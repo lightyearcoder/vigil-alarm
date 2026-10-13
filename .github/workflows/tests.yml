@@ -1,4 +1,4 @@
-name: tests
+name: Test core, home-assistant, hassfest
 
 on: [push, pull_request]
 
