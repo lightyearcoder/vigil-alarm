@@ -1,0 +1,115 @@
+# Example dashboard for Vigil Alarm, using only the standard Home Assistant cards.
+#
+# How to use it:
+#   1. Settings > Dashboards > Add dashboard > "New dashboard from scratch", open it.
+#   2. Top right: pencil > three dots > "Raw configuration editor".
+#   3. Paste everything below this comment block and save.
+#   4. Change the example sensor names (front_door, living_pir, smoke, tamper) in the
+#      "Sensors" card to your own. The entity ids are the name you gave the sensor, lower case,
+#      with underscores: sensor "Back door" gives sensor.back_door_status and switch.back_door_bypass.
+#
+# The alarm itself is called "Vigil Alarm" here. If you gave it another name, replace
+# "vigil_alarm" in the entity ids (alarm_control_panel.vigil_alarm and so on).
+title: Alarm
+views:
+  - title: Alarm
+    path: alarm
+    icon: mdi:shield-home
+    cards:
+      - type: alarm-panel
+        entity: alarm_control_panel.vigil_alarm
+        name: Alarm
+        states:
+          - arm_home
+          - arm_away
+          - arm_night
+
+      - type: markdown
+        title: Status
+        content: >
+          {% set a = 'alarm_control_panel.vigil_alarm' %}
+          **{{ states(a) | replace('_', ' ') | capitalize }}**
+          {% if state_attr(a, 'changed_by') %} (by {{ state_attr(a, 'changed_by') }}){% endif %}
+
+          {% if state_attr(a, 'cause') %}
+          Alarm cause: **{{ state_attr(a, 'cause') }}**
+          {% if state_attr(a, 'cause_sensor') %}, sensor: **{{ state_attr(a, 'cause_sensor') }}**{% endif %}
+          {% endif %}
+          {% if state_attr(a, 'open_sensors') %}
+          Open: {{ state_attr(a, 'open_sensors') | join(', ') }}
+          {% endif %}
+          {% if state_attr(a, 'bypassed_sensors') %}
+          Bypassed: {{ state_attr(a, 'bypassed_sensors') | join(', ') }}
+          {% endif %}
+
+      # Only visible when something needs attention.
+      - type: conditional
+        conditions:
+          - condition: template
+            value_template: >
+              {{ state_attr('alarm_control_panel.vigil_alarm', 'problems') | count > 0
+                 or state_attr('alarm_control_panel.vigil_alarm', 'faults') | count > 0
+                 or state_attr('alarm_control_panel.vigil_alarm', 'technical_alarms') | count > 0 }}
+        card:
+          type: markdown
+          title: Needs attention
+          content: >
+            {% set a = 'alarm_control_panel.vigil_alarm' %}
+            {% for p in state_attr(a, 'problems') %}
+            - {{ p.name }}: {{ p.problem | replace('_', ' ') }}{% if p.level is defined %} ({{ p.level | round(0) }}%){% endif %}
+            {% endfor %}
+            {% for f in state_attr(a, 'faults') %}
+            - Sensor not reachable: {{ f }}
+            {% endfor %}
+            {% for t in state_attr(a, 'technical_alarms') %}
+            - Technical alarm: {{ t }}
+            {% endfor %}
+
+      - type: entities
+        title: Alarms
+        show_header_toggle: false
+        entities:
+          - entity: binary_sensor.vigil_alarm_intrusion_alarm
+          - entity: binary_sensor.vigil_alarm_fire_alarm
+          - entity: binary_sensor.vigil_alarm_tamper_alarm
+          # Only exist when you have a gas or water sensor. Remove these lines if you do not.
+          # - entity: binary_sensor.vigil_alarm_gas_alarm
+          # - entity: binary_sensor.vigil_alarm_water_alarm
+          - entity: sensor.vigil_alarm_last_event
+            name: Last event
+
+      - type: entities
+        title: Sensors
+        show_header_toggle: false
+        entities:
+          - type: section
+            label: Status
+          - entity: sensor.front_door_status
+            name: Front door
+          - entity: sensor.living_pir_status
+            name: Living room PIR
+          - entity: sensor.smoke_status
+            name: Smoke
+          - entity: sensor.tamper_status
+            name: Tamper
+          - type: section
+            label: Bypass (leave a sensor out for now)
+          - entity: switch.front_door_bypass
+            name: Front door
+          - entity: switch.living_pir_bypass
+            name: Living room PIR
+
+      - type: logbook
+        title: History
+        hours_to_show: 48
+        target:
+          entity_id: event.vigil_alarm_alarm_events
+
+      - type: button
+        name: Silence the siren
+        icon: mdi:bell-off
+        tap_action:
+          action: perform-action
+          perform_action: vigil.silence
+          confirmation:
+            text: Silence the siren?

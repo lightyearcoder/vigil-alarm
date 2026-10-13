@@ -1,0 +1,58 @@
+blueprint:
+  name: Vigil - Remind when arriving at an armed home
+  description: >
+    Sends a message when someone arrives home while the alarm is still armed, so nobody walks in
+    and sets it off. It does not disarm anything.
+  domain: automation
+  homeassistant:
+    min_version: 2024.10.0
+  source_url: https://github.com/lightyearcoder/vigil-alarm/blob/main/blueprints/automation/vigil/arrival_reminder.yaml
+  input:
+    alarm:
+      name: Vigil alarm
+      selector:
+        entity:
+          filter:
+            - integration: vigil
+              domain: alarm_control_panel
+    persons:
+      name: People
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - domain: person
+    notify:
+      name: Message to
+      description: A notify entity (for example the Companion app of that person).
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - domain: notify
+    message:
+      name: Message
+      default: "The alarm is still armed. Disarm it before you go in."
+      selector:
+        text:
+
+mode: queued
+max_exceeded: silent
+
+triggers:
+  - trigger: state
+    entity_id: !input persons
+    to: home
+
+conditions:
+  - condition: state
+    entity_id: !input alarm
+    state: [armed_home, armed_away, armed_night]
+
+actions:
+  - action: notify.send_message
+    target:
+      entity_id: !input notify
+    data:
+      title: Alarm
+      message: !input message

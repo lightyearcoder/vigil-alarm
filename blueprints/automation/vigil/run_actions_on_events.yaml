@@ -1,0 +1,46 @@
+blueprint:
+  name: Vigil - Run your own actions on alarm events
+  description: >
+    The general building block: pick which Vigil events you care about and what should happen.
+    In your actions you can use `event_type` and `data` (for example `data.cause`,
+    `data.sensor_name`, `data.user`, `data.mode`, `data.reason`).
+  domain: automation
+  homeassistant:
+    min_version: 2024.10.0
+  source_url: https://github.com/lightyearcoder/vigil-alarm/blob/main/blueprints/automation/vigil/run_actions_on_events.yaml
+  input:
+    events:
+      name: Vigil events
+      selector:
+        entity:
+          filter:
+            - integration: vigil
+              domain: event
+    event_types:
+      name: Run on these events
+      selector:
+        select:
+          multiple: true
+          options: [armed, arming_started, arm_refused, disarmed, pending_started, triggered, trigger_cause_changed, trigger_ended, sensor_faulted, sensor_unconfirmed, sensor_unconfirmed_escalated, sensor_bypassed, sensor_bypassed_at_arm, sensor_unbypassed, bypass_refused, supervision_lost, supervision_restored, technical_alarm_started, technical_alarm_ended, state_restore_failed, notification_failed, siren_started, siren_stopped, siren_failed, siren_unavailable, siren_available, siren_power_lost, siren_power_restored, battery_low, battery_ok, alarm_silenced, alarm_acknowledged]
+    actions:
+      name: Actions
+      selector:
+        action:
+
+mode: queued
+max_exceeded: silent
+
+variables:
+  event_types: !input event_types
+  event_type: "{{ trigger.to_state.attributes.get('event_type', '') }}"
+  data: "{{ trigger.to_state.attributes }}"
+
+triggers:
+  - trigger: state
+    entity_id: !input events
+
+conditions:
+  - condition: template
+    value_template: "{{ event_type in event_types }}"
+
+actions: !input actions

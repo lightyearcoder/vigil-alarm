@@ -1,0 +1,104 @@
+configs:
+  escalating:
+    modes: {away: {exit_delay: 0}}
+    sensors:
+      a: {cls: intrusion, type: instant, modes: [away]}
+      b: {cls: intrusion, type: instant, modes: [away]}
+    rules:
+      g: {sensors: [a, b], required: 2, window: 60, escalate: true}
+
+scenarios:
+  - name: second_sensor_in_window_confirms_alarm
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 60, expect: {state: armed_away}}
+      - {t: 100, sensor: living_pir, value: open}
+      - {t: 100, expect: {state: armed_away}}
+      - {t: 120, sensor: kitchen_pir, value: open}
+      - {t: 120, expect: {state: triggered, cause: intrusion, cause_sensor: kitchen_pir}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: sensor_unconfirmed, rule: downstairs, sensor: living_pir}
+      - {t: 120, type: triggered, cause: intrusion, sensor: kitchen_pir, confirmed_by: [living_pir, kitchen_pir]}
+
+  - name: single_sensor_gives_notice_but_no_alarm
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 100, sensor: living_pir, value: open}
+      - {t: 161, expect: {state: armed_away}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: sensor_unconfirmed, sensor: living_pir}
+
+  - name: same_sensor_twice_does_not_count_as_two
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 100, sensor: living_pir, value: open}
+      - {t: 105, sensor: living_pir, value: closed}
+      - {t: 110, sensor: living_pir, value: open}
+      - {t: 200, expect: {state: armed_away}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: sensor_unconfirmed, sensor: living_pir}
+
+  - name: second_sensor_after_window_starts_a_new_window
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 100, sensor: living_pir, value: open}
+      - {t: 170, sensor: kitchen_pir, value: open}
+      - {t: 171, expect: {state: armed_away}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: sensor_unconfirmed, sensor: living_pir}
+      - {t: 170, type: sensor_unconfirmed, sensor: kitchen_pir}
+
+  - name: escalation_event_when_window_expires_unconfirmed
+    config: escalating
+    steps:
+      - {t: 0, arm: away}
+      - {t: 10, sensor: a, value: open}
+      - {t: 70, expect: {state: armed_away}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: armed}
+      - {t: 10, type: sensor_unconfirmed, rule: g, sensor: a}
+      - {t: 70, type: sensor_unconfirmed_escalated, rule: g, sensors: [a]}
+
+  - name: confirmation_cancels_the_escalation
+    config: escalating
+    steps:
+      - {t: 0, arm: away}
+      - {t: 10, sensor: a, value: open}
+      - {t: 20, sensor: b, value: open}
+      - {t: 100, expect: {state: triggered}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: armed}
+      - {t: 10, type: sensor_unconfirmed}
+      - {t: 20, type: triggered, confirmed_by: [a, b]}
+
+  - name: unavailable_is_a_fault_not_a_second_detection
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 100, sensor: living_pir, value: open}
+      - {t: 110, sensor: kitchen_pir, value: unavailable}
+      - {t: 111, expect: {state: armed_away, faults: [kitchen_pir]}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: sensor_unconfirmed, sensor: living_pir}
+      - {t: 110, type: supervision_lost, sensor: kitchen_pir}

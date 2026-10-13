@@ -1,0 +1,139 @@
+scenarios:
+  - name: arm_away_runs_exit_delay
+    config: house
+    steps:
+      - {t: 0, arm: away, user: anna}
+      - {t: 59, expect: {state: arming, mode: away, delay_end: 60}}
+      - {t: 60, expect: {state: armed_away, delay_end: null}}
+    events:
+      - {t: 0, type: arming_started, mode: away, end: 60, user: anna}
+      - {t: 60, type: armed, mode: away, user: anna}
+
+  - name: arm_home_without_exit_delay_is_immediate
+    config: house
+    steps:
+      - {t: 0, arm: home, user: anna}
+      - {t: 0, expect: {state: armed_home, mode: home}}
+    events:
+      - {t: 0, type: armed, mode: home, user: anna}
+
+  - name: disarm_during_arming_cancels_it
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 10, disarm: bob}
+      - {t: 100, expect: {state: disarmed, delay_end: null, mode: null}}
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 10, type: disarmed, user: bob}
+
+  - name: intrusion_sensors_are_ignored_while_arming
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 10, sensor: front_door, value: open}
+      - {t: 20, sensor: front_door, value: closed}
+      - {t: 30, sensor: window_living, value: open}
+      - {t: 40, sensor: window_living, value: closed}
+      - {t: 60, expect: {state: armed_away}}
+    events_ignore: []
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+
+  - name: pir_still_active_at_end_waits_until_clear
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 50, sensor: hallway_pir, value: open}
+      - {t: 60, expect: {state: armed_away, sensor_status: {hallway_pir: waiting}}}
+      - {t: 70, expect: {state: armed_away}}
+      - {t: 80, sensor: hallway_pir, value: closed}
+      - {t: 80, expect: {sensor_status: {hallway_pir: closed}}}
+      - {t: 90, sensor: hallway_pir, value: open}
+      - {t: 90, expect: {state: triggered, cause_sensor: hallway_pir}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 90, type: triggered, cause: intrusion, sensor: hallway_pir}
+
+  - name: door_open_at_end_is_bypassed_with_notice_then_restored
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 30, sensor: front_door, value: open}
+      - {t: 60, expect: {state: armed_away, sensor_status: {front_door: bypassed_at_arm}}}
+      - {t: 70, sensor: front_door, value: closed}
+      - {t: 70, expect: {sensor_status: {front_door: closed}}}
+      - {t: 100, sensor: front_door, value: open}
+      - {t: 129, expect: {state: pending}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: sensor_bypassed_at_arm, sensor: front_door, reason: open}
+      - {t: 60, type: armed}
+      - {t: 70, type: sensor_unbypassed, sensor: front_door, reason: closed}
+      - {t: 100, type: pending_started, sensor: front_door, end: 130}
+
+  - name: window_open_at_end_refuses_arming
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 30, sensor: window_living, value: open}
+      - {t: 60, expect: {state: disarmed, refuse_reason: sensor_open, mode: null}}
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: arm_refused, reason: sensor_open, sensors: [window_living], mode: away}
+
+  - name: pending_policy_sensor_open_at_end_starts_entry_delay
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 30, sensor: garage_door, value: open}
+      - {t: 60, expect: {state: pending, delay_end: 80}}
+      - {t: 80, expect: {state: triggered, cause: intrusion, cause_sensor: garage_door}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 60, type: pending_started, sensor: garage_door, end: 80}
+      - {t: 80, type: triggered, cause: intrusion, sensor: garage_door}
+
+  - name: arming_is_refused_when_not_disarmed
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 60, expect: {state: armed_away}}
+      - {t: 100, arm: home}
+      - {t: 100, expect: {state: armed_away, refuse_reason: not_disarmed}}
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: arm_refused, reason: not_disarmed, mode: home}
+
+  - name: arming_is_refused_during_pending
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 60, expect: {state: armed_away}}
+      - {t: 100, sensor: front_door, value: open}
+      - {t: 105, arm: home}
+      - {t: 106, expect: {state: pending}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: pending_started}
+      - {t: 105, type: arm_refused, reason: not_disarmed}
+
+  - name: night_mode_uses_its_own_exit_delay_and_skips_inactive_sensors
+    config: house
+    steps:
+      - {t: 0, sensor: bedroom_pir, value: unavailable}
+      - {t: 1, arm: night}
+      - {t: 11, expect: {state: armed_night}}
+    events:
+      - {t: 0, type: supervision_lost, sensor: bedroom_pir}
+      - {t: 1, type: arming_started, mode: night, end: 11}
+      - {t: 11, type: armed, mode: night}

@@ -1,0 +1,158 @@
+configs:
+  zero_delay:
+    modes: {away: {exit_delay: 0}}
+    sensors:
+      door: {cls: intrusion, type: delayed, modes: [away], entry_delay: 0}
+  timed:
+    trigger_time: 120
+    modes: {away: {exit_delay: 0}}
+    sensors:
+      w: {cls: intrusion, type: instant, modes: [away]}
+
+scenarios:
+  - name: delayed_sensor_goes_pending_then_triggers
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 60, expect: {state: armed_away}}
+      - {t: 100, sensor: front_door, value: open}
+      - {t: 100, expect: {state: pending, delay_end: 130}}
+      - {t: 129, expect: {state: pending}}
+      - {t: 130, expect: {state: triggered, cause: intrusion, cause_sensor: front_door}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: pending_started, sensor: front_door, end: 130}
+      - {t: 130, type: triggered, cause: intrusion, sensor: front_door}
+
+  - name: disarm_during_pending_prevents_alarm
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 100, sensor: front_door, value: open}
+      - {t: 110, disarm: anna}
+      - {t: 200, expect: {state: disarmed}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: pending_started}
+      - {t: 110, type: disarmed, user: anna}
+
+  - name: follower_follows_a_running_entry_delay
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 100, sensor: front_door, value: open}
+      - {t: 105, sensor: hallway_pir, value: open}
+      - {t: 106, expect: {state: pending, delay_end: 130}}
+      - {t: 130, expect: {state: triggered, cause_sensor: front_door}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: pending_started, sensor: front_door}
+      - {t: 130, type: triggered, sensor: front_door}
+
+  - name: follower_going_first_triggers_immediately
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 100, sensor: hallway_pir, value: open}
+      - {t: 100, expect: {state: triggered, cause_sensor: hallway_pir}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: triggered, cause: intrusion, sensor: hallway_pir}
+
+  - name: instant_sensor_breaks_a_running_entry_delay
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 100, sensor: front_door, value: open}
+      - {t: 110, sensor: window_living, value: open}
+      - {t: 110, expect: {state: triggered, cause_sensor: window_living}}
+      - {t: 140, expect: {state: triggered, cause_sensor: window_living}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: pending_started, sensor: front_door}
+      - {t: 110, type: triggered, sensor: window_living}
+
+  - name: entry_delay_is_per_mode
+    config: house
+    steps:
+      - {t: 0, arm: night}
+      - {t: 10, expect: {state: armed_night}}
+      - {t: 20, sensor: front_door, value: open}
+      - {t: 20, expect: {state: pending, delay_end: 35}}
+      - {t: 35, expect: {state: triggered}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started, mode: night, end: 10}
+      - {t: 10, type: armed, mode: night}
+      - {t: 20, type: pending_started, sensor: front_door, end: 35}
+      - {t: 35, type: triggered}
+
+  - name: shortest_running_entry_delay_wins
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 100, sensor: front_door, value: open}
+      - {t: 105, sensor: back_door, value: open}
+      - {t: 106, expect: {state: pending, delay_end: 120}}
+      - {t: 120, expect: {state: triggered, cause_sensor: back_door}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: pending_started, sensor: front_door, end: 130}
+      - {t: 120, type: triggered, sensor: back_door}
+
+  - name: zero_entry_delay_triggers_immediately
+    config: zero_delay
+    steps:
+      - {t: 0, arm: away}
+      - {t: 10, sensor: door, value: open}
+      - {t: 10, expect: {state: triggered}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: armed}
+      - {t: 10, type: triggered, sensor: door}
+
+  - name: trigger_time_returns_to_armed_and_can_retrigger
+    config: timed
+    steps:
+      - {t: 0, arm: away}
+      - {t: 100, sensor: w, value: open}
+      - {t: 219, expect: {state: triggered}}
+      - {t: 220, expect: {state: armed_away, cause: null}}
+      - {t: 230, sensor: w, value: closed}
+      - {t: 240, sensor: w, value: open}
+      - {t: 250, expect: {state: triggered}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: armed}
+      - {t: 100, type: triggered}
+      - {t: 220, type: trigger_ended}
+      - {t: 240, type: triggered}
+
+  - name: disarm_while_triggered_then_no_new_alarm_until_rearmed
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 100, sensor: window_living, value: open}
+      - {t: 110, disarm: anna}
+      - {t: 120, sensor: window_living, value: closed}
+      - {t: 130, sensor: window_living, value: open}
+      - {t: 200, expect: {state: disarmed, cause: null}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: triggered}
+      - {t: 110, type: trigger_ended}
+      - {t: 110, type: disarmed, user: anna}

@@ -1,0 +1,56 @@
+name: Bug report
+description: Something does not work as the user guide says
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please check the [user guide](https://github.com/lightyearcoder/vigil-alarm/blob/main/docs/user-guide.md) first.
+  - type: textarea
+    id: did
+    attributes:
+      label: What did you do?
+      description: The steps, so someone else can repeat them.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: input
+    id: vigil_version
+    attributes:
+      label: Vigil Alarm version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      placeholder: "2026.2.3"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: Installed with
+      options: [HACS, Manually]
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log lines that mention vigil
+      description: |
+        Settings → System → Logs. For more detail enable `custom_components.vigil: debug`.
+        Remove anything private.
+      render: text

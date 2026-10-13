@@ -1,0 +1,157 @@
+configs:
+  policy:
+    modes: {away: {exit_delay: 10}}
+    sensors:
+      sensor: {cls: intrusion, type: instant, modes: [away], on_unavailable: bypass}
+      tamper_t: {cls: tamper, on_unavailable: bypass}
+      window: {cls: intrusion, type: instant, modes: [away]}
+  strict_fire:
+    modes: {away: {exit_delay: 0}}
+    sensors:
+      smoke: {cls: fire, on_unavailable: block}
+
+scenarios:
+  # --- defaults per class -------------------------------------------------
+  - name: broken_smoke_detector_does_not_block_arming
+    config: house
+    steps:
+      - {t: 0, sensor: smoke_hall, value: unavailable}
+      - {t: 5, arm: away}
+      - {t: 65, expect: {state: armed_away, faults: [smoke_hall]}}
+    events:
+      - {t: 0, type: supervision_lost, sensor: smoke_hall}
+      - {t: 5, type: arming_started, end: 65}
+      - {t: 65, type: armed}
+
+  - name: broken_gas_detector_does_not_block_arming
+    config: house
+    steps:
+      - {t: 0, sensor: gas_kitchen, value: unavailable}
+      - {t: 1, arm: home}
+      - {t: 1, expect: {state: armed_home, faults: [gas_kitchen]}}
+    events:
+      - {t: 0, type: supervision_lost, sensor: gas_kitchen}
+      - {t: 1, type: armed, mode: home}
+
+  - name: fire_sensor_can_be_explicitly_configured_to_block
+    config: strict_fire
+    steps:
+      - {t: 0, sensor: smoke, value: unavailable}
+      - {t: 1, arm: away}
+      - {t: 1, expect: {state: disarmed, refuse_reason: sensor_unavailable}}
+    events:
+      - {t: 0, type: supervision_lost}
+      - {t: 1, type: arm_refused, reason: sensor_unavailable, sensors: [smoke]}
+
+  - name: unreachable_tamper_sensor_blocks_arming_by_default
+    config: house
+    steps:
+      - {t: 0, sensor: tamper_siren, value: unavailable}
+      - {t: 1, arm: away}
+      - {t: 1, expect: {state: disarmed, refuse_reason: sensor_unavailable}}
+    events:
+      - {t: 0, type: supervision_lost}
+      - {t: 1, type: arm_refused, reason: sensor_unavailable, sensors: [tamper_siren]}
+
+  - name: open_tamper_contact_blocks_arming_until_it_is_bypassed
+    config: house
+    steps:
+      - {t: 10, sensor: tamper_siren, value: open}
+      - {t: 20, disarm: anna}
+      - {t: 30, arm: away}
+      - {t: 30, expect: {state: disarmed, refuse_reason: alarm_condition}}
+      - {t: 40, bypass: tamper_siren, user: anna}
+      - {t: 50, arm: away}
+      - {t: 110, expect: {state: armed_away}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 10, type: triggered, cause: tamper}
+      - {t: 20, type: trigger_ended}
+      - {t: 20, type: disarmed}
+      - {t: 30, type: arm_refused, reason: alarm_condition, sensors: [tamper_siren]}
+      - {t: 40, type: sensor_bypassed, sensor: tamper_siren, user: anna}
+      - {t: 50, type: arming_started, end: 110}
+      - {t: 110, type: armed}
+
+  # --- on_unavailable: bypass ---------------------------------------------
+  - name: bypass_policy_arms_around_an_unavailable_sensor_and_restores_it
+    config: policy
+    steps:
+      - {t: 0, sensor: sensor, value: unavailable}
+      - {t: 5, arm: away}
+      - {t: 15, expect: {state: armed_away, faults: [sensor]}}
+      - {t: 50, sensor: sensor, value: closed}
+      - {t: 60, sensor: sensor, value: open}
+      - {t: 60, expect: {state: triggered, cause_sensor: sensor}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: supervision_lost, sensor: sensor}
+      - {t: 5, type: arming_started, end: 15}
+      - {t: 15, type: sensor_bypassed_at_arm, sensor: sensor, reason: unavailable}
+      - {t: 15, type: armed}
+      - {t: 50, type: supervision_restored, sensor: sensor}
+      - {t: 50, type: sensor_unbypassed, sensor: sensor, reason: closed}
+      - {t: 60, type: triggered, cause: intrusion, sensor: sensor}
+
+  - name: bypassed_sensor_returning_as_open_stays_bypassed_until_it_closes
+    config: policy
+    steps:
+      - {t: 0, sensor: sensor, value: unavailable}
+      - {t: 5, arm: away}
+      - {t: 15, expect: {state: armed_away}}
+      - {t: 20, sensor: sensor, value: open}
+      - {t: 21, expect: {state: armed_away, sensor_status: {sensor: bypassed_at_arm}}}
+      - {t: 30, sensor: sensor, value: closed}
+      - {t: 40, sensor: sensor, value: open}
+      - {t: 40, expect: {state: triggered}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: supervision_lost}
+      - {t: 5, type: arming_started}
+      - {t: 15, type: sensor_bypassed_at_arm, reason: unavailable}
+      - {t: 15, type: armed}
+      - {t: 20, type: supervision_restored}
+      - {t: 30, type: sensor_unbypassed, reason: closed}
+      - {t: 40, type: triggered}
+
+  - name: bypass_policy_does_not_apply_when_a_sensor_fails_while_armed
+    config: policy
+    steps:
+      - {t: 0, arm: away}
+      - {t: 10, expect: {state: armed_away}}
+      - {t: 20, sensor: sensor, value: unavailable}
+      - {t: 21, expect: {state: armed_away, sensor_status: {sensor: unavailable}}}
+      - {t: 30, sensor: sensor, value: open}
+      - {t: 30, expect: {state: triggered, cause_sensor: sensor}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started, end: 10}
+      - {t: 10, type: armed}
+      - {t: 20, type: supervision_lost}
+      - {t: 30, type: supervision_restored}
+      - {t: 30, type: triggered}
+
+  - name: bypass_policy_also_works_for_a_tamper_sensor
+    config: policy
+    steps:
+      - {t: 0, sensor: tamper_t, value: unavailable}
+      - {t: 1, arm: away}
+      - {t: 11, expect: {state: armed_away}}
+    events:
+      - {t: 0, type: supervision_lost, sensor: tamper_t}
+      - {t: 1, type: arming_started}
+      - {t: 11, type: sensor_bypassed_at_arm, sensor: tamper_t, reason: unavailable}
+      - {t: 11, type: armed}
+
+  - name: manual_bypass_takes_precedence_over_the_policy
+    config: policy
+    steps:
+      - {t: 0, sensor: sensor, value: unavailable}
+      - {t: 1, bypass: sensor, user: anna}
+      - {t: 2, arm: away}
+      - {t: 12, expect: {state: armed_away, faults: [sensor]}}
+    events:
+      - {t: 0, type: supervision_lost}
+      - {t: 1, type: sensor_bypassed, sensor: sensor, user: anna}
+      - {t: 2, type: arming_started}
+      - {t: 12, type: armed}

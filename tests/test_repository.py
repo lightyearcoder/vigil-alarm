@@ -1,0 +1,71 @@
+"""The repository is publishable: links in the docs point at real files, metadata is filled in."""
+
+from __future__ import annotations
+
+import json
+import pathlib
+import re
+from urllib.parse import parse_qs, unquote, urlparse
+
+ROOT = pathlib.Path(__file__).parents[1]
+DOCS = [ROOT / "README.md", ROOT / "docs" / "user-guide.md", ROOT / "docs" / "gebruikershandleiding.nl.md",
+        ROOT / "docs" / "installatie-en-testen.nl.md"]
+OWNER_REPO = "lightyearcoder/vigil-alarm"
+
+
+def test_no_placeholders_are_left():
+    for path in [*DOCS, ROOT / "custom_components/vigil/manifest.json", ROOT / "hacs.json"]:
+        assert "YOUR_GITHUB_USERNAME" not in path.read_text(), path
+
+
+def test_manifest_points_at_the_repository():
+    manifest = json.loads((ROOT / "custom_components/vigil/manifest.json").read_text())
+    assert manifest["documentation"] == f"https://github.com/{OWNER_REPO}"
+    assert manifest["issue_tracker"] == f"https://github.com/{OWNER_REPO}/issues"
+    assert manifest["codeowners"] == ["@lightyearcoder"]
+    assert list(manifest)[:2] == ["domain", "name"] and list(manifest)[2:] == sorted(list(manifest)[2:])  # hassfest order
+    assert re.fullmatch(r"\d+\.\d+\.\d+", manifest["version"])
+
+
+def test_hacs_metadata():
+    hacs = json.loads((ROOT / "hacs.json").read_text())
+    assert hacs["name"] == "Vigil Alarm" and hacs["homeassistant"] == "2026.2.3"
+    for name in ("icon.png", "icon@2x.png"):
+        assert (ROOT / "custom_components/vigil/brand" / name).is_file()
+
+
+def test_relative_links_point_at_files():
+    for path in DOCS:
+        text = path.read_text()
+        for target in re.findall(r"\]\((?!https?:|#|mailto:)([^)\s]+)\)", text):
+            file = target.split("#")[0]
+            assert (path.parent / file).exists(), f"{path.name}: {target}"
+        for src in re.findall(r'src="(?!https?:)([^"]+)"', text):
+            assert (path.parent / src).exists(), f"{path.name}: {src}"
+
+
+def test_blueprint_import_buttons_match_the_files():
+    text = (ROOT / "README.md").read_text()
+    urls = re.findall(r"blueprint_url=([^)\s]+)\)", text)
+    found = set()
+    for url in urls:
+        target = unquote(parse_qs(urlparse("https://x/?blueprint_url=" + url).query)["blueprint_url"][0])
+        prefix = f"https://github.com/{OWNER_REPO}/blob/main/"
+        assert target.startswith(prefix), target
+        assert (ROOT / target[len(prefix):]).is_file(), target
+        found.add(pathlib.Path(target).name)
+    assert found == {p.name for p in (ROOT / "blueprints/automation/vigil").glob("*.yaml")}
+
+
+def test_every_event_is_documented_in_the_readme():
+    from custom_components.vigil.const import EVENT_TYPES
+
+    text = (ROOT / "README.md").read_text()
+    missing = [e for e in EVENT_TYPES if f"`{e}`" not in text]
+    assert not missing, missing
+
+
+def test_the_guides_cover_the_same_sections():
+    en = re.findall(r"^## ", (ROOT / "docs/user-guide.md").read_text(), re.M)
+    nl = re.findall(r"^## ", (ROOT / "docs/gebruikershandleiding.nl.md").read_text(), re.M)
+    assert len(en) == len(nl)

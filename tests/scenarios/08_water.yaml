@@ -1,0 +1,160 @@
+# Water is a technical alarm: it never changes the alarm state, it has its own
+# started/ended events and an entry in snapshot.technical_alarms.
+scenarios:
+  - name: leak_while_disarmed_is_a_technical_alarm_until_it_dries
+    config: house
+    steps:
+      - {t: 10, sensor: water_kitchen, value: open}
+      - {t: 11, expect: {state: disarmed, technical_alarms: [water_kitchen], cause: null}}
+      - {t: 50, sensor: water_kitchen, value: closed}
+      - {t: 51, expect: {technical_alarms: []}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 10, type: technical_alarm_started, sensor: water_kitchen, cause: water}
+      - {t: 50, type: technical_alarm_ended, sensor: water_kitchen, cause: water, reason: closed}
+
+  - name: leak_while_armed_does_not_trigger_the_alarm
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 60, expect: {state: armed_away}}
+      - {t: 100, sensor: water_kitchen, value: open}
+      - {t: 101, expect: {state: armed_away, cause: null, technical_alarms: [water_kitchen]}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: technical_alarm_started, sensor: water_kitchen}
+
+  - name: an_active_leak_does_not_block_arming
+    config: house
+    steps:
+      - {t: 0, sensor: water_kitchen, value: open}
+      - {t: 5, arm: away}
+      - {t: 65, expect: {state: armed_away, technical_alarms: [water_kitchen]}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: technical_alarm_started}
+      - {t: 5, type: arming_started, end: 65}
+      - {t: 65, type: armed}
+
+  - name: a_leak_survives_disarming
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 100, sensor: water_kitchen, value: open}
+      - {t: 110, disarm: anna}
+      - {t: 111, expect: {state: disarmed, technical_alarms: [water_kitchen]}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: technical_alarm_started}
+      - {t: 110, type: disarmed}
+
+  - name: water_sensors_are_tracked_separately
+    config: house
+    steps:
+      - {t: 10, sensor: water_kitchen, value: open}
+      - {t: 20, sensor: water_bath, value: open}
+      - {t: 30, sensor: water_kitchen, value: closed}
+      - {t: 31, expect: {technical_alarms: [water_bath]}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 10, type: technical_alarm_started, sensor: water_kitchen}
+      - {t: 20, type: technical_alarm_started, sensor: water_bath}
+      - {t: 30, type: technical_alarm_ended, sensor: water_kitchen, reason: closed}
+
+  - name: a_leak_does_not_interfere_with_an_intrusion_alarm
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 100, sensor: window_living, value: open}
+      - {t: 110, sensor: water_kitchen, value: open}
+      - {t: 111, expect: {state: triggered, cause: intrusion, cause_sensor: window_living, technical_alarms: [water_kitchen]}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: triggered, cause: intrusion}
+      - {t: 110, type: technical_alarm_started, sensor: water_kitchen}
+
+  - name: a_water_sensor_can_be_bypassed
+    config: house
+    steps:
+      - {t: 0, bypass: water_kitchen, user: anna}
+      - {t: 10, sensor: water_kitchen, value: open}
+      - {t: 11, expect: {technical_alarms: [], sensor_status: {water_kitchen: bypassed}}}
+    events:
+      - {t: 0, type: sensor_bypassed, sensor: water_kitchen, user: anna}
+
+  - name: bypassing_an_active_leak_ends_it_and_unbypassing_resumes_it
+    config: house
+    steps:
+      - {t: 10, sensor: water_kitchen, value: open}
+      - {t: 20, bypass: water_kitchen, user: anna}
+      - {t: 21, expect: {technical_alarms: []}}
+      - {t: 30, unbypass: water_kitchen, user: anna}
+      - {t: 31, expect: {technical_alarms: [water_kitchen]}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 10, type: technical_alarm_started}
+      - {t: 20, type: sensor_bypassed, user: anna}
+      - {t: 20, type: technical_alarm_ended, sensor: water_kitchen, reason: bypassed}
+      - {t: 30, type: sensor_unbypassed, reason: manual}
+      - {t: 30, type: technical_alarm_started, sensor: water_kitchen}
+
+  - name: disarming_lifts_a_bypass_and_a_still_present_leak_resumes
+    config: house
+    steps:
+      - {t: 0, bypass: water_kitchen}
+      - {t: 1, arm: away}
+      - {t: 10, sensor: water_kitchen, value: open}
+      - {t: 70, disarm: anna}
+      - {t: 71, expect: {state: disarmed, technical_alarms: [water_kitchen]}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: sensor_bypassed}
+      - {t: 1, type: arming_started}
+      - {t: 61, type: armed}
+      - {t: 70, type: sensor_unbypassed, reason: disarm}
+      - {t: 70, type: disarmed}
+      - {t: 70, type: technical_alarm_started, sensor: water_kitchen}
+
+  - name: a_broken_water_sensor_only_reports
+    config: house
+    steps:
+      - {t: 0, sensor: water_kitchen, value: unavailable}
+      - {t: 1, arm: away}
+      - {t: 61, expect: {state: armed_away, faults: [water_kitchen], technical_alarms: []}}
+    events:
+      - {t: 0, type: supervision_lost, sensor: water_kitchen}
+      - {t: 1, type: arming_started}
+      - {t: 61, type: armed}
+
+  - name: a_sensor_returning_as_open_does_not_start_a_second_alarm
+    config: house
+    steps:
+      - {t: 10, sensor: water_kitchen, value: open}
+      - {t: 20, sensor: water_kitchen, value: unavailable}
+      - {t: 21, expect: {technical_alarms: [water_kitchen]}}
+      - {t: 30, sensor: water_kitchen, value: open}
+      - {t: 31, expect: {technical_alarms: [water_kitchen]}}
+      - {t: 40, sensor: water_kitchen, value: closed}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 10, type: technical_alarm_started}
+      - {t: 20, type: supervision_lost}
+      - {t: 30, type: supervision_restored}
+      - {t: 40, type: technical_alarm_ended, reason: closed}
+
+  - name: a_leak_that_dries_while_the_sensor_is_unavailable_is_not_ended_by_the_outage
+    config: house
+    steps:
+      - {t: 10, sensor: water_kitchen, value: open}
+      - {t: 20, sensor: water_kitchen, value: unavailable}
+      - {t: 100, expect: {technical_alarms: [water_kitchen], faults: [water_kitchen]}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 10, type: technical_alarm_started}
+      - {t: 20, type: supervision_lost}

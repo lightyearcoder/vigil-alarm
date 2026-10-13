@@ -1,0 +1,45 @@
+scenarios:
+  - name: manual_bypass_silences_a_sensor_until_disarm
+    config: house
+    steps:
+      - {t: 0, bypass: window_living, user: anna}
+      - {t: 5, arm: away}
+      - {t: 65, expect: {state: armed_away}}
+      - {t: 100, sensor: window_living, value: open}
+      - {t: 101, expect: {state: armed_away, sensor_status: {window_living: bypassed}}}
+      - {t: 120, disarm: anna}
+      - {t: 121, expect: {sensor_status: {window_living: open}}}
+    events:
+      - {t: 0, type: sensor_bypassed, sensor: window_living, user: anna}
+      - {t: 5, type: arming_started, end: 65}
+      - {t: 65, type: armed}
+      - {t: 120, type: sensor_unbypassed, sensor: window_living, reason: disarm}
+      - {t: 120, type: disarmed, user: anna}
+
+  - name: fire_and_gas_sensors_cannot_be_bypassed
+    config: house
+    steps:
+      - {t: 0, bypass: smoke_hall}
+      - {t: 1, bypass: gas_kitchen}
+      - {t: 2, expect: {sensor_status: {smoke_hall: closed, gas_kitchen: closed}}}
+    events:
+      - {t: 0, type: bypass_refused, sensor: smoke_hall, reason: not_bypassable}
+      - {t: 1, type: bypass_refused, sensor: gas_kitchen, reason: not_bypassable}
+
+  - name: unbypassing_an_open_sensor_waits_for_it_to_clear
+    config: house
+    steps:
+      - {t: 0, bypass: window_living}
+      - {t: 1, arm: home}
+      - {t: 10, sensor: window_living, value: open}
+      - {t: 20, unbypass: window_living, user: anna}
+      - {t: 21, expect: {state: armed_home, sensor_status: {window_living: waiting}}}
+      - {t: 30, sensor: window_living, value: closed}
+      - {t: 40, sensor: window_living, value: open}
+      - {t: 40, expect: {state: triggered}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: sensor_bypassed}
+      - {t: 1, type: armed, mode: home}
+      - {t: 20, type: sensor_unbypassed, reason: manual, user: anna}
+      - {t: 40, type: triggered}

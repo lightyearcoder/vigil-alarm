@@ -1,0 +1,130 @@
+blueprint:
+  name: Vigil - Arm when everyone has left
+  description: >
+    Arms the alarm when everyone has been away for a while. If arming is refused (for example
+    because a door is open) you can get a message.
+
+
+    **Code:** arming needs a code unless "Code needed to arm" is switched off in the Vigil panel
+    (Settings). If you fill in a code here it is stored as plain text in this automation. Make a
+    separate Vigil user for it that may only use the mode you choose, and never use your own code.
+
+
+    This blueprint never disarms. Disarming always needs a person with a code.
+  domain: automation
+  homeassistant:
+    min_version: 2024.10.0
+  source_url: https://github.com/lightyearcoder/vigil-alarm/blob/main/blueprints/automation/vigil/arm_when_everyone_leaves.yaml
+  input:
+    alarm:
+      name: Vigil alarm
+      selector:
+        entity:
+          filter:
+            - integration: vigil
+              domain: alarm_control_panel
+    persons:
+      name: People
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - domain: person
+    wait:
+      name: Everyone away for (minutes)
+      default: 3
+      selector:
+        number:
+          min: 0
+          max: 120
+          unit_of_measurement: min
+    mode:
+      name: Mode
+      default: away
+      selector:
+        select:
+          options: [away, home, night]
+    code:
+      name: Code (optional)
+      default: ""
+      selector:
+        text:
+          type: password
+    notify:
+      name: Message when arming fails (optional)
+      description: A notify entity. Leave empty for no message.
+      default: []
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - domain: notify
+
+mode: single
+max_exceeded: silent
+
+variables:
+  alarm: !input alarm
+  persons: !input persons
+  mode: !input mode
+  code: !input code
+  notify: !input notify
+
+triggers:
+  - trigger: state
+    entity_id: !input persons
+    to: not_home
+    for:
+      minutes: !input wait
+
+conditions:
+  - condition: template
+    value_template: "{{ persons | reject('is_state', 'not_home') | list | count == 0 }}"
+  - condition: state
+    entity_id: !input alarm
+    state: disarmed
+
+actions:
+  - choose:
+      - conditions: "{{ mode == 'home' }}"
+        sequence:
+          - action: alarm_control_panel.alarm_arm_home
+            continue_on_error: true
+            target:
+              entity_id: !input alarm
+            data:
+              code: "{{ code }}"
+      - conditions: "{{ mode == 'night' }}"
+        sequence:
+          - action: alarm_control_panel.alarm_arm_night
+            continue_on_error: true
+            target:
+              entity_id: !input alarm
+            data:
+              code: "{{ code }}"
+    default:
+      - action: alarm_control_panel.alarm_arm_away
+        continue_on_error: true
+        target:
+          entity_id: !input alarm
+        data:
+          code: "{{ code }}"
+  - if:
+      - condition: state
+        entity_id: !input alarm
+        state: disarmed
+      - condition: template
+        value_template: "{{ notify | count > 0 }}"
+    then:
+      - alias: Tell that arming failed
+        action: notify.send_message
+        target:
+          entity_id: !input notify
+        data:
+          title: Alarm not armed
+          message: >
+            Everyone has left, but the alarm could not be armed.
+            {% set r = state_attr(alarm, 'refuse_reason') %}
+            {% if r %}Reason: {{ r | replace('_', ' ') }}.{% endif %}
+            {% set o = state_attr(alarm, 'open_sensors') %}
+            {% if o %}Open: {{ o | join(', ') }}.{% endif %}

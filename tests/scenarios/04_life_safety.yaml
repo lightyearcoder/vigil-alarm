@@ -1,0 +1,108 @@
+scenarios:
+  - name: fire_during_arming_is_not_overwritten_when_the_exit_delay_would_end
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 20, sensor: smoke_hall, value: open}
+      - {t: 61, expect: {state: triggered, cause: fire, mode: null}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 20, type: triggered, cause: fire}
+
+  - name: fire_during_arming_aborts_arming_and_triggers
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 20, sensor: smoke_hall, value: open}
+      - {t: 20, expect: {state: triggered, cause: fire, cause_sensor: smoke_hall}}
+      - {t: 30, disarm: anna}
+      - {t: 100, expect: {state: disarmed}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 20, type: triggered, cause: fire, sensor: smoke_hall}
+      - {t: 30, type: trigger_ended}
+      - {t: 30, type: disarmed, user: anna}
+
+  - name: fire_while_disarmed_triggers
+    config: house
+    steps:
+      - {t: 10, sensor: smoke_hall, value: open}
+      - {t: 10, expect: {state: triggered, cause: fire}}
+      - {t: 20, disarm: anna}
+      - {t: 20, expect: {state: disarmed}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 10, type: triggered, cause: fire, sensor: smoke_hall}
+      - {t: 20, type: trigger_ended}
+      - {t: 20, type: disarmed, user: anna}
+
+  - name: gas_triggers_with_its_own_cause
+    config: house
+    steps:
+      - {t: 5, sensor: gas_kitchen, value: open}
+      - {t: 5, expect: {state: triggered, cause: gas, cause_sensor: gas_kitchen}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 5, type: triggered, cause: gas, sensor: gas_kitchen}
+
+  - name: fire_takes_over_a_running_intrusion_alarm_and_gas_does_not
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 100, sensor: window_living, value: open}
+      - {t: 110, sensor: smoke_hall, value: open}
+      - {t: 120, sensor: gas_kitchen, value: open}
+      - {t: 130, expect: {state: triggered, cause: fire, cause_sensor: smoke_hall}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: triggered, cause: intrusion, sensor: window_living}
+      - {t: 110, type: trigger_cause_changed, cause: fire, sensor: smoke_hall}
+
+  - name: tamper_overrides_intrusion_but_not_the_other_way_round
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 100, sensor: window_living, value: open}
+      - {t: 110, sensor: tamper_siren, value: open}
+      - {t: 120, sensor: cellar_window, value: open}
+      - {t: 130, expect: {cause: tamper, cause_sensor: tamper_siren}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: triggered, cause: intrusion}
+      - {t: 110, type: trigger_cause_changed, cause: tamper, sensor: tamper_siren}
+
+  - name: tamper_is_always_active
+    config: house
+    steps:
+      - {t: 10, sensor: tamper_siren, value: open}
+      - {t: 10, expect: {state: triggered, cause: tamper}}
+      - {t: 20, disarm: anna}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 10, type: triggered, cause: tamper, sensor: tamper_siren}
+      - {t: 20, type: trigger_ended}
+      - {t: 20, type: disarmed}
+
+  - name: cannot_arm_while_an_alarm_condition_is_still_present
+    config: house
+    steps:
+      - {t: 10, sensor: smoke_hall, value: open}
+      - {t: 20, disarm: anna}
+      - {t: 30, arm: away}
+      - {t: 30, expect: {state: disarmed, refuse_reason: alarm_condition}}
+      - {t: 40, sensor: smoke_hall, value: closed}
+      - {t: 50, arm: away}
+      - {t: 51, expect: {state: arming}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 10, type: triggered}
+      - {t: 20, type: trigger_ended}
+      - {t: 20, type: disarmed}
+      - {t: 30, type: arm_refused, reason: alarm_condition, sensors: [smoke_hall]}
+      - {t: 50, type: arming_started, end: 110}

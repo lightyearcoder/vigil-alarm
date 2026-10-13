@@ -1,0 +1,40 @@
+name: Feature request
+description: An idea or a missing option
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Vigil keeps a small core: it decides and publishes events, and only notifications and sirens are built in.
+        Everything else is meant for blueprints and your own automations. Say what you need and why;
+        that makes it easier to see whether it belongs in the core, in a blueprint or in an example.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The situation or problem, not only the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like Vigil to do?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What do you do now, or what else did you try?
+      description: For example a workaround with an automation or a blueprint.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where does it belong, in your opinion?
+      options:
+        - Not sure
+        - Alarm and sensors
+        - Notifications
+        - Sirens
+        - Panel
+        - Blueprints or examples
+        - Documentation

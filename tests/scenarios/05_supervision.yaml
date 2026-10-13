@@ -1,0 +1,77 @@
+scenarios:
+  - name: unavailable_sensor_blocks_arming
+    config: house
+    steps:
+      - {t: 0, sensor: living_pir, value: unavailable}
+      - {t: 5, arm: away, user: anna}
+      - {t: 5, expect: {state: disarmed, refuse_reason: sensor_unavailable, faults: [living_pir]}}
+    events:
+      - {t: 0, type: supervision_lost, sensor: living_pir}
+      - {t: 5, type: arm_refused, reason: sensor_unavailable, sensors: [living_pir], mode: away}
+
+  - name: unavailable_while_armed_only_reports_and_recovers
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 100, sensor: front_door, value: unavailable}
+      - {t: 101, expect: {state: armed_away, faults: [front_door]}}
+      - {t: 110, sensor: front_door, value: closed}
+      - {t: 111, expect: {state: armed_away, faults: []}}
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: supervision_lost, sensor: front_door}
+      - {t: 110, type: supervision_restored, sensor: front_door}
+
+  - name: unavailable_with_trigger_policy_raises_a_fault_alarm
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 100, sensor: cellar_window, value: unavailable}
+      - {t: 100, expect: {state: triggered, cause: fault, cause_sensor: cellar_window}}
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: supervision_lost, sensor: cellar_window}
+      - {t: 100, type: triggered, cause: fault, sensor: cellar_window}
+
+  - name: sensor_returning_as_open_counts_as_a_fault
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 100, sensor: front_door, value: unavailable}
+      - {t: 110, sensor: front_door, value: open}
+      - {t: 111, expect: {state: pending, delay_end: 140}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: supervision_lost}
+      - {t: 110, type: supervision_restored}
+      - {t: 110, type: pending_started, sensor: front_door, end: 140}
+
+  - name: snapshot_lists_open_sensors_and_faults_and_delay_end
+    config: house
+    steps:
+      - {t: 0, arm: away}
+      - {t: 100, sensor: front_door, value: open}
+      - {t: 105, sensor: living_pir, value: unavailable}
+      - {t: 106, expect: {open_sensors: [front_door], faults: [living_pir], delay_end: 130, state: pending}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 100, type: pending_started}
+      - {t: 105, type: supervision_lost}
+
+  - name: sensor_faulted_is_published_for_monitored_sensors_only
+    config: house
+    steps:
+      - {t: 0, sensor: window_living, value: open}
+      - {t: 1, sensor: window_living, value: closed}
+      - {t: 2, arm: home}
+      - {t: 10, sensor: window_living, value: open}
+    events:
+      - {t: 2, type: armed, mode: home}
+      - {t: 10, type: sensor_faulted, sensor: window_living}
+      - {t: 10, type: triggered, sensor: window_living}

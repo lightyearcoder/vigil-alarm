@@ -1,0 +1,104 @@
+# Test package for Vigil Alarm: virtual sensors and a virtual siren, so you can test
+# without touching real hardware. Toggle the input_boolean helpers on a dashboard
+# to "open" a door, trigger a PIR, and so on.
+#
+# Put this file in /config/packages/ and make sure configuration.yaml contains:
+#   homeassistant:
+#     packages: !include_dir_named packages
+#
+# Remove the file (and restart) when you are done testing.
+
+input_boolean:
+  vigil_test_front_door:
+    name: Vigil test front door
+  vigil_test_living_pir:
+    name: Vigil test living pir
+  vigil_test_kitchen_pir:
+    name: Vigil test kitchen pir
+  vigil_test_smoke:
+    name: Vigil test smoke
+  vigil_test_tamper:
+    name: Vigil test tamper
+  vigil_test_water:
+    name: Vigil test water
+  vigil_test_siren:
+    name: Vigil test siren (state)
+  vigil_test_lamp:
+    name: Vigil test lamp (state)
+
+input_number:
+  vigil_test_battery:
+    name: Vigil test battery
+    min: 0
+    max: 100
+    step: 1
+    initial: 80
+    mode: box
+
+input_select:
+  vigil_test_power:
+    name: Vigil test siren power
+    options:
+      - mains
+      - battery
+    initial: mains
+
+template:
+  - binary_sensor:
+      - name: Vigil test front door
+        unique_id: vigil_test_front_door
+        device_class: door
+        state: "{{ is_state('input_boolean.vigil_test_front_door', 'on') }}"
+      - name: Vigil test living pir
+        unique_id: vigil_test_living_pir
+        device_class: motion
+        state: "{{ is_state('input_boolean.vigil_test_living_pir', 'on') }}"
+      - name: Vigil test kitchen pir
+        unique_id: vigil_test_kitchen_pir
+        device_class: motion
+        state: "{{ is_state('input_boolean.vigil_test_kitchen_pir', 'on') }}"
+      - name: Vigil test smoke
+        unique_id: vigil_test_smoke
+        device_class: smoke
+        state: "{{ is_state('input_boolean.vigil_test_smoke', 'on') }}"
+      - name: Vigil test tamper
+        unique_id: vigil_test_tamper
+        device_class: tamper
+        state: "{{ is_state('input_boolean.vigil_test_tamper', 'on') }}"
+      - name: Vigil test water
+        unique_id: vigil_test_water
+        device_class: moisture
+        state: "{{ is_state('input_boolean.vigil_test_water', 'on') }}"
+  - sensor:
+      - name: Vigil test battery level
+        unique_id: vigil_test_battery_level
+        device_class: battery
+        unit_of_measurement: "%"
+        state: "{{ states('input_number.vigil_test_battery') }}"
+      - name: Vigil test siren power mode
+        unique_id: vigil_test_siren_power_mode
+        state: "{{ states('input_select.vigil_test_power') }}"
+  - switch:
+      - name: Vigil test siren
+        unique_id: vigil_test_siren
+        state: "{{ is_state('input_boolean.vigil_test_siren', 'on') }}"
+        turn_on:
+          - action: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.vigil_test_siren
+        turn_off:
+          - action: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.vigil_test_siren
+  - light:
+      - name: Vigil test lamp
+        unique_id: vigil_test_lamp
+        state: "{{ is_state('input_boolean.vigil_test_lamp', 'on') }}"
+        turn_on:
+          - action: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.vigil_test_lamp
+        turn_off:
+          - action: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.vigil_test_lamp
