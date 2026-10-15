@@ -83,7 +83,8 @@ Assistant 2026.3.
 3. Arm the alarm from the alarm panel card and open a door to see what happens.
 
 The full manual is in the **[user guide](docs/user-guide.md)**
-(Dutch: **[gebruikershandleiding](docs/gebruikershandleiding.nl.md)**).
+(Dutch: **[gebruikershandleiding](docs/gebruikershandleiding.nl.md)**). If the alarm does not do what you expect, see
+**[troubleshooting](docs/troubleshooting.md)** (Dutch: [problemen oplossen](docs/problemen-oplossen.nl.md)).
 
 ## Blueprints
 

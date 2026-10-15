@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.3.0
+
+- **Find sensors:** *Sensors → Find sensors* lists the door, window, motion, smoke, gas, water and tamper sensors Home Assistant already knows, with the battery and tamper sensor of the same device. It works on standard Home Assistant data only (device class, same device, entity category, unit), so it is not tied to one integration. Tick what you want and add several in one go; nothing is saved until you confirm, and if one fails nothing is saved. Doors can be marked as an entrance (entry delay).
+- *Copy discovery data* copies an anonymous list (no names or addresses) that helps to test an integration.
+- **Ready for use?** on the Overview tab names what is missing (no sensors, no sensor groups, a mode nothing watches, no user with a code, no notification channel, no siren, sensors without a battery sensor, tamper sensors that are not connected), each with a button to the right place.
+- **Create default groups:** Perimeter (doors and windows, all modes) and Interior (motion, Away), or the Dutch names when Home Assistant is set to Dutch. Only kinds you do not have yet are added.
+- A phone with the Home Assistant app is offered as the first notification channel, with a test message.
+- A one-sentence summary under each sensor name: how it reacts and when it is watching.
+- **Copy dashboard:** a dashboard with this installation's own entity ids.
+- A battery sensor can also be a "battery low" on/off sensor, for devices that report no percentage.
+- Diagnostics (Download diagnostics) without codes, tags or names of people.
+- **Repairs:** real faults (a sensor that cannot be reached, a low battery, a siren that is unavailable or has lost mains power) appear under Settings > System > Repairs and disappear by themselves when fixed. Missing settings are not repairs; see *Ready for use?* in the panel.
+- A "new" badge on the About tab after an update.
+- New troubleshooting page (My alarm does not do what I expect) and an updated test guide.
+
 ## 0.2.0
 
 - **Breaking:** the integration is now called `vigil_alarm` (it was `vigil`), and entity ids always end on the English name. Remove the old Vigil integration from Settings > Devices & services, restart Home Assistant, add Vigil Alarm again, and update your own automations and dashboards to the new entity ids.

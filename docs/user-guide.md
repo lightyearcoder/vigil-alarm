@@ -70,7 +70,7 @@ the alarm state is kept.
 
 1. **Check the settings** (tab *Settings*): modes, exit delays, default entry delay, alarm
    duration and whether a code is needed to arm.
-2. **Add your sensors** (tab *Sensors*, *Add sensor*):
+2. **Add your sensors.** The quick way is *Sensors → Find sensors*: Vigil lists the door, window, motion, smoke, gas, water and tamper sensors that Home Assistant already knows, with the battery and tamper sensor of the same device. Tick the ones you want, change a name if you like, tick *Entrance* for doors you walk through (they get an entry delay) and add them in one go. Nothing is saved until you press the button at the bottom. Without sensor groups, press *Create default groups* first (Perimeter for doors and windows, Interior for motion). To add one by hand use *Sensors → Add sensor*:
    - Name it ("Front door"). The name decides the entity names (`sensor.front_door_status`).
    - Pick the `binary_sensor`. For a door contact or motion sensor the panel suggests the right
      sensor group by itself.
@@ -91,7 +91,8 @@ the alarm state is kept.
 5. **Optional: a confirmation rule** (tab *Confirmation rules*): choose the instant intrusion
    sensors, how many must trigger, and in what time window.
 6. **Optional: a siren** (tab *Sirens*). See below.
-7. **Test everything** with the *Test* buttons and by arming and opening a door. Use the
+7. **Look at *Ready for use?*** at the top of the *Overview* tab. It names what is still missing (a user with a code, a notification channel, a mode that nothing watches, sensors without a battery sensor) and has a button to the right place. If you have no notification channel yet and Home Assistant knows your phone, one button adds it and sends a test message.
+8. **Test everything** with the *Test* buttons and by arming and opening a door. Use the
    [test guide](installatie-en-testen.nl.md) (Dutch) for a full test plan with virtual sensors.
 
 ### Sirens
@@ -184,15 +185,15 @@ Actions in the lists are icon buttons (edit, copy, delete, test); hover for the 
 
 | Tab | What you do there |
 |---|---|
-| **Overview** | Alarm state, attention points (low batteries, unreachable devices), what each mode watches, and the live status of every sensor. |
-| **Sensors** | Add, edit, copy and delete sensors. The table shows battery level in its own column. One entity can belong to only one sensor. The *Tamper entity* field links the tamper signal of the same device: Vigil creates a separate tamper sensor that can be bypassed on its own. You can also create a standalone tamper sensor. |
+| **Overview** | *Ready for use?* (what is still missing), a *Dashboard* card with a button that copies a dashboard with your own entity ids, alarm state, attention points (low batteries, unreachable devices), what each mode watches, and the live status of every sensor. |
+| **Sensors** | *Find sensors* proposes sensors from Home Assistant; add, edit, copy and delete sensors. Under each name a sentence says how the sensor reacts and when it is watching. The table shows battery level in its own column. One entity can belong to only one sensor. The *Tamper entity* field links the tamper signal of the same device: Vigil creates a separate tamper sensor that can be bypassed on its own. You can also create a standalone tamper sensor. |
 | **Sensor groups** | Which sensors watch in which modes. A group can *suggest itself* for new door contacts or motion sensors. A group that is still in use cannot be deleted. |
 | **Confirmation rules** | Several sensors must trigger within a time window. A sensor that is in a rule cannot be deleted. |
 | **Users** | (Cannot be copied.) Name, code, allowed modes, right to bypass tamper. Codes are stored hashed and never shown. Leave the code empty when editing to keep it. |
 | **Notifications** | `notify` service, kinds of message (alarm, entry delay, arming and disarming, faults and notices, technical alarms), delay, high priority. *Test* sends a test message. |
 | **Sirens** | See above. *Test* sounds the siren for 3 seconds (refused during a real alarm). |
 | **Settings** | Modes, exit delays, entry delay, alarm duration, battery limit, code required to arm, minimum code length (4 to 12 characters, default 4; applies to new and changed codes, existing codes keep working). |
-| **About** | Version, links to the user guide and GitHub, release notes (newest first) and a button that copies the details for a bug report. |
+| **About** | A "new" badge after an update, version, links to the user guide and GitHub, release notes (newest first) and a button that copies the details for a bug report. |
 
 The language of the **notification texts** follows the Home Assistant system language (Settings →
 System → General). The panel follows your own profile language (English and Dutch).
@@ -237,6 +238,8 @@ why. If you leave the message field empty, nothing is sent.
 
 ## Self-monitoring
 
+Real faults (an unreachable sensor, a low battery, a siren that is unavailable or on battery power) also appear under *Settings → System → Repairs* and go away by themselves when fixed. Missing settings are not repairs; *Ready for use?* shows those.
+
 - **Battery:** give a sensor or siren a battery sensor. Vigil reports `battery_low` when the
   level drops to the limit (default 20%, a setting) and `battery_ok` when it recovers.
 - **Sensors:** an unreachable sensor is handled by its *when unreachable* setting, and reported
@@ -259,6 +262,8 @@ why. If you leave the message field empty, nothing is sent.
   migrated automatically.
 
 ## Troubleshooting
+
+See also **[My alarm does not do what I expect](troubleshooting.md)**.
 
 | Problem | What to do |
 |---|---|

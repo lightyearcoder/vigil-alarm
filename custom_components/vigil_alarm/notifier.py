@@ -171,6 +171,8 @@ class Notifier:
             "cause": self._translated(f"cause.{event.get('cause')}", event.get("cause")),
             "reason": self._translated(f"reason.{event.get('reason')}", event.get("reason")),
         }
+        if key == "battery_low" and "level" not in event:  # a device that only says "battery low"
+            key = "battery_low_flag"
         if key == "unconfirmed":
             params["rule"] = self.manager.rule_name(event.get("rule"))
         if key == "unconfirmed_escalated":

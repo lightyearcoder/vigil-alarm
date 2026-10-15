@@ -182,3 +182,68 @@ async def test_acknowledge_cancels_the_escalation(hass, freezer):
     assert hass.states.get(EVENTS).attributes["user"] == "Anna"
 
 
+
+
+async def test_a_battery_that_only_says_low_is_watched_too(hass):
+    m = Mocks(hass)
+    hass.states.async_set("binary_sensor.back", "off")
+    hass.states.async_set("binary_sensor.back_battery_low", "off")
+    flag = sub("zone", "Back door", {"entity_id": "binary_sensor.back", "cls": "intrusion", "type": "delayed",
+                                     "sensor_groups": ["g_away"], "battery_entity": "binary_sensor.back_battery_low"}, "back")
+    await _house(hass, flag, NOTIFY)
+    assert problems(hass) == []
+    hass.states.async_set("binary_sensor.back_battery_low", "on")
+    await hass.async_block_till_done()
+    assert problems(hass) == [{"name": "Back door", "problem": "battery_low"}]
+    assert messages(m) == ["Battery low: Back door"]
+    hass.states.async_set("binary_sensor.back_battery_low", "off")
+    await hass.async_block_till_done()
+    assert problems(hass) == [] and messages(m)[-1] == "Battery ok again: Back door"
+
+
+def _issues(hass):
+    from homeassistant.helpers import issue_registry as ir
+
+    return {i.issue_id.split("_", 1)[1]: i for i in ir.async_get(hass).issues.values() if i.domain == "vigil_alarm"}
+
+
+async def test_real_faults_become_repairs_and_go_away_by_themselves(hass):
+    hass.states.async_set("binary_sensor.back", "off")
+    hass.states.async_set("sensor.back_battery", "80")
+    await _house(hass, sensor_with_battery(), NOTIFY)
+    assert _issues(hass) == {}
+    hass.states.async_set("sensor.back_battery", "15")
+    await hass.async_block_till_done()
+    issue = next(iter(_issues(hass).values()))
+    assert issue.translation_key == "battery_low_level"
+    assert issue.translation_placeholders == {"name": "Back door", "level": "15"}
+    assert issue.is_fixable is False
+    hass.states.async_set("sensor.back_battery", "90")
+    await hass.async_block_till_done()
+    assert _issues(hass) == {}
+
+
+async def test_an_unreachable_sensor_is_a_repair_and_missing_settings_are_not(hass):
+    hass.states.async_set("binary_sensor.back", "off")
+    hass.states.async_set("sensor.back_battery", "80")
+    await _house(hass, sensor_with_battery())  # no notification channel: that is not a repair
+    assert _issues(hass) == {}
+    hass.states.async_set("binary_sensor.back", "unavailable")
+    await hass.async_block_till_done()
+    assert [i.translation_key for i in _issues(hass).values()] == ["sensor_unreachable"]
+    hass.states.async_set("binary_sensor.back", "off")
+    await hass.async_block_till_done()
+    assert _issues(hass) == {}
+
+
+def test_every_repair_has_a_text_in_both_languages():
+    import json
+    from pathlib import Path
+
+    from custom_components.vigil_alarm.repairs import _PROBLEM_KEY
+
+    keys = {*_PROBLEM_KEY.values(), "sensor_unreachable", "battery_low_level"}
+    for lang in ("en", "nl"):
+        data = json.loads((Path(__file__).parents[2] / f"custom_components/vigil_alarm/translations/{lang}.json").read_text("utf-8"))
+        assert keys <= set(data["issues"]), lang
+        assert all(v["title"] and v["description"] for v in data["issues"].values())

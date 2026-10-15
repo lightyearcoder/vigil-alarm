@@ -6,6 +6,7 @@ rules are the same as in the config flows: both use `editing`.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any
@@ -46,12 +47,16 @@ from .const import (
     SUGGEST_FOR,
 )
 from .about import async_about
+from .dashboard import async_dashboard
+from .discovery import async_discover, async_report
+from .readiness import async_create_default_groups, async_readiness, phone_services, phone_title
 from .editing import EditError, _TrialEntry, async_prepare, companion_id, notify_services, plan_companion
 from .manager import SIGNAL_UPDATE, build_config
 from .presets import siren_preset_ids, siren_suggestion
 from .vigil_core import ConfigError
 from .vigil_core.model import AT_ARM_OPEN, CLASSES, GAS_TYPES, ON_UNAVAILABLE, SENSOR_TYPES
 
+_VERSION = json.loads((Path(__file__).parent / "manifest.json").read_text(encoding="utf-8"))["version"]
 PANEL_URL = "vigil_alarm"
 STATIC_URL = "/vigil_alarm_static/vigil-panel.js"
 LOGO_URL = "/vigil_alarm_static/logo.png"
@@ -90,7 +95,7 @@ def form_schema(modes: list[str]) -> dict[str, list[dict[str, Any]]]:
             _f("entry_delay", "number", unit="s", min=0, max=600, show_if=intrusion),
             _f("gas_type", "select", options=list(GAS_TYPES), default="other", show_if={"cls": ["gas"]}),
             _f("on_unavailable", "select", options=["default", *ON_UNAVAILABLE], default="default"),
-            _f(CONF_BATTERY_ENTITY, "entity", domains=["sensor"]),
+            _f(CONF_BATTERY_ENTITY, "entity", domains=["sensor", "binary_sensor"]),
             _f(CONF_TAMPER_ENTITY, "entity", domains=["binary_sensor"], show_if={"cls": ["intrusion", "fire", "gas", "water"]}),
         ],
         "sensor_group": [
@@ -182,6 +187,7 @@ def _snapshot(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
             "status": registry.async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}_{sid}_status"),
         }
     return {
+        "version": _VERSION,
         "entry": {"id": entry.entry_id, "title": entry.title, "data": {CONF_MIN_CODE_LENGTH: MIN_CODE_LENGTH_FLOOR, **entry.data}},
         "items": {
             kind: [_public(s) for s in items_of(entry).values() if s.subentry_type == TYPE_OF[kind]]
@@ -239,6 +245,88 @@ async def ws_about(hass: HomeAssistant, connection: websocket_api.ActiveConnecti
     }
     live = _live(entry)
     connection.send_result(msg["id"], await async_about(hass, counts, live["state"] if live else None))
+
+
+@websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/discover"})
+@websocket_api.require_admin
+@callback
+def ws_discover(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Sensors that could be added, from the entity registry. Nothing is saved."""
+    entry = _entry_for(hass)
+    if entry is None:
+        _no_entry(connection, msg)
+        return
+    connection.send_result(msg["id"], async_discover(hass, entry))
+
+
+@websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/discover_report"})
+@websocket_api.require_admin
+@callback
+def ws_discover_report(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """The anonymous list testers can copy."""
+    connection.send_result(msg["id"], async_report(hass))
+
+
+@websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/readiness"})
+@websocket_api.require_admin
+@callback
+def ws_readiness(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """What stops the alarm from protecting yet, or could make it better."""
+    entry = _entry_for(hass)
+    if entry is None:
+        _no_entry(connection, msg)
+        return
+    connection.send_result(msg["id"], {"findings": async_readiness(hass, entry)})
+
+
+@websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/add_phone", vol.Required("service"): str})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_add_phone(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """A notification channel for a phone with the Home Assistant app, with the usual categories."""
+    entry = _entry_for(hass)
+    if entry is None:
+        _no_entry(connection, msg)
+        return
+    if msg["service"] not in phone_services(hass, entry):
+        connection.send_result(msg["id"], {"ok": False, "errors": {"service": "service_not_found"}, "placeholders": {}})
+        return
+    title = phone_title(msg["service"])
+    raw = {"name": title, "service": msg["service"], "categories": ["alarm", "pending", "fault", "technical"], "delay": 0}
+    try:
+        name, data = await async_prepare(hass, entry, SUBENTRY_NOTIFICATION, None, raw)
+    except EditError as err:
+        connection.send_result(msg["id"], _failure(err))
+        return
+    working = stored_items(entry)
+    new_id = new_item_id()
+    working[new_id] = stored(SUBENTRY_NOTIFICATION, name, data)
+    save_stored(hass, entry, working)
+    connection.send_result(msg["id"], {"ok": True, "id": new_id, "title": name})
+
+
+@websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/dashboard"})
+@websocket_api.require_admin
+@callback
+def ws_dashboard(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """A dashboard with this installation's own entity ids, as text to paste."""
+    entry = _entry_for(hass)
+    if entry is None:
+        _no_entry(connection, msg)
+        return
+    connection.send_result(msg["id"], {"yaml": async_dashboard(hass, entry)})
+
+
+@websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/create_default_groups"})
+@websocket_api.require_admin
+@callback
+def ws_create_default_groups(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Add the usual sensor groups (doors and windows, motion) if they do not exist yet."""
+    entry = _entry_for(hass)
+    if entry is None:
+        _no_entry(connection, msg)
+        return
+    connection.send_result(msg["id"], {"ok": True, "ids": async_create_default_groups(hass, entry)})
 
 
 @websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/subscribe"})
@@ -324,6 +412,43 @@ async def ws_save(hass: HomeAssistant, connection: websocket_api.ActiveConnectio
     connection.send_result(msg["id"], {"ok": True, "id": new_id})
 
 
+@websocket_api.websocket_command(
+    {vol.Required("type"): "vigil_alarm/save_many", vol.Required("items"): [dict]}
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_save_many(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Add several new sensors at once: every check first, then one save and one reload.
+
+    Each sensor is checked against the ones before it, so two with the same entity or name are
+    refused. If one fails nothing is saved and the answer says which one (`index`).
+    """
+    entry = _entry_for(hass)
+    if entry is None:
+        _no_entry(connection, msg)
+        return
+    working = stored_items(entry)
+    ids: list[str] = []
+    for index, raw in enumerate(msg["items"]):
+        trial = _TrialEntry(entry, entry.data)
+        trial.options = {**entry.options, "items": working}
+        try:
+            title, data = await async_prepare(hass, trial, SUBENTRY_SENSOR, None, raw)  # type: ignore[arg-type]
+            new_id = new_item_id()
+            working[new_id] = stored(SUBENTRY_SENSOR, title, data)
+            trial.options = {**entry.options, "items": working}
+            companion = plan_companion(hass, trial, new_id, title, data)  # type: ignore[arg-type]
+        except EditError as err:
+            connection.send_result(msg["id"], {**_failure(err), "index": index})
+            return
+        if companion is not None:
+            working[new_item_id()] = stored(SUBENTRY_SENSOR, *companion)
+        ids.append(new_id)
+    if ids:
+        save_stored(hass, entry, working)
+    connection.send_result(msg["id"], {"ok": True, "ids": ids})
+
+
 @websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/delete", vol.Required("subentry_id"): str})
 @websocket_api.require_admin
 @websocket_api.async_response
@@ -402,7 +527,7 @@ async def ws_save_settings(
 
 @callback
 def async_register_commands(hass: HomeAssistant) -> None:
-    for command in (ws_get, ws_about, ws_subscribe, ws_save, ws_delete, ws_save_settings, ws_siren_preset):
+    for command in (ws_get, ws_about, ws_discover, ws_discover_report, ws_readiness, ws_dashboard, ws_add_phone, ws_create_default_groups, ws_subscribe, ws_save, ws_save_many, ws_delete, ws_save_settings, ws_siren_preset):
         websocket_api.async_register_command(hass, command)
 
 

@@ -70,7 +70,7 @@ opnieuw; de alarmstand blijft behouden.
 
 1. **Controleer de instellingen** (tabblad *Instellingen*): modi, uitlooptijden, standaard
    inlooptijd, alarmduur en of er een code nodig is om in te schakelen.
-2. **Voeg je sensoren toe** (tabblad *Sensoren*, *Sensor toevoegen*):
+2. **Voeg je sensoren toe.** De snelle weg is *Sensoren → Sensoren zoeken*: Vigil toont de deur-, raam-, beweging-, rook-, gas-, water- en sabotagesensoren die Home Assistant al kent, met de batterij- en sabotagesensor van hetzelfde apparaat. Vink aan wat je wilt, pas zo nodig een naam aan, vink *Ingang* aan voor deuren waar je doorheen loopt (die krijgen een inlooptijd) en voeg ze in één keer toe. Er wordt niets opgeslagen voordat je op de knop onderaan drukt. Heb je nog geen sensorgroepen, klik dan eerst op *Standaardgroepen maken* (Buitenschil voor deuren en ramen, Binnen voor beweging). Zelf één toevoegen kan met *Sensoren → Sensor toevoegen*:
    - Geef een naam ("Voordeur"). De naam bepaalt de entiteitsnamen (`sensor.voordeur_status`).
    - Kies de `binary_sensor`. Bij een deurcontact of bewegingssensor stelt het paneel zelf de
      juiste sensorgroep voor.
@@ -92,7 +92,8 @@ opnieuw; de alarmstand blijft behouden.
 5. **Optioneel: een bevestigingsregel** (tabblad *Bevestigingsregels*): kies de directe
    inbraaksensoren, hoeveel er moeten aanslaan en binnen welk tijdvenster.
 6. **Optioneel: een sirene** (tabblad *Sirenes*). Zie hieronder.
-7. **Test alles** met de knoppen *Test* en door in te schakelen en een deur te openen. Het
+7. **Kijk bij *Klaar voor gebruik?*** bovenaan het tabblad *Overzicht*. Daar staat wat er nog ontbreekt (een gebruiker met code, een meldingskanaal, een modus die niets bewaakt, sensoren zonder batterijsensor), met een knop naar de juiste plek. Heb je nog geen meldingskanaal en kent Home Assistant je telefoon, dan voegt één knop hem toe en stuurt een testmelding.
+8. **Test alles** met de knoppen *Test* en door in te schakelen en een deur te openen. Het
    [testplan](installatie-en-testen.nl.md) heeft een volledige test met virtuele sensoren.
 
 ### Sirenes
@@ -187,15 +188,15 @@ Acties in de lijsten zijn icoonknoppen (bewerken, kopiëren, verwijderen, testen
 
 | Tabblad | Wat je er doet |
 |---|---|
-| **Overzicht** | Alarmstand, aandachtspunten (bijna lege batterijen, onbereikbare apparaten), wat elke modus bewaakt en de live status van elke sensor. |
-| **Sensoren** | Sensoren toevoegen, bewerken, kopiëren en verwijderen. De tabel toont ook het batterijpercentage in een eigen kolom. Eén entiteit kan maar bij één sensor horen. Met het veld *Sabotage-entiteit* koppel je het sabotagesignaal van dezelfde sensor: Vigil maakt daar vanzelf een aparte sabotagesensor van die je los kunt omzeilen. Je kunt ook gewoon een losse sabotagesensor aanmaken. |
+| **Overzicht** | *Klaar voor gebruik?* (wat ontbreekt er nog), een kaart *Dashboard* met een knop die een dashboard met je eigen entiteit-id's kopieert, alarmstand, aandachtspunten (bijna lege batterijen, onbereikbare apparaten), wat elke modus bewaakt en de live status van elke sensor. |
+| **Sensoren** | *Sensoren zoeken* stelt sensoren uit Home Assistant voor; sensoren toevoegen, bewerken, kopiëren en verwijderen. De tabel toont ook het batterijpercentage in een eigen kolom. Eén entiteit kan maar bij één sensor horen. Met het veld *Sabotage-entiteit* koppel je het sabotagesignaal van dezelfde sensor: Vigil maakt daar vanzelf een aparte sabotagesensor van die je los kunt omzeilen. Je kunt ook gewoon een losse sabotagesensor aanmaken. |
 | **Sensorgroepen** | Welke sensoren in welke modi bewaken. Een groep kan zichzelf *voorstellen* voor nieuwe deurcontacten of bewegingssensoren. Een groep die nog in gebruik is kan niet verwijderd worden. |
 | **Bevestigingsregels** | Meerdere sensoren moeten binnen een tijdvenster aanslaan. Een sensor die in een regel zit kan niet verwijderd worden. |
 | **Gebruikers** | (Niet te kopiëren.) Naam, code, toegestane modi, recht om sabotage te omzeilen. Codes worden versleuteld opgeslagen en nooit getoond. Laat de code leeg bij bewerken om hem te behouden. |
 | **Meldingen** | `notify`-dienst, soorten berichten (alarm, inlooptijd, in- en uitschakelen, storingen en mededelingen, technische alarmen), vertraging, hoge prioriteit. *Test* stuurt een testbericht. |
 | **Sirenes** | Zie hierboven. *Test* laat de sirene 3 seconden klinken (geweigerd tijdens een echt alarm). |
 | **Instellingen** | Modi, uitlooptijden, inlooptijd, alarmduur, batterijgrens, code nodig om in te schakelen, minimale codelengte (4 tot 12 tekens, standaard 4; geldt voor nieuwe en gewijzigde codes, bestaande codes blijven werken). |
-| **Over** | Versie, links naar de handleiding en GitHub, release notes (nieuwste bovenaan) en een knop die de gegevens kopieert voor een foutmelding. |
+| **Over** | Een badge "nieuw" na een update, versie, links naar de handleiding en GitHub, release notes (nieuwste bovenaan) en een knop die de gegevens kopieert voor een foutmelding. |
 
 De taal van de **meldingsteksten** volgt de systeemtaal van Home Assistant (Instellingen → Systeem →
 Algemeen). Het paneel volgt de taal van je eigen profiel (Nederlands en Engels).
@@ -243,6 +244,8 @@ met de reden. Laat je het berichtveld leeg, dan wordt er niets gestuurd.
 
 ## Zelfbewaking
 
+Echte storingen (een onbereikbare sensor, een bijna lege batterij, een sirene die niet beschikbaar is of op batterij werkt) staan ook onder *Instellingen → Systeem → Reparaties* en verdwijnen vanzelf als ze zijn opgelost. Ontbrekende instellingen zijn geen reparaties; die staan in *Klaar voor gebruik?*.
+
 - **Batterij:** geef een sensor of sirene een batterijsensor. Vigil meldt `battery_low` als het
   niveau de grens bereikt (standaard 20%, een instelling) en `battery_ok` bij herstel.
 - **Sensoren:** een onbereikbare sensor volgt zijn instelling *als onbereikbaar*, en wordt gemeld
@@ -265,6 +268,8 @@ met de reden. Laat je het berichtveld leeg, dan wordt er niets gestuurd.
   automatisch omgezet.
 
 ## Als het niet werkt
+
+Zie ook **[Mijn alarm doet niet wat ik verwacht](problemen-oplossen.nl.md)**.
 
 | Probleem | Wat te doen |
 |---|---|

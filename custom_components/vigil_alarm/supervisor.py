@@ -112,6 +112,9 @@ class Supervisor:
             try:
                 level = float(state.state)
             except ValueError:
+                # A device that only says "battery low": a binary sensor, on = low.
+                if state.state in ("on", "off"):
+                    return state.state == "on", {}
                 return None, {}
             return level <= self.threshold, {"level": level}
         return state.state.lower() == watch.battery_value.lower(), {}  # power

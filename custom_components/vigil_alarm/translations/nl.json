@@ -378,5 +378,27 @@
         }
       }
     }
+  },
+  "issues": {
+    "sensor_unreachable": {
+      "title": "Sensor niet bereikbaar: {name}",
+      "description": "Vigil Alarm kan de sensor {name} niet bereiken. Controleer het apparaat (batterij, bereik, voeding). Inschakelen kan geweigerd worden totdat hij terug is. Deze melding verdwijnt vanzelf."
+    },
+    "battery_low": {
+      "title": "Batterij bijna leeg: {name}",
+      "description": "De batterij van {name} is bijna leeg. Vervang hem. Deze melding verdwijnt vanzelf als de batterij weer in orde is."
+    },
+    "battery_low_level": {
+      "title": "Batterij bijna leeg: {name} ({level}%)",
+      "description": "De batterij van {name} staat op {level}%. Vervang hem. Deze melding verdwijnt vanzelf als de batterij weer in orde is."
+    },
+    "siren_unavailable": {
+      "title": "Sirene niet beschikbaar: {name}",
+      "description": "De sirene {name} is niet bereikbaar en klinkt dus niet bij een alarm. Controleer het apparaat. Deze melding verdwijnt vanzelf."
+    },
+    "siren_on_battery": {
+      "title": "Sirene op batterij: {name}",
+      "description": "De sirene {name} heeft geen netstroom meer en werkt op zijn batterij. Controleer de voeding. Deze melding verdwijnt vanzelf."
+    }
   }
 }

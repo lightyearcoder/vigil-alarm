@@ -40,7 +40,37 @@ const TXT = {
       siren: "Nog geen sirene. Dit is optioneel; zonder sirene werkt het alarm met meldingen.",
     },
     save: "Opslaan", cancel: "Annuleren", del: "Verwijderen", dup: "Kopiëren", editBtn: "Bewerken", testBtn: "Test", close: "Sluiten",
+    ready: {
+      title: "Klaar voor gebruik?", allGood: "Alles is ingesteld. Test het alarm toch regelmatig.", problem: "Eerst regelen", advice: "Advies", go: "Ga erheen",
+      createGroups: "Standaardgroepen maken", groupsMade: "Sensorgroepen gemaakt",
+      addPhone: "Telefoon toevoegen: {name}", phoneAdded: "{name} toegevoegd; er is een testmelding verstuurd. Is die aangekomen?",
+      text: {
+        no_sensors: "Er zijn nog geen sensoren. Voeg ze toe of laat ze zoeken.",
+        no_sensor_groups: "Er zijn nog geen sensorgroepen. Zonder groep bewaakt een inbraaksensor niets. Vigil kan twee voorstellen: Buitenschil (deuren en ramen) en Binnen (beweging).",
+        mode_unwatched: "In deze modus bewaakt geen enkele inbraaksensor: {modes}.",
+        no_user_code: "Er is nog geen gebruiker met een code, dus niemand kan het alarm bedienen.",
+        no_notification: "Er is nog geen meldingskanaal, dus je hoort niets als het alarm afgaat. Gebruik bijvoorbeeld de app op je telefoon.",
+        no_siren: "Er is geen sirene. Het alarm werkt dan alleen met meldingen.",
+        battery_missing: "{n} sensoren hebben geen batterijsensor, dus je hoort niet als de batterij leeg raakt: {names}.",
+        tamper_unlinked: "{n} sensoren hebben een sabotagesensor op hetzelfde apparaat die nergens aan gekoppeld is: {names}.",
+      },
+    },
+    dash: { title: "Dashboard", text: "Een dashboard met de eigen entiteiten van dit alarm. Kopieer het en plak het in een nieuw dashboard (Instellingen > Dashboards > nieuw dashboard > ruwe configuratie-editor).", copy: "Kopieer dashboard" },
+    summary: { always: "{cls}, altijd actief", instant: "direct", delayed: "vertraagd ({s} s)", follower: "volger", and: "en", watching: "{type}, bewaakt in {modes}", nowhere: "{type}, bewaakt in geen enkele modus" },
+    whatsNew: "nieuw", batteryLow: "laag", batteryOk: "ok",
     copySuffix: " (kopie)",
+    find: {
+      button: "Sensoren zoeken", title: "Sensoren zoeken",
+      intro: "Deze sensoren zijn gevonden in Home Assistant. Kies welke je wilt toevoegen. Er wordt niets opgeslagen voordat je op de knop onderaan drukt.",
+      none: "Er zijn geen nieuwe sensoren gevonden. Deur-, raam-, beweging-, rook-, gas-, water- en sabotagesensoren van een geïntegreerd apparaat worden getoond.",
+      noGroups: "Voor sommige inbraaksensoren is nog geen sensorgroep ingesteld. Zet bij een sensorgroep 'Voorstellen voor nieuwe sensoren' op deuren/ramen of beweging; dan kun je ze hier toevoegen.",
+      cols: { name: "Naam", cls: "Klasse", entrance: "Ingang", groups: "Sensorgroepen", extra: "Erbij" },
+      entranceHelp: "Een ingang geeft vertraging bij binnenkomst (type 'vertraagd').",
+      inUse: "al in gebruik", needsGroup: "geen sensorgroep", battery: "batterij", tamper: "sabotage",
+      all: "Alles selecteren", nothing: "Niets selecteren", add: "{n} toevoegen", adding: "Toevoegen…",
+      copy: "Kopieer ontdekkingsgegevens", copyHelp: "Een anonieme lijst zonder namen of adressen, voor een melding of om een integratie te helpen testen.",
+      createGroups: "Standaardgroepen maken", added: "{n} sensoren toegevoegd", failed: "{name}: {error}",
+    },
     confirmDelete: "Weet je zeker dat je '{name}' wilt verwijderen?",
     saved: "Opgeslagen", deleted: "Verwijderd", testSent: "Test verstuurd", loading: "Laden…", loadFailed: "Vigil Alarm kon niet geladen worden. Is de integratie actief?",
     retry: "Opnieuw proberen",
@@ -158,7 +188,37 @@ const TXT = {
       siren: "No siren yet. This is optional; without a siren the alarm works with notifications.",
     },
     save: "Save", cancel: "Cancel", del: "Delete", dup: "Copy", editBtn: "Edit", testBtn: "Test", close: "Close",
+    ready: {
+      title: "Ready for use?", allGood: "Everything is set up. Still test the alarm regularly.", problem: "Fix first", advice: "Advice", go: "Go there",
+      createGroups: "Create default groups", groupsMade: "Sensor groups created",
+      addPhone: "Add phone: {name}", phoneAdded: "{name} added; a test notification was sent. Did it arrive?",
+      text: {
+        no_sensors: "There are no sensors yet. Add them or let Vigil find them.",
+        no_sensor_groups: "There are no sensor groups yet. Without a group an intrusion sensor watches nothing. Vigil can propose two: Perimeter (doors and windows) and Interior (motion).",
+        mode_unwatched: "No intrusion sensor is watching in this mode: {modes}.",
+        no_user_code: "There is no user with a code yet, so nobody can operate the alarm.",
+        no_notification: "There is no notification channel yet, so you will not hear anything when the alarm goes off. Use the app on your phone, for example.",
+        no_siren: "There is no siren. The alarm then works with notifications only.",
+        battery_missing: "{n} sensors have no battery sensor, so you will not hear when a battery runs low: {names}.",
+        tamper_unlinked: "{n} sensors have a tamper contact on the same device that is not connected to anything: {names}.",
+      },
+    },
+    dash: { title: "Dashboard", text: "A dashboard with this alarm's own entities. Copy it and paste it into a new dashboard (Settings > Dashboards > new dashboard > raw configuration editor).", copy: "Copy dashboard" },
+    summary: { always: "{cls}, always on", instant: "instant", delayed: "delayed ({s} s)", follower: "follower", and: "and", watching: "{type}, watching in {modes}", nowhere: "{type}, not watching in any mode" },
+    whatsNew: "new", batteryLow: "low", batteryOk: "ok",
     copySuffix: " (copy)",
+    find: {
+      button: "Find sensors", title: "Find sensors",
+      intro: "These sensors were found in Home Assistant. Choose which ones to add. Nothing is saved until you press the button at the bottom.",
+      none: "No new sensors were found. Door, window, motion, smoke, gas, water and tamper sensors of an integrated device are shown.",
+      noGroups: "Some intrusion sensors have no sensor group yet. Set 'Suggest for new sensors' on a sensor group to contacts or motion; then you can add them here.",
+      cols: { name: "Name", cls: "Class", entrance: "Entrance", groups: "Sensor groups", extra: "Included" },
+      entranceHelp: "An entrance gets an entry delay (type 'delayed').",
+      inUse: "already in use", needsGroup: "no sensor group", battery: "battery", tamper: "tamper",
+      all: "Select all", nothing: "Select none", add: "Add {n}", adding: "Adding…",
+      copy: "Copy discovery data", copyHelp: "An anonymous list without names or addresses, for a report or to help test an integration.",
+      createGroups: "Create default groups", added: "{n} sensors added", failed: "{name}: {error}",
+    },
     confirmDelete: "Are you sure you want to delete '{name}'?",
     saved: "Saved", deleted: "Deleted", testSent: "Test sent", loading: "Loading…", loadFailed: "Vigil Alarm could not be loaded. Is the integration running?",
     retry: "Try again",
@@ -324,6 +384,7 @@ td.actions { text-align: right; white-space: nowrap; }
 td .sub { display: block; color: var(--secondary-text-color, #727272); font-size: 12px; }
 .empty { padding: 32px 16px; text-align: center; color: var(--secondary-text-color, #727272); }
 .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; background: var(--secondary-background-color, #eee); }
+.readyrow { margin-bottom: 10px; line-height: 1.9; }
 .badge.ok { background: color-mix(in srgb, var(--success-color, #43a047) 18%, transparent); color: var(--success-color, #2e7d32); }
 .badge.warn { background: color-mix(in srgb, var(--warning-color, #ffa600) 22%, transparent); color: var(--warning-color, #b26a00); }
 .badge.bad { background: color-mix(in srgb, var(--error-color, #db4437) 18%, transparent); color: var(--error-color, #db4437); }
@@ -360,6 +421,8 @@ ul.plain { margin: 0; padding-left: 18px; }
   background: var(--secondary-background-color, #fff); color: var(--primary-text-color, #212121); font-family: inherit; }
 .field.err input, .field.err select { border-color: var(--error-color, #db4437); }
 .overlay.top { z-index: 20; }
+.dialog.wide { max-width: min(1100px, 96vw); }
+.dialog.wide input[type="text"] { min-width: 180px; }
 .morelist { margin: 4px 0 8px; padding-left: 20px; }
 .morelist li { margin: 8px 0; }
 .field .help button.info { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--secondary-text-color, #727272); background: none; color: var(--secondary-text-color, #727272); font: italic 600 12px/16px serif; cursor: pointer; padding: 0; margin-left: 8px; vertical-align: middle; }
@@ -467,6 +530,8 @@ class VigilPanel extends HTMLElement {
   async _load(retries = 4) {
     try {
       this._data = await this._hass.callWS({ type: "vigil_alarm/get" });
+      const ready = await this._call({ type: "vigil_alarm/readiness" });
+      this._ready = ready && ready.findings ? ready.findings : [];
       this._loadError = false;
     } catch (err) {
       if (retries > 0) {
@@ -523,12 +588,28 @@ class VigilPanel extends HTMLElement {
     this._renderNav();
   }
 
+  // "What's new": a badge on About until the person has looked at it after an update.
+  _newVersion() {
+    const v = this._data && this._data.version;
+    if (!v) return false;
+    try {
+      const seen = localStorage.getItem("vigil_alarm_seen_version");
+      if (seen === null) { localStorage.setItem("vigil_alarm_seen_version", v); return false; }  // first visit: nothing is new
+      return seen !== v;
+    } catch (err) { return false; }
+  }
+  _markVersionSeen() {
+    try { if (this._data && this._data.version) localStorage.setItem("vigil_alarm_seen_version", this._data.version); } catch (err) { /* private window */ }
+  }
+
   _renderNav() {
     const t = this.t;
     const nav = el("nav", {}, TABS.map((tab) => {
       const count = KINDS.includes(tab) && this._data ? this._shown(tab).length : null;
-      return el("button", { class: tab === this._tab ? "active" : "", onclick: () => { this._tab = tab; if (tab === "about") this._about = null; this._renderNav(); this._renderBody(); } },
-        t.tabs[tab], count !== null ? el("span", { class: "count", text: `(${count})` }) : null);
+      const fresh = tab === "about" && this._tab !== "about" && this._newVersion();
+      return el("button", { class: tab === this._tab ? "active" : "", onclick: () => { this._tab = tab; if (tab === "about") { this._about = null; this._markVersionSeen(); } this._renderNav(); this._renderBody(); } },
+        t.tabs[tab], count !== null ? el("span", { class: "count", text: `(${count})` }) : null,
+        fresh ? el("span", { class: "badge ok", style: "margin-left:6px", text: t.whatsNew }) : null);
     }));
     this._q("nav").replaceChildren(nav);
   }
@@ -595,6 +676,10 @@ class VigilPanel extends HTMLElement {
   }
   _batteryCell(sensor) {
     const level = this._batteryLevel(sensor);
+    const flag = sensor.data.battery_entity && this._hass.states[sensor.data.battery_entity];
+    if (level === null && flag && (flag.state === "on" || flag.state === "off")) {  // only "battery low", no percentage
+      return el("span", { class: flag.state === "on" ? "badge warn" : "badge ok", text: flag.state === "on" ? this.t.batteryLow : this.t.batteryOk });
+    }
     if (level === null) return this.t.none;
     const low = level <= Number(this._data.entry.data.battery_threshold ?? 20);
     return el("span", { class: low ? "badge warn" : "", text: `${level}%` });
@@ -607,6 +692,23 @@ class VigilPanel extends HTMLElement {
     const badge = el("span", { class: `badge ${cls}`, text: t.zstatus[status] || status });
     const level = this._batteryLevel(sensor);
     return withBattery && level !== null ? el("span", {}, badge, el("span", { class: "muted", text: ` 🔋 ${level}%` })) : badge;
+  }
+  // One sentence per sensor: how it reacts and when it is watching.
+  _sensorSummary(sensor) {
+    const t = this.t;
+    const d = sensor.data;
+    if (d.cls !== "intrusion") return fill(t.summary.always, { cls: String(this._opt("cls", d.cls)).toLowerCase() });
+    const modes = [...new Set((d.sensor_groups || []).flatMap((gid) => {
+      const g = this._data.items.sensor_group.find((x) => x.id === gid);
+      return g ? g.data.modes || [] : [];
+    }))];
+    const order = this._data.entry.data.modes || [];
+    modes.sort((a, b) => order.indexOf(a) - order.indexOf(b));
+    const list = modes.map((m) => t.mode[m] || m);
+    const names = list.length > 1 ? `${list.slice(0, -1).join(", ")} ${t.summary.and} ${list[list.length - 1]}` : list[0];
+    const delay = d.entry_delay !== undefined ? d.entry_delay : this._data.entry.data.default_entry_delay;
+    const type = d.type === "delayed" ? fill(t.summary.delayed, { s: delay }) : d.type === "follower" ? t.summary.follower : t.summary.instant;
+    return names ? fill(t.summary.watching, { type, modes: names }) : fill(t.summary.nowhere, { type });
   }
   _rulesOfSensor(sensorId) {
     return this._data.items.rule.filter((g) => (g.data.sensors || []).includes(sensorId)).map((g) => g.title);
@@ -640,6 +742,35 @@ class VigilPanel extends HTMLElement {
     return this.t.state[key] || live.state;
   }
 
+  _readyCard() {
+    const t = this.t;
+    const r = t.ready;
+    const findings = this._ready || [];
+    const go = (f) => {
+      if (f.go === "add_phone") {
+        return el("span", {}, (f.phones || []).map((ph) => el("button", { class: "btn", text: fill(r.addPhone, { name: ph.title }), onclick: async () => {
+          const res = await this._call({ type: "vigil_alarm/add_phone", service: ph.service });
+          if (!res.ok) { this._toast(this._errorText(Object.keys(res.errors || {})[0] || "base", res)); return; }
+          await this._load();
+          try { await this._hass.callService("vigil_alarm", "test_notification", { channel: res.title }); } catch (err) { /* shown by the toast below */ }
+          this._toast(fill(r.phoneAdded, { name: res.title }));
+        } })), el("button", { class: "btn", text: r.go, onclick: () => { this._tab = "notification"; this._renderBody(); } }));
+      }
+      if (f.go === "create_groups") {
+        return el("button", { class: "btn", text: r.createGroups, onclick: async () => {
+          const res = await this._call({ type: "vigil_alarm/create_default_groups" });
+          if (res.ok) { this._toast(r.groupsMade); await this._load(); }
+        } });
+      }
+      return el("button", { class: "btn", text: r.go, onclick: () => { this._tab = f.go; this._renderBody(); } });
+    };
+    const row = (f) => el("li", { class: "readyrow" },
+      el("span", { class: "badge " + (f.level === "problem" ? "bad" : "warn"), text: f.level === "problem" ? r.problem : r.advice }),
+      " ", fill(r.text[f.code] || f.code, f.params), " ", go(f));
+    return el("div", { class: "card" }, el("h2", { text: r.title }),
+      findings.length ? el("ul", { class: "plain" }, findings.map(row)) : el("div", { class: "muted", text: r.allGood }));
+  }
+
   _overview() {
     const t = this.t;
     const live = this._live;
@@ -652,6 +783,13 @@ class VigilPanel extends HTMLElement {
           el("div", { class: "muted", text: live && live.mode ? (t.mode[live.mode] || live.mode) : "" })),
         ...KINDS.map((k) => el("div", { class: "card", style: "cursor:pointer", onclick: () => { this._tab = k; this._renderBody(); } },
           el("h2", { text: t.tabs[k] }), el("div", { class: "stat", text: String(this._shown(k).length) })))),
+      this._readyCard(),
+      el("div", { class: "card" }, el("h2", { text: t.dash.title }), el("p", { class: "muted", text: t.dash.text }),
+        el("button", { class: "btn", text: t.dash.copy, onclick: async () => {
+          const res = await this._call({ type: "vigil_alarm/dashboard" });
+          try { await navigator.clipboard.writeText(res.yaml); this._toast(t.about.copied); }
+          catch (err) { this._toast(t.about.copyFailed); }
+        } })),
       el("div", { class: "card" }, el("h2", { text: t.problems }),
         problems.length
           ? el("ul", { class: "plain" }, problems.map((p) => el("li", { text: `${p.name}: ${t.problem[p.problem] || p.problem}${p.level !== undefined ? ` (${p.level}%)` : ""}` })))
@@ -672,7 +810,7 @@ class VigilPanel extends HTMLElement {
     const named = (id) => (id ? el("span", {}, this._friendly(id), el("span", { class: "sub", text: id })) : t.none);
     switch (kind) {
       case "sensor": return [
-        [C.name, (i) => i.title],
+        [C.name, (i) => el("span", {}, i.title, el("span", { class: "sub", text: this._sensorSummary(i) }))],
         [C.entity, (i) => el("span", {}, named(i.data.entity_id),
           i.data.tamper_entity ? el("span", { class: "sub", text: `${t.tamperShort}: ${i.data.tamper_entity}` }) : null)],
         [C.cls, (i) => this._opt("cls", i.data.cls)],
@@ -739,6 +877,7 @@ class VigilPanel extends HTMLElement {
       : el("div", { class: "empty", text: t.empty[kind] });
     return el("div", {},
       el("div", { class: "bar" }, el("p", { class: "intro", text: t.intro[kind] }),
+        kind === "sensor" ? el("button", { class: "btn", text: t.find.button, onclick: () => this._openFind() }) : null,
         el("button", { class: "btn primary", text: t.add[kind], onclick: () => this._openForm(kind) })),
       el("div", { class: "card" }, table));
   }
@@ -857,11 +996,11 @@ class VigilPanel extends HTMLElement {
   }
 
   // ---- dialogs
-  _dialog(title, body, buttons) {
+  _dialog(title, body, buttons, wide = false) {
     const layer = this._q("layer");
     const close = () => layer.replaceChildren();
     const overlay = el("div", { class: "overlay", onmousedown: (e) => { if (e.target === overlay) close(); } },
-      el("div", { class: "dialog", role: "dialog" }, el("h2", { text: title }), el("div", { class: "body" }, body), el("div", { class: "foot" }, buttons(close))));
+      el("div", { class: "dialog" + (wide ? " wide" : ""), role: "dialog" }, el("h2", { text: title }), el("div", { class: "body" }, body), el("div", { class: "foot" }, buttons(close))));
     layer.replaceChildren(overlay);
     return close;
   }
@@ -895,6 +1034,102 @@ class VigilPanel extends HTMLElement {
         else base.replaceChildren(el("div", { class: "baseerror", text: this._errorText("base", res) }));
       } }),
     ]);
+  }
+
+  // ---- find sensors: a proposal from the entity registry, nothing is saved until the person confirms
+  async _openFind() {
+    const t = this.t;
+    const f = t.find;
+    const res = await this._call({ type: "vigil_alarm/discover" });
+    if (!res || !res.candidates) { this._toast(t.errors.generic); return; }
+    const groupName = (id) => this._groupName(id);
+    const rows = [
+      ...res.candidates.map((c) => ({ c, tamperOnly: false })),
+      ...(res.tamper_only || []).map((c) => ({ c: { ...c, cls: "tamper", groups: [], entrance: false }, tamperOnly: true })),
+    ].map((r) => {
+      const intrusion = r.c.cls === "intrusion";
+      r.blocked = r.c.in_use ? f.inUse : intrusion && !(r.c.groups || []).length ? f.needsGroup : "";
+      r.on = !r.blocked;
+      r.name = r.c.name;
+      r.entrance = !!r.c.entrance && intrusion;
+      r.nameInput = null;
+      return r;
+    });
+    const base = el("div");
+    const tableHost = el("div");
+    let close = () => {};
+    const addBtn = el("button", { class: "btn primary" });
+    const count = () => rows.filter((r) => r.on && !r.blocked).length;
+    const refresh = () => {
+      const n = count();
+      addBtn.textContent = fill(f.add, { n });
+      addBtn.disabled = n === 0;
+    };
+    const build = () => {
+      const missingGroup = rows.some((r) => r.blocked === f.needsGroup);
+      if (!rows.length) { tableHost.replaceChildren(el("div", { class: "empty", text: f.none })); refresh(); return; }
+      const table = el("div", { class: "tablewrap" }, el("table", {},
+        el("thead", {}, el("tr", {}, el("th", {}), ...["name", "cls", "entrance", "groups", "extra"].map((k) => el("th", { text: f.cols[k] })))),
+        el("tbody", {}, rows.map((r) => {
+          const check = el("input", { type: "checkbox", checked: r.on && !r.blocked, disabled: !!r.blocked, "aria-label": r.name });
+          check.addEventListener("change", () => { r.on = check.checked; refresh(); });
+          const nameInput = el("input", { type: "text", value: r.name, disabled: !!r.blocked, "aria-label": f.cols.name });
+          nameInput.addEventListener("input", () => { r.name = nameInput.value; });
+          const entrance = r.c.entrance && r.c.cls === "intrusion"
+            ? (() => { const b = el("input", { type: "checkbox", checked: r.entrance, disabled: !!r.blocked, "aria-label": f.cols.entrance, title: f.entranceHelp });
+                b.addEventListener("change", () => { r.entrance = b.checked; }); return b; })()
+            : t.none;
+          const extras = [r.c.battery_entity ? f.battery : null, r.c.tamper_entity ? f.tamper : null].filter(Boolean).join(", ") || t.none;
+          return el("tr", { class: "row" },
+            el("td", { "data-label": "" }, check),
+            el("td", { "data-label": f.cols.name }, nameInput, el("span", { class: "sub", text: r.c.platform ? `${r.c.entity_id} · ${r.c.platform}` : r.c.entity_id }),
+              r.blocked ? el("span", { class: "badge warn", text: r.blocked }) : null),
+            el("td", { "data-label": f.cols.cls }, this._opt("cls", r.c.cls)),
+            el("td", { "data-label": f.cols.entrance }, entrance),
+            el("td", { "data-label": f.cols.groups }, r.c.cls === "intrusion" ? (r.c.groups || []).map(groupName).join(", ") || t.none : t.alwaysOn),
+            el("td", { "data-label": f.cols.extra }, extras));
+        }))));
+      const makeGroups = el("button", { class: "btn", text: f.createGroups, onclick: async () => {
+        const made = await this._call({ type: "vigil_alarm/create_default_groups" });
+        if (made.ok) { close(); await this._load(); this._openFind(); }
+      } });
+      tableHost.replaceChildren(missingGroup ? el("div", {}, el("p", { class: "intro", text: f.noGroups }), makeGroups) : null, table);
+      refresh();
+    };
+    const setAll = (on) => { rows.forEach((r) => { r.on = on && !r.blocked; }); build(); };
+    const copy = el("button", { class: "btn", text: f.copy, title: f.copyHelp });
+    copy.addEventListener("click", async () => {
+      const report = await this._call({ type: "vigil_alarm/discover_report" });
+      try { await navigator.clipboard.writeText(JSON.stringify(report.entities || [], null, 1)); this._toast(t.about.copied); }
+      catch (err) { this._toast(t.about.copyFailed); }
+    });
+    build();
+    this._dialog(f.title, [el("p", { class: "intro", text: f.intro }), base,
+      el("div", { class: "bar" }, el("button", { class: "btn", text: f.all, onclick: () => setAll(true) }),
+        el("button", { class: "btn", text: f.nothing, onclick: () => setAll(false) }), copy),
+      tableHost], (closeDialog) => {
+      close = closeDialog;
+      addBtn.addEventListener("click", async () => {
+        const chosen = rows.filter((r) => r.on && !r.blocked);
+        const items = chosen.map((r) => {
+          const c = r.c;
+          const data = { name: (r.name || "").trim() || c.name, entity_id: c.entity_id, cls: c.cls };
+          if (c.cls === "intrusion") Object.assign(data, { type: r.entrance ? "delayed" : "instant", sensor_groups: c.groups, at_arm_open: "bypass" });
+          if (c.battery_entity) data.battery_entity = c.battery_entity;
+          if (c.tamper_entity) data.tamper_entity = c.tamper_entity;
+          return data;
+        });
+        addBtn.disabled = true;
+        const result = await this._call({ type: "vigil_alarm/save_many", items });
+        if (result.ok) { close(); this._toast(fill(f.added, { n: items.length })); await this._load(); return; }
+        refresh();
+        const field = Object.keys(result.errors || {})[0] || "base";
+        const who = result.index !== undefined && items[result.index] ? items[result.index].name : "";
+        base.replaceChildren(el("div", { class: "baseerror", text: fill(f.failed, { name: who, error: this._errorText(field, result) }) }));
+      });
+      refresh();
+      return [el("button", { class: "btn", text: t.cancel, onclick: close }), addBtn];
+    }, true);
   }
 
   _openForm(kind, item, copy = false) {

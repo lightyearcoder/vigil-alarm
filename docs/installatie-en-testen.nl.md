@@ -53,7 +53,7 @@ Alles is alleen als beheerder mogelijk.
    - Uitlooptijd thuis `0`, weg `20`, nacht `5`
    - Standaard inlooptijd `15`
    - Duur alarm `0`, batterijgrens `20`, code vereist om in te schakelen: aan
-3. Klik in de zijbalk op **Vigil Alarm** (het schildje met huisje; alleen zichtbaar voor beheerders). Zie je het niet, ververs dan de browser hard. Hier staan tabbladen **Overzicht, Sensoren, Sensorgroepen, Bevestigingsregels, Gebruikers, Meldingen, Sirenes** en **Instellingen**. Voeg per tabblad met de knop bovenaan de onderdelen hieronder toe. Elke rij heeft knoppen om te bewerken, te kopiëren of te verwijderen. Sensoren, gebruikers enzovoort bewerk je alleen hier; onder *Apparaten en diensten* staat alleen het alarm zelf (met de knop *Opnieuw configureren* voor de basisinstellingen).
+3. Klik in de zijbalk op **Vigil Alarm** (het schildje met huisje; alleen zichtbaar voor beheerders). Zie je het niet, ververs dan de browser hard. Hier staan tabbladen **Overzicht, Sensoren, Sensorgroepen, Bevestigingsregels, Gebruikers, Meldingen, Sirenes, Instellingen** en **Over**. Bovenaan het Overzicht staat de kaart **Klaar voor gebruik?**: die laat zien wat er nog ontbreekt en heeft bij elk punt een knop naar de juiste plek. Voeg per tabblad met de knop bovenaan de onderdelen hieronder toe. Elke rij heeft knoppen om te bewerken, te kopiëren of te verwijderen. Sensoren, gebruikers enzovoort bewerk je alleen hier; onder *Apparaten en diensten* staat alleen het alarm zelf (met de knop *Opnieuw configureren* voor de basisinstellingen).
    Elke keer dat je iets opslaat laadt Vigil zichzelf opnieuw. Dat duurt een paar seconden; de alarmstatus blijft behouden.
 
 **Gebruikers** (gebruiker toevoegen)
@@ -63,16 +63,18 @@ Alles is alleen als beheerder mogelijk.
 | Anna | 1234 | leeg (alles) | aan |
 | Bob | 5678 | alleen thuis | uit |
 
-**Sensorgroepen.** Een sensorgroep bepaalt in welke modi de sensoren erin bewaken. Bij een nieuwe installatie bestaan er al twee, die je gewoon gebruikt:
+**Sensorgroepen.** Een sensorgroep bepaalt in welke modi de sensoren erin bewaken. Een nieuwe installatie heeft er nog geen. Klik op het Overzicht in de kaart **Klaar voor gebruik?** op **Standaardgroepen maken** (of in het venster *Sensoren zoeken*). Vigil maakt dan twee groepen aan, die je gewoon gebruikt:
 
 | Naam | Actief in modi | Voor |
 |---|---|---|
 | Buitenschil | thuis, weg, nacht | deuren en ramen |
 | Binnen | weg | beweging (PIR) |
 
+Staat Home Assistant op Engels, dan heten ze *Perimeter* en *Interior*. Een soort die je al hebt, maakt Vigil niet nog eens aan.
+
 *Heb je de vorige versie al geïnstalleerd?* Dan zet Vigil bij het opstarten je oude "modi per sensor" automatisch om in sensorgroepen, met namen als "Weg" en "Thuis + Weg + Nacht". Daar verandert niets aan het gedrag; je kunt ze hernoemen en op het tabblad Sensorgroepen controleren. Kijk ook op het Overzicht bij "Wat bewaakt elke modus".
 
-**Sensoren** (sensor toevoegen; de naam bepaalt de entiteitsnamen, houd je aan deze namen). Kies bij een inbraaksensor in welke sensorgroepen hij zit. Kies je een deurcontact of bewegingssensor als entiteit, dan stelt het paneel zelf de passende groep voor.
+**Sensoren** (sensor toevoegen, of zoek ze met de knop **Sensoren zoeken**, zie test 26; de naam bepaalt de entiteitsnamen, houd je aan deze namen). Kies bij een inbraaksensor in welke sensorgroepen hij zit. Kies je een deurcontact of bewegingssensor als entiteit, dan stelt het paneel zelf de passende groep voor.
 
 | Naam | Entiteit | Klasse | Type | Sensorgroep | Bij open aan einde uitlooptijd |
 |---|---|---|---|---|---|
@@ -142,6 +144,26 @@ Zet na elke test alles terug: alle testschakelaars uit, alarm uitgeschakeld. De 
 | **24. Blueprint: events** | Automatisering "Vigil - Run your own actions on alarm events": events `triggered` en `disarmed`, actie "Melding" via `persistent_notification.create` met bericht `{{ event_type }} {{ data.cause | default('') }}`. | Bij een alarm komt "triggered fire" in de meldingen, bij uitschakelen "disarmed". |
 | **25. Dashboard** | Plak het voorbeelddashboard (hoofdstuk 5). Zet Smoke aan. | De alarmpaneelkaart toont het alarm; "Status" noemt oorzaak *fire* en sensor *Smoke*; de kaart "Needs attention" verschijnt alleen als er iets mis is (bijvoorbeeld Living PIR op `unavailable`); de logboekkaart toont de events; de knop "Silence the siren" dempt de sirene na bevestiging. |
 
+### Extra testen: inrichten, codes en controle
+
+| # | Doen | Verwacht |
+|---|---|---|
+| **26. Sensoren zoeken** | Tabblad Sensoren, knop *Sensoren zoeken*. | Een breed venster met de gevonden sensoren (deur, raam, beweging, rook, gas, water, sabotage) van echte of testapparaten, met onder elke naam de entiteit en de integratie. Sensoren die je al hebt staan grijs met "al in gebruik". Vigils eigen indicatoren staan er niet in. Bij een deurcontact staat "Ingang" aan of uit; de batterij- en sabotagesensor van hetzelfde apparaat staan bij "Erbij". Er is nog niets opgeslagen. |
+| **27. Meerdere tegelijk toevoegen** | Vink twee sensoren aan en klik *2 toevoegen*. Doe het daarna nog eens met een naam die al bestaat. | De eerste keer komen beide in één keer in de lijst (met een eigen sabotage-item als er een sabotagesensor bij hoort). De tweede keer krijg je een duidelijke foutmelding met de naam van de sensor en wordt er niets opgeslagen. |
+| **28. Ontdekkingsgegevens** | Klik in het zoekvenster op *Kopieer ontdekkingsgegevens* en plak het ergens. | Een lijst met per entiteit alleen domein, device class, integratie, een apparaatnummer, categorie en eenheid. Geen namen, entiteit-id's of adressen. |
+| **29. Klaar voor gebruik?** | Kijk op het Overzicht. Los een punt op (bijvoorbeeld een gebruiker met code toevoegen). | Elk punt heeft de knop *Ga erheen* (of *Standaardgroepen maken*). Eerst staan de punten die "Eerst regelen" zijn, dan de adviezen. Is een punt opgelost, dan verdwijnt het. Staat alles goed, dan staat er "Alles is ingesteld". |
+| **30. Telefoon als kanaal** | Verwijder alle meldingskanalen. Heb je de Home Assistant-app op je telefoon, kijk dan op het Overzicht. | Bij het punt over het meldingskanaal staat de knop *Telefoon toevoegen: <naam van je telefoon>*. Die maakt het kanaal aan en stuurt een testmelding. Daarna staat er een kanaal en verdwijnt het punt. |
+| **31. Foute codes** | Schakel vijf keer binnen vijf minuten met een foute code. Probeer dan de goede code. | Na de vijfde foute code is er een gebeurtenis `code_locked`. Gedurende vijf minuten wordt ook de goede code geweigerd. Daarna werkt hij weer. Een beheerder zonder code in het paneel kan wel gewoon bedienen. |
+| **32. Minimale codelengte** | Instellingen: zet de minimale codelengte op 6. Voeg een gebruiker met een code van 4 cijfers toe. | De gebruiker wordt geweigerd met de melding dat de code minstens 6 tekens moet hebben. Waarden buiten 4 tot 12 worden geweigerd. |
+| **33. Alarmindicatoren en entiteitsnamen** | Kijk bij de entiteiten van Vigil. | Er zijn altijd de binary sensors voor inbraak, brand, gas, sabotage en water, ook als je geen sensor van die klasse hebt. De entiteit-id's eindigen op de Engelse naam (bijvoorbeeld `binary_sensor.vigil_alarm_intrusion_alarm`), ook als Home Assistant op Nederlands staat. |
+| **34. Code controleren** | Roep de actie `vigil_alarm.check_code` aan met een goede en een foute code. | Een goede code geeft geen fout. Een foute code geeft een foutmelding en telt mee voor de blokkade (test 31). |
+| **35. Batterij laag als aan/uit** | Zet bij een sensor een `binary_sensor` met device class battery als batterijsensor. Zet die aan. | Er komt de melding "Batterij bijna leeg: <naam>" (zonder percentage) en in het attribuut `problems` staat de sensor. Zet je hem uit, dan komt "Batterij weer in orde". In de sensorlijst staat bij Batterij "laag" of "ok". |
+| **36. Dashboard kopiëren** | Overzicht, kaart *Dashboard*, knop *Kopieer dashboard*. Plak het in een nieuw dashboard (ruwe configuratie-editor). | Het dashboard toont jouw sensoren en alarmentiteiten met de goede entiteit-id's; alle kaarten werken zonder voorbeeldnamen aan te passen. |
+| **37. Sensorlijst op het aanraakpaneel** | Heb je het ESPHome-paneel? Zet `sensor_list` op `code` en bekijk de sensorlijst. | Zonder code zie je geen namen; met een geldige code is de lijst zichtbaar tot de ontgrendeltijd voorbij is. Zie `esphome/README.md`. |
+| **38. Wat is nieuw** | Na een update van Vigil: open het paneel. | Op het tabblad *Over* staat een badge "nieuw" tot je het bekijkt. De eerste keer in een browser staat er geen badge. |
+| **39. Diagnostics** | Apparaten en diensten → Vigil Alarm → ⋮ → Diagnostische gegevens downloaden. | Een bestand met instellingen, onderdelen en de status. Gebruikersnamen, codes en tags staan er niet in. |
+| **40. Repairs** | Zet `binary_sensor.vigil_test_living_pir` met de hand op `unavailable`, of zet de batterij van de test op 15. Kijk onder Instellingen → Systeem → Reparaties. | Er staat een reparatie "Sensor niet bereikbaar: Living PIR" (of "Batterij bijna leeg: … (15%)"). Herstel je het, dan verdwijnt hij vanzelf. Ontbrekende instellingen (zoals een meldingskanaal) geven geen reparatie; die staan in *Klaar voor gebruik?*. |
+
 ## 7. Wat je terugmeldt
 
 Per test dat iets anders uitpakt:
@@ -159,6 +181,8 @@ Per test dat iets anders uitpakt:
 - bij formulieren: een schermafbeelding.
 
 ## 8. Als het niet werkt
+
+Voor een alarm dat iets anders doet dan je verwacht, zie [Mijn alarm doet niet wat ik verwacht](problemen-oplossen.nl.md).
 
 - **"Vigil Alarm" staat niet in de lijst:** controleer het pad `config/custom_components/vigil_alarm/manifest.json`, herstart volledig en ververs de browser. Kijk in het logboek naar `vigil`.
 - **De zijbalk toont geen "Vigil":** alleen beheerders zien hem. Ververs hard, herstart Home Assistant volledig en kijk in het logboek of `vigil` een fout meldt. Er is geen tweede manier om te configureren; blijft het paneel weg, stuur dan de logregel.

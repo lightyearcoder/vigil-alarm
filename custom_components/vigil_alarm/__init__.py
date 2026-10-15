@@ -15,6 +15,7 @@ from homeassistant.loader import async_get_integration
 from .const import ATTR_SENSOR, DOMAIN, SERVICE_ACKNOWLEDGE, SERVICE_ARM, SERVICE_BYPASS, SERVICE_CHECK_CODE, SERVICE_DISARM, SERVICE_SILENCE, SERVICE_TEST_NOTIFICATION, SERVICE_TEST_SIREN, SERVICE_UNBYPASS
 from .manager import VigilManager
 from .migration import async_migrate_entry  # noqa: F401  (Home Assistant looks it up here)
+from .repairs import VigilRepairs
 from .panel import async_register_commands, async_register_panel, async_remove_panel
 from .vigil_core import ConfigError
 
@@ -156,6 +157,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> boo
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     await async_register_panel(hass, (await async_get_integration(hass, DOMAIN)).version.string)
     _remove_orphans(hass, entry, manager)
+    entry.async_on_unload(VigilRepairs(hass, manager).start())
     # Changing the entry or its items rebuilds the engine from the new config.
     entry.async_on_unload(entry.add_update_listener(_reload))
     return True

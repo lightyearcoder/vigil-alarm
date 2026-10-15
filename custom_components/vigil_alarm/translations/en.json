@@ -378,5 +378,27 @@
         }
       }
     }
+  },
+  "issues": {
+    "sensor_unreachable": {
+      "title": "Sensor not reachable: {name}",
+      "description": "Vigil Alarm cannot reach the sensor {name}. Check the device (battery, range, power). Arming may be refused until it is back. This message disappears by itself."
+    },
+    "battery_low": {
+      "title": "Battery low: {name}",
+      "description": "The battery of {name} is low. Replace it. This message disappears by itself when the battery is fine again."
+    },
+    "battery_low_level": {
+      "title": "Battery low: {name} ({level}%)",
+      "description": "The battery of {name} is at {level}%. Replace it. This message disappears by itself when the battery is fine again."
+    },
+    "siren_unavailable": {
+      "title": "Siren not available: {name}",
+      "description": "The siren {name} cannot be reached, so it will not sound during an alarm. Check the device. This message disappears by itself."
+    },
+    "siren_on_battery": {
+      "title": "Siren on battery power: {name}",
+      "description": "The siren {name} has lost mains power and runs on its battery. Check the power. This message disappears by itself."
+    }
   }
 }
