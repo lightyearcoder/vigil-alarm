@@ -1,0 +1,113 @@
+arm:
+  fields:
+    mode:
+      required: true
+      selector:
+        select:
+          options: [home, away, night]
+          translation_key: mode
+    code:
+      required: false
+      selector:
+        text:
+          type: password
+    source:
+      required: false
+      selector:
+        text:
+disarm:
+  fields:
+    code:
+      required: false
+      selector:
+        text:
+          type: password
+    source:
+      required: false
+      selector:
+        text:
+bypass:
+  fields:
+    sensor:
+      required: true
+      selector:
+        entity:
+          domain: binary_sensor
+    code:
+      required: false
+      selector:
+        text:
+          type: password
+    source:
+      required: false
+      selector:
+        text:
+unbypass:
+  fields:
+    sensor:
+      required: true
+      selector:
+        entity:
+          domain: binary_sensor
+    code:
+      required: false
+      selector:
+        text:
+          type: password
+    source:
+      required: false
+      selector:
+        text:
+test_notification:
+  fields:
+    channel:
+      required: false
+      selector:
+        text:
+test_siren:
+  fields:
+    siren:
+      required: false
+      selector:
+        text:
+    duration:
+      required: false
+      default: 3
+      selector:
+        number:
+          min: 1
+          max: 30
+          unit_of_measurement: s
+silence:
+  fields:
+    code:
+      required: false
+      selector:
+        text:
+          type: password
+    source:
+      required: false
+      selector:
+        text:
+acknowledge:
+  fields:
+    code:
+      required: false
+      selector:
+        text:
+          type: password
+    source:
+      required: false
+      selector:
+        text:
+check_code:
+  fields:
+    code:
+      required: false
+      selector:
+        text:
+          type: password
+    source:
+      required: false
+      selector:
+        text:

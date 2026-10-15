@@ -136,10 +136,10 @@ async def test_silence_stops_the_siren_but_not_the_alarm(hass, hass_admin_user):
     await hass.async_block_till_done()
     assert len(m.on) == 1 and m.off == []
     with pytest.raises(ServiceValidationError):  # no code, no administrator
-        await hass.services.async_call("vigil", "silence", {}, blocking=True)
+        await hass.services.async_call("vigil_alarm", "silence", {}, blocking=True)
     with pytest.raises(ServiceValidationError):
-        await hass.services.async_call("vigil", "silence", {"code": "0000"}, blocking=True)
-    await hass.services.async_call("vigil", "silence", {"code": "5678"}, blocking=True)
+        await hass.services.async_call("vigil_alarm", "silence", {"code": "0000"}, blocking=True)
+    await hass.services.async_call("vigil_alarm", "silence", {"code": "5678"}, blocking=True)
     await hass.async_block_till_done()
     assert len(m.off) == 1 and hass.states.get(PANEL).state == "triggered"
     assert "alarm_silenced" in seen
@@ -149,7 +149,7 @@ async def test_silence_stops_the_siren_but_not_the_alarm(hass, hass_admin_user):
     await _call(hass, "alarm_disarm", code="1234")
     hass.states.async_set("binary_sensor.smoke", "on")
     await hass.async_block_till_done()
-    await hass.services.async_call("vigil", "silence", {}, blocking=True, context=Context(user_id=hass_admin_user.id))
+    await hass.services.async_call("vigil_alarm", "silence", {}, blocking=True, context=Context(user_id=hass_admin_user.id))
     await hass.async_block_till_done()
     assert len(m.on) == 2 and len(m.off) == 2  # second alarm sounded and was silenced by the administrator
 
@@ -160,7 +160,7 @@ async def test_a_new_higher_priority_cause_sounds_the_siren_again_after_silence(
     await _call(hass, "alarm_arm_home", code="1234")
     hass.states.async_set("binary_sensor.tamper", "on")
     await hass.async_block_till_done()
-    await hass.services.async_call("vigil", "silence", {"code": "1234"}, blocking=True)
+    await hass.services.async_call("vigil_alarm", "silence", {"code": "1234"}, blocking=True)
     await hass.async_block_till_done()
     assert len(m.on) == 1 and len(m.off) == 1
     hass.states.async_set("binary_sensor.smoke", "on")  # fire beats tamper
@@ -174,8 +174,8 @@ async def test_acknowledge_cancels_the_escalation(hass, freezer):
     hass.states.async_set("binary_sensor.smoke", "on")
     await hass.async_block_till_done()
     with pytest.raises(ServiceValidationError):
-        await hass.services.async_call("vigil", "acknowledge", {}, blocking=True)
-    await hass.services.async_call("vigil", "acknowledge", {"code": "1234"}, blocking=True)
+        await hass.services.async_call("vigil_alarm", "acknowledge", {}, blocking=True)
+    await hass.services.async_call("vigil_alarm", "acknowledge", {"code": "1234"}, blocking=True)
     await _tick(hass, freezer, 120)
     assert m.notify == []
     assert hass.states.get(EVENTS).attributes["event_type"] == "alarm_acknowledged"

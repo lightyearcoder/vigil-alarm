@@ -1,6 +1,6 @@
 # Vigil Alarm: installeren op Home Assistant OS en testen
 
-Deze gids is voor Home Assistant OS (HAOS). Je plaatst de map `vigil` in de configuratiemap, voegt een testpakket met virtuele sensoren toe en doorloopt daarna de testen. Alles gebeurt zonder echte sensoren of sirene.
+Deze gids is voor Home Assistant OS (HAOS). Je plaatst de map `vigil_alarm` in de configuratiemap, voegt een testpakket met virtuele sensoren toe en doorloopt daarna de testen. Alles gebeurt zonder echte sensoren of sirene.
 
 **Let op:** dit is een testversie van een zelfgebouwde integratie, geen gecertificeerd alarmsysteem. De integratie is tot nu toe alleen getest in een testomgeving met Home Assistant 2026.2.3. Verwacht afwijkingen in een echte installatie en meld ze (zie hoofdstuk 7).
 
@@ -10,7 +10,7 @@ Deze gids is voor Home Assistant OS (HAOS). Je plaatst de map `vigil` in de conf
 
 1. Controleer je versie: **Instellingen → Info**. Minimaal 2026.2.3.
 2. Maak een back-up: **Instellingen → Systeem → Back-ups → Back-up maken**. Wacht tot hij klaar is.
-3. Pak `vigil-alarm.zip` uit op je Mac. Je krijgt een map `vigil-alarm`. Daarin staat `custom_components/vigil`. Alleen die map `vigil` ga je kopiëren.
+3. Pak `vigil-alarm.zip` uit op je Mac. Je krijgt een map `vigil-alarm`. Daarin staat `custom_components/vigil_alarm`. Alleen die map `vigil_alarm` ga je kopiëren.
 
 ## 2. De bestanden op Home Assistant zetten
 
@@ -21,9 +21,9 @@ Je hebt toegang tot de configuratiemap nodig. De makkelijkste weg op een Mac is 
 3. In Finder: **Ga → Verbind met server** (⌘K) en typ `smb://homeassistant.local` (lukt dat niet, gebruik het IP-adres van je Home Assistant). Log in met de zojuist gekozen gegevens.
 4. Open de share **config**. Zie je daar `configuration.yaml`, dan zit je goed.
 5. Bestaat de map `custom_components` nog niet, maak hem dan aan.
-6. Kopieer de map `vigil` (uit `vigil-alarm/custom_components/`) in `config/custom_components/`. Het resultaat is `config/custom_components/vigil/manifest.json`. Controleer dat precies dit pad klopt: één map te veel of te weinig is de meest voorkomende fout.
+6. Kopieer de map `vigil_alarm` (uit `vigil-alarm/custom_components/`) in `config/custom_components/`. Het resultaat is `config/custom_components/vigil_alarm/manifest.json`. Controleer dat precies dit pad klopt: één map te veel of te weinig is de meest voorkomende fout.
 
-*Alternatief:* de add-on **Terminal & SSH** met `scp -r custom_components/vigil root@homeassistant.local:/config/custom_components/`.
+*Alternatief:* de add-on **Terminal & SSH** met `scp -r custom_components/vigil_alarm root@homeassistant.local:/config/custom_components/`.
 
 ## 3. Het testpakket plaatsen
 
@@ -95,7 +95,7 @@ Bij "Front door" kun je bij **Batterijsensor** niets invullen. Bij **Kitchen PIR
 
 ## 5. Een dashboard maken
 
-**Het voorbeelddashboard:** maak een nieuw dashboard (**Instellingen → Dashboards → Dashboard toevoegen → Nieuw dashboard vanaf nul**), open het, kies rechtsboven het potlood, de drie puntjes en **Ruwe configuratie-editor**. Plak de inhoud van `examples/dashboard.yaml` (uit de zip) erin en sla op. De voorbeeldsensoren in de kaart *Sensors* heten zoals in hoofdstuk 4 (Front door, Living PIR, Smoke, Tamper); pas ze aan als jij andere namen gebruikt. Het testhuis heeft een watersensor: haal in de kaart *Alarms* het commentaarteken (`#`) weg voor de regel `binary_sensor.vigil_alarm_water_alarm`.
+**Het voorbeelddashboard:** maak een nieuw dashboard (**Instellingen → Dashboards → Dashboard toevoegen → Nieuw dashboard vanaf nul**), open het, kies rechtsboven het potlood, de drie puntjes en **Ruwe configuratie-editor**. Plak de inhoud van `examples/dashboard.yaml` (uit de zip) erin en sla op. De voorbeeldsensoren in de kaart *Sensors* heten zoals in hoofdstuk 4 (Front door, Living PIR, Smoke, Tamper); pas ze aan als jij andere namen gebruikt.
 
 **Een testdashboard voor de schakelaars:** maak een tweede weergave of een nieuw dashboard met een **Entiteitenkaart** met:
 
@@ -116,10 +116,10 @@ Zet na elke test alles terug: alle testschakelaars uit, alarm uitgeschakeld. De 
 | **5. Bevestigingsregel** | Armed weg, alleen Living PIR aan | Geen alarm; melding "Eén melding zonder bevestiging". Daarna binnen 60 s ook Kitchen PIR aan: `triggered`, `confirmed_by` bevat beide. |
 | **6. Open bij inschakelen** | Front door aan, Living PIR aan, dan Inschakelen Weg | Na 20 s `armed_away`. Front door status "Omzeild bij inschakelen" met een melding, Living PIR "Wacht tot dicht". Living PIR uit: wordt weer bewaakt. |
 | **7. Brand** | Smoke aan (niet ingeschakeld) | Direct `triggered`, oorzaak `fire`, sirene aan. Inschakelen is geweigerd. Smoke uit, uitschakelen met code. |
-| **8. Omzeilen** | Zet de schakelaar "Living PIR Omzeilen" aan. Roep daarna de actie `vigil.bypass` aan met sensor `binary_sensor.vigil_test_kitchen_pir` (zonder code) en `vigil.unbypass`. Probeer `vigil.bypass` voor `binary_sensor.vigil_test_smoke`. | Als beheerder in de interface heb je geen code nodig. Living PIR toont "Omzeild". Smoke heeft geen omzeil-schakelaar en de actie wordt geweigerd (brand kan niet omzeild worden). Bij uitschakelen vervalt de omzeiling. De regel dat Bob geen sabotage mag omzeilen geldt voor gewone gebruikers; als beheerder omzeil je sabotage wel, en dat is zo bedoeld. Dit onderscheid is in de automatische tests gedekt. |
+| **8. Omzeilen** | Zet de schakelaar "Living PIR Omzeilen" aan. Roep daarna de actie `vigil_alarm.bypass` aan met sensor `binary_sensor.vigil_test_kitchen_pir` (zonder code) en `vigil_alarm.unbypass`. Probeer `vigil_alarm.bypass` voor `binary_sensor.vigil_test_smoke`. | Als beheerder in de interface heb je geen code nodig. Living PIR toont "Omzeild". Smoke heeft geen omzeil-schakelaar en de actie wordt geweigerd (brand kan niet omzeild worden). Bij uitschakelen vervalt de omzeiling. De regel dat Bob geen sabotage mag omzeilen geldt voor gewone gebruikers; als beheerder omzeil je sabotage wel, en dat is zo bedoeld. Dit onderscheid is in de automatische tests gedekt. |
 | **9. Codes en rechten** | Bob (5678): Thuis lukt, Weg niet. Foute code. Geen code. | Bob kan alleen thuis. Een foute code en een ontbrekende code geven een foutmelding. Uitschakelen kan nooit zonder code. |
-| **10. Escalatie** | Alarm laten afgaan (test 4) en niet uitschakelen | Direct de melding van `Persistent`, na 30 s ook die van `Escalation`. Bij een tweede alarm dat je binnen 30 s uitschakelt komt de escalatiemelding niet. Probeer ook de actie `vigil.acknowledge` (code 1234) binnen 30 s: geen escalatie. |
-| **11. Sirene** | Actie `vigil.test_siren` (duur 5). Tijdens een alarm: `vigil.silence` met code. | Testsirene is 5 s aan en gaat vanzelf uit. Tijdens een alarm weigert de test. Na `silence` gaat `switch.vigil_test_siren` uit terwijl de alarmstatus `triggered` blijft. Na de maximale duur (60 s) gaat de sirene uit. |
+| **10. Escalatie** | Alarm laten afgaan (test 4) en niet uitschakelen | Direct de melding van `Persistent`, na 30 s ook die van `Escalation`. Bij een tweede alarm dat je binnen 30 s uitschakelt komt de escalatiemelding niet. Probeer ook de actie `vigil_alarm.acknowledge` (code 1234) binnen 30 s: geen escalatie. |
+| **11. Sirene** | Actie `vigil_alarm.test_siren` (duur 5). Tijdens een alarm: `vigil_alarm.silence` met code. | Testsirene is 5 s aan en gaat vanzelf uit. Tijdens een alarm weigert de test. Na `silence` gaat `switch.vigil_test_siren` uit terwijl de alarmstatus `triggered` blijft. Na de maximale duur (60 s) gaat de sirene uit. |
 | **12. Herstart** | Armed weg. Herstart Home Assistant. | Na de herstart nog steeds `armed_away`. |
 | **13. Alarm tijdens herstart** | Armed weg, Front door aan (inlooptijd 15 s), herstart direct Home Assistant | Een herstart duurt langer dan 15 s. Na het opstarten is de status `triggered`. Het attribuut `t` van `sensor.vigil_alarm_last_event` (bij het event `triggered`) toont het moment dat de inlooptijd afliep, niet het moment van opstarten. |
 | **14. Opstarten** | Direct na een herstart, probeer te schakelen | Eerste 10 s: "nog aan het opstarten". Geen valse storingen of alarmen door sensoren die nog niet geladen zijn. |
@@ -132,7 +132,7 @@ Zet na elke test alles terug: alle testschakelaars uit, alarm uitgeschakeld. De 
 
 ### Extra testen: voorinstelling, blueprints en dashboard
 
-**Voorbereiding voor de blueprints:** kopieer de map `vigil` uit `vigil-alarm/blueprints/automation/` naar `config/blueprints/automation/` (maak de mappen aan als ze niet bestaan). Je krijgt `config/blueprints/automation/vigil/flash_lights_on_alarm.yaml` en vijf andere bestanden. Laad daarna de automatiseringen opnieuw: **Ontwikkelaarstools → YAML → Automatiseringen opnieuw laden**. (Met een openbare GitHub-opslagplaats kun je ze ook importeren met de knoppen in de README.) Maak een automatisering via **Instellingen → Automatiseringen → Automatisering maken → Blueprint gebruiken**.
+**Voorbereiding voor de blueprints:** kopieer de map `vigil_alarm` uit `vigil-alarm/blueprints/automation/` naar `config/blueprints/automation/` (maak de mappen aan als ze niet bestaan). Je krijgt `config/blueprints/automation/vigil_alarm/flash_lights_on_alarm.yaml` en vijf andere bestanden. Laad daarna de automatiseringen opnieuw: **Ontwikkelaarstools → YAML → Automatiseringen opnieuw laden**. (Met een openbare GitHub-opslagplaats kun je ze ook importeren met de knoppen in de README.) Maak een automatisering via **Instellingen → Automatiseringen → Automatisering maken → Blueprint gebruiken**.
 
 | # | Doen | Verwacht |
 |---|---|---|
@@ -154,13 +154,13 @@ Per test dat iets anders uitpakt:
   logger:
     default: warning
     logs:
-      custom_components.vigil: debug
+      custom_components.vigil_alarm: debug
   ```
 - bij formulieren: een schermafbeelding.
 
 ## 8. Als het niet werkt
 
-- **"Vigil Alarm" staat niet in de lijst:** controleer het pad `config/custom_components/vigil/manifest.json`, herstart volledig en ververs de browser. Kijk in het logboek naar `vigil`.
+- **"Vigil Alarm" staat niet in de lijst:** controleer het pad `config/custom_components/vigil_alarm/manifest.json`, herstart volledig en ververs de browser. Kijk in het logboek naar `vigil`.
 - **De zijbalk toont geen "Vigil":** alleen beheerders zien hem. Ververs hard, herstart Home Assistant volledig en kijk in het logboek of `vigil` een fout meldt. Er is geen tweede manier om te configureren; blijft het paneel weg, stuur dan de logregel.
 - **Het paneel blijft leeg of toont "kon niet geladen worden":** de integratie is niet actief (kijk onder *Apparaten en diensten* of er een fout staat). Ververs de browser.
 - **Foutmelding bij het openen van het eerste formulier (naam en basisinstellingen):** meestal een JSON- of vertaalfout of een versieverschil. Stuur de logregel.
@@ -170,5 +170,5 @@ Per test dat iets anders uitpakt:
 ## 9. Opruimen
 
 1. Verwijder de integratie: **Instellingen → Apparaten en diensten → Vigil Alarm → ⋮ → Verwijderen**.
-2. Verwijder `custom_components/vigil` en `packages/vigil_test_package.yaml` uit de share **config**, en haal zo nodig de regels `packages` uit `configuration.yaml`.
+2. Verwijder `custom_components/vigil_alarm` en `packages/vigil_test_package.yaml` uit de share **config**, en haal zo nodig de regels `packages` uit `configuration.yaml`.
 3. Herstart Home Assistant. Zet de Samba-add-on uit als je hem niet meer nodig hebt.

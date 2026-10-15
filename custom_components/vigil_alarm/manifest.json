@@ -1,0 +1,21 @@
+{
+  "domain": "vigil_alarm",
+  "name": "Vigil Alarm",
+  "codeowners": [
+    "@lightyearcoder"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "http",
+    "websocket_api",
+    "frontend",
+    "panel_custom"
+  ],
+  "documentation": "https://github.com/lightyearcoder/vigil-alarm",
+  "integration_type": "service",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/lightyearcoder/vigil-alarm/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "0.2.0"
+}

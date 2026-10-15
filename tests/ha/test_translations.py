@@ -6,7 +6,7 @@ import json
 import pathlib
 import re
 
-ROOT = pathlib.Path(__file__).parents[2] / "custom_components" / "vigil"
+ROOT = pathlib.Path(__file__).parents[2] / "custom_components" / "vigil_alarm"
 
 
 def _keys(node, prefix=""):
@@ -67,7 +67,7 @@ def test_the_panel_shows_armed_home_away_and_night_as_armed():
 
 def test_every_event_type_cause_and_refusal_has_a_text_in_both_languages():
     """What Home Assistant shows for the event entity, the last-event sensor and the alarm attributes."""
-    from custom_components.vigil.const import EVENT_TYPES
+    from custom_components.vigil_alarm.const import EVENT_TYPES
 
     for lang in ("en", "nl"):
         ent = json.loads((ROOT / f"translations/{lang}.json").read_text())["entity"]

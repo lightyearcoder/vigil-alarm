@@ -3,9 +3,9 @@ from __future__ import annotations
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResultType
 
-from custom_components.vigil.items import items_of
-from custom_components.vigil.const import DOMAIN
-from custom_components.vigil.credentials import code_matches
+from custom_components.vigil_alarm.items import items_of
+from custom_components.vigil_alarm.const import DOMAIN
+from custom_components.vigil_alarm.credentials import code_matches
 
 from .common import make_entry
 
@@ -49,7 +49,7 @@ async def test_a_new_alarm_starts_with_two_sensor_groups(hass):
 
 async def test_there_are_no_standard_forms_for_the_parts(hass):
     # Sensors, users and the rest are edited in the Vigil panel only.
-    from custom_components.vigil.config_flow import VigilConfigFlow
+    from custom_components.vigil_alarm.config_flow import VigilConfigFlow
 
     entry = make_entry(users=False)
     assert VigilConfigFlow.async_get_supported_subentry_types(entry) == {}

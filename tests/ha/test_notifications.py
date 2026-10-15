@@ -132,16 +132,16 @@ async def test_test_service(hass):
     anna = async_mock_service(hass, "notify", "mobile_app_anna")
     bob = async_mock_service(hass, "notify", "mobile_app_bob")
     await _house(hass, channel(), channel("n2", "Bob", "mobile_app_bob"))
-    await hass.services.async_call("vigil", "test_notification", {}, blocking=True)
+    await hass.services.async_call("vigil_alarm", "test_notification", {}, blocking=True)
     assert _messages(anna) == ["Test notification from Vigil Alarm"] == _messages(bob)
-    await hass.services.async_call("vigil", "test_notification", {"channel": "Bob"}, blocking=True)
+    await hass.services.async_call("vigil_alarm", "test_notification", {"channel": "Bob"}, blocking=True)
     assert len(anna) == 1 and len(bob) == 2
 
 
 async def test_test_service_without_channels_says_so(hass):
     await _house(hass)
     with pytest.raises(ServiceValidationError, match="No notification channel"):
-        await hass.services.async_call("vigil", "test_notification", {}, blocking=True)
+        await hass.services.async_call("vigil_alarm", "test_notification", {}, blocking=True)
 
 
 async def test_the_alarm_works_without_any_channel(hass):

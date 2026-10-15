@@ -1,0 +1,85 @@
+blueprint:
+  name: Vigil - Announce alarm events with speech
+  description: >
+    Speaks a message on one or more speakers when the alarm changes state. Leave a message empty to
+    stay silent for that event. In the messages you can use these values:
+    `{{ trigger.to_state.attributes.mode }}`, `user`, `sensor_name` and `cause`.
+  domain: automation
+  homeassistant:
+    min_version: 2024.10.0
+  source_url: https://github.com/lightyearcoder/vigil-alarm/blob/main/blueprints/automation/vigil_alarm/announce_with_speech.yaml
+  input:
+    events:
+      name: Vigil events
+      selector:
+        entity:
+          filter:
+            - integration: vigil_alarm
+              domain: event
+    tts:
+      name: Text-to-speech service
+      selector:
+        entity:
+          filter:
+            - domain: tts
+    speakers:
+      name: Speakers
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - domain: media_player
+    msg_arming_started:
+      name: Exit delay starts
+      default: "Alarm will be armed in a moment. Leave the house."
+      selector:
+        text:
+    msg_armed:
+      name: Alarm armed
+      default: "Alarm armed."
+      selector:
+        text:
+    msg_disarmed:
+      name: Alarm disarmed
+      default: "Alarm disarmed."
+      selector:
+        text:
+    msg_pending_started:
+      name: Entry delay starts
+      default: "Enter your code now."
+      selector:
+        text:
+    msg_triggered:
+      name: Alarm triggered
+      default: "Alarm! {{ trigger.to_state.attributes.sensor_name | default('') }}"
+      selector:
+        text:
+
+mode: queued
+max_exceeded: silent
+
+variables:
+  event_type: "{{ trigger.to_state.attributes.get('event_type', '') }}"
+  messages:
+    arming_started: !input msg_arming_started
+    armed: !input msg_armed
+    disarmed: !input msg_disarmed
+    pending_started: !input msg_pending_started
+    triggered: !input msg_triggered
+  text: "{{ messages.get(event_type, '') | trim }}"
+
+triggers:
+  - trigger: state
+    entity_id: !input events
+
+conditions:
+  - condition: template
+    value_template: "{{ text != '' }}"
+
+actions:
+  - action: tts.speak
+    target:
+      entity_id: !input tts
+    data:
+      media_player_entity_id: !input speakers
+      message: "{{ text }}"

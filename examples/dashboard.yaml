@@ -72,9 +72,8 @@ views:
           - entity: binary_sensor.vigil_alarm_intrusion_alarm
           - entity: binary_sensor.vigil_alarm_fire_alarm
           - entity: binary_sensor.vigil_alarm_tamper_alarm
-          # Only exist when you have a gas or water sensor. Remove these lines if you do not.
-          # - entity: binary_sensor.vigil_alarm_gas_alarm
-          # - entity: binary_sensor.vigil_alarm_water_alarm
+          - entity: binary_sensor.vigil_alarm_gas_alarm
+          - entity: binary_sensor.vigil_alarm_water_alarm
           - entity: sensor.vigil_alarm_last_event
             name: Last event
 
@@ -110,6 +109,6 @@ views:
         icon: mdi:bell-off
         tap_action:
           action: perform-action
-          perform_action: vigil.silence
+          perform_action: vigil_alarm.silence
           confirmation:
             text: Silence the siren?

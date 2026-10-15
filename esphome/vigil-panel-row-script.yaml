@@ -1,0 +1,33 @@
+# Fills one sensor row. Included five times by vigil-panel.yaml, with `n` the position on the page.
+id: row_update_${n}
+mode: restart
+then:
+  - lvgl.label.update:
+      id: srow_name_${n}
+      text: !lambda 'return vigil::row_at(id(sens_page), ${n}).name;'
+  - lvgl.label.update:
+      id: srow_state_${n}
+      text: !lambda 'return vigil::status_text(vigil::row_at(id(sens_page), ${n}).status);'
+  - lvgl.label.update:
+      id: srow_state_${n}
+      text_color: !lambda 'return lv_color_hex(vigil::status_color(vigil::row_at(id(sens_page), ${n}).status));'
+  - lvgl.label.update:
+      id: srow_btn_lbl_${n}
+      text: !lambda |-
+        return vigil::is_bypassed(vigil::row_at(id(sens_page), ${n}).status) ? vigil::tr("unbypass") : vigil::tr("bypass");
+  - if:
+      condition:
+        lambda: 'return vigil::row_at(id(sens_page), ${n}).name.empty();'
+      then:
+        - lvgl.widget.hide: srow_${n}
+      else:
+        - lvgl.widget.show: srow_${n}
+  - if:
+      condition:
+        lambda: |-
+          auto r = vigil::row_at(id(sens_page), ${n});
+          return ${allow_bypass} && r.bypassable && vigil::state_known();
+      then:
+        - lvgl.widget.show: srow_btn_${n}
+      else:
+        - lvgl.widget.hide: srow_btn_${n}

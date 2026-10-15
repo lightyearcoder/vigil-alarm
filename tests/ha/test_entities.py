@@ -42,7 +42,7 @@ async def test_sensor_status_follows_the_sensor_and_bypass(hass):
     assert hass.states.get("sensor.living_pir_status").state == "unavailable"
     hass.states.async_set("binary_sensor.living_pir", "off")
     await hass.async_block_till_done()
-    await hass.services.async_call("vigil", "bypass", {"sensor": "binary_sensor.living_pir", "code": "1234"}, blocking=True)
+    await hass.services.async_call("vigil_alarm", "bypass", {"sensor": "binary_sensor.living_pir", "code": "1234"}, blocking=True)
     assert hass.states.get("sensor.living_pir_status").state == "bypassed"
     assert hass.states.get("switch.living_pir_bypass").state == "on"
 
@@ -76,11 +76,11 @@ async def test_alarm_active_per_class(hass):
     assert hass.states.get("binary_sensor.vigil_alarm_fire_alarm").state == "off"
 
 
-async def test_classes_without_sensors_get_no_sensor(hass):
-    await _setup(hass)  # intrusion, fire and tamper only
-    assert hass.states.get("binary_sensor.vigil_alarm_gas_alarm") is None
-    assert hass.states.get("binary_sensor.vigil_alarm_water_alarm") is None
-    assert hass.states.get("binary_sensor.vigil_alarm_tamper_alarm") is not None
+async def test_every_class_has_an_alarm_entity_even_without_a_sensor(hass):
+    await _setup(hass)  # no gas or water sensor configured
+    for name in ("intrusion", "fire", "gas", "tamper", "water"):
+        state = hass.states.get(f"binary_sensor.vigil_alarm_{name}_alarm")
+        assert state is not None and state.state == "off"
 
 
 async def test_water_is_a_technical_alarm_that_leaves_the_alarm_state_alone(hass):
@@ -100,3 +100,19 @@ async def test_last_event_sensor(hass):
     await _call(hass, "alarm_arm_home", code="1234")
     state = hass.states.get("sensor.vigil_alarm_last_event")
     assert state.state == "armed" and state.attributes["user"] == "Anna"
+
+
+async def test_entity_ids_are_english_on_a_dutch_installation_but_the_names_are_dutch(hass):
+    hass.config.language = "nl"
+    await _setup(hass)
+    for entity_id in (
+        "binary_sensor.vigil_alarm_fire_alarm",
+        "binary_sensor.vigil_alarm_water_alarm",
+        "sensor.vigil_alarm_last_event",
+        "event.vigil_alarm_alarm_events",
+        "sensor.front_door_status",
+        "switch.front_door_bypass",
+    ):
+        assert hass.states.get(entity_id) is not None, entity_id
+    assert hass.states.get("binary_sensor.vigil_alarm_fire_alarm").attributes["friendly_name"].endswith("Brandalarm")
+    assert hass.states.get("switch.front_door_bypass").attributes["friendly_name"].endswith("Omzeilen")

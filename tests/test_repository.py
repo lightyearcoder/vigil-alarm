@@ -14,12 +14,12 @@ OWNER_REPO = "lightyearcoder/vigil-alarm"
 
 
 def test_no_placeholders_are_left():
-    for path in [*DOCS, ROOT / "custom_components/vigil/manifest.json", ROOT / "hacs.json"]:
+    for path in [*DOCS, ROOT / "custom_components/vigil_alarm/manifest.json", ROOT / "hacs.json"]:
         assert "YOUR_GITHUB_USERNAME" not in path.read_text(), path
 
 
 def test_manifest_points_at_the_repository():
-    manifest = json.loads((ROOT / "custom_components/vigil/manifest.json").read_text())
+    manifest = json.loads((ROOT / "custom_components/vigil_alarm/manifest.json").read_text())
     assert manifest["documentation"] == f"https://github.com/{OWNER_REPO}"
     assert manifest["issue_tracker"] == f"https://github.com/{OWNER_REPO}/issues"
     assert manifest["codeowners"] == ["@lightyearcoder"]
@@ -31,7 +31,7 @@ def test_hacs_metadata():
     hacs = json.loads((ROOT / "hacs.json").read_text())
     assert hacs["name"] == "Vigil Alarm" and hacs["homeassistant"] == "2026.2.3"
     for name in ("icon.png", "icon@2x.png"):
-        assert (ROOT / "custom_components/vigil/brand" / name).is_file()
+        assert (ROOT / "custom_components/vigil_alarm/brand" / name).is_file()
 
 
 def test_relative_links_point_at_files():
@@ -54,11 +54,11 @@ def test_blueprint_import_buttons_match_the_files():
         assert target.startswith(prefix), target
         assert (ROOT / target[len(prefix):]).is_file(), target
         found.add(pathlib.Path(target).name)
-    assert found == {p.name for p in (ROOT / "blueprints/automation/vigil").glob("*.yaml")}
+    assert found == {p.name for p in (ROOT / "blueprints/automation/vigil_alarm").glob("*.yaml")}
 
 
 def test_every_event_is_documented_in_the_readme():
-    from custom_components.vigil.const import EVENT_TYPES
+    from custom_components.vigil_alarm.const import EVENT_TYPES
 
     text = (ROOT / "README.md").read_text()
     missing = [e for e in EVENT_TYPES if f"`{e}`" not in text]

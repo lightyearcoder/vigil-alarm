@@ -1,6 +1,6 @@
 [project]
 name = "vigil-alarm"
-version = "0.1.0"
+version = "0.2.0"
 description = "Vigil Alarm: a modular alarm system for Home Assistant"
 requires-python = ">=3.12"
 license = "GPL-3.0-or-later"
@@ -11,6 +11,6 @@ test = ["pytest", "pyyaml"]
 
 # The core tests import `vigil_core` directly, without Home Assistant installed.
 [tool.pytest.ini_options]
-pythonpath = [".", "custom_components/vigil"]
+pythonpath = [".", "custom_components/vigil_alarm"]
 testpaths = ["tests"]
 asyncio_mode = "auto"

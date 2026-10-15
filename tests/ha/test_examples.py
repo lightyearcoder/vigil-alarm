@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import pathlib
+
+import pytest
 import re
 
 import yaml
@@ -30,7 +32,9 @@ def _walk(node):
             yield from _walk(v)
 
 
-async def test_the_dashboard_only_uses_entities_the_integration_creates(hass):
+@pytest.mark.parametrize("language", ["en", "nl"])
+async def test_the_dashboard_only_uses_entities_the_integration_creates(hass, language):
+    hass.config.language = language  # entity ids must not depend on it
     await _setup(hass)
     known = set(hass.states.async_entity_ids()) | {e for e in er.async_get(hass).entities}
     wanted = set()

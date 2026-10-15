@@ -56,10 +56,11 @@ async def _house(hass, *extra, **data):
 
 def _record(hass, entry):
     from homeassistant.core import callback
+    from custom_components.vigil_alarm.manager import SIGNAL_EVENT
     from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
     seen: list[str] = []
-    async_dispatcher_connect(hass, f"vigil_event_{entry.entry_id}", callback(lambda e: seen.append(e["type"])))
+    async_dispatcher_connect(hass, SIGNAL_EVENT.format(entry.entry_id), callback(lambda e: seen.append(e["type"])))
     return seen
 
 
@@ -249,27 +250,27 @@ async def test_alarm_message_mentions_a_missing_siren_only_when_there_is_none(ha
 async def test_test_siren_service(hass, freezer):
     m = Mocks(hass)
     await _house(hass, siren())
-    await hass.services.async_call("vigil", "test_siren", {"duration": 5}, blocking=True)
+    await hass.services.async_call("vigil_alarm", "test_siren", {"duration": 5}, blocking=True)
     assert m.targets(m.on) == ["switch.siren"] and m.off == []
     await _tick(hass, freezer, 5)
     assert m.targets(m.off) == ["switch.siren"]
     hass.states.async_set("binary_sensor.smoke", "on")
     await hass.async_block_till_done()
     with pytest.raises(ServiceValidationError, match="alarm is active"):
-        await hass.services.async_call("vigil", "test_siren", {}, blocking=True)
+        await hass.services.async_call("vigil_alarm", "test_siren", {}, blocking=True)
 
 
 async def test_test_siren_without_sirens(hass):
     Mocks(hass)
     await _house(hass)
     with pytest.raises(ServiceValidationError, match="No siren"):
-        await hass.services.async_call("vigil", "test_siren", {}, blocking=True)
+        await hass.services.async_call("vigil_alarm", "test_siren", {}, blocking=True)
 
 
 async def test_test_siren_does_not_silence_a_real_alarm(hass, freezer):
     m = Mocks(hass)
     await _house(hass, siren())
-    await hass.services.async_call("vigil", "test_siren", {"duration": 5}, blocking=True)
+    await hass.services.async_call("vigil_alarm", "test_siren", {"duration": 5}, blocking=True)
     hass.states.async_set("binary_sensor.smoke", "on")
     await hass.async_block_till_done()
     await _tick(hass, freezer, 5)

@@ -15,7 +15,7 @@ from pytest_homeassistant_custom_component.common import async_fire_time_changed
 from .common import EVENTS, PANEL, make_entry
 from .test_integration import _call, _setup, _tick
 
-BLUEPRINTS = pathlib.Path(__file__).parents[2] / "blueprints" / "automation" / "vigil"
+BLUEPRINTS = pathlib.Path(__file__).parents[2] / "blueprints" / "automation" / "vigil_alarm"
 
 
 async def _settle(hass):
@@ -38,11 +38,11 @@ async def _flash_tick(hass, freezer, seconds):
 
 
 async def _automation(hass, name, inputs):
-    target = pathlib.Path(hass.config.path("blueprints/automation/vigil"))
+    target = pathlib.Path(hass.config.path("blueprints/automation/vigil_alarm"))
     target.mkdir(parents=True, exist_ok=True)
     shutil.copy(BLUEPRINTS / name, target / name)
     assert await async_setup_component(
-        hass, "automation", {"automation": [{"use_blueprint": {"path": f"vigil/{name}", "input": inputs}}]}
+        hass, "automation", {"automation": [{"use_blueprint": {"path": f"vigil_alarm/{name}", "input": inputs}}]}
     )
     await _settle(hass)
 
@@ -60,7 +60,7 @@ def test_every_blueprint_is_valid_and_documented():
         data = yaml.load(path.read_text(), Loader)  # noqa: S506 (our own files)
         bp = data["blueprint"]
         assert bp["domain"] == "automation" and bp["name"].startswith("Vigil - ") and bp["description"], path
-        assert bp["source_url"].endswith(f"blueprints/automation/vigil/{path.name}"), path
+        assert bp["source_url"].endswith(f"blueprints/automation/vigil_alarm/{path.name}"), path
         used = set()
         text = path.read_text()
         for name in bp["input"]:

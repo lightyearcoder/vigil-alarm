@@ -75,6 +75,7 @@ opnieuw; de alarmstand blijft behouden.
    - Kies de `binary_sensor`. Bij een deurcontact of bewegingssensor stelt het paneel zelf de
      juiste sensorgroep voor.
    - Kies de klasse en, bij inbraak, het type en de sensorgroepen.
+   - Heeft het apparaat ook een sabotagecontact (de meeste Zigbee-deurcontacten wel)? Vul het in bij *Sabotage-entiteit*. Vigil voegt dan zelf een sabotagesensor toe, "Voordeur (sabotage)": altijd actief, met een eigen omzeilschakelaar. Hij volgt de sensor bij hernoemen, wijzigen en verwijderen en heeft geen eigen regel in de tabel.
    - *Als open bij einde uitlooptijd* bepaalt wat er gebeurt met een deur die nog open staat als het
      alarm inschakelt: **omzeilen met melding** (standaard; hij wordt weer bewaakt zodra hij dicht
      is), **wachten tot dicht**, **inschakelen weigeren** of **inlooptijd starten**.
@@ -138,15 +139,24 @@ Omzeilen laat één sensor buiten beschouwing tot het alarm wordt uitgeschakeld 
 omzeilen opheft).
 
 - In het paneel en op het dashboard: de schakelaar **Omzeilen** van de sensor (alleen beheerders).
-- Met een actie: `vigil.bypass` en `vigil.unbypass` met de sensor-entiteit en, voor mensen die geen
-  beheerder zijn, een code. Sabotagesensoren kunnen alleen door beheerders en door gebruikers met
+- Met een actie: `vigil_alarm.bypass` en `vigil_alarm.unbypass` met de sensor-entiteit en, voor mensen die geen
+  beheerder zijn, een code. Die code is alleen nodig als ook inschakelen een code vraagt
+  (instelling *code vereist bij inschakelen*). Sabotagesensoren kunnen alleen door beheerders en door gebruikers met
   dat recht worden omzeild.
 - Brand- en gassensoren kunnen nooit worden omzeild.
 
+### Een aanraakpaneel
+
+Met het ESPHome-paneel (Guition 4848) schakel je in en uit en omzeil je sensoren zonder telefoon.
+Het paneel toont alleen de modi die in Vigil aan staan, vraagt een code zoals Vigil dat doet en kan
+van taal wisselen. Installatie en opties staan in [esphome/README.md](../esphome/README.md). Elk
+paneel heeft een eigen `source` (bijvoorbeeld *paneel garage*), dat in de geschiedenis staat als
+*Anna (paneel garage)*. Een foute code geeft de gebeurtenis `code_rejected`, nooit met de code zelf. Na 5 foute codes binnen 5 minuten zijn alle codes 5 minuten vergrendeld (gebeurtenis `code_locked`); een beheerder in het paneel kan dan nog gewoon bedienen.
+
 ### Dempen en bevestigen
 
-- `vigil.silence` stopt de sirenes terwijl het alarm actief blijft.
-- `vigil.acknowledge` annuleert de nog wachtende escalatieberichten: je hebt het gezien.
+- `vigil_alarm.silence` stopt de sirenes terwijl het alarm actief blijft.
+- `vigil_alarm.acknowledge` annuleert de nog wachtende escalatieberichten: je hebt het gezien.
 
 Beide vragen een gebruikerscode, of een beheerder in de interface.
 
@@ -173,16 +183,19 @@ sensoren binnen het venster aan, dan volgt het alarm met `confirmed_by` in het e
 
 ## Naslag: het paneel, tabblad voor tabblad
 
+Acties in de lijsten zijn icoonknoppen (bewerken, kopiëren, verwijderen, testen); houd de muis erboven voor de naam. Regels en gebruikers hebben geen kopieerknop. Achter sommige velden staat een ⓘ: klik erop voor een uitgebreide uitleg.
+
 | Tabblad | Wat je er doet |
 |---|---|
 | **Overzicht** | Alarmstand, aandachtspunten (bijna lege batterijen, onbereikbare apparaten), wat elke modus bewaakt en de live status van elke sensor. |
-| **Sensoren** | Sensoren toevoegen, bewerken, kopiëren en verwijderen. |
+| **Sensoren** | Sensoren toevoegen, bewerken, kopiëren en verwijderen. De tabel toont ook het batterijpercentage in een eigen kolom. Eén entiteit kan maar bij één sensor horen. Met het veld *Sabotage-entiteit* koppel je het sabotagesignaal van dezelfde sensor: Vigil maakt daar vanzelf een aparte sabotagesensor van die je los kunt omzeilen. Je kunt ook gewoon een losse sabotagesensor aanmaken. |
 | **Sensorgroepen** | Welke sensoren in welke modi bewaken. Een groep kan zichzelf *voorstellen* voor nieuwe deurcontacten of bewegingssensoren. Een groep die nog in gebruik is kan niet verwijderd worden. |
 | **Bevestigingsregels** | Meerdere sensoren moeten binnen een tijdvenster aanslaan. Een sensor die in een regel zit kan niet verwijderd worden. |
-| **Gebruikers** | Naam, code, toegestane modi, recht om sabotage te omzeilen. Codes worden versleuteld opgeslagen en nooit getoond. Laat de code leeg bij bewerken om hem te behouden. |
+| **Gebruikers** | (Niet te kopiëren.) Naam, code, toegestane modi, recht om sabotage te omzeilen. Codes worden versleuteld opgeslagen en nooit getoond. Laat de code leeg bij bewerken om hem te behouden. |
 | **Meldingen** | `notify`-dienst, soorten berichten (alarm, inlooptijd, in- en uitschakelen, storingen en mededelingen, technische alarmen), vertraging, hoge prioriteit. *Test* stuurt een testbericht. |
 | **Sirenes** | Zie hierboven. *Test* laat de sirene 3 seconden klinken (geweigerd tijdens een echt alarm). |
-| **Instellingen** | Modi, uitlooptijden, inlooptijd, alarmduur, batterijgrens, code nodig om in te schakelen. |
+| **Instellingen** | Modi, uitlooptijden, inlooptijd, alarmduur, batterijgrens, code nodig om in te schakelen, minimale codelengte (4 tot 12 tekens, standaard 4; geldt voor nieuwe en gewijzigde codes, bestaande codes blijven werken). |
+| **Over** | Versie, links naar de handleiding en GitHub, release notes (nieuwste bovenaan) en een knop die de gegevens kopieert voor een foutmelding. |
 
 De taal van de **meldingsteksten** volgt de systeemtaal van Home Assistant (Instellingen → Systeem →
 Algemeen). Het paneel volgt de taal van je eigen profiel (Nederlands en Engels).
@@ -270,18 +283,17 @@ Neem bij een foutmelding op wat je deed, wat je verwachtte, wat er gebeurde en d
 ```yaml
 logger:
   logs:
-    custom_components.vigil: debug
+    custom_components.vigil_alarm: debug
 ```
 
 ## Beperkingen om te kennen
 
 - Vigil Alarm is **niet gecertificeerd** voor een alarm-, brandmeld- of verzekeringsnorm.
 - Het draait in Home Assistant. Ligt Home Assistant eruit of herstart het, dan is er geen alarm.
-  Een terugvaloptie daarvoor staat gepland voor release 3.
 - Alles wordt door Home Assistant-beheerders ingesteld, in het paneel. Er is geen andere manier om
   sensoren en gebruikers te bewerken; dat is bewust.
-- **Tags** kunnen bij een gebruiker worden bewaard maar hebben **nog geen functie**. Ze zijn bedoeld
-  voor een tag-lezer, die komt met het touchpaneel (release 2). Bedien het alarm met een code.
+- **Tags** kunnen bij een gebruiker worden bewaard maar hebben **geen functie**. Bedien het alarm
+  met een code.
 - Je code beschermt alleen de alarm-entiteit. Elke Home Assistant-beheerder kan de configuratie
   wijzigen.
 - Test regelmatig, ook een echt alarm en je meldingsroute, en vervang batterijen als Vigil dat meldt.

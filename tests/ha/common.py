@@ -5,8 +5,8 @@ from __future__ import annotations
 from homeassistant.config_entries import ConfigSubentryData
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.vigil.const import DOMAIN
-from custom_components.vigil.credentials import hash_code
+from custom_components.vigil_alarm.const import DOMAIN
+from custom_components.vigil_alarm.credentials import hash_code
 
 PANEL = "alarm_control_panel.vigil_alarm"
 EVENTS = "event.vigil_alarm_alarm_events"

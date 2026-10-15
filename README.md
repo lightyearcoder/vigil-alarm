@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="custom_components/vigil/brand/icon@2x.png" alt="Vigil Alarm" width="128">
+  <img src="custom_components/vigil_alarm/brand/icon@2x.png" alt="Vigil Alarm" width="128">
 </p>
 
 <h1 align="center">Vigil Alarm</h1>
@@ -66,7 +66,7 @@ The core decides and publishes events; it never calls a device itself. Only the 
 
 ### Manually
 
-Copy the folder `custom_components/vigil` to `config/custom_components/vigil` in your Home
+Copy the folder `custom_components/vigil_alarm` to `config/custom_components/vigil_alarm` in your Home
 Assistant, restart, and add the integration as above.
 
 Requires Home Assistant **2026.2.3** or newer. The integration icon is shown from Home
@@ -92,12 +92,12 @@ blueprint**. HACS does not install blueprints, so the buttons are the easy way.
 
 | Blueprint | What it does | |
 |---|---|---|
-| **Flash lights during an alarm** | Flashes lights while the alarm is triggered and puts them back as they were. Choose which causes flash; gas is off by default for safety. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil%2Fflash_lights_on_alarm.yaml) |
-| **Announce alarm events with speech** | Speaks a message on your speakers when the alarm arms, disarms, starts the entry delay or goes off. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil%2Fannounce_with_speech.yaml) |
-| **Arm when everyone has left** | Arms the alarm when everyone has been away for a while, and tells you if arming was refused. Never disarms. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil%2Farm_when_everyone_leaves.yaml) |
-| **Arm at a set time** | Arms (for example Night) at a set time on chosen days. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil%2Farm_on_schedule.yaml) |
-| **Remind when arriving at an armed home** | Sends a message when someone arrives while the alarm is still armed. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil%2Farrival_reminder.yaml) |
-| **Run your own actions on alarm events** | The general building block: pick events, add any actions. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil%2Frun_actions_on_events.yaml) |
+| **Flash lights during an alarm** | Flashes lights while the alarm is triggered and puts them back as they were. Choose which causes flash; gas is off by default for safety. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil_alarm%2Fflash_lights_on_alarm.yaml) |
+| **Announce alarm events with speech** | Speaks a message on your speakers when the alarm arms, disarms, starts the entry delay or goes off. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil_alarm%2Fannounce_with_speech.yaml) |
+| **Arm when everyone has left** | Arms the alarm when everyone has been away for a while, and tells you if arming was refused. Never disarms. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil_alarm%2Farm_when_everyone_leaves.yaml) |
+| **Arm at a set time** | Arms (for example Night) at a set time on chosen days. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil_alarm%2Farm_on_schedule.yaml) |
+| **Remind when arriving at an armed home** | Sends a message when someone arrives while the alarm is still armed. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil_alarm%2Farrival_reminder.yaml) |
+| **Run your own actions on alarm events** | The general building block: pick events, add any actions. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil_alarm%2Frun_actions_on_events.yaml) |
 
 Arming from an automation needs a code unless *Code required to arm* is switched off in the
 panel. See the note in the [user guide](docs/user-guide.md#automatic-arming) before putting a
@@ -151,15 +151,19 @@ actions:
 | `siren_started` / `siren_stopped` / `siren_failed` / `siren_unavailable` / `siren_available` | Siren activity | `siren`, `cause`, `verified`, `reason`, `error` |
 | `siren_power_lost` / `siren_power_restored` / `battery_low` / `battery_ok` | Self-monitoring | `siren` or `name`, `level` |
 | `alarm_silenced` / `alarm_acknowledged` | A person silenced the sirens or confirmed the alarm | `user` |
+| `code_rejected` | Someone entered a wrong code | `source` (for example a panel), `action` |
+| `code_locked` | 5 wrong codes within 5 minutes: all codes are locked for 5 minutes | `source`, `action` |
 | `notification_failed` / `state_restore_failed` | Vigil itself had a problem | `channel`, `error`, `reason` |
 
 Entities per alarm: `alarm_control_panel.<name>` (with attributes `cause`, `open_sensors`,
-`faults`, `bypassed_sensors`, `problems`, `delay_end`, `refuse_reason`),
-`binary_sensor.<name>_<class>_alarm`, `sensor.<name>_last_event`, and per sensor
+`faults`, `bypassed_sensors`, `problems`, `delay_end`, `refuse_reason`, `mode`, and text versions
+for displays),
+`binary_sensor.<name>_<class>_alarm` (the ids always end on the English name, also on a Dutch Home Assistant; always there for intrusion, fire, gas, tamper and water), `sensor.<name>_last_event`, and per sensor
 `sensor.<sensor>_status` and `switch.<sensor>_bypass`.
 
-Actions: `vigil.silence`, `vigil.acknowledge`, `vigil.bypass`, `vigil.unbypass`,
-`vigil.test_siren`, `vigil.test_notification`, plus the standard `alarm_control_panel` actions.
+Actions: `vigil_alarm.arm`, `vigil_alarm.disarm`, `vigil_alarm.silence`, `vigil_alarm.acknowledge`, `vigil_alarm.bypass`, `vigil_alarm.unbypass`, `vigil_alarm.check_code` (only checks a code, changes nothing)
+(all take an optional `source`, the name of a control point such as a panel),
+`vigil_alarm.test_siren`, `vigil_alarm.test_notification`, plus the standard `alarm_control_panel` actions.
 
 ## Development
 
@@ -171,18 +175,12 @@ pip install pytest-homeassistant-custom-component home-assistant-frontend   # ev
 pytest
 ```
 
-The core (`custom_components/vigil/vigil_core`) has no Home Assistant imports and is specified
+The core (`custom_components/vigil_alarm/vigil_core`) has no Home Assistant imports and is specified
 by scenarios as data in `tests/scenarios/`. The integration, panel, blueprints and example
 dashboard are tested against a real Home Assistant test instance in `tests/ha/`.
 
 Bug reports and ideas: [GitHub issues](https://github.com/lightyearcoder/vigil-alarm/issues).
 Please include the log lines that mention `vigil`.
-
-## Roadmap
-
-- **Release 1:** a complete alarm inside Home Assistant (this release).
-- **Release 2:** a touch panel (Guition, ESPHome and LVGL), including tag readers.
-- **Release 3:** a safe fallback when Home Assistant is not available.
 
 ## License
 

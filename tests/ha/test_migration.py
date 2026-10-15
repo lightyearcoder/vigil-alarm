@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.vigil.const import DOMAIN
-from custom_components.vigil.items import items_of
-from custom_components.vigil.manager import build_config
+from custom_components.vigil_alarm.const import DOMAIN
+from custom_components.vigil_alarm.items import items_of
+from custom_components.vigil_alarm.manager import build_config
 
 from .common import sub
 

@@ -10,7 +10,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
-from custom_components.vigil.const import DOMAIN
+from custom_components.vigil_alarm.const import DOMAIN
 
 from .common import EVENTS, PANEL, make_entry
 
@@ -188,7 +188,7 @@ async def test_sensors_are_trusted_only_after_the_startup_grace_period(hass, fre
 async def test_unusable_saved_state_starts_disarmed_with_an_event(hass, hass_storage):
     entry = make_entry()
     entry.add_to_hass(hass)
-    hass_storage[f"vigil.{entry.entry_id}"] = {"version": 1, "key": f"vigil.{entry.entry_id}", "data": {"version": 99}}
+    hass_storage[f"vigil_alarm.{entry.entry_id}"] = {"version": 1, "key": f"vigil_alarm.{entry.entry_id}", "data": {"version": 99}}
     for name in ("front_door", "living_pir", "smoke", "tamper"):
         hass.states.async_set(f"binary_sensor.{name}", "off")
     assert await hass.config_entries.async_setup(entry.entry_id)

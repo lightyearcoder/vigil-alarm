@@ -75,6 +75,7 @@ the alarm state is kept.
    - Pick the `binary_sensor`. For a door contact or motion sensor the panel suggests the right
      sensor group by itself.
    - Choose the class and, for intrusion, the type and the sensor groups.
+   - Has the device a tamper contact as well (most Zigbee door contacts do)? Fill it in under *Tamper entity*. Vigil adds a tamper sensor named "Front door (tamper)" by itself: always watching, with its own bypass switch. It follows the sensor when you rename, change or delete it, and has no row of its own in the table.
    - *If open when exit delay ends* decides what happens to a door that is still open when the
      alarm arms: **bypass with a notice** (default; it is guarded again once it closes), **wait
      until closed**, **refuse to arm**, or **start entry delay**.
@@ -135,15 +136,24 @@ the sensor, or bypass it.
 Bypass leaves one sensor out until the alarm is switched off (or until you un-bypass it).
 
 - In the panel and dashboard: the **Bypass** switch of the sensor (administrators only).
-- By action: `vigil.bypass` and `vigil.unbypass` with the sensor entity and, for people who are
-  not administrators, a code. Tamper sensors can only be bypassed by administrators and by users
+- By action: `vigil_alarm.bypass` and `vigil_alarm.unbypass` with the sensor entity and, for people who are
+  not administrators, a code. That code is only needed if arming needs one too (the setting
+  *code required to arm*). Tamper sensors can only be bypassed by administrators and by users
   who have that right.
 - Fire and gas sensors can never be bypassed.
 
+### A touch panel
+
+With the ESPHome panel (Guition 4848) you arm, disarm and bypass sensors without a phone. It shows
+only the modes that are on in Vigil, asks for a code the way Vigil does and can switch language.
+Installation and options are in [esphome/README.md](../esphome/README.md). Every panel has its own
+`source` (for example *panel garage*), which shows in the history as *Anna (panel garage)*. A wrong
+code gives the event `code_rejected`, never with the code itself. After 5 wrong codes within 5 minutes all codes are locked for 5 minutes (event `code_locked`); an administrator in the UI can still operate the alarm.
+
 ### Silence and acknowledge
 
-- `vigil.silence` stops the sirens while the alarm stays active.
-- `vigil.acknowledge` cancels the pending escalation messages: you have seen it.
+- `vigil_alarm.silence` stops the sirens while the alarm stays active.
+- `vigil_alarm.acknowledge` cancels the pending escalation messages: you have seen it.
 
 Both need a user code, or an administrator in the interface.
 
@@ -170,16 +180,19 @@ in the event.
 
 ## Reference: the panel, tab by tab
 
+Actions in the lists are icon buttons (edit, copy, delete, test); hover for the name. Rules and users have no copy button. Some fields have an ⓘ: click it for a fuller explanation.
+
 | Tab | What you do there |
 |---|---|
 | **Overview** | Alarm state, attention points (low batteries, unreachable devices), what each mode watches, and the live status of every sensor. |
-| **Sensors** | Add, edit, copy and delete sensors. |
+| **Sensors** | Add, edit, copy and delete sensors. The table shows battery level in its own column. One entity can belong to only one sensor. The *Tamper entity* field links the tamper signal of the same device: Vigil creates a separate tamper sensor that can be bypassed on its own. You can also create a standalone tamper sensor. |
 | **Sensor groups** | Which sensors watch in which modes. A group can *suggest itself* for new door contacts or motion sensors. A group that is still in use cannot be deleted. |
 | **Confirmation rules** | Several sensors must trigger within a time window. A sensor that is in a rule cannot be deleted. |
-| **Users** | Name, code, allowed modes, right to bypass tamper. Codes are stored hashed and never shown. Leave the code empty when editing to keep it. |
+| **Users** | (Cannot be copied.) Name, code, allowed modes, right to bypass tamper. Codes are stored hashed and never shown. Leave the code empty when editing to keep it. |
 | **Notifications** | `notify` service, kinds of message (alarm, entry delay, arming and disarming, faults and notices, technical alarms), delay, high priority. *Test* sends a test message. |
 | **Sirens** | See above. *Test* sounds the siren for 3 seconds (refused during a real alarm). |
-| **Settings** | Modes, exit delays, entry delay, alarm duration, battery limit, code required to arm. |
+| **Settings** | Modes, exit delays, entry delay, alarm duration, battery limit, code required to arm, minimum code length (4 to 12 characters, default 4; applies to new and changed codes, existing codes keep working). |
+| **About** | Version, links to the user guide and GitHub, release notes (newest first) and a button that copies the details for a bug report. |
 
 The language of the **notification texts** follows the Home Assistant system language (Settings →
 System → General). The panel follows your own profile language (English and Dutch).
@@ -264,18 +277,17 @@ with `vigil` (Settings → System → Logs). For more detail add to `configurati
 ```yaml
 logger:
   logs:
-    custom_components.vigil: debug
+    custom_components.vigil_alarm: debug
 ```
 
 ## Limits to know about
 
 - Vigil Alarm is **not certified** for any alarm, fire-detection or insurance standard.
 - It runs inside Home Assistant. If Home Assistant is down or restarting, there is no alarm.
-  A fallback for that is planned for release 3.
 - Everything is configured by Home Assistant administrators, in the panel. There is no other
   way to edit sensors and users; this is on purpose.
-- **Tags** can be stored on a user but have **no function yet**. They are meant for a tag
-  reader, which comes with the touch panel (release 2). Operate the alarm with a code.
+- **Tags** can be stored on a user but have **no function**. Operate the alarm
+  with a code.
 - Your own code only protects the alarm entity. Anyone who is a Home Assistant administrator
   can change the configuration.
 - Test regularly, including a real alarm and your notification route, and replace batteries

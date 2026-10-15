@@ -51,6 +51,6 @@ body:
     attributes:
       label: Log lines that mention vigil
       description: |
-        Settings → System → Logs. For more detail enable `custom_components.vigil: debug`.
+        Settings → System → Logs. For more detail enable `custom_components.vigil_alarm: debug`.
         Remove anything private.
       render: text

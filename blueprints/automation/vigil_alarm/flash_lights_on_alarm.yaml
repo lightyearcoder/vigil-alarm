@@ -1,0 +1,162 @@
+blueprint:
+  name: Vigil - Flash lights during an alarm
+  description: >
+    Flashes lights while the alarm is triggered and puts them back as they were when the alarm
+    ends or is switched off.
+
+
+    **Gas safety:** with flammable gas (natural gas, LPG) the usual advice is not to switch
+    electrical devices. The gas cause is therefore not selected by default. Only add it if you
+    know it is safe in your situation.
+
+
+    **Flashing:** the default (2 seconds on, 2 seconds off) stays well below the rate that is a
+    concern for photosensitive people. Think twice before making it faster.
+  domain: automation
+  homeassistant:
+    min_version: 2024.10.0
+  source_url: https://github.com/lightyearcoder/vigil-alarm/blob/main/blueprints/automation/vigil_alarm/flash_lights_on_alarm.yaml
+  input:
+    events:
+      name: Vigil events
+      description: The "Alarm events" entity of Vigil Alarm.
+      selector:
+        entity:
+          filter:
+            - integration: vigil_alarm
+              domain: event
+    alarm:
+      name: Vigil alarm
+      selector:
+        entity:
+          filter:
+            - integration: vigil_alarm
+              domain: alarm_control_panel
+    lights:
+      name: Lights
+      description: >
+        Tip for Hue: use a room or zone (group) instead of single lamps. Groups are disabled by
+        default in Home Assistant; enable them first.
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - domain: light
+    causes:
+      name: Flash for
+      description: Which kinds of alarm make the lights flash.
+      default: [intrusion, fire, tamper]
+      selector:
+        select:
+          multiple: true
+          options: [intrusion, fire, gas, tamper]
+    interval:
+      name: Seconds on and off
+      default: 2
+      selector:
+        number:
+          min: 0.5
+          max: 10
+          step: 0.5
+          unit_of_measurement: s
+    brightness:
+      name: Brightness
+      default: 100
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "%"
+    color:
+      name: Colour
+      description: Leave at red, or pick another colour. Lights that cannot do colour just switch on.
+      default: [255, 0, 0]
+      selector:
+        color_rgb:
+    max_duration:
+      name: Stop after
+      description: Safety limit, in seconds. The lights are put back after this time.
+      default: 300
+      selector:
+        number:
+          min: 10
+          max: 3600
+          unit_of_measurement: s
+    snapshot:
+      name: Name of the saved light state
+      description: Only change this if you use this blueprint more than once.
+      default: vigil_lights_before
+      selector:
+        text:
+
+mode: restart
+max_exceeded: silent
+
+variables:
+  lights: !input lights
+  causes: !input causes
+  interval: !input interval
+  max_duration: !input max_duration
+  alarm: !input alarm
+  snapshot: !input snapshot
+  scene_entity: "{{ 'scene.' ~ snapshot }}"
+  event_type: "{{ trigger.to_state.attributes.get('event_type', '') }}"
+  cause: "{{ trigger.to_state.attributes.cause | default('') }}"
+
+triggers:
+  - trigger: state
+    entity_id: !input events
+
+conditions:
+  - condition: template
+    value_template: "{{ event_type in ['triggered', 'trigger_ended', 'disarmed'] }}"
+
+actions:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ event_type == 'triggered' and cause in causes }}"
+        sequence:
+          - action: scene.create
+            data:
+              scene_id: "{{ snapshot }}"
+              snapshot_entities: "{{ lights }}"
+          - repeat:
+              sequence:
+                - action: light.turn_on
+                  target:
+                    entity_id: !input lights
+                  data:
+                    brightness_pct: !input brightness
+                    rgb_color: !input color
+                - delay:
+                    seconds: "{{ interval }}"
+                - action: light.turn_off
+                  target:
+                    entity_id: !input lights
+                - delay:
+                    seconds: "{{ interval }}"
+              until:
+                - condition: template
+                  value_template: >
+                    {{ not is_state(alarm, 'triggered')
+                       or repeat.index * interval * 2 >= max_duration }}
+          - alias: Put the lights back
+            action: scene.turn_on
+            target:
+              entity_id: "{{ scene_entity }}"
+          - action: scene.delete
+            target:
+              entity_id: "{{ scene_entity }}"
+    default:
+      # The alarm ended or was switched off: this run replaced the flashing one, so restore here.
+      - if:
+          - condition: template
+            value_template: "{{ states[scene_entity] is not none }}"
+        then:
+          - action: scene.turn_on
+            target:
+              entity_id: "{{ scene_entity }}"
+          - action: scene.delete
+            target:
+              entity_id: "{{ scene_entity }}"
