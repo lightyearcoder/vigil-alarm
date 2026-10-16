@@ -67,6 +67,7 @@ from .credentials import find_user_by_code
 from .eventlog import EventLog
 from .notifier import Notifier
 from .heartbeat import Heartbeat
+from .lockout import CodeLockout
 from .selftest import SelfTest
 from .sirens import SirenController
 from .supervisor import Supervisor
@@ -158,8 +159,7 @@ class VigilManager:
         self.ready = False
         self.early_events: list[dict[str, Any]] = []
         self.eventlog = EventLog(hass, entry, self)
-        self._code_failures: list[float] = []  # monotonic times of recent wrong codes
-        self._locked_until = 0.0
+        self.lockout = CodeLockout(hass, entry, lambda: self._clock())
         self.last_event: dict[str, Any] | None = None
         self.changed_by: str | None = None
         self._store: Store[dict[str, Any]] = Store(
@@ -190,8 +190,8 @@ class VigilManager:
 
     @staticmethod
     def _clock() -> float:
-        """Monotonic seconds, for the wrong-code lockout (a test can replace it)."""
-        return time.monotonic()
+        """Wall-clock seconds, for the wrong-code lockout (a test can replace it)."""
+        return dt_util.utcnow().timestamp()
 
     @staticmethod
     def _wall() -> float:
@@ -208,6 +208,7 @@ class VigilManager:
 
     async def async_setup(self) -> None:
         await self.eventlog.async_load()
+        await self.lockout.async_load()
         await self._async_restore()
         self._sync()
         if self.hass.is_running:
@@ -255,6 +256,7 @@ class VigilManager:
             self._unsub_timer = None
         await self._store.async_save(self.engine.export_state())
         await self.eventlog.async_flush()
+        await self.lockout.async_flush()
 
     # ---------------------------------------------------------- persistence
 
@@ -362,16 +364,12 @@ class VigilManager:
                     translation_domain=DOMAIN, translation_key="code_required"
                 )
             return None
-        now = self._clock()
-        if now < self._locked_until:  # before hashing: a locked system also costs no CPU
+        if self.lockout.remaining(source):  # before hashing: a locked control point also costs no CPU
             raise ServiceValidationError(translation_domain=DOMAIN, translation_key="code_locked")
         user = await self.hass.async_add_executor_job(find_user_by_code, code, self.users)
         if user is None:
-            self._code_failures = [t for t in self._code_failures if now - t < CODE_FAILURE_WINDOW] + [now]
-            if len(self._code_failures) >= CODE_MAX_FAILURES:
-                self._code_failures = []
-                self._locked_until = now + CODE_LOCK_SECONDS
-                self.publish("code_locked", source=source, action=action)
+            if locked := self.lockout.record_failure(source):
+                self.publish("code_locked", source=source, action=action, timer=locked, minutes=CODE_LOCK_SECONDS // 60)
             # Never log the code itself; the source (for example a panel) and the action are enough.
             self.publish("code_rejected", source=source, action=action)
             raise ServiceValidationError(translation_domain=DOMAIN, translation_key="invalid_code")

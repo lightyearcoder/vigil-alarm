@@ -152,7 +152,7 @@ Met het ESPHome-paneel (Guition 4848) schakel je in en uit en omzeil je sensoren
 Het paneel toont alleen de modi die in Vigil aan staan, vraagt een code zoals Vigil dat doet en kan
 van taal wisselen. Installatie en opties staan in [esphome/README.md](../esphome/README.md). Elk
 paneel heeft een eigen `source` (bijvoorbeeld *paneel garage*), dat in de geschiedenis staat als
-*Anna (paneel garage)*. Een foute code geeft de gebeurtenis `code_rejected`, nooit met de code zelf. Na 5 foute codes binnen 5 minuten zijn alle codes 5 minuten vergrendeld (gebeurtenis `code_locked`); een beheerder in het paneel kan dan nog gewoon bedienen.
+*Anna (paneel garage)*. Een foute code geeft de gebeurtenis `code_rejected`, nooit met de code zelf. Na 5 foute codes binnen 5 minuten zijn alle codes 5 minuten vergrendeld (gebeurtenis `code_locked`, ook gemeld op je storingskanalen); de vergrendeling blijft staan als Home Assistant herstart; een beheerder in het paneel kan dan nog gewoon bedienen.
 
 ### Dempen en bevestigen
 

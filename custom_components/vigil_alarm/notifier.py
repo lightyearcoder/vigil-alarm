@@ -56,6 +56,7 @@ EVENT_MESSAGES = {
     "siren_power_restored": ("fault", "siren_power_restored"),
     "battery_low": ("fault", "battery_low"),
     "battery_ok": ("fault", "battery_ok"),
+    "code_locked": ("fault", "code_locked"),
     "alarm_silenced": ("arming", "silenced"),
     "alarm_acknowledged": ("arming", "acknowledged"),
 }
@@ -167,6 +168,8 @@ class Notifier:
             "rule": event.get("rule", "-"),
             "mode": event.get("mode", "-"),
             "by": by,
+            "source": event.get("source") or "-",
+            "minutes": event.get("minutes", "-"),
             "end": self._time(event.get("end")),
             "cause": self._translated(f"cause.{event.get('cause')}", event.get("cause")),
             "reason": self._translated(f"reason.{event.get('reason')}", event.get("reason")),

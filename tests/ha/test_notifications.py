@@ -164,3 +164,14 @@ async def test_escalation_continues_after_a_restart_during_the_alarm(hass, freez
     assert len(immediate) == 1  # not repeated
     await _tick(hass, freezer, 60)
     assert len(escalation) == 1 and "ALARM: fire" in escalation[0].data["message"]
+
+
+async def test_a_lockout_is_reported_on_the_fault_channels(hass):
+    from .test_control_points import _vigil
+
+    calls = async_mock_service(hass, "notify", "mobile_app_anna")
+    await _house(hass, channel(categories=("fault",)))
+    for _ in range(5):
+        with pytest.raises(ServiceValidationError):
+            await _vigil(hass, "disarm", code="0000", source="panel garage")
+    assert _messages(calls) == ["Too many wrong codes at panel garage: locked for 5 minutes"]

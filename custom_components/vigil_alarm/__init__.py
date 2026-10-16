@@ -19,6 +19,7 @@ from homeassistant.helpers.storage import Store
 
 from .eventlog import STORAGE_VERSION as EVENTLOG_STORAGE_VERSION
 from .repairs import VigilRepairs
+from .lockout import STORAGE_VERSION as LOCKOUT_STORAGE_VERSION
 from .selftest import STORAGE_VERSION as SELFTEST_STORAGE_VERSION
 from .panel import async_register_commands, async_register_panel, async_remove_panel
 from .vigil_core import ConfigError
@@ -207,3 +208,4 @@ async def async_remove_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> No
     async_remove_panel(hass)
     await Store(hass, EVENTLOG_STORAGE_VERSION, f"{DOMAIN}.log.{entry.entry_id}").async_remove()
     await Store(hass, SELFTEST_STORAGE_VERSION, f"{DOMAIN}.selftest.{entry.entry_id}").async_remove()
+    await Store(hass, LOCKOUT_STORAGE_VERSION, f"{DOMAIN}.lockout.{entry.entry_id}").async_remove()

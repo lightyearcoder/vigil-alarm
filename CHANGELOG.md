@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2
+
+- **The code lock now survives a restart.** After five wrong codes within five minutes the lock lasts five minutes, also when Home Assistant restarts or Vigil is reloaded in that time. A stored lock is never longer than five minutes, even when the clock changes. The lock is also reported as a message on the *Fault* channels, and the event `code_locked` now carries the timer and the number of minutes.
+
 ## 0.3.1
 
 - **Settings in sections:** the Settings tab is now one card per subject (modes and delays, codes, batteries, event log, self-test, heartbeat), each with a line of explanation. The hours for the automatic siren test only show when that option is on; the hours you set are kept.

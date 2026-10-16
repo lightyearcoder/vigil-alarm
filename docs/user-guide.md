@@ -149,7 +149,7 @@ With the ESPHome panel (Guition 4848) you arm, disarm and bypass sensors without
 only the modes that are on in Vigil, asks for a code the way Vigil does and can switch language.
 Installation and options are in [esphome/README.md](../esphome/README.md). Every panel has its own
 `source` (for example *panel garage*), which shows in the history as *Anna (panel garage)*. A wrong
-code gives the event `code_rejected`, never with the code itself. After 5 wrong codes within 5 minutes all codes are locked for 5 minutes (event `code_locked`); an administrator in the UI can still operate the alarm.
+code gives the event `code_rejected`, never with the code itself. After 5 wrong codes within 5 minutes all codes are locked for 5 minutes (event `code_locked`, also sent to your fault notification channels); the lock stays in place when Home Assistant restarts; an administrator in the UI can still operate the alarm.
 
 ### Silence and acknowledge
 
