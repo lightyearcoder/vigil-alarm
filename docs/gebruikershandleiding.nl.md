@@ -188,14 +188,15 @@ Acties in de lijsten zijn icoonknoppen (bewerken, kopiëren, verwijderen, testen
 
 | Tabblad | Wat je er doet |
 |---|---|
-| **Overzicht** | *Klaar voor gebruik?* (wat ontbreekt er nog), een kaart *Dashboard* met een knop die een dashboard met je eigen entiteit-id's kopieert, alarmstand, aandachtspunten (bijna lege batterijen, onbereikbare apparaten), wat elke modus bewaakt en de live status van elke sensor. |
+| **Overzicht** | *Klaar voor gebruik?*, de kaart *Zelftest* (laatste controle, laatste sirenetest, volgende test, *Sirene nu testen*), de kaart *Hartslag* (laatste succes, *Nu testen*), (wat ontbreekt er nog), een kaart *Dashboard* met een knop die een dashboard met je eigen entiteit-id's kopieert, alarmstand, aandachtspunten (bijna lege batterijen, onbereikbare apparaten), wat elke modus bewaakt en de live status van elke sensor. |
 | **Sensoren** | *Sensoren zoeken* stelt sensoren uit Home Assistant voor; sensoren toevoegen, bewerken, kopiëren en verwijderen. De tabel toont ook het batterijpercentage in een eigen kolom. Eén entiteit kan maar bij één sensor horen. Met het veld *Sabotage-entiteit* koppel je het sabotagesignaal van dezelfde sensor: Vigil maakt daar vanzelf een aparte sabotagesensor van die je los kunt omzeilen. Je kunt ook gewoon een losse sabotagesensor aanmaken. |
 | **Sensorgroepen** | Welke sensoren in welke modi bewaken. Een groep kan zichzelf *voorstellen* voor nieuwe deurcontacten of bewegingssensoren. Een groep die nog in gebruik is kan niet verwijderd worden. |
 | **Bevestigingsregels** | Meerdere sensoren moeten binnen een tijdvenster aanslaan. Een sensor die in een regel zit kan niet verwijderd worden. |
 | **Gebruikers** | (Niet te kopiëren.) Naam, code, toegestane modi, recht om sabotage te omzeilen. Codes worden versleuteld opgeslagen en nooit getoond. Laat de code leeg bij bewerken om hem te behouden. |
 | **Meldingen** | `notify`-dienst, soorten berichten (alarm, inlooptijd, in- en uitschakelen, storingen en mededelingen, technische alarmen), vertraging, hoge prioriteit. *Test* stuurt een testbericht. |
 | **Sirenes** | Zie hierboven. *Test* laat de sirene 3 seconden klinken (geweigerd tijdens een echt alarm). |
-| **Instellingen** | Modi, uitlooptijden, inlooptijd, alarmduur, batterijgrens, code nodig om in te schakelen, minimale codelengte (4 tot 12 tekens, standaard 4; geldt voor nieuwe en gewijzigde codes, bestaande codes blijven werken). |
+| **Logboek** | Alles wat Vigil als gebeurtenis meldt, de nieuwste bovenaan (de laatste 200 staan in beeld). *Download* geeft het hele logboek als JSON Lines of CSV (RFC 4180), met tijden in UTC (RFC 3339) en de velden `time`, `event`, `source`, `user`, `item`, `result` en `detail`. Standaard 90 dagen bewaard (*Instellingen*), zonder codes, en het blijft bestaan na een herstart. |
+| **Instellingen** | Modi, uitlooptijden, inlooptijd, alarmduur, batterijgrens, code nodig om in te schakelen, minimale codelengte (4 tot 12 tekens, standaard 4; geldt voor nieuwe en gewijzigde codes, bestaande codes blijven werken), dagen dat het logboek bewaard blijft (standaard 90), en de zelftest: herinneringsinterval (standaard 30 dagen, 0 = uit), seconden dat de sirene klinkt (1 tot 5, standaard 2), zelf laten klinken en de uren waarbinnen dat mag, en het hartslag-adres met het interval in minuten (standaard 5). |
 | **Over** | Een badge "nieuw" na een update, versie, links naar de handleiding en GitHub, release notes (nieuwste bovenaan) en een knop die de gegevens kopieert voor een foutmelding. |
 
 De taal van de **meldingsteksten** volgt de systeemtaal van Home Assistant (Instellingen → Systeem →
@@ -256,6 +257,38 @@ Echte storingen (een onbereikbare sensor, een bijna lege batterij, een sirene di
   sabotagesensor.
 - Problemen die bij het opstarten al bestaan staan in het attribuut `problems` van het alarm, zonder
   event; events volgen bij veranderingen. Het overzicht toont ze onder *Aandachtspunten*.
+
+### Zelftest
+
+Niemand test elke week een sirene, dus Vigil onthoudt het voor je. De zelftest loopt vanzelf en vraagt pas iets van je als het tijd is voor een echte test.
+
+- **Stille controle, dagelijks.** Vigil controleert of de meldingsdiensten die je hebt ingesteld nog bestaan en of de sirenes bereikbaar zijn. Er klinkt niets. Alleen een meldkanaal dat is verdwenen (bijvoorbeeld na een nieuwe telefoon) geeft een bericht en een reparatie; een onbereikbare sirene wordt al als storing gemeld door de bewaking hierboven.
+- **Sirenetest, maandelijks.** Standaard elke 30 dagen (een instelling; 0 zet het uit) stuurt Vigil een herinnering naar de kanalen die *storingen en mededelingen* ontvangen. Op een telefoon met de Home Assistant-app heeft het bericht een knop **Sirene testen**; een tik laat de sirene 2 seconden klinken. Je kunt ook *Sirene nu testen* op het Overzicht gebruiken of de actie `vigil_alarm.test_siren` aanroepen.
+- **Reageer je niet,** dan volgt na 3 dagen een tweede herinnering. Na nog eens 7 dagen staat er een reparatie dat de test achterstallig is. Een test, op een van de drie manieren, haalt die weg.
+- **Vigil de sirene zelf laten klinken** staat standaard uit. Zet je het aan, dan laat Vigil de sirene klinken als de test aan de beurt is, maar alleen binnen de uren die je instelt (standaard 9 tot 20), zodat niemand wakker wordt.
+- De test wordt geweigerd tijdens een echt alarm en is zelf geen alarm: er gaat niets naar de alarmkanalen.
+- De kaart *Zelftest* op het Overzicht toont de laatste stille controle, de laatste sirenetest en wanneer de volgende aan de beurt is. De zelftest-events (`selftest_checked`, `selftest_reminder`, `selftest_siren_tested`) komen in het logboek maar tellen niet als laatste gebeurtenis van het alarm.
+
+### Hartslag
+
+Een sirene en een melding helpen alleen als Home Assistant zelf draait. De hartslag dekt het andere geval: als Home Assistant, de computer waarop het draait of je internetverbinding uitvalt, kan niets in huis je dat vertellen. Daarom roept Vigil met vaste tussenpozen een webadres aan, en een bewakingsdienst **buiten** je huis slaat alarm als die aanroepen uitblijven.
+
+- Vigil is niet aan één dienst gebonden. Bij *Instellingen* vul je een **hartslag-adres** in en het aantal **minuten tussen hartslagen** (standaard 5). Elke dienst die een regelmatige aanroep verwacht en meldt als die uitblijft, werkt. Laat het adres leeg om het uit te zetten.
+- De aanroep gebeurt altijd, ook als het alarm uit staat, want de vraag die hij beantwoordt is: "draait Vigil nog?".
+- De aanroep bevat niets over je alarm: geen status, geen namen, geen codes. Het is een gewone GET-aanvraag.
+- Het adres is een geheim, want diensten stoppen er meestal de sleutel in. Vigil houdt het uit het logboek, de reparaties en de gedownloade diagnostics, en het paneel toont het alleen aan een beheerder op het tabblad Instellingen.
+- De kaart *Hartslag* op het Overzicht toont het interval, de laatste keer dat het lukte en de laatste keer dat het mislukte, en heeft een knop *Nu testen*. Na drie mislukkingen achter elkaar komt er een reparatie, die verdwijnt als de hartslag weer werkt.
+
+**Uitgewerkt voorbeeld met Healthchecks.io** (er is een gratis plan, of je draait het zelf):
+
+1. Maak een check. Zet de *periode* iets boven je interval, bijvoorbeeld 5 minuten, en een *respijttijd* van 5 tot 10 minuten, zodat één gemiste aanroep nog geen bericht geeft.
+2. Koppel onder *Integrations* waar het bericht heen moet (e-mail, of een app op je telefoon).
+3. Kopieer de *ping-URL* van de check. Dat is een `https://`-adres dat eindigt op een lange code.
+4. Plak die in Vigil Alarm bij *Instellingen → Hartslag-adres* en sla op.
+5. Klik op het Overzicht op *Nu testen*. De check wordt binnen een paar seconden groen.
+6. Om te bewijzen dat het werkt: zet Home Assistant langer dan de periode plus de respijttijd uit. Je hoort een bericht van de dienst te krijgen.
+
+Andere diensten werken op dezelfde manier: je hebt een adres nodig dat een aanroep verwacht, een periode, en een manier om te horen als die gemist wordt.
 
 ## Herstarten en bijwerken
 

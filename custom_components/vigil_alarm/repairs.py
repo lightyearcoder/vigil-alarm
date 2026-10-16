@@ -14,7 +14,9 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
 from .const import DOMAIN
+from .heartbeat import SIGNAL_HEARTBEAT
 from .manager import SIGNAL_EVENT, VigilManager
+from .selftest import SIGNAL_SELFTEST
 
 # What the supervisor calls a problem -> the issue text (translation key).
 _PROBLEM_KEY = {"battery_low": "battery_low", "unavailable": "siren_unavailable", "on_battery": "siren_on_battery"}
@@ -43,6 +45,8 @@ class VigilRepairs:
                     key + ("_level" if key == "battery_low" and "level" in problem else ""),
                     {k: str(v) for k, v in placeholders.items()},
                 )
+        wanted.update(self.manager.selftest.issues())
+        wanted.update(self.manager.heartbeat.issues())
         return wanted
 
     @callback
@@ -60,12 +64,18 @@ class VigilRepairs:
     @callback
     def start(self):
         """Follow the alarm's events; returns the function that stops and removes the issues."""
-        unsub = async_dispatcher_connect(self.hass, SIGNAL_EVENT.format(self.manager.entry.entry_id), self.sync)
+        entry_id = self.manager.entry.entry_id
+        unsubs = [
+            async_dispatcher_connect(self.hass, SIGNAL_EVENT.format(entry_id), self.sync),
+            async_dispatcher_connect(self.hass, SIGNAL_SELFTEST.format(entry_id), self.sync),
+            async_dispatcher_connect(self.hass, SIGNAL_HEARTBEAT.format(entry_id), self.sync),
+        ]
         self.sync()
 
         @callback
         def stop() -> None:
-            unsub()
+            for unsub in unsubs:
+                unsub()
             for issue_id in self._open:
                 ir.async_delete_issue(self.hass, DOMAIN, issue_id)
             self._open = set()

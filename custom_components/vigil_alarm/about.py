@@ -39,6 +39,15 @@ def _sort_key(version: str) -> tuple[int, tuple[int, ...]]:
     return (0, tuple(int(p) for p in parts))
 
 
+def plain_text(text: str) -> str:
+    """Markdown to plain text: the panel shows the notes as they are, without formatting marks."""
+    text = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", text)  # [label](url) -> label
+    text = re.sub(r"`([^`]*)`", r"\1", text)
+    text = re.sub(r"(\*\*|__)(.+?)\1", r"\2", text)
+    text = re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])", r"\1", text)
+    return text
+
+
 def parse_release_notes(text: str) -> list[dict[str, Any]]:
     """The changelog as [{"version", "note", "items"}], newest first."""
     releases: list[dict[str, Any]] = []
@@ -52,6 +61,8 @@ def parse_release_notes(text: str) -> list[dict[str, Any]]:
             current["items"].append(line[2:].strip())
         elif current is not None and line.startswith("  ") and current["items"] and line.strip():
             current["items"][-1] += " " + line.strip()  # a wrapped line
+    for release in releases:
+        release["items"] = [plain_text(item) for item in release["items"]]
     unreleased = [r for r in releases if not re.search(r"\d", r["version"])]
     numbered = [r for r in releases if re.search(r"\d", r["version"])]
     numbered.sort(key=lambda r: _sort_key(r["version"])[1], reverse=True)

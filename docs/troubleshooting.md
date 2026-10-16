@@ -73,3 +73,11 @@ Hard refresh the browser (Ctrl+F5) and check that the integration is running und
 ## Still not working?
 
 Download the diagnostics (*Devices & services → Vigil Alarm → ⋮ → Download diagnostics*), which hold no codes or names of people, and report it on GitHub (see the *About* tab).
+
+## I keep getting a siren test reminder
+
+The reminder repeats until a test is done. Tap *Test siren* in the message, use *Test siren now* on the Overview tab, or call `vigil_alarm.test_siren`. To stop the reminders, set the interval under *Settings* to 0.
+
+## The heartbeat fails
+
+The *Heartbeat* card on the Overview tab names the reason: *no connection* (Home Assistant cannot reach the internet or the address is wrong), *no answer within 10 seconds*, or *HTTP 404* and similar (the service does not know the address; copy it again). Correct it under *Settings* and click *Test now*.

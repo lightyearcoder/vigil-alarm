@@ -73,3 +73,11 @@ Ververs de browser hard (Ctrl+F5) en kijk of de integratie actief is onder *Appa
 ## Nog steeds niet?
 
 Download de diagnostische gegevens (*Apparaten en diensten → Vigil Alarm → ⋮ → Diagnostische gegevens downloaden*), zonder codes of namen van personen, en meld het op GitHub (zie het tabblad *Over*).
+
+## Ik blijf een herinnering voor de sirenetest krijgen
+
+De herinnering herhaalt zich tot er een test is gedaan. Tik op *Sirene testen* in het bericht, gebruik *Sirene nu testen* op het Overzicht, of roep `vigil_alarm.test_siren` aan. Wil je geen herinneringen, zet dan het interval bij *Instellingen* op 0.
+
+## De hartslag mislukt
+
+De kaart *Hartslag* op het Overzicht noemt de reden: *geen verbinding* (Home Assistant komt niet op internet of het adres klopt niet), *geen antwoord binnen 10 seconden*, of *HTTP 404* en dergelijke (de dienst kent het adres niet; kopieer het opnieuw). Verbeter het bij *Instellingen* en klik op *Nu testen*.

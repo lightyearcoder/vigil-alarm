@@ -20,7 +20,7 @@ const TXT = {
       disclaimer: "Vigil Alarm is geen gecertificeerd alarmsysteem. Test het regelmatig en vertrouw er niet als enige bescherming op.",
       unreleased: "Nog niet uitgebracht", firstRelease: "eerste versie",
     },
-    tabs: { overview: "Overzicht", sensor: "Sensoren", sensor_group: "Sensorgroepen", rule: "Bevestigingsregels", user: "Gebruikers", notification: "Meldingen", siren: "Sirenes", settings: "Instellingen", about: "Over" },
+    tabs: { overview: "Overzicht", sensor: "Sensoren", sensor_group: "Sensorgroepen", rule: "Bevestigingsregels", user: "Gebruikers", notification: "Meldingen", siren: "Sirenes", log: "Logboek", settings: "Instellingen", about: "Over" },
     add: { sensor: "Sensor toevoegen", sensor_group: "Sensorgroep toevoegen", rule: "Bevestigingsregel toevoegen", user: "Gebruiker toevoegen", notification: "Melding toevoegen", siren: "Sirene toevoegen" },
     edit: { sensor: "Sensor bewerken", sensor_group: "Sensorgroep bewerken", rule: "Bevestigingsregel bewerken", user: "Gebruiker bewerken", notification: "Melding bewerken", siren: "Sirene bewerken" },
     intro: {
@@ -55,7 +55,11 @@ const TXT = {
         tamper_unlinked: "{n} sensoren hebben een sabotagesensor op hetzelfde apparaat die nergens aan gekoppeld is: {names}.",
       },
     },
+    heartbeat: { title: "Hartslag", off: "Uit. Vul bij Instellingen een hartslag-adres in om te beginnen.", lastOk: "Laatst gelukt", lastFail: "Laatst mislukt", never: "nog niet", every: "Elke {n} minuten", test: "Nu testen", ok: "De hartslag is aangekomen.", failed: "De hartslag is niet aangekomen ({reason}).", reason: { timeout: "geen antwoord binnen 10 seconden", connection: "geen verbinding", } , failing: "Mislukt: {reason}" },
+    selftest: { title: "Zelftest", last: "Laatste stille controle", lastSiren: "Laatste sirenetest", next: "Volgende sirenetest", never: "nog niet", off: "Herinnering staat uit (Instellingen)", noSiren: "Er is geen sirene ingesteld.", overdue: "Achterstallig: de test had {days} dagen geleden moeten gebeuren.", test: "Sirene nu testen", started: "De sirene klinkt {seconds} seconden.", auto: "Vigil laat de sirene zelf klinken binnen de ingestelde uren.", problems: "Ontbrekend meldkanaal: {name}" },
     dash: { title: "Dashboard", text: "Een dashboard met de eigen entiteiten van dit alarm. Kopieer het en plak het in een nieuw dashboard (Instellingen > Dashboards > nieuw dashboard > ruwe configuratie-editor).", copy: "Kopieer dashboard" },
+    log: { intro: "Alles wat Vigil als gebeurtenis meldt. Het logboek bewaart {days} dagen (zie Instellingen) en bevat geen codes. Tijden zijn in jouw tijdzone; in de downloads staan ze in UTC volgens RFC 3339.", empty: "Nog niets in het logboek.",
+      cols: { time: "Tijd", event: "Gebeurtenis", item: "Onderdeel", who: "Door", result: "Resultaat" }, showing: "De nieuwste {n} van {total}", jsonl: "Download (JSON Lines)", csv: "Download (CSV)", refresh: "Vernieuwen" },
     summary: { always: "{cls}, altijd actief", instant: "direct", delayed: "vertraagd ({s} s)", follower: "volger", and: "en", watching: "{type}, bewaakt in {modes}", nowhere: "{type}, bewaakt in geen enkele modus" },
     whatsNew: "nieuw", batteryLow: "laag", batteryOk: "ok",
     copySuffix: " (kopie)",
@@ -74,6 +78,14 @@ const TXT = {
     confirmDelete: "Weet je zeker dat je '{name}' wilt verwijderen?",
     saved: "Opgeslagen", deleted: "Verwijderd", testSent: "Test verstuurd", loading: "Laden…", loadFailed: "Vigil Alarm kon niet geladen worden. Is de integratie actief?",
     retry: "Opnieuw proberen",
+    sections: {
+      alarm: ["Modi en vertragingen", "Welke modi je gebruikt en hoe lang je hebt om te vertrekken, binnen te komen en hoe lang het alarm duurt."],
+      codes: ["Codes", "Of een code nodig is om in te schakelen en hoe lang een code minstens moet zijn."],
+      battery: ["Batterijen", "Vanaf welk niveau een batterij als bijna leeg geldt."],
+      log: ["Logboek", "Hoe lang Vigil de gebeurtenissen bewaart."],
+      selftest: ["Zelftest", "Vigil herinnert je eraan de sirene te testen. Zet het interval op 0 om de herinnering uit te zetten."],
+      heartbeat: ["Hartslag", "Vigil roept dit adres regelmatig aan, zodat een dienst buiten je huis meldt als Home Assistant of je internet uitvalt."],
+    },
     reloadNote: "Opslaan laadt Vigil Alarm opnieuw (de alarmstatus blijft behouden).",
     alarm: "Alarm", problems: "Aandachtspunten", noProblems: "Geen problemen", sensorsNow: "Sensoren nu",
     coverage: "Wat bewaakt elke modus", coverageNothing: "geen sensorgroep: er wordt niets bewaakt", alwaysOn: "Altijd actief", sensorsCount: "{n} sensoren",
@@ -101,7 +113,7 @@ const TXT = {
       light: "Flitslicht", tone_entity: "Toonkeuze-entiteit", volume_entity: "Volume-entiteit", power_entity: "Voedingsmodus-entiteit", power_battery_value: "Waarde bij batterijvoeding",
       tone: "Toon", volume: "Volume", preset: "Voorinstelling",
       "s.modes": "Beschikbare modi", exit_delay_home: "Uitlooptijd thuis", exit_delay_away: "Uitlooptijd weg", exit_delay_night: "Uitlooptijd nacht",
-      default_entry_delay: "Standaard inlooptijd", trigger_time: "Alarmduur (0 = tot uitschakelen)", battery_threshold: "Batterijgrens", code_arm_required: "Code nodig om in te schakelen", min_code_length: "Minimale codelengte (cijfers/tekens)",
+      default_entry_delay: "Standaard inlooptijd", trigger_time: "Alarmduur (0 = tot uitschakelen)", battery_threshold: "Batterijgrens", code_arm_required: "Code nodig om in te schakelen", min_code_length: "Minimale codelengte (cijfers/tekens)", log_retention_days: "Logboek bewaren (dagen)", selftest_interval_days: "Herinnering sirenetest (dagen, 0 = uit)", selftest_siren_seconds: "Sirene klinkt bij test (seconden)", selftest_auto: "Sirene zelf laten klinken voor de test", selftest_window_start: "Test niet voor (uur)", selftest_window_end: "Test niet na (uur)", heartbeat_url: "Hartslag-adres (leeg = uit)", heartbeat_interval_minutes: "Minuten tussen hartslagen",
     },
     helpMore: {
       at_arm_open: "Wat er gebeurt als deze sensor nog open staat wanneer de uitlooptijd voorbij is:\n• Omzeilen met melding (standaard): het alarm gaat aan zonder deze sensor en je krijgt een melding. Zodra de sensor dicht gaat, bewaakt hij weer.\n• Wachten tot dicht: het alarm gaat aan en deze sensor wordt genegeerd tot hij één keer dicht is geweest, zonder melding. Daarna bewaakt hij weer.\n• Inschakelen weigeren: het alarm gaat niet aan en je ziet welke sensor open staat. Sluit hem eerst.\n• Inlooptijd starten: het alarm gaat aan en de open sensor telt meteen als geactiveerd. Een directe sensor geeft alarm, bij een vertraagde sensor start de inlooptijd.",
@@ -145,7 +157,7 @@ const TXT = {
       entity_in_use: "Deze entiteit is al een sensor.", tamper_same_entity: "De sabotage-entiteit moet een andere zijn dan de sensor zelf.", tamper_entity_in_use: "Deze entiteit is al een sensor.",
       no_sensor_group: "Kies minstens één sensorgroep.", unknown_sensor_group: "Onbekende sensorgroep.",
       unknown_mode: "Onbekende modus.", unknown_suggestion: "Onbekende keuze.",
-      code_in_use: "Deze code is al in gebruik.", code_too_short: "De code moet minstens {min} tekens hebben (instelbaar bij Instellingen).", code_length_range: "Kies een waarde van {min} tot {max}.", tag_in_use: "Deze tag is al in gebruik.", no_credential: "Geef een code of minstens één tag op.",
+      code_in_use: "Deze code is al in gebruik.", code_too_short: "De code moet minstens {min} tekens hebben (instelbaar bij Instellingen).", code_length_range: "Kies een waarde van {min} tot {max}.", log_retention_range: "Kies een aantal dagen van {min} tot {max}.", selftest_range: "Kies een waarde van {min} tot {max}.", selftest_window: "Het laatste uur moet na het vroegste uur liggen.", heartbeat_url_invalid: "Dit is geen webadres. Het moet beginnen met http:// of https://.", heartbeat_range: "Kies een aantal minuten van {min} tot {max}.", tag_in_use: "Deze tag is al in gebruik.", no_credential: "Geef een code of minstens één tag op.",
       service_not_found: "Deze notify-dienst bestaat niet (meer).", no_categories: "Kies minstens één soort melding.",
       no_causes: "Kies minstens één oorzaak.", tone_without_entity: "Een toon kan alleen met een toonkeuze-entiteit.", volume_without_entity: "Een volume kan alleen met een volume-entiteit.",
       sensor_in_rule: "Deze sensor zit nog in bevestigingsregel: {rules}. Haal hem daar eerst uit.",
@@ -168,7 +180,7 @@ const TXT = {
       disclaimer: "Vigil Alarm is not a certified alarm system. Test it regularly and do not rely on it as your only protection.",
       unreleased: "Not released yet", firstRelease: "first release",
     },
-    tabs: { overview: "Overview", sensor: "Sensors", sensor_group: "Sensor groups", rule: "Confirmation rules", user: "Users", notification: "Notifications", siren: "Sirens", settings: "Settings", about: "About" },
+    tabs: { overview: "Overview", sensor: "Sensors", sensor_group: "Sensor groups", rule: "Confirmation rules", user: "Users", notification: "Notifications", siren: "Sirens", log: "Log", settings: "Settings", about: "About" },
     add: { sensor: "Add sensor", sensor_group: "Add sensor group", rule: "Add confirmation rule", user: "Add user", notification: "Add notification", siren: "Add siren" },
     edit: { sensor: "Edit sensor", sensor_group: "Edit sensor group", rule: "Edit confirmation rule", user: "Edit user", notification: "Edit notification", siren: "Edit siren" },
     intro: {
@@ -203,7 +215,11 @@ const TXT = {
         tamper_unlinked: "{n} sensors have a tamper contact on the same device that is not connected to anything: {names}.",
       },
     },
+    heartbeat: { title: "Heartbeat", off: "Off. Enter a heartbeat address under Settings to start.", lastOk: "Last succeeded", lastFail: "Last failed", never: "not yet", every: "Every {n} minutes", test: "Test now", ok: "The heartbeat arrived.", failed: "The heartbeat did not arrive ({reason}).", reason: { timeout: "no answer within 10 seconds", connection: "no connection" }, failing: "Failing: {reason}" },
+    selftest: { title: "Self-test", last: "Last quiet check", lastSiren: "Last siren test", next: "Next siren test", never: "not yet", off: "Reminder is off (Settings)", noSiren: "No siren is set up.", overdue: "Overdue: the test was due {days} days ago.", test: "Test siren now", started: "The siren sounds for {seconds} seconds.", auto: "Vigil sounds the siren by itself within the set hours.", problems: "Missing notification channel: {name}" },
     dash: { title: "Dashboard", text: "A dashboard with this alarm's own entities. Copy it and paste it into a new dashboard (Settings > Dashboards > new dashboard > raw configuration editor).", copy: "Copy dashboard" },
+    log: { intro: "Everything Vigil reports as an event. The log keeps {days} days (see Settings) and holds no codes. Times are in your time zone; in the downloads they are in UTC as RFC 3339.", empty: "Nothing in the log yet.",
+      cols: { time: "Time", event: "Event", item: "Item", who: "By", result: "Result" }, showing: "The newest {n} of {total}", jsonl: "Download (JSON Lines)", csv: "Download (CSV)", refresh: "Refresh" },
     summary: { always: "{cls}, always on", instant: "instant", delayed: "delayed ({s} s)", follower: "follower", and: "and", watching: "{type}, watching in {modes}", nowhere: "{type}, not watching in any mode" },
     whatsNew: "new", batteryLow: "low", batteryOk: "ok",
     copySuffix: " (copy)",
@@ -222,6 +238,14 @@ const TXT = {
     confirmDelete: "Are you sure you want to delete '{name}'?",
     saved: "Saved", deleted: "Deleted", testSent: "Test sent", loading: "Loading…", loadFailed: "Vigil Alarm could not be loaded. Is the integration running?",
     retry: "Try again",
+    sections: {
+      alarm: ["Modes and delays", "Which modes you use, and how long you have to leave, to come in, and how long the alarm lasts."],
+      codes: ["Codes", "Whether a code is needed to arm and how long a code must be at least."],
+      battery: ["Batteries", "From which level a battery counts as low."],
+      log: ["Event log", "How long Vigil keeps the events."],
+      selftest: ["Self-test", "Vigil reminds you to test the siren. Set the interval to 0 to turn the reminder off."],
+      heartbeat: ["Heartbeat", "Vigil calls this address regularly, so a service outside your house reports when Home Assistant or your internet stops."],
+    },
     reloadNote: "Saving reloads Vigil Alarm (the alarm state is kept).",
     alarm: "Alarm", problems: "Attention", noProblems: "No problems", sensorsNow: "Sensors now",
     coverage: "What each mode watches", coverageNothing: "no sensor group: nothing is watched", alwaysOn: "Always on", sensorsCount: "{n} sensors",
@@ -249,7 +273,7 @@ const TXT = {
       light: "Flash light", tone_entity: "Tone selection entity", volume_entity: "Volume entity", power_entity: "Power mode entity", power_battery_value: "Value when on battery",
       tone: "Tone", volume: "Volume", preset: "Preset",
       "s.modes": "Available modes", exit_delay_home: "Exit delay home", exit_delay_away: "Exit delay away", exit_delay_night: "Exit delay night",
-      default_entry_delay: "Default entry delay", trigger_time: "Alarm duration (0 = until disarmed)", battery_threshold: "Battery threshold", code_arm_required: "Code required to arm", min_code_length: "Minimum code length (characters)",
+      default_entry_delay: "Default entry delay", trigger_time: "Alarm duration (0 = until disarmed)", battery_threshold: "Battery threshold", code_arm_required: "Code required to arm", log_retention_days: "Keep the log (days)", selftest_interval_days: "Siren test reminder (days, 0 = off)", selftest_siren_seconds: "Siren sounds in a test (seconds)", selftest_auto: "Sound the siren by itself for the test", selftest_window_start: "Not before (hour)", selftest_window_end: "Not after (hour)", heartbeat_url: "Heartbeat address (empty = off)", heartbeat_interval_minutes: "Minutes between heartbeats", min_code_length: "Minimum code length (characters)",
     },
     helpMore: {
       at_arm_open: "What happens if this sensor is still open when the exit delay ends:\n• Bypass with a notice (default): the alarm arms without this sensor and you get a notice. As soon as the sensor closes, it is watched again.\n• Wait until closed: the alarm arms and this sensor is ignored until it has closed once, without a notice. After that it is watched again.\n• Refuse to arm: the alarm does not arm and you see which sensor is open. Close it first.\n• Start entry delay: the alarm arms and the open sensor counts as triggered right away. A direct sensor sounds the alarm, a delayed sensor starts the entry delay.",
@@ -293,7 +317,7 @@ const TXT = {
       entity_in_use: "This entity is already a sensor.", tamper_same_entity: "The tamper entity must be another one than the sensor itself.", tamper_entity_in_use: "This entity is already a sensor.",
       no_sensor_group: "Choose at least one sensor group.", unknown_sensor_group: "Unknown sensor group.",
       unknown_mode: "Unknown mode.", unknown_suggestion: "Unknown choice.",
-      code_in_use: "This code is already in use.", code_too_short: "The code must have at least {min} characters (set under Settings).", code_length_range: "Choose a value from {min} to {max}.", tag_in_use: "This tag is already in use.", no_credential: "Enter a code or at least one tag.",
+      code_in_use: "This code is already in use.", code_too_short: "The code must have at least {min} characters (set under Settings).", code_length_range: "Choose a value from {min} to {max}.", log_retention_range: "Choose a number of days from {min} to {max}.", selftest_range: "Choose a value from {min} to {max}.", selftest_window: "The latest hour must be after the earliest hour.", heartbeat_url_invalid: "That is not a web address. It must start with http:// or https://.", heartbeat_range: "Choose a number of minutes from {min} to {max}.", tag_in_use: "This tag is already in use.", no_credential: "Enter a code or at least one tag.",
       service_not_found: "This notify service does not exist (any more).", no_categories: "Choose at least one kind of message.",
       no_causes: "Choose at least one cause.", tone_without_entity: "A tone needs a tone selection entity.", volume_without_entity: "A volume needs a volume entity.",
       sensor_in_rule: "This sensor is still in confirmation rule: {rules}. Remove it there first.",
@@ -343,7 +367,7 @@ const OPTION_GROUP = { modes: "mode", allowed_modes: "mode" };
 const CONTACT_CLASSES = ["door", "window", "opening", "garage_door"];
 const MOTION_CLASSES = ["motion", "occupancy", "presence", "moving"];
 const KINDS = ["sensor", "sensor_group", "rule", "user", "notification", "siren"];
-const TABS = ["overview", ...KINDS, "settings", "about"];
+const TABS = ["overview", ...KINDS, "log", "settings", "about"];
 
 const CSS = `
 :host { display: block; height: 100%; background: var(--primary-background-color, #fafafa); color: var(--primary-text-color, #212121);
@@ -532,6 +556,8 @@ class VigilPanel extends HTMLElement {
       this._data = await this._hass.callWS({ type: "vigil_alarm/get" });
       const ready = await this._call({ type: "vigil_alarm/readiness" });
       this._ready = ready && ready.findings ? ready.findings : [];
+      try { this._heartbeat = await this._hass.callWS({ type: "vigil_alarm/heartbeat" }); } catch (err) { this._heartbeat = null; }
+      try { this._selftest = await this._hass.callWS({ type: "vigil_alarm/selftest" }); } catch (err) { this._selftest = null; }
       this._loadError = false;
     } catch (err) {
       if (retries > 0) {
@@ -607,7 +633,7 @@ class VigilPanel extends HTMLElement {
     const nav = el("nav", {}, TABS.map((tab) => {
       const count = KINDS.includes(tab) && this._data ? this._shown(tab).length : null;
       const fresh = tab === "about" && this._tab !== "about" && this._newVersion();
-      return el("button", { class: tab === this._tab ? "active" : "", onclick: () => { this._tab = tab; if (tab === "about") { this._about = null; this._markVersionSeen(); } this._renderNav(); this._renderBody(); } },
+      return el("button", { class: tab === this._tab ? "active" : "", onclick: () => { this._tab = tab; if (tab === "log") this._logNode = null; if (tab === "about") { this._about = null; this._markVersionSeen(); } this._renderNav(); this._renderBody(); } },
         t.tabs[tab], count !== null ? el("span", { class: "count", text: `(${count})` }) : null,
         fresh ? el("span", { class: "badge ok", style: "margin-left:6px", text: t.whatsNew }) : null);
     }));
@@ -628,10 +654,11 @@ class VigilPanel extends HTMLElement {
     }
     let content;
     if (this._tab === "overview") content = this._overview();
+    else if (this._tab === "log") content = this._logNode || (this._logNode = this._logTab());  // not rebuilt on every live update
     else if (this._tab === "settings") content = this._settings();
     else if (this._tab === "about") content = this._aboutTab();
     else content = this._list(this._tab);
-    body.replaceChildren(el("main", { class: KINDS.includes(this._tab) ? "wide" : "" }, content));
+    body.replaceChildren(el("main", { class: KINDS.includes(this._tab) || this._tab === "log" ? "wide" : "" }, content));
     this._renderNav();
   }
 
@@ -771,6 +798,53 @@ class VigilPanel extends HTMLElement {
       findings.length ? el("ul", { class: "plain" }, findings.map(row)) : el("div", { class: "muted", text: r.allGood }));
   }
 
+  _selftestCard() {
+    const t = this.t.selftest;
+    const st = this._selftest;
+    if (!st) return null;
+    const when = (iso) => { if (!iso) return t.never; const d = new Date(iso); return isNaN(d) ? iso : d.toLocaleString(); };
+    const row = (label, value) => el("tr", {}, el("td", { text: label }), el("td", { text: value }));
+    const rows = [row(t.last, when(st.last_check))];
+    if (st.siren) rows.push(row(t.lastSiren, when(st.last_siren_test)));
+    if (st.siren && st.enabled) rows.push(row(t.next, when(st.due)));
+    return el("div", { class: "card" }, el("h2", { text: t.title }),
+      el("div", { class: "tablewrap" }, el("table", {}, el("tbody", {}, rows))),
+      ...(st.problems || []).map((p) => el("div", { class: "muted", text: fill(t.problems, { name: p.name }) })),
+      st.overdue_days != null ? el("div", { class: "badge bad", text: fill(t.overdue, { days: st.overdue_days }) }) : null,
+      !st.siren ? el("div", { class: "muted", text: t.noSiren }) : (!st.enabled ? el("div", { class: "muted", text: t.off }) : null),
+      st.siren && st.auto ? el("div", { class: "muted", text: t.auto }) : null,
+      st.siren ? el("button", { class: "btn", text: t.test, onclick: async () => {
+        try {
+          await this._hass.callService("vigil_alarm", "test_siren", { duration: st.seconds });
+          this._toast(fill(t.started, { seconds: st.seconds }));
+          await this._load();
+          this._renderBody();
+        } catch (err) { this._toast(String((err && err.message) || err)); }
+      } }) : null);
+  }
+
+  _heartbeatCard(status) {
+    const t = this.t.heartbeat;
+    const st = status || this._heartbeat;
+    if (!st) return null;
+    const when = (iso) => { if (!iso) return t.never; const d = new Date(iso); return isNaN(d) ? iso : d.toLocaleString(); };
+    const why = (r) => (t.reason[r] || (String(r).startsWith("http_") ? "HTTP " + String(r).slice(5) : r));
+    const row = (label, value) => el("tr", {}, el("td", { text: label }), el("td", { text: value }));
+    if (!st.enabled) return el("div", { class: "card" }, el("h2", { text: t.title }), el("div", { class: "muted", text: t.off }));
+    return el("div", { class: "card" }, el("h2", { text: t.title }),
+      el("div", { class: "muted", text: fill(t.every, { n: st.interval }) }),
+      el("div", { class: "tablewrap" }, el("table", {}, el("tbody", {}, [row(t.lastOk, when(st.last_ok)), row(t.lastFail, when(st.last_failure))]))),
+      st.failures ? el("div", { class: "badge bad", text: fill(t.failing, { reason: why(st.reason) }) }) : null,
+      el("button", { class: "btn", text: t.test, onclick: async () => {
+        try {
+          const res = await this._hass.callWS({ type: "vigil_alarm/heartbeat", test: true });
+          this._heartbeat = res;
+          this._toast(res.failures ? fill(t.failed, { reason: why(res.reason) }) : t.ok);
+          this._renderBody();
+        } catch (err) { this._toast(String((err && err.message) || err)); }
+      } }));
+  }
+
   _overview() {
     const t = this.t;
     const live = this._live;
@@ -784,6 +858,8 @@ class VigilPanel extends HTMLElement {
         ...KINDS.map((k) => el("div", { class: "card", style: "cursor:pointer", onclick: () => { this._tab = k; this._renderBody(); } },
           el("h2", { text: t.tabs[k] }), el("div", { class: "stat", text: String(this._shown(k).length) })))),
       this._readyCard(),
+      this._selftestCard(),
+      this._heartbeatCard(),
       el("div", { class: "card" }, el("h2", { text: t.dash.title }), el("p", { class: "muted", text: t.dash.text }),
         el("button", { class: "btn", text: t.dash.copy, onclick: async () => {
           const res = await this._call({ type: "vigil_alarm/dashboard" });
@@ -883,9 +959,53 @@ class VigilPanel extends HTMLElement {
   }
 
   // ---- settings tab
+  // ---- log tab: filled in after the entries arrive
+  _logTab() {
+    const t = this.t;
+    const l = t.log;
+    const host = el("div", {});
+    const load = async () => {
+      const res = await this._call({ type: "vigil_alarm/log", limit: 200 });
+      if (!res || !res.entries) { host.replaceChildren(el("div", { class: "empty", text: t.errors.generic })); return; }
+      const when = (iso) => { const d = new Date(iso); return isNaN(d) ? iso : d.toLocaleString(); };
+      const who = (e) => [e.user, e.source].filter(Boolean).join(" · ") || t.none;
+      const table = res.entries.length
+        ? el("div", { class: "tablewrap" }, el("table", {},
+            el("thead", {}, el("tr", {}, ["time", "event", "item", "who", "result"].map((k) => el("th", { text: l.cols[k] })))),
+            el("tbody", {}, res.entries.map((e) => el("tr", { class: "row", title: e.detail ? JSON.stringify(e.detail) : "" },
+              el("td", { "data-label": l.cols.time, text: when(e.time) }),
+              el("td", { "data-label": l.cols.event, text: res.labels[e.event] || e.event }),
+              el("td", { "data-label": l.cols.item, text: e.item || t.none }),
+              el("td", { "data-label": l.cols.who, text: who(e) }),
+              el("td", { "data-label": l.cols.result, text: e.result || t.none }))))))
+        : el("div", { class: "empty", text: l.empty });
+      host.replaceChildren(
+        el("p", { class: "intro", text: fill(l.intro, { days: res.retention_days }) }),
+        res.entries.length ? el("p", { class: "muted", text: fill(l.showing, { n: res.entries.length, total: res.total }) }) : null,
+        table);
+    };
+    const download = (format) => async () => {
+      const res = await this._call({ type: "vigil_alarm/log_export", format });
+      if (!res || res.text === undefined) { this._toast(t.errors.generic); return; }
+      const url = URL.createObjectURL(new Blob([res.text], { type: res.media_type + ";charset=utf-8" }));
+      const link = el("a", { href: url, download: res.filename });
+      this._root.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    };
+    load();
+    return el("div", {},
+      el("div", { class: "bar" }, el("span", {}),
+        el("button", { class: "btn", text: l.refresh, onclick: load }),
+        el("button", { class: "btn", text: l.csv, onclick: download("csv") }),
+        el("button", { class: "btn primary", text: l.jsonl, onclick: download("jsonl") })),
+      el("div", { class: "card" }, host));
+  }
+
   _settings() {
     const t = this.t;
-    const form = this._makeForm(this._data.settings_form, { ...this._data.entry.data }, { ctx: "s", kind: "settings" });
+    const form = this._makeForm(this._data.settings_form, { ...this._data.entry.data }, { ctx: "s", kind: "settings", sections: true });
     const base = el("div");
     const saveBtn = el("button", { class: "btn primary", text: t.save });
     saveBtn.addEventListener("click", async () => {
@@ -894,9 +1014,8 @@ class VigilPanel extends HTMLElement {
       saveBtn.disabled = false;
       if (res.ok) { this._toast(t.saved); await this._load(); } else form.showErrors(res, base);
     });
-    return el("div", {},
-      el("div", { class: "card" }, el("h2", { text: t.tabs.settings }), base, form.node,
-        el("div", { class: "bar" }, saveBtn), el("p", { class: "note", text: t.reloadNote })),
+    return el("div", {}, base, form.node,
+      el("div", { class: "card" }, el("div", { class: "bar" }, saveBtn), el("p", { class: "note", text: t.reloadNote })),
       this._coverageCard());
   }
 
@@ -1225,6 +1344,20 @@ class VigilPanel extends HTMLElement {
         nodes.push(det);
         for (const k of groups) profileGroups[k] = [];
       }
+      if (opts.sections) {
+        // Settings: one card per section, in the order the fields arrive.
+        const order = [];
+        const bySection = {};
+        schema.forEach((f, i) => { if (!bySection[f.section]) { bySection[f.section] = []; order.push(f.section); } });
+        const placed = new Map(schema.filter((f) => matches(f.show_if)).map((f, i) => [f.key, nodes[i]]));
+        const cards = order.map((s) => {
+          const [title, intro] = t.sections[s] || [s, ""];
+          const inner = schema.filter((f) => f.section === s && placed.has(f.key)).map((f) => placed.get(f.key));
+          return el("div", { class: "card" }, el("h2", { text: title }), intro ? el("p", { class: "muted", text: intro }) : null, ...inner);
+        });
+        container.replaceChildren(...cards);
+        return;
+      }
       container.replaceChildren(...nodes);
     };
     renderAll();
@@ -1297,7 +1430,7 @@ class VigilPanel extends HTMLElement {
       }
       case "boolean": {
         return wrap(el("label", { class: "inline" },
-          el("input", { type: "checkbox", checked: !!state[key], onchange: (e) => { state[key] = e.target.checked; } }), labelText));
+          el("input", { type: "checkbox", checked: !!state[key], onchange: (e) => { state[key] = e.target.checked; rerender(); } }), labelText));
       }
       case "select": {
         const select = el("select", { onchange: (e) => { state[key] = e.target.value; rerender(); } },

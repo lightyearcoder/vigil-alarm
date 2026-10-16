@@ -224,6 +224,34 @@ class Notifier:
             _LOGGER.error("Notification via notify.%s failed: %s", channel.service, err)
             self.manager.publish("notification_failed", channel=channel.name, error=str(err))
 
+    async def async_send_reminder(self, key: str) -> int:
+        """The test reminder, to every channel that gets fault messages.
+
+        On a phone with the Home Assistant app the message has a button that sounds the siren briefly.
+        Returns how many channels were tried.
+        """
+        lang = self._lang()
+        sent = 0
+        for channel in self.channels:
+            if "fault" not in channel.categories:
+                continue
+            data: dict[str, Any] = {"title": text(lang, "title"), "message": text(lang, key)}
+            if channel.service.startswith("mobile_app_"):
+                data["data"] = {"tag": "vigil_selftest", "actions": [{"action": "VIGIL_TEST_SIREN", "title": text(lang, "selftest_action")}]}
+            sent += 1
+            try:
+                await self.hass.services.async_call("notify", channel.service, data, blocking=True)
+            except Exception as err:  # noqa: BLE001
+                _LOGGER.error("Notification via notify.%s failed: %s", channel.service, err)
+                self.manager.publish("notification_failed", channel=channel.name, error=str(err))
+        return sent
+
+    async def async_send_problem(self, problems: str) -> None:
+        """A message to every channel that gets fault messages."""
+        for channel in self.channels:
+            if "fault" in channel.categories:
+                await self._async_send(channel, render(self._lang(), "selftest_problem", problems=problems), "fault")
+
     async def async_test(self, channel_name: str | None = None) -> int:
         """Send a test message to all channels (or one). Returns how many were tried."""
         chosen = [c for c in self.channels if channel_name in (None, c.name)]

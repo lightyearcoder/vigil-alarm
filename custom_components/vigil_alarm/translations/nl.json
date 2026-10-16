@@ -14,7 +14,15 @@
           "trigger_time": "Duur alarm (0 = tot uitschakelen)",
           "code_arm_required": "Code vereist om in te schakelen",
           "min_code_length": "Minimale codelengte",
-          "battery_threshold": "Batterij laag bij of onder"
+          "battery_threshold": "Batterij laag bij of onder",
+          "log_retention_days": "Dagen dat het gebeurtenissenlogboek bewaard blijft",
+          "selftest_interval_days": "Dagen tussen herinneringen voor de siretest (0 = uit)",
+          "selftest_siren_seconds": "Seconden dat de sirene klinkt bij een test",
+          "selftest_auto": "Sirene zelf laten klinken voor de test",
+          "selftest_window_start": "Vroegste uur voor de test",
+          "selftest_window_end": "Laatste uur voor de test",
+          "heartbeat_url": "Hartslag-adres (optioneel)",
+          "heartbeat_interval_minutes": "Minuten tussen hartslagen"
         }
       },
       "reconfigure": {
@@ -30,13 +38,22 @@
           "trigger_time": "Duur alarm (0 = tot uitschakelen)",
           "code_arm_required": "Code vereist om in te schakelen",
           "min_code_length": "Minimale codelengte",
-          "battery_threshold": "Batterij laag bij of onder"
+          "battery_threshold": "Batterij laag bij of onder",
+          "log_retention_days": "Dagen dat het gebeurtenissenlogboek bewaard blijft",
+          "selftest_interval_days": "Dagen tussen herinneringen voor de siretest (0 = uit)",
+          "selftest_siren_seconds": "Seconden dat de sirene klinkt bij een test",
+          "selftest_auto": "Sirene zelf laten klinken voor de test",
+          "selftest_window_start": "Vroegste uur voor de test",
+          "selftest_window_end": "Laatste uur voor de test",
+          "heartbeat_url": "Hartslag-adres (optioneel)",
+          "heartbeat_interval_minutes": "Minuten tussen hartslagen"
         }
       }
     },
     "error": {
       "no_modes": "Schakel minstens één modus in.",
-      "invalid_config": "De instellingen passen niet bij de sensoren: {error}"
+      "invalid_config": "De instellingen passen niet bij de sensoren: {error}",
+      "heartbeat_url_invalid": "Dit is geen webadres (het moet beginnen met http:// of https://)."
     },
     "abort": {
       "already_configured": "Vigil Alarm is al ingesteld.",
@@ -93,7 +110,10 @@
               "alarm_silenced": "Alarm gedempt",
               "alarm_acknowledged": "Alarm bevestigd",
               "code_rejected": "Code geweigerd",
-              "code_locked": "Codes vergrendeld na te veel foute codes"
+              "code_locked": "Codes vergrendeld na te veel foute codes",
+              "selftest_checked": "Zelfcontrole gedaan",
+              "selftest_reminder": "Testherinnering verstuurd",
+              "selftest_siren_tested": "Sirene getest"
             }
           }
         }
@@ -147,7 +167,10 @@
           "alarm_silenced": "Alarm gedempt",
           "alarm_acknowledged": "Alarm bevestigd",
           "code_rejected": "Code geweigerd",
-          "code_locked": "Codes vergrendeld na te veel foute codes"
+          "code_locked": "Codes vergrendeld na te veel foute codes",
+          "selftest_checked": "Zelfcontrole gedaan",
+          "selftest_reminder": "Testherinnering verstuurd",
+          "selftest_siren_tested": "Sirene getest"
         }
       }
     },
@@ -399,6 +422,18 @@
     "siren_on_battery": {
       "title": "Sirene op batterij: {name}",
       "description": "De sirene {name} heeft geen netstroom meer en werkt op zijn batterij. Controleer de voeding. Deze melding verdwijnt vanzelf."
+    },
+    "selftest_overdue": {
+      "title": "Sirene al {days} dagen niet getest",
+      "description": "De sirene is al {days} dagen niet getest. Gebruik \"Sirene testen\" in het Vigil Alarm-paneel, of de actie vigil_alarm.test_siren. Deze melding verdwijnt zodra je hebt getest."
+    },
+    "selftest_channel_missing": {
+      "title": "Meldingskanaal werkt niet: {name}",
+      "description": "De notify-dienst van het kanaal {name} bestaat niet meer, dus er kunnen geen berichten mee verstuurd worden. Controleer het kanaal in het Vigil Alarm-paneel. Deze melding verdwijnt vanzelf."
+    },
+    "heartbeat_failing": {
+      "title": "Hartslag kan niet worden verstuurd",
+      "description": "Vigil Alarm kan het hartslag-adres al een paar keer achter elkaar niet bereiken ({reason}). Een bewakingsdienst die de hartslag verwacht, zal dit melden. Controleer het adres bij Instellingen in het Vigil Alarm-paneel en je internetverbinding. Deze melding verdwijnt vanzelf als de hartslag weer werkt."
     }
   }
 }

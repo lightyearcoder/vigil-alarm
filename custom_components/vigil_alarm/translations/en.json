@@ -14,7 +14,15 @@
           "trigger_time": "Alarm duration (0 = until disarmed)",
           "code_arm_required": "Require a code to arm",
           "min_code_length": "Minimum code length",
-          "battery_threshold": "Battery low at or below"
+          "battery_threshold": "Battery low at or below",
+          "log_retention_days": "Days to keep the event log",
+          "selftest_interval_days": "Days between siren test reminders (0 = off)",
+          "selftest_siren_seconds": "Seconds the siren sounds in a test",
+          "selftest_auto": "Sound the siren by itself for the test",
+          "selftest_window_start": "Earliest hour for the test",
+          "selftest_window_end": "Latest hour for the test",
+          "heartbeat_url": "Heartbeat address (optional)",
+          "heartbeat_interval_minutes": "Minutes between heartbeats"
         }
       },
       "reconfigure": {
@@ -30,13 +38,22 @@
           "trigger_time": "Alarm duration (0 = until disarmed)",
           "code_arm_required": "Require a code to arm",
           "min_code_length": "Minimum code length",
-          "battery_threshold": "Battery low at or below"
+          "battery_threshold": "Battery low at or below",
+          "log_retention_days": "Days to keep the event log",
+          "selftest_interval_days": "Days between siren test reminders (0 = off)",
+          "selftest_siren_seconds": "Seconds the siren sounds in a test",
+          "selftest_auto": "Sound the siren by itself for the test",
+          "selftest_window_start": "Earliest hour for the test",
+          "selftest_window_end": "Latest hour for the test",
+          "heartbeat_url": "Heartbeat address (optional)",
+          "heartbeat_interval_minutes": "Minutes between heartbeats"
         }
       }
     },
     "error": {
       "no_modes": "Enable at least one mode.",
-      "invalid_config": "The settings are not consistent with the sensors: {error}"
+      "invalid_config": "The settings are not consistent with the sensors: {error}",
+      "heartbeat_url_invalid": "That is not a web address (it must start with http:// or https://)."
     },
     "abort": {
       "already_configured": "Vigil Alarm is already set up.",
@@ -93,7 +110,10 @@
               "alarm_silenced": "Alarm silenced",
               "alarm_acknowledged": "Alarm acknowledged",
               "code_rejected": "Code rejected",
-              "code_locked": "Codes locked after too many wrong codes"
+              "code_locked": "Codes locked after too many wrong codes",
+              "selftest_checked": "Self-check done",
+              "selftest_reminder": "Test reminder sent",
+              "selftest_siren_tested": "Siren tested"
             }
           }
         }
@@ -147,7 +167,10 @@
           "alarm_silenced": "Alarm silenced",
           "alarm_acknowledged": "Alarm acknowledged",
           "code_rejected": "Code rejected",
-          "code_locked": "Codes locked after too many wrong codes"
+          "code_locked": "Codes locked after too many wrong codes",
+          "selftest_checked": "Self-check done",
+          "selftest_reminder": "Test reminder sent",
+          "selftest_siren_tested": "Siren tested"
         }
       }
     },
@@ -399,6 +422,18 @@
     "siren_on_battery": {
       "title": "Siren on battery power: {name}",
       "description": "The siren {name} has lost mains power and runs on its battery. Check the power. This message disappears by itself."
+    },
+    "selftest_overdue": {
+      "title": "Siren not tested for {days} days",
+      "description": "The siren has not been tested for {days} days. Use \"Test siren\" in the Vigil Alarm panel, or the action vigil_alarm.test_siren. This message disappears when you have tested it."
+    },
+    "selftest_channel_missing": {
+      "title": "Notification channel not working: {name}",
+      "description": "The notify service of the channel {name} no longer exists, so it cannot send messages. Check the channel in the Vigil Alarm panel. This message disappears by itself."
+    },
+    "heartbeat_failing": {
+      "title": "Heartbeat cannot be sent",
+      "description": "Vigil Alarm has not been able to reach the heartbeat address several times in a row ({reason}). A monitoring service that expects the heartbeat will report this. Check the address under Settings in the Vigil Alarm panel and your internet connection. This message disappears by itself when the heartbeat works again."
     }
   }
 }

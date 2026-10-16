@@ -1,0 +1,439 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vigil Alarm",
+        "description": "Instellingen van het alarm. Sensoren, groepen en gebruikers voeg je daarna toe.",
+        "data": {
+          "name": "Naam",
+          "modes": "Ingeschakelde modi",
+          "exit_delay_home": "Uitlooptijd: thuis",
+          "exit_delay_away": "Uitlooptijd: weg",
+          "exit_delay_night": "Uitlooptijd: nacht",
+          "default_entry_delay": "Standaard inlooptijd",
+          "trigger_time": "Duur alarm (0 = tot uitschakelen)",
+          "code_arm_required": "Code vereist om in te schakelen",
+          "min_code_length": "Minimale codelengte",
+          "battery_threshold": "Batterij laag bij of onder",
+          "log_retention_days": "Dagen dat het gebeurtenissenlogboek bewaard blijft",
+          "selftest_interval_days": "Dagen tussen herinneringen voor de siretest (0 = uit)",
+          "selftest_siren_seconds": "Seconden dat de sirene klinkt bij een test",
+          "selftest_auto": "Sirene zelf laten klinken voor de test",
+          "selftest_window_start": "Vroegste uur voor de test",
+          "selftest_window_end": "Laatste uur voor de test",
+          "heartbeat_url": "Hartslag-adres (optioneel)",
+          "heartbeat_interval_minutes": "Minuten tussen hartslagen"
+        }
+      },
+      "reconfigure": {
+        "title": "Vigil Alarm",
+        "description": "Instellingen van het alarm. Sensoren, groepen en gebruikers voeg je daarna toe.\n\n{error}",
+        "data": {
+          "name": "Naam",
+          "modes": "Ingeschakelde modi",
+          "exit_delay_home": "Uitlooptijd: thuis",
+          "exit_delay_away": "Uitlooptijd: weg",
+          "exit_delay_night": "Uitlooptijd: nacht",
+          "default_entry_delay": "Standaard inlooptijd",
+          "trigger_time": "Duur alarm (0 = tot uitschakelen)",
+          "code_arm_required": "Code vereist om in te schakelen",
+          "min_code_length": "Minimale codelengte",
+          "battery_threshold": "Batterij laag bij of onder",
+          "log_retention_days": "Dagen dat het gebeurtenissenlogboek bewaard blijft",
+          "selftest_interval_days": "Dagen tussen herinneringen voor de siretest (0 = uit)",
+          "selftest_siren_seconds": "Seconden dat de sirene klinkt bij een test",
+          "selftest_auto": "Sirene zelf laten klinken voor de test",
+          "selftest_window_start": "Vroegste uur voor de test",
+          "selftest_window_end": "Laatste uur voor de test",
+          "heartbeat_url": "Hartslag-adres (optioneel)",
+          "heartbeat_interval_minutes": "Minuten tussen hartslagen"
+        }
+      }
+    },
+    "error": {
+      "no_modes": "Schakel minstens één modus in.",
+      "invalid_config": "De instellingen passen niet bij de sensoren: {error}",
+      "heartbeat_url_invalid": "Dit is geen webadres (het moet beginnen met http:// of https://)."
+    },
+    "abort": {
+      "already_configured": "Vigil Alarm is al ingesteld.",
+      "reconfigure_successful": "Opgeslagen."
+    }
+  },
+  "selector": {
+    "mode": {
+      "options": {
+        "home": "Thuis",
+        "away": "Weg",
+        "night": "Nacht"
+      }
+    }
+  },
+  "entity": {
+    "event": {
+      "alarm_events": {
+        "name": "Alarmgebeurtenissen",
+        "state_attributes": {
+          "event_type": {
+            "name": "Soort gebeurtenis",
+            "state": {
+              "armed": "Ingeschakeld",
+              "arming_started": "Inschakelen gestart",
+              "arm_refused": "Inschakelen geweigerd",
+              "disarmed": "Uitgeschakeld",
+              "pending_started": "Inlooptijd gestart",
+              "triggered": "Alarm afgegaan",
+              "trigger_cause_changed": "Oorzaak van het alarm gewijzigd",
+              "trigger_ended": "Alarm beëindigd",
+              "sensor_faulted": "Sensorstoring",
+              "sensor_unconfirmed": "Onbevestigde melding",
+              "sensor_unconfirmed_escalated": "Onbevestigde melding geëscaleerd",
+              "sensor_bypassed": "Sensor omzeild",
+              "sensor_bypassed_at_arm": "Sensor omzeild bij inschakelen",
+              "sensor_unbypassed": "Omzeiling van sensor opgeheven",
+              "bypass_refused": "Omzeilen geweigerd",
+              "supervision_lost": "Sensor onbereikbaar",
+              "supervision_restored": "Sensor weer bereikbaar",
+              "technical_alarm_started": "Technisch alarm gestart",
+              "technical_alarm_ended": "Technisch alarm beëindigd",
+              "state_restore_failed": "Opgeslagen status niet hersteld",
+              "notification_failed": "Melding mislukt",
+              "siren_started": "Sirene gestart",
+              "siren_stopped": "Sirene gestopt",
+              "siren_failed": "Sirene mislukt",
+              "siren_unavailable": "Sirene onbereikbaar",
+              "siren_available": "Sirene weer bereikbaar",
+              "siren_power_lost": "Sirene zonder netstroom",
+              "siren_power_restored": "Sirene weer op netstroom",
+              "battery_low": "Batterij bijna leeg",
+              "battery_ok": "Batterij weer in orde",
+              "alarm_silenced": "Alarm gedempt",
+              "alarm_acknowledged": "Alarm bevestigd",
+              "code_rejected": "Code geweigerd",
+              "code_locked": "Codes vergrendeld na te veel foute codes",
+              "selftest_checked": "Zelfcontrole gedaan",
+              "selftest_reminder": "Testherinnering verstuurd",
+              "selftest_siren_tested": "Sirene getest"
+            }
+          }
+        }
+      }
+    },
+    "sensor": {
+      "sensor_status": {
+        "name": "Status",
+        "state": {
+          "closed": "Dicht",
+          "open": "Open",
+          "unavailable": "Onbereikbaar",
+          "bypassed": "Omzeild",
+          "bypassed_at_arm": "Omzeild bij inschakelen",
+          "waiting": "Wacht tot dicht"
+        }
+      },
+      "last_event": {
+        "name": "Laatste melding",
+        "state": {
+          "armed": "Ingeschakeld",
+          "arming_started": "Inschakelen gestart",
+          "arm_refused": "Inschakelen geweigerd",
+          "disarmed": "Uitgeschakeld",
+          "pending_started": "Inlooptijd gestart",
+          "triggered": "Alarm afgegaan",
+          "trigger_cause_changed": "Oorzaak van het alarm gewijzigd",
+          "trigger_ended": "Alarm beëindigd",
+          "sensor_faulted": "Sensorstoring",
+          "sensor_unconfirmed": "Onbevestigde melding",
+          "sensor_unconfirmed_escalated": "Onbevestigde melding geëscaleerd",
+          "sensor_bypassed": "Sensor omzeild",
+          "sensor_bypassed_at_arm": "Sensor omzeild bij inschakelen",
+          "sensor_unbypassed": "Omzeiling van sensor opgeheven",
+          "bypass_refused": "Omzeilen geweigerd",
+          "supervision_lost": "Sensor onbereikbaar",
+          "supervision_restored": "Sensor weer bereikbaar",
+          "technical_alarm_started": "Technisch alarm gestart",
+          "technical_alarm_ended": "Technisch alarm beëindigd",
+          "state_restore_failed": "Opgeslagen status niet hersteld",
+          "notification_failed": "Melding mislukt",
+          "siren_started": "Sirene gestart",
+          "siren_stopped": "Sirene gestopt",
+          "siren_failed": "Sirene mislukt",
+          "siren_unavailable": "Sirene onbereikbaar",
+          "siren_available": "Sirene weer bereikbaar",
+          "siren_power_lost": "Sirene zonder netstroom",
+          "siren_power_restored": "Sirene weer op netstroom",
+          "battery_low": "Batterij bijna leeg",
+          "battery_ok": "Batterij weer in orde",
+          "alarm_silenced": "Alarm gedempt",
+          "alarm_acknowledged": "Alarm bevestigd",
+          "code_rejected": "Code geweigerd",
+          "code_locked": "Codes vergrendeld na te veel foute codes",
+          "selftest_checked": "Zelfcontrole gedaan",
+          "selftest_reminder": "Testherinnering verstuurd",
+          "selftest_siren_tested": "Sirene getest"
+        }
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Omzeilen"
+      }
+    },
+    "binary_sensor": {
+      "active_intrusion": {
+        "name": "Inbraakalarm"
+      },
+      "active_fire": {
+        "name": "Brandalarm"
+      },
+      "active_gas": {
+        "name": "Gasalarm"
+      },
+      "active_tamper": {
+        "name": "Sabotagealarm"
+      },
+      "technical_alarm": {
+        "name": "Wateralarm"
+      }
+    },
+    "alarm_control_panel": {
+      "alarm": {
+        "state_attributes": {
+          "cause": {
+            "name": "Oorzaak",
+            "state": {
+              "intrusion": "Inbraak",
+              "fire": "Brand",
+              "gas": "Gas",
+              "tamper": "Sabotage",
+              "fault": "Sensorstoring"
+            }
+          },
+          "refuse_reason": {
+            "name": "Geweigerd omdat",
+            "state": {
+              "not_disarmed": "Niet uitgeschakeld",
+              "alarm_condition": "Er is een alarmsituatie open",
+              "sensor_unavailable": "Een sensor is onbereikbaar",
+              "sensor_open": "Een sensor is open"
+            }
+          }
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "code_required": {
+      "message": "Een code is vereist."
+    },
+    "code_locked": {
+      "message": "Te veel foute codes. Codes zijn enkele minuten vergrendeld."
+    },
+    "invalid_code": {
+      "message": "Ongeldige code."
+    },
+    "not_ready": {
+      "message": "Het alarm is nog aan het opstarten."
+    },
+    "mode_not_allowed": {
+      "message": "{user} mag niet inschakelen in modus {mode}."
+    },
+    "arm_refused": {
+      "message": "Inschakelen geweigerd: {reason} ({sensors})."
+    },
+    "unknown_sensor": {
+      "message": "Onbekende sensor."
+    },
+    "tamper_bypass_not_allowed": {
+      "message": "Sabotage omzeilen vereist het recht om sabotage te omzeilen, of een Home Assistant-beheerder."
+    },
+    "sensor_not_bypassable": {
+      "message": "Deze sensor kan niet worden omzeild."
+    },
+    "invalid_config": {
+      "message": "Ongeldige configuratie: {error}"
+    },
+    "no_channels": {
+      "message": "Er is geen meldingskanaal ingesteld."
+    },
+    "no_sirens": {
+      "message": "Er is geen sirene ingesteld."
+    },
+    "alarm_active": {
+      "message": "Er is een alarm actief."
+    },
+    "mode_not_enabled": {
+      "message": "Modus {mode} staat niet aan."
+    }
+  },
+  "services": {
+    "arm": {
+      "name": "Inschakelen",
+      "description": "Schakel het alarm in een modus in, met de naam van het bedienpunt.",
+      "fields": {
+        "mode": {
+          "name": "Modus",
+          "description": "Thuis, weg of nacht."
+        },
+        "code": {
+          "name": "Code",
+          "description": "Code van een gebruiker. Niet nodig voor Home Assistant-beheerders in de interface."
+        },
+        "source": {
+          "name": "Bron",
+          "description": "Naam van het bedienpunt, bijvoorbeeld een paneel. Komt in het logboek en bij wie het alarm wijzigde."
+        }
+      }
+    },
+    "disarm": {
+      "name": "Uitschakelen",
+      "description": "Schakel het alarm uit, met de naam van het bedienpunt.",
+      "fields": {
+        "code": {
+          "name": "Code",
+          "description": "Code van een gebruiker. Niet nodig voor Home Assistant-beheerders in de interface."
+        },
+        "source": {
+          "name": "Bron",
+          "description": "Naam van het bedienpunt, bijvoorbeeld een paneel. Komt in het logboek en bij wie het alarm wijzigde."
+        }
+      }
+    },
+    "bypass": {
+      "name": "Sensor omzeilen",
+      "description": "Negeer een sensor tijdelijk tot het alarm wordt uitgeschakeld.",
+      "fields": {
+        "sensor": {
+          "name": "Sensor",
+          "description": "De sensor-entiteit van de sensor."
+        },
+        "code": {
+          "name": "Code",
+          "description": "Code van een gebruiker. Niet nodig voor Home Assistant-beheerders in de UI."
+        },
+        "source": {
+          "name": "Bron",
+          "description": "Naam van het bedienpunt, bijvoorbeeld een paneel. Komt in het logboek en bij wie het alarm wijzigde."
+        }
+      }
+    },
+    "unbypass": {
+      "name": "Sensor weer bewaken",
+      "description": "Bewaak een omzeilde sensor weer.",
+      "fields": {
+        "sensor": {
+          "name": "Sensor",
+          "description": "De sensor-entiteit van de sensor."
+        },
+        "code": {
+          "name": "Code",
+          "description": "Code van een gebruiker. Niet nodig voor Home Assistant-beheerders in de UI."
+        },
+        "source": {
+          "name": "Bron",
+          "description": "Naam van het bedienpunt, bijvoorbeeld een paneel. Komt in het logboek en bij wie het alarm wijzigde."
+        }
+      }
+    },
+    "test_notification": {
+      "name": "Testmelding",
+      "description": "Stuur een testbericht naar de meldingskanalen.",
+      "fields": {
+        "channel": {
+          "name": "Kanaal",
+          "description": "Naam van één kanaal; leeg = alle."
+        }
+      }
+    },
+    "test_siren": {
+      "name": "Sirene testen",
+      "description": "Laat de sirene kort klinken om te controleren of hij reageert. Niet mogelijk tijdens een alarm.",
+      "fields": {
+        "siren": {
+          "name": "Sirene",
+          "description": "Naam van één sirene; leeg = alle."
+        },
+        "duration": {
+          "name": "Duur",
+          "description": "Seconden."
+        }
+      }
+    },
+    "silence": {
+      "name": "Sirene dempen",
+      "description": "Stop de sirenes; het alarm blijft actief.",
+      "fields": {
+        "code": {
+          "name": "Code",
+          "description": "Code van een gebruiker. Niet nodig voor Home Assistant-beheerders in de UI."
+        },
+        "source": {
+          "name": "Bron",
+          "description": "Naam van het bedienpunt, bijvoorbeeld een paneel. Komt in het logboek en bij wie het alarm wijzigde."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Alarm bevestigen",
+      "description": "Bevestig dat je het alarm hebt gezien; dit annuleert escalatieberichten.",
+      "fields": {
+        "code": {
+          "name": "Code",
+          "description": "Code van een gebruiker. Niet nodig voor Home Assistant-beheerders in de UI."
+        },
+        "source": {
+          "name": "Bron",
+          "description": "Naam van het bedienpunt, bijvoorbeeld een paneel. Komt in het logboek en bij wie het alarm wijzigde."
+        }
+      }
+    },
+    "check_code": {
+      "name": "Code controleren",
+      "description": "Controleer of een code geldig is. Verandert niets. Een foute code telt mee voor de blokkade.",
+      "fields": {
+        "code": {
+          "name": "Code",
+          "description": "De code die gecontroleerd wordt."
+        },
+        "source": {
+          "name": "Bron",
+          "description": "Naam van het bedieningspunt, bijvoorbeeld een paneel."
+        }
+      }
+    }
+  },
+  "issues": {
+    "sensor_unreachable": {
+      "title": "Sensor niet bereikbaar: {name}",
+      "description": "Vigil Alarm kan de sensor {name} niet bereiken. Controleer het apparaat (batterij, bereik, voeding). Inschakelen kan geweigerd worden totdat hij terug is. Deze melding verdwijnt vanzelf."
+    },
+    "battery_low": {
+      "title": "Batterij bijna leeg: {name}",
+      "description": "De batterij van {name} is bijna leeg. Vervang hem. Deze melding verdwijnt vanzelf als de batterij weer in orde is."
+    },
+    "battery_low_level": {
+      "title": "Batterij bijna leeg: {name} ({level}%)",
+      "description": "De batterij van {name} staat op {level}%. Vervang hem. Deze melding verdwijnt vanzelf als de batterij weer in orde is."
+    },
+    "siren_unavailable": {
+      "title": "Sirene niet beschikbaar: {name}",
+      "description": "De sirene {name} is niet bereikbaar en klinkt dus niet bij een alarm. Controleer het apparaat. Deze melding verdwijnt vanzelf."
+    },
+    "siren_on_battery": {
+      "title": "Sirene op batterij: {name}",
+      "description": "De sirene {name} heeft geen netstroom meer en werkt op zijn batterij. Controleer de voeding. Deze melding verdwijnt vanzelf."
+    },
+    "selftest_overdue": {
+      "title": "Sirene al {days} dagen niet getest",
+      "description": "De sirene is al {days} dagen niet getest. Gebruik \"Sirene testen\" in het Vigil Alarm-paneel, of de actie vigil_alarm.test_siren. Deze melding verdwijnt zodra je hebt getest."
+    },
+    "selftest_channel_missing": {
+      "title": "Meldingskanaal werkt niet: {name}",
+      "description": "De notify-dienst van het kanaal {name} bestaat niet meer, dus er kunnen geen berichten mee verstuurd worden. Controleer het kanaal in het Vigil Alarm-paneel. Deze melding verdwijnt vanzelf."
+    },
+    "heartbeat_failing": {
+      "title": "Hartslag kan niet worden verstuurd",
+      "description": "Vigil Alarm kan het hartslag-adres al een paar keer achter elkaar niet bereiken ({reason}). Een bewakingsdienst die de hartslag verwacht, zal dit melden. Controleer het adres bij Instellingen in het Vigil Alarm-paneel en je internetverbinding. Deze melding verdwijnt vanzelf als de hartslag weer werkt."
+    }
+  }
+}

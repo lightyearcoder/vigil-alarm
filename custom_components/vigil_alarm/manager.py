@@ -64,7 +64,10 @@ from .const import (
     SUBENTRY_SENSOR_GROUP,
 )
 from .credentials import find_user_by_code
+from .eventlog import EventLog
 from .notifier import Notifier
+from .heartbeat import Heartbeat
+from .selftest import SelfTest
 from .sirens import SirenController
 from .supervisor import Supervisor
 from .vigil_core import Config, ConfigError, Engine
@@ -73,6 +76,7 @@ _LOGGER = logging.getLogger(__name__)
 
 SIGNAL_UPDATE = f"{DOMAIN}_update_{{}}"
 SIGNAL_EVENT = f"{DOMAIN}_event_{{}}"
+ROUTINE_EVENTS = {"selftest_checked", "selftest_reminder", "selftest_siren_tested"}
 
 
 def build_config(entry: ConfigEntry, extra: dict[str, Item] | None = None) -> Config:
@@ -153,6 +157,7 @@ class VigilManager:
         self.engine = Engine(self.config, now=self._wall(), on_event=self._handle_event)
         self.ready = False
         self.early_events: list[dict[str, Any]] = []
+        self.eventlog = EventLog(hass, entry, self)
         self._code_failures: list[float] = []  # monotonic times of recent wrong codes
         self._locked_until = 0.0
         self.last_event: dict[str, Any] | None = None
@@ -174,6 +179,8 @@ class VigilManager:
         }
         self.notifier = Notifier(hass, self)
         self.sirens = SirenController(hass, self)
+        self.selftest = SelfTest(hass, entry, self)
+        self.heartbeat = Heartbeat(hass, entry)
         self.supervisor = Supervisor(hass, self)
         self.users: list[Item] = [
             sub for sub in items_of(entry).values() if sub.subentry_type == SUBENTRY_USER
@@ -200,6 +207,7 @@ class VigilManager:
         return bool(self.users) and self.entry.data.get(CONF_CODE_ARM_REQUIRED, True)
 
     async def async_setup(self) -> None:
+        await self.eventlog.async_load()
         await self._async_restore()
         self._sync()
         if self.hass.is_running:
@@ -246,6 +254,7 @@ class VigilManager:
             self._unsub_timer()
             self._unsub_timer = None
         await self._store.async_save(self.engine.export_state())
+        await self.eventlog.async_flush()
 
     # ---------------------------------------------------------- persistence
 
@@ -308,6 +317,7 @@ class VigilManager:
         if data.get("type") in ("armed", "disarmed"):
             self.changed_by = data.get("user")
         self.last_event = data
+        self.eventlog.add(data)
         async_dispatcher_send(self.hass, SIGNAL_EVENT.format(self.entry.entry_id), data)
         self.sirens.handle(data)
         self.notifier.handle(data)
@@ -316,7 +326,9 @@ class VigilManager:
     def publish(self, type_: str, **fields: Any) -> None:
         """Publish an event of the glue layer (not sent to the notifier)."""
         data = {"t": self._wall(), "type": type_, **fields}
-        self.last_event = data
+        if type_ not in ROUTINE_EVENTS:  # the daily check must not replace "the last thing the alarm reported"
+            self.last_event = data
+        self.eventlog.add(data)
         async_dispatcher_send(self.hass, SIGNAL_EVENT.format(self.entry.entry_id), data)
         self.notifier.handle(data)  # ignores everything but the events it has a text for
 
@@ -333,6 +345,7 @@ class VigilManager:
         event = {"t": self._wall(), "type": type_, **fields}
         self.last_event = event
         self.early_events.append(event)
+        self.eventlog.add(event)
         self.notifier.handle(event)
 
     # ------------------------------------------------------------- commands

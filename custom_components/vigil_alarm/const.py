@@ -71,6 +71,33 @@ CONF_POWER_BATTERY_VALUE = "power_battery_value"
 CONF_BATTERY_THRESHOLD = "battery_threshold"
 DEFAULT_BATTERY_THRESHOLD = 20
 
+CONF_SELFTEST_INTERVAL = "selftest_interval_days"  # 0 = no reminders
+CONF_SELFTEST_SECONDS = "selftest_siren_seconds"
+CONF_SELFTEST_AUTO = "selftest_auto"
+CONF_SELFTEST_FROM = "selftest_window_start"  # hour of the day
+CONF_SELFTEST_TO = "selftest_window_end"
+DEFAULT_SELFTEST = {
+    CONF_SELFTEST_INTERVAL: 30,
+    CONF_SELFTEST_SECONDS: 2,
+    CONF_SELFTEST_AUTO: False,
+    CONF_SELFTEST_FROM: 9,
+    CONF_SELFTEST_TO: 20,
+}
+SELFTEST_RANGES = {  # setting -> (lowest, highest)
+    CONF_SELFTEST_INTERVAL: (0, 365),
+    CONF_SELFTEST_SECONDS: (1, 5),
+    CONF_SELFTEST_FROM: (0, 23),
+    CONF_SELFTEST_TO: (1, 24),
+}
+CONF_HEARTBEAT_URL = "heartbeat_url"  # a secret; empty = off
+CONF_HEARTBEAT_INTERVAL = "heartbeat_interval_minutes"
+DEFAULT_HEARTBEAT_INTERVAL = 5
+HEARTBEAT_INTERVAL_RANGE = (1, 1440)
+HEARTBEAT_URL_MAX = 2048
+CONF_LOG_RETENTION_DAYS = "log_retention_days"
+DEFAULT_LOG_RETENTION_DAYS = 90
+LOG_RETENTION_FLOOR = 1
+LOG_RETENTION_CEILING = 3650
 CONF_MIN_CODE_LENGTH = "min_code_length"
 MIN_CODE_LENGTH_FLOOR = 4  # the lowest value the setting accepts
 MIN_CODE_LENGTH_CEILING = 12
@@ -118,6 +145,9 @@ EVENT_TYPES = [
     "alarm_acknowledged",
     "code_rejected",
     "code_locked",
+    "selftest_checked",
+    "selftest_reminder",
+    "selftest_siren_tested",
 ]
 
 CODE_MAX_FAILURES = 5  # wrong codes within CODE_FAILURE_WINDOW seconds lock all codes

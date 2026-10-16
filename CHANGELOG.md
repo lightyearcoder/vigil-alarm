@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1
+
+- **Settings in sections:** the Settings tab is now one card per subject (modes and delays, codes, batteries, event log, self-test, heartbeat), each with a line of explanation. The hours for the automatic siren test only show when that option is on; the hours you set are kept.
+- **Heartbeat:** Vigil can call a web address of your choice at a fixed interval (default every 5 minutes, also when the alarm is disarmed), so a monitoring service outside your house reports when Home Assistant, the computer or your internet stops. It is not tied to any service; the manual works out Healthchecks.io as an example. The address is treated as a secret and is kept out of the log, the diagnostics and the Repairs. A *Heartbeat* card on the Overview shows the last success and failure and has a *Test now* button; three failures in a row give a Repair.
+- **Self-test:** a quiet daily check that your notification services still exist and your sirens can be reached (only a missing channel gives a message and a Repair), and a monthly siren test reminder (interval is a setting, 0 = off) with a **Test siren** button on phones using the Home Assistant app. A second reminder follows after 3 days and a Repair after 7 more. Optionally Vigil sounds the siren itself within hours you set (off by default). A *Self-test* card on the Overview shows the last check and the next test; *Test siren now* sounds the siren for a moment. Three new events (`selftest_checked`, `selftest_reminder`, `selftest_siren_tested`) are logged.
+- **Event log:** a new *Log* tab shows everything Vigil publishes as an event, newest first, and keeps it for 90 days (a setting, 1 to 3650 days). Home Assistant's own logbook keeps ten days by default. The log holds no codes. Download it as **JSON Lines** (one object per line) or **CSV** (RFC 4180); times are RFC 3339 in UTC, with the fields `time`, `event`, `source`, `user`, `item`, `result` and `detail`, so any standard tool can read it. The log survives restarts and updates.
+
 ## 0.3.0
 
 - **Find sensors:** *Sensors → Find sensors* lists the door, window, motion, smoke, gas, water and tamper sensors Home Assistant already knows, with the battery and tamper sensor of the same device. It works on standard Home Assistant data only (device class, same device, entity category, unit), so it is not tied to one integration. Tick what you want and add several in one go; nothing is saved until you confirm, and if one fails nothing is saved. Doors can be marked as an entrance (entry delay).

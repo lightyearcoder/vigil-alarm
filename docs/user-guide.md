@@ -185,14 +185,15 @@ Actions in the lists are icon buttons (edit, copy, delete, test); hover for the 
 
 | Tab | What you do there |
 |---|---|
-| **Overview** | *Ready for use?* (what is still missing), a *Dashboard* card with a button that copies a dashboard with your own entity ids, alarm state, attention points (low batteries, unreachable devices), what each mode watches, and the live status of every sensor. |
+| **Overview** | *Ready for use?* (what is still missing), the *Self-test* card (last check, last siren test, next test, *Test siren now*), the *Heartbeat* card (last success, *Test now*), a *Dashboard* card with a button that copies a dashboard with your own entity ids, alarm state, attention points (low batteries, unreachable devices), what each mode watches, and the live status of every sensor. |
 | **Sensors** | *Find sensors* proposes sensors from Home Assistant; add, edit, copy and delete sensors. Under each name a sentence says how the sensor reacts and when it is watching. The table shows battery level in its own column. One entity can belong to only one sensor. The *Tamper entity* field links the tamper signal of the same device: Vigil creates a separate tamper sensor that can be bypassed on its own. You can also create a standalone tamper sensor. |
 | **Sensor groups** | Which sensors watch in which modes. A group can *suggest itself* for new door contacts or motion sensors. A group that is still in use cannot be deleted. |
 | **Confirmation rules** | Several sensors must trigger within a time window. A sensor that is in a rule cannot be deleted. |
 | **Users** | (Cannot be copied.) Name, code, allowed modes, right to bypass tamper. Codes are stored hashed and never shown. Leave the code empty when editing to keep it. |
 | **Notifications** | `notify` service, kinds of message (alarm, entry delay, arming and disarming, faults and notices, technical alarms), delay, high priority. *Test* sends a test message. |
 | **Sirens** | See above. *Test* sounds the siren for 3 seconds (refused during a real alarm). |
-| **Settings** | Modes, exit delays, entry delay, alarm duration, battery limit, code required to arm, minimum code length (4 to 12 characters, default 4; applies to new and changed codes, existing codes keep working). |
+| **Log** | Everything Vigil publishes as an event, newest first (the newest 200 are shown). *Download* gives the whole log as JSON Lines or CSV (RFC 4180), with times in UTC (RFC 3339) and the fields `time`, `event`, `source`, `user`, `item`, `result` and `detail`. It keeps 90 days by default (*Settings*), holds no codes and survives restarts. |
+| **Settings** | Modes, exit delays, entry delay, alarm duration, battery limit, code required to arm, minimum code length (4 to 12 characters, default 4; applies to new and changed codes, existing codes keep working), days to keep the log (default 90), and the self-test: reminder interval (default 30 days, 0 = off), seconds the siren sounds (1 to 5, default 2), sounding by itself, and the hours it may do so, and the heartbeat address and its interval in minutes (default 5). |
 | **About** | A "new" badge after an update, version, links to the user guide and GitHub, release notes (newest first) and a button that copies the details for a bug report. |
 
 The language of the **notification texts** follows the Home Assistant system language (Settings →
@@ -250,6 +251,38 @@ Real faults (an unreachable sensor, a low battery, a siren that is unavailable o
   sensor.
 - Problems that exist at startup are listed in the `problems` attribute of the alarm without an
   event; events follow on changes. The overview shows them under *Attention*.
+
+### Self-test
+
+Nobody tests a siren every week, so Vigil does the remembering. It runs by itself and needs nothing from you until it is time for a real test.
+
+- **Quiet check, daily.** Vigil checks that the notification services you set up still exist and that the sirens can be reached. It makes no sound. Only a notification channel that has disappeared (for example after you changed phones) produces a message and a Repair; an unreachable siren is already reported as a fault by the supervision above.
+- **Siren test, monthly.** By default every 30 days (a setting; 0 turns it off) Vigil sends a reminder to the channels that receive *faults and notices*. On a phone with the Home Assistant app the message has a **Test siren** button; a tap sounds the siren for 2 seconds. You can also use *Test siren now* on the Overview tab or call `vigil_alarm.test_siren`.
+- **If you do not react,** a second reminder follows after 3 days. After 7 more days a Repair says the test is overdue. Doing a test, by any of the three ways, clears it.
+- **Let Vigil sound the siren itself** is off by default. When you turn it on, Vigil sounds the siren when the test is due, but only between the hours you set (default 9 to 20), so nobody is woken.
+- The test is refused during a real alarm, and it is not an alarm: nothing is sent to the alarm channels.
+- The *Self-test* card on the Overview tab shows the last quiet check, the last siren test and when the next one is due. Self-test events (`selftest_checked`, `selftest_reminder`, `selftest_siren_tested`) are written to the log but do not count as the alarm's last event.
+
+### Heartbeat
+
+A siren and a notification only help when Home Assistant itself is running. The heartbeat covers the other case: if Home Assistant, the computer it runs on or your internet connection stops, nothing inside the house can tell you. So Vigil calls a web address at a fixed interval, and a monitoring service **outside** your house raises the alarm when the calls stop.
+
+- Vigil is not tied to a service. Under *Settings* you enter a **heartbeat address** and the **minutes between heartbeats** (default 5). Any service that expects a regular call and reports when it stays away works. Leave the address empty to turn it off.
+- The call is made all the time, also when the alarm is disarmed, because the question it answers is "is Vigil still running?".
+- The call carries nothing about your alarm: no state, no names, no codes. It is a plain GET request.
+- The address is a secret, because services usually put the key in it. Vigil keeps it out of the log, the Repairs and the downloaded diagnostics, and the panel never shows it to anyone but an administrator on the Settings tab.
+- The *Heartbeat* card on the Overview tab shows the interval, the last success and the last failure, and has a *Test now* button. After three failures in a row a Repair appears, which goes away when the heartbeat works again.
+
+**Worked example with Healthchecks.io** (a free plan exists, or you can run it yourself):
+
+1. Create a check. Set its *period* a little above your interval, for example 5 minutes, and a *grace time* of 5 to 10 minutes, so a single missed call does not trigger a message.
+2. Under *Integrations* connect where the message must go (email, or an app on your phone).
+3. Copy the check's *ping URL*. It is an `https://` address that ends in a long identifier.
+4. Paste it in Vigil Alarm under *Settings → Heartbeat address* and save.
+5. Click *Test now* on the Overview. The check turns green within a few seconds.
+6. To prove it works, stop Home Assistant for longer than the period plus the grace time. You should get a message from the service.
+
+Other services work the same way: you need an address that expects a call, a period, and a way to be told when it is missed.
 
 ## Restarts and updates
 

@@ -49,3 +49,15 @@ async def test_the_about_command(hass, hass_ws_client):
     assert info["system"]["counts"]["sensor"] > 0
     assert info["system"]["alarm_state"] == "disarmed"
     assert "1234" not in json.dumps(info)  # nothing secret in the details people paste into a bug report
+
+
+def test_release_notes_have_no_markdown():
+    from custom_components.vigil_alarm.about import plain_text
+
+    assert plain_text("**Find sensors:** *Sensors → Find sensors* uses `save_many` and [the guide](https://x.y/z).") == (
+        "Find sensors: Sensors → Find sensors uses save_many and the guide."
+    )
+    notes = parse_release_notes((ROOT / "custom_components/vigil_alarm/CHANGELOG.md").read_text())
+    for release in notes:
+        for item in release["items"]:
+            assert "**" not in item and "`" not in item and "](" not in item, item

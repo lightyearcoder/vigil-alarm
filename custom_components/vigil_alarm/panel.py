@@ -22,6 +22,17 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
 from .items import Item, items_of, new_id as new_item_id, save_stored, stored, stored_items
 from .const import (
+    CONF_HEARTBEAT_INTERVAL,
+    CONF_HEARTBEAT_URL,
+    CONF_LOG_RETENTION_DAYS,
+    DEFAULT_HEARTBEAT_INTERVAL,
+    HEARTBEAT_INTERVAL_RANGE,
+    CONF_SELFTEST_AUTO,
+    DEFAULT_SELFTEST,
+    SELFTEST_RANGES,
+    DEFAULT_LOG_RETENTION_DAYS,
+    LOG_RETENTION_CEILING,
+    LOG_RETENTION_FLOOR,
     CONF_MIN_CODE_LENGTH,
     MIN_CODE_LENGTH_CEILING,
     MIN_CODE_LENGTH_FLOOR,
@@ -47,6 +58,7 @@ from .const import (
     SUGGEST_FOR,
 )
 from .about import async_about
+from .heartbeat import valid_url
 from .dashboard import async_dashboard
 from .discovery import async_discover, async_report
 from .readiness import async_create_default_groups, async_readiness, phone_services, phone_title
@@ -56,6 +68,16 @@ from .presets import siren_preset_ids, siren_suggestion
 from .vigil_core import ConfigError
 from .vigil_core.model import AT_ARM_OPEN, CLASSES, GAS_TYPES, ON_UNAVAILABLE, SENSOR_TYPES
 
+def _event_labels() -> dict[str, dict[str, str]]:
+    """The names of the event types, in each language, from the translation files."""
+    out: dict[str, dict[str, str]] = {}
+    for lang in ("en", "nl"):
+        data = json.loads((Path(__file__).parent / "translations" / f"{lang}.json").read_text(encoding="utf-8"))
+        out[lang] = data["entity"]["event"]["alarm_events"]["state_attributes"]["event_type"]["state"]
+    return out
+
+
+_EVENT_LABELS = _event_labels()
 _VERSION = json.loads((Path(__file__).parent / "manifest.json").read_text(encoding="utf-8"))["version"]
 PANEL_URL = "vigil_alarm"
 STATIC_URL = "/vigil_alarm_static/vigil-panel.js"
@@ -145,14 +167,24 @@ def form_schema(modes: list[str]) -> dict[str, list[dict[str, Any]]]:
 
 
 def settings_schema() -> list[dict[str, Any]]:
+    """The settings form. A `section` puts the field on its own card in the panel."""
+    st = SELFTEST_RANGES
     return [
-        _f("modes", "multiselect", options=list(MODES), required=True),
-        *[_f(f"exit_delay_{m}", "number", unit="s", min=0, max=3600, show_if={"modes": [m]}) for m in MODES],
-        _f("default_entry_delay", "number", unit="s", min=0, max=3600),
-        _f("trigger_time", "number", unit="s", min=0, max=86400),
-        _f("battery_threshold", "number", unit="%", min=1, max=100),
-        _f("code_arm_required", "boolean"),
-        _f("min_code_length", "number", min=MIN_CODE_LENGTH_FLOOR, max=MIN_CODE_LENGTH_CEILING),
+        _f("modes", "multiselect", options=list(MODES), required=True, section="alarm"),
+        *[_f(f"exit_delay_{m}", "number", unit="s", min=0, max=3600, show_if={"modes": [m]}, section="alarm") for m in MODES],
+        _f("default_entry_delay", "number", unit="s", min=0, max=3600, section="alarm"),
+        _f("trigger_time", "number", unit="s", min=0, max=86400, section="alarm"),
+        _f("code_arm_required", "boolean", section="codes"),
+        _f("min_code_length", "number", min=MIN_CODE_LENGTH_FLOOR, max=MIN_CODE_LENGTH_CEILING, section="codes"),
+        _f("battery_threshold", "number", unit="%", min=1, max=100, section="battery"),
+        _f("log_retention_days", "number", unit="d", min=LOG_RETENTION_FLOOR, max=LOG_RETENTION_CEILING, section="log"),
+        _f("selftest_interval_days", "number", unit="d", min=st["selftest_interval_days"][0], max=st["selftest_interval_days"][1], section="selftest"),
+        _f("selftest_siren_seconds", "number", unit="s", min=st["selftest_siren_seconds"][0], max=st["selftest_siren_seconds"][1], section="selftest"),
+        _f("selftest_auto", "boolean", default=False, section="selftest"),
+        _f("selftest_window_start", "number", unit="h", min=st["selftest_window_start"][0], max=st["selftest_window_start"][1], show_if={"selftest_auto": [True]}, section="selftest"),
+        _f("selftest_window_end", "number", unit="h", min=st["selftest_window_end"][0], max=st["selftest_window_end"][1], show_if={"selftest_auto": [True]}, section="selftest"),
+        _f("heartbeat_url", "text", section="heartbeat"),
+        _f("heartbeat_interval_minutes", "number", unit="min", min=HEARTBEAT_INTERVAL_RANGE[0], max=HEARTBEAT_INTERVAL_RANGE[1], section="heartbeat"),
     ]
 
 
@@ -188,7 +220,7 @@ def _snapshot(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
         }
     return {
         "version": _VERSION,
-        "entry": {"id": entry.entry_id, "title": entry.title, "data": {CONF_MIN_CODE_LENGTH: MIN_CODE_LENGTH_FLOOR, **entry.data}},
+        "entry": {"id": entry.entry_id, "title": entry.title, "data": {CONF_MIN_CODE_LENGTH: MIN_CODE_LENGTH_FLOOR, CONF_LOG_RETENTION_DAYS: DEFAULT_LOG_RETENTION_DAYS, CONF_HEARTBEAT_INTERVAL: DEFAULT_HEARTBEAT_INTERVAL, **DEFAULT_SELFTEST, **entry.data}},
         "items": {
             kind: [_public(s) for s in items_of(entry).values() if s.subentry_type == TYPE_OF[kind]]
             for kind in KINDS
@@ -303,6 +335,67 @@ async def ws_add_phone(hass: HomeAssistant, connection: websocket_api.ActiveConn
     working[new_id] = stored(SUBENTRY_NOTIFICATION, name, data)
     save_stored(hass, entry, working)
     connection.send_result(msg["id"], {"ok": True, "id": new_id, "title": name})
+
+
+@websocket_api.websocket_command(
+    {vol.Required("type"): "vigil_alarm/log", vol.Optional("limit", default=200): vol.All(int, vol.Range(min=1, max=2000))}
+)
+@websocket_api.require_admin
+@callback
+def ws_log(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """The newest entries of the event log, and what the event types are called."""
+    entry = _entry_for(hass)
+    if entry is None or getattr(entry, "runtime_data", None) is None:
+        _no_entry(connection, msg)
+        return
+    log = entry.runtime_data.eventlog
+    language = "nl" if str(hass.config.language).startswith("nl") else "en"
+    connection.send_result(
+        msg["id"],
+        {"entries": log.recent(msg["limit"]), "total": len(log.entries), "labels": _EVENT_LABELS[language], "retention_days": log.retention_days},
+    )
+
+
+@websocket_api.websocket_command(
+    {vol.Required("type"): "vigil_alarm/log_export", vol.Required("format"): vol.In(["jsonl", "csv"])}
+)
+@websocket_api.require_admin
+@callback
+def ws_log_export(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """The whole log as a file: JSON Lines or CSV."""
+    entry = _entry_for(hass)
+    if entry is None or getattr(entry, "runtime_data", None) is None:
+        _no_entry(connection, msg)
+        return
+    name, media_type, text = entry.runtime_data.eventlog.export(msg["format"])
+    connection.send_result(msg["id"], {"filename": name, "media_type": media_type, "text": text})
+
+
+@websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/selftest"})
+@websocket_api.require_admin
+@callback
+def ws_selftest(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """When the quiet check and the siren test last ran, and when the next test is due."""
+    entry = _entry_for(hass)
+    if entry is None or getattr(entry, "runtime_data", None) is None:
+        _no_entry(connection, msg)
+        return
+    connection.send_result(msg["id"], entry.runtime_data.selftest.status())
+
+
+@websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/heartbeat", vol.Optional("test", default=False): bool})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_heartbeat(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """The heartbeat's status (never the address). With test, call the address once first."""
+    entry = _entry_for(hass)
+    if entry is None or getattr(entry, "runtime_data", None) is None:
+        _no_entry(connection, msg)
+        return
+    beat = entry.runtime_data.heartbeat
+    if msg["test"]:
+        await beat.ping()
+    connection.send_result(msg["id"], beat.status())
 
 
 @websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/dashboard"})
@@ -513,6 +606,48 @@ async def ws_save_settings(
         )
         return
     data[CONF_MIN_CODE_LENGTH] = length
+    try:
+        days = int(data.get(CONF_LOG_RETENTION_DAYS, DEFAULT_LOG_RETENTION_DAYS))
+    except (TypeError, ValueError):
+        days = 0
+    if not LOG_RETENTION_FLOOR <= days <= LOG_RETENTION_CEILING:
+        connection.send_result(
+            msg["id"],
+            _failure(EditError({CONF_LOG_RETENTION_DAYS: "log_retention_range"}, {"min": LOG_RETENTION_FLOOR, "max": LOG_RETENTION_CEILING})),
+        )
+        return
+    data[CONF_LOG_RETENTION_DAYS] = days
+    for key, (low, high) in SELFTEST_RANGES.items():
+        try:
+            value = int(data.get(key, entry.data.get(key, DEFAULT_SELFTEST[key])))
+        except (TypeError, ValueError):
+            value = low - 1
+        if not low <= value <= high:
+            connection.send_result(
+                msg["id"], _failure(EditError({key: "selftest_range"}, {"min": low, "max": high}))
+            )
+            return
+        data[key] = value
+    if data["selftest_window_start"] >= data["selftest_window_end"]:
+        connection.send_result(msg["id"], _failure(EditError({"selftest_window_end": "selftest_window"})))
+        return
+    data[CONF_SELFTEST_AUTO] = bool(data.get(CONF_SELFTEST_AUTO, False))
+    url = str(data.get(CONF_HEARTBEAT_URL) or "").strip()
+    if url and not valid_url(url):
+        connection.send_result(msg["id"], _failure(EditError({CONF_HEARTBEAT_URL: "heartbeat_url_invalid"})))
+        return
+    data[CONF_HEARTBEAT_URL] = url
+    try:
+        minutes = int(data.get(CONF_HEARTBEAT_INTERVAL, DEFAULT_HEARTBEAT_INTERVAL))
+    except (TypeError, ValueError):
+        minutes = 0
+    if not HEARTBEAT_INTERVAL_RANGE[0] <= minutes <= HEARTBEAT_INTERVAL_RANGE[1]:
+        connection.send_result(
+            msg["id"],
+            _failure(EditError({CONF_HEARTBEAT_INTERVAL: "heartbeat_range"}, {"min": HEARTBEAT_INTERVAL_RANGE[0], "max": HEARTBEAT_INTERVAL_RANGE[1]})),
+        )
+        return
+    data[CONF_HEARTBEAT_INTERVAL] = minutes
     if not data.get(CONF_MODES):
         connection.send_result(msg["id"], _failure(EditError({"modes": "no_modes"})))
         return
@@ -527,7 +662,7 @@ async def ws_save_settings(
 
 @callback
 def async_register_commands(hass: HomeAssistant) -> None:
-    for command in (ws_get, ws_about, ws_discover, ws_discover_report, ws_readiness, ws_dashboard, ws_add_phone, ws_create_default_groups, ws_subscribe, ws_save, ws_save_many, ws_delete, ws_save_settings, ws_siren_preset):
+    for command in (ws_get, ws_about, ws_discover, ws_discover_report, ws_readiness, ws_log, ws_log_export, ws_selftest, ws_heartbeat, ws_dashboard, ws_add_phone, ws_create_default_groups, ws_subscribe, ws_save, ws_save_many, ws_delete, ws_save_settings, ws_siren_preset):
         websocket_api.async_register_command(hass, command)
 
 

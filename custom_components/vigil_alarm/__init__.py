@@ -15,7 +15,11 @@ from homeassistant.loader import async_get_integration
 from .const import ATTR_SENSOR, DOMAIN, SERVICE_ACKNOWLEDGE, SERVICE_ARM, SERVICE_BYPASS, SERVICE_CHECK_CODE, SERVICE_DISARM, SERVICE_SILENCE, SERVICE_TEST_NOTIFICATION, SERVICE_TEST_SIREN, SERVICE_UNBYPASS
 from .manager import VigilManager
 from .migration import async_migrate_entry  # noqa: F401  (Home Assistant looks it up here)
+from homeassistant.helpers.storage import Store
+
+from .eventlog import STORAGE_VERSION as EVENTLOG_STORAGE_VERSION
 from .repairs import VigilRepairs
+from .selftest import STORAGE_VERSION as SELFTEST_STORAGE_VERSION
 from .panel import async_register_commands, async_register_panel, async_remove_panel
 from .vigil_core import ConfigError
 
@@ -119,6 +123,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             sounded += await entry.runtime_data.sirens.async_test(call.data.get("siren"), call.data["duration"])
         if not sounded:
             raise ServiceValidationError(translation_domain=DOMAIN, translation_key="no_sirens")
+        for entry in hass.config_entries.async_loaded_entries(DOMAIN):
+            entry.runtime_data.selftest.record_siren_test("manual")
 
     hass.services.async_register(
         DOMAIN,
@@ -157,6 +163,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> boo
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     await async_register_panel(hass, (await async_get_integration(hass, DOMAIN)).version.string)
     _remove_orphans(hass, entry, manager)
+    await manager.selftest.async_start()
+    entry.async_on_unload(manager.selftest.stop)
+    manager.heartbeat.start()
+    entry.async_on_unload(manager.heartbeat.stop)
     entry.async_on_unload(VigilRepairs(hass, manager).start())
     # Changing the entry or its items rebuilds the engine from the new config.
     entry.async_on_unload(entry.add_update_listener(_reload))
@@ -195,3 +205,5 @@ async def async_unload_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> bo
 async def async_remove_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> None:
     """The panel stays through reloads (every panel save reloads the entry); it goes with the entry."""
     async_remove_panel(hass)
+    await Store(hass, EVENTLOG_STORAGE_VERSION, f"{DOMAIN}.log.{entry.entry_id}").async_remove()
+    await Store(hass, SELFTEST_STORAGE_VERSION, f"{DOMAIN}.selftest.{entry.entry_id}").async_remove()

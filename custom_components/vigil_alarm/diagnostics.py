@@ -15,6 +15,7 @@ from .const import SUBENTRY_USER
 from .items import items_of
 
 REDACT = {"code_hash", "code_salt", "tags", "code"}
+SECRET_SETTINGS = {"heartbeat_url"}
 
 
 def _clean(data: dict[str, Any]) -> dict[str, Any]:
@@ -33,7 +34,7 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
         for item_id, item in items_of(entry).items()
     ]
     return {
-        "settings": dict(entry.data),
+        "settings": {k: ("**redacted**" if k in SECRET_SETTINGS and v else v) for k, v in entry.data.items()},
         "items": items,
         "state": manager.snapshot() if manager is not None else None,
     }

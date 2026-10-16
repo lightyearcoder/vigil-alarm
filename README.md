@@ -154,6 +154,9 @@ actions:
 | `alarm_silenced` / `alarm_acknowledged` | A person silenced the sirens or confirmed the alarm | `user` |
 | `code_rejected` | Someone entered a wrong code | `source` (for example a panel), `action` |
 | `code_locked` | 5 wrong codes within 5 minutes: all codes are locked for 5 minutes | `source`, `action` |
+| `selftest_checked` | The quiet daily check ran (it never changes `last_event`) | `result` (`ok` or `problems`), `problems` |
+| `selftest_reminder` | A reminder to test the siren was sent | `number` (1 or 2) |
+| `selftest_siren_tested` | The siren was tested | `how` (`manual`, `notification` or `auto`) |
 | `notification_failed` / `state_restore_failed` | Vigil itself had a problem | `channel`, `error`, `reason` |
 
 Entities per alarm: `alarm_control_panel.<name>` (with attributes `cause`, `open_sensors`,

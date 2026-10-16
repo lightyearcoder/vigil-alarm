@@ -13,6 +13,21 @@ from .const import (
     CONF_BATTERY_THRESHOLD,
     CONF_CODE_ARM_REQUIRED,
     CONF_DEFAULT_ENTRY_DELAY,
+    CONF_HEARTBEAT_INTERVAL,
+    CONF_HEARTBEAT_URL,
+    CONF_LOG_RETENTION_DAYS,
+    DEFAULT_HEARTBEAT_INTERVAL,
+    HEARTBEAT_INTERVAL_RANGE,
+    CONF_SELFTEST_AUTO,
+    CONF_SELFTEST_FROM,
+    CONF_SELFTEST_INTERVAL,
+    CONF_SELFTEST_SECONDS,
+    CONF_SELFTEST_TO,
+    DEFAULT_SELFTEST,
+    SELFTEST_RANGES,
+    DEFAULT_LOG_RETENTION_DAYS,
+    LOG_RETENTION_CEILING,
+    LOG_RETENTION_FLOOR,
     CONF_MIN_CODE_LENGTH,
     MIN_CODE_LENGTH_CEILING,
     MIN_CODE_LENGTH_FLOOR,
@@ -26,6 +41,7 @@ from .const import (
 )
 from .editing import CONF_NAME, _TrialEntry
 from .manager import build_config
+from .heartbeat import valid_url
 from .items import OPTION_KEY
 from .migration import ENTRY_VERSION, default_groups
 from .vigil_core import ConfigError
@@ -50,6 +66,15 @@ def _seconds(maximum: int = 3600) -> selector.NumberSelector:
     )
 
 
+def _heartbeat_ok(user_input: dict[str, Any]) -> bool:
+    url = str(user_input.get(CONF_HEARTBEAT_URL) or "").strip()
+    if url:
+        user_input[CONF_HEARTBEAT_URL] = url
+    else:
+        user_input.pop(CONF_HEARTBEAT_URL, None)
+    return not url or valid_url(url)
+
+
 def _entry_schema(d: dict[str, Any]) -> vol.Schema:
     fields: dict[Any, Any] = {
         vol.Required(CONF_MODES, default=d.get(CONF_MODES, list(MODES))): _select(
@@ -70,6 +95,30 @@ def _entry_schema(d: dict[str, Any]) -> vol.Schema:
             min=MIN_CODE_LENGTH_FLOOR, max=MIN_CODE_LENGTH_CEILING, step=1, mode=selector.NumberSelectorMode.BOX
         )
     )
+    fields[vol.Required(CONF_LOG_RETENTION_DAYS, default=d.get(CONF_LOG_RETENTION_DAYS, DEFAULT_LOG_RETENTION_DAYS))] = selector.NumberSelector(
+        selector.NumberSelectorConfig(
+            min=LOG_RETENTION_FLOOR, max=LOG_RETENTION_CEILING, step=1, unit_of_measurement="d", mode=selector.NumberSelectorMode.BOX
+        )
+    )
+    for key in (CONF_SELFTEST_INTERVAL, CONF_SELFTEST_SECONDS):
+        low, high = SELFTEST_RANGES[key]
+        fields[vol.Required(key, default=d.get(key, DEFAULT_SELFTEST[key]))] = selector.NumberSelector(
+            selector.NumberSelectorConfig(min=low, max=high, step=1, mode=selector.NumberSelectorMode.BOX)
+        )
+    fields[vol.Required(CONF_SELFTEST_AUTO, default=d.get(CONF_SELFTEST_AUTO, DEFAULT_SELFTEST[CONF_SELFTEST_AUTO]))] = bool
+    for key in (CONF_SELFTEST_FROM, CONF_SELFTEST_TO):
+        low, high = SELFTEST_RANGES[key]
+        fields[vol.Required(key, default=d.get(key, DEFAULT_SELFTEST[key]))] = selector.NumberSelector(
+            selector.NumberSelectorConfig(min=low, max=high, step=1, mode=selector.NumberSelectorMode.BOX)
+        )
+    fields[vol.Optional(CONF_HEARTBEAT_URL, description={"suggested_value": d.get(CONF_HEARTBEAT_URL, "")})] = selector.TextSelector(
+        selector.TextSelectorConfig(type=selector.TextSelectorType.URL)
+    )
+    fields[vol.Required(CONF_HEARTBEAT_INTERVAL, default=d.get(CONF_HEARTBEAT_INTERVAL, DEFAULT_HEARTBEAT_INTERVAL))] = selector.NumberSelector(
+        selector.NumberSelectorConfig(
+            min=HEARTBEAT_INTERVAL_RANGE[0], max=HEARTBEAT_INTERVAL_RANGE[1], step=1, unit_of_measurement="min", mode=selector.NumberSelectorMode.BOX
+        )
+    )
     return vol.Schema(fields)
 
 
@@ -83,6 +132,8 @@ class VigilConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             if not user_input[CONF_MODES]:
                 errors["base"] = "no_modes"
+            elif not _heartbeat_ok(user_input):
+                errors[CONF_HEARTBEAT_URL] = "heartbeat_url_invalid"
             else:
                 name = user_input.pop(CONF_NAME)
                 return self.async_create_entry(
@@ -99,6 +150,8 @@ class VigilConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             if not user_input[CONF_MODES]:
                 errors["base"] = "no_modes"
+            elif not _heartbeat_ok(user_input):
+                errors[CONF_HEARTBEAT_URL] = "heartbeat_url_invalid"
             else:
                 trial = _TrialEntry(entry, user_input)
                 try:
