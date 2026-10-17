@@ -130,6 +130,7 @@ def test_the_panel_gets_its_settings_from_the_profile_not_from_the_yaml():
 
 
 def test_the_default_profile_entity_is_the_one_vigil_makes():
+    pytest.importorskip("homeassistant")  # this job has no Home Assistant; the full run has
     from custom_components.vigil_alarm.panels import profile_object_id
 
     assert profile_object_id("vigil-panel-garage") == "vigil_panel_garage_profile"
@@ -138,6 +139,7 @@ def test_the_default_profile_entity_is_the_one_vigil_makes():
 
 def test_the_panel_reports_what_vigil_reads():
     """Vigil finds these by the name of the entity: Hardware ID, Capabilities, Firmware version, Profile version."""
+    pytest.importorskip("homeassistant")  # this job has no Home Assistant; the full run has
     from custom_components.vigil_alarm.panels import REPORTED
 
     yaml = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
