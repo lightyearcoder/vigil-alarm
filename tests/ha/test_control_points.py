@@ -73,20 +73,35 @@ async def test_bypass_needs_a_code_when_arming_does(hass):
 
 
 async def test_the_attributes_for_displays(hass):
-    await _setup(hass)
+    """Names of sensors are no longer on the alarm entity: a panel gets them in its profile, when it may show them."""
+    from .test_panels import _house, panel_item, profile
+
+    entry = await _house(hass, panel_item(sensor_list="always"))
     hass.states.async_set("binary_sensor.living_pir", "on")
     await hass.async_block_till_done()
     attrs = hass.states.get(PANEL).attributes
-    assert attrs["open_now_text"] == "Living PIR"  # open at all
-    assert attrs["open_sensors_text"] == ""  # but not in the current mode (disarmed)
-    assert attrs["problems_count"] == 0 and attrs["faults_text"] == ""
+    assert attrs["problems_count"] == 0
+    for gone in ("open_now_text", "open_sensors_text", "faults_text", "panel_sensors"):
+        assert gone not in attrs, gone
+    prof = profile(hass).attributes
+    assert prof["open_now_text"] == "Living PIR"  # open at all
+    assert prof["open_sensors_text"] == "" and prof["open_count"] == 1  # but not in the current mode (disarmed)
+    assert prof["faults_text"] == "" and prof["faults_count"] == 0 and prof["problems_count"] == 0
     await _vigil(hass, "arm", mode="home", code="1234")
     hass.states.async_set("binary_sensor.front_door", "on")
     await hass.async_block_till_done()
-    assert hass.states.get(PANEL).attributes["open_sensors_text"] == "Front door"  # watching in Home
-    lines = {l.split("|")[0]: l.split("|") for l in hass.states.get(PANEL).attributes["panel_sensors"].split("\n")}
+    assert profile(hass).attributes["open_sensors_text"] == "Front door"  # watching in Home
+    lines = {l.split("|")[0]: l.split("|") for l in profile(hass).attributes["sensors"].split("\n")}
     assert lines["Living PIR"] == ["Living PIR", "binary_sensor.living_pir", "open", "1"]
     assert lines["Smoke"][3] == "0" and lines["Tamper"][3] == "1"  # fire/gas can never be bypassed
+    assert entry.runtime_data.panels.profile(entry.runtime_data.panels.get("garage"))["modes_mask"] == 7
+    # what is most likely to be bypassed comes first: open and bypassable, then open and fire/gas, then the rest
+    order = [l.split("|")[0] for l in profile(hass).attributes["sensors"].split("\n")]
+    assert order[:2] == ["Front door", "Living PIR"] and order.index("Smoke") > 1 and order[-1] in ("Smoke", "Tamper")
+    hass.states.async_set("binary_sensor.smoke", "on")
+    await hass.async_block_till_done()
+    order = [l.split("|")[0] for l in profile(hass).attributes["sensors"].split("\n")]
+    assert order == ["Front door", "Living PIR", "Smoke", "Tamper"]  # open ones first, the unbypassable after them
 
 
 async def test_the_mode_attribute_and_the_delay_end_are_there_for_displays(hass):
@@ -95,6 +110,9 @@ async def test_the_mode_attribute_and_the_delay_end_are_there_for_displays(hass)
     attrs = hass.states.get(PANEL).attributes
     assert attrs["mode"] == "away"
     assert attrs["delay_end"] is None or attrs["delay_end"] > 1_000_000_000  # epoch seconds
+    # The seconds left, for displays whose own clock is off.
+    assert attrs["delay_left"] is None or 0 <= attrs["delay_left"] <= 120
+    assert (attrs["delay_left"] is None) == (attrs["delay_end"] is None)
 
 
 async def test_too_many_wrong_codes_lock_all_codes_for_a_while(hass, monkeypatch):
@@ -103,14 +121,14 @@ async def test_too_many_wrong_codes_lock_all_codes_for_a_while(hass, monkeypatch
     await _setup(hass)
     clock = [1000.0]
     monkeypatch.setattr(VigilManager, "_clock", staticmethod(lambda: clock[0]))
-    for _ in range(5):
-        with pytest.raises(ServiceValidationError, match="Invalid code"):
+    for _ in range(3):
+        with pytest.raises(ServiceValidationError, match="Invalid code|Too many wrong codes"):
             await _vigil(hass, "disarm", code="0000", source="panel garage")
     assert hass.states.get(EVENTS).attributes["event_type"] == "code_rejected"
     with pytest.raises(ServiceValidationError, match="Too many wrong codes"):  # even the right code
         await _vigil(hass, "arm", mode="home", code="1234")
     assert hass.states.get(PANEL).state == "disarmed"
-    clock[0] += 301
+    clock[0] += 5 * 60 + 1
     await _vigil(hass, "arm", mode="home", code="1234")  # open again
     assert hass.states.get(PANEL).state != "disarmed"
 

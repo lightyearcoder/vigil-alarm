@@ -57,6 +57,9 @@ EVENT_MESSAGES = {
     "battery_low": ("fault", "battery_low"),
     "battery_ok": ("fault", "battery_ok"),
     "code_locked": ("fault", "code_locked"),
+    "code_locked_permanent": ("fault", "code_locked_permanent"),
+    "panel_offline": ("fault", "panel_offline"),
+    "panel_online": ("fault", "panel_online"),
     "alarm_silenced": ("arming", "silenced"),
     "alarm_acknowledged": ("arming", "acknowledged"),
 }
@@ -169,6 +172,7 @@ class Notifier:
             "mode": event.get("mode", "-"),
             "by": by,
             "source": event.get("source") or "-",
+            "panel": event.get("panel") or event.get("source") or "-",
             "minutes": event.get("minutes", "-"),
             "end": self._time(event.get("end")),
             "cause": self._translated(f"cause.{event.get('cause')}", event.get("cause")),

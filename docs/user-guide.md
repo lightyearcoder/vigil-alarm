@@ -84,7 +84,7 @@ the alarm state is kept.
      anyway (bypass)**. Fire and gas can never be bypassed.
    - Optionally add a battery sensor; Vigil then warns when it runs low.
 3. **Add a user** (tab *Users*): a name and a code. Without any user, no code is needed at all.
-   A user can be limited to certain modes, and can be allowed to bypass tamper sensors.
+   A user can be limited to certain modes. Bypassing a sensor is a right you give to a user (*May bypass sensors*): without it a user can neither bypass nor restore a sensor, even with a right code. Whoever may bypass a sensor may also restore it. A tamper sensor needs the extra right *May bypass tamper*, for bypassing and for restoring. Users saved before this right existed keep it until you untick it.
 4. **Add a notification** (tab *Notifications*): pick a `notify` service and the kinds of
    message it should get. With a *delay* the channel only sends alarm messages when the alarm is
    still active after that time: that is an escalation channel for a second person or device.
@@ -145,11 +145,39 @@ Bypass leaves one sensor out until the alarm is switched off (or until you un-by
 
 ### A touch panel
 
-With the ESPHome panel (Guition 4848) you arm, disarm and bypass sensors without a phone. It shows
-only the modes that are on in Vigil, asks for a code the way Vigil does and can switch language.
-Installation and options are in [esphome/README.md](../esphome/README.md). Every panel has its own
-`source` (for example *panel garage*), which shows in the history as *Anna (panel garage)*. A wrong
-code gives the event `code_rejected`, never with the code itself. After 5 wrong codes within 5 minutes all codes are locked for 5 minutes (event `code_locked`, also sent to your fault notification channels); the lock stays in place when Home Assistant restarts; an administrator in the UI can still operate the alarm.
+With the ESPHome panel (Guition 4848) you arm, disarm and bypass sensors without a phone. It reads
+its profile from Vigil: it shows only the modes the panel may arm in, asks for a code the way Vigil does and uses the language you set for it.
+Installation and options are in [esphome/README.md](../esphome/README.md). The device name is the panel id and the `source` of every call, which shows in the history as *Anna (vigil-panel-garage)*. A wrong
+code gives the event `code_rejected`, never with the code itself. The lock goes in steps and you set the numbers under *Settings*, *Locking*. By default: after 3 wrong codes that panel is locked for 5 minutes, then after 2 more wrong codes for 15 minutes, then after 2 more for 60 minutes, and after 1 more wrong code for good (events `code_locked` and `code_locked_permanent`, also sent to your fault notification channels). A permanent lock only goes away with *Clear lock* at the panel, and then everything starts from the first step again. A right code also sets the count and the step back to zero. The lock stays in place when Home Assistant restarts; the shared timer for everything that is not a registered panel (*other*) never locks for good, because nobody could lift it, but repeats the last wait; an administrator in the UI can still operate the alarm. Every registered panel (see below) has its own timer; everything else (a phone, an automation, any other name) shares one.
+
+#### Panels, tablets and phones
+
+The tab *Panels* is the register of everything that may operate the alarm besides the Home Assistant UI: ESPHome panels (recognised by their panel id) and tablets or phones (recognised by their Home Assistant account). All are set up the same way. As soon as one account is registered, other ordinary accounts are refused before their code is looked at (event `user_refused`); administrators, automations and ESPHome panels are not touched. Details, and the advice to give an administrator a second, ordinary account for daily use, are in the [tablet guide](tablet.md).
+
+#### Registering a panel (tab *Panels*)
+
+A panel or tablet that you register in the *Panels* tab is treated as a dumb terminal: Vigil decides what it may do. You give it a name and a **panel id**, which is the name of the ESPHome device and also the `source` its calls carry. Per panel you set:
+
+When you add a panel you first choose the **kind of device**. *ESPHome panel* asks for the name of the ESPHome device (the panel id) and. *Tablet or phone running Home Assistant* asks only for the Home Assistant account; Vigil makes the panel id from the name itself. Everything else (modes, disarm, bypass, language, sensor list, installer code) is the same for both. The language starts as that of the person who adds the panel, English if that is not Dutch or English.
+
+- the modes it may arm in, and whether it may disarm, bypass sensors, and silence or acknowledge;
+- the language (default: that of Home Assistant);
+- whether it may show the list of sensors: *always*, *only after unlocking* (default) or *never*, and how long it stays unlocked (default 60 seconds);
+- an optional **installer code** for this panel, kept as a hash, with its own wrong-code timer. The panel sends it with `vigil_alarm.unlock_panel`; Vigil checks it and unlocks the panel for the set time. It opens the information pages and (like the code of any Vigil user) the sensor list, and never disarms the alarm: disarming always needs a valid user code;
+- what the firmware **reports** about itself (its hardware, firmware version and profile version) is shown on the panel card, and *Ready for use?* gives advice when the firmware does not understand the profile;
+- **blocked**: Vigil refuses every call with that panel id and logs it.
+
+What is enforced, on the server side: a call from a registered panel that its profile does not allow is refused and logged (event `panel_refused`, with the reason). Bypassing a sensor from a registered panel always needs a user code. A blocked panel is refused before any code is looked at. Calls whose source is not registered are not restricted by any of this.
+
+Every registered panel gets an entity `sensor.<panel_id>_profile` (dashes in the panel id become underscores, so `vigil-panel-garage` gives `sensor.vigil_panel_garage_profile`) with what it may do and show. The names of the sensors are only in it while the panel is unlocked (or when the list is set to *always*), and the attributes that hold them are kept out of the history. It never holds a code, hash, key or password. **Be honest about what this protects:** `source` is plain text, so Vigil cannot prove that a call really comes from that panel. The profile protects against mistakes and against a panel that should not have certain buttons, not against someone who can already call services. The real protection is the code, the lockout, the encrypted connection of the panel and the access rules of Home Assistant itself.
+
+Two buttons per panel, **Unlock** and **Clear lock**, exist only in the Vigil panel (administrators only) and not as Home Assistant actions: an action can be called by any user, automation or panel, so a stolen panel could unlock itself. *Unlock* shows the sensor list for the set time; *Clear lock* lifts the stored lock after wrong codes (it survives a restart, so this is how you lift it). Both are logged with the administrator who did it (`panel_unlocked`, `panel_lock_cleared`).
+
+**Out of reach.** If Vigil cannot reach the ESPHome device of a panel for 10 minutes, you get a Repair *Panel not reachable* and a message on your fault channels (events `panel_offline` and `panel_online`). A panel that is out of reach never changes the alarm state. A blocked panel gives no Repair. After a restart of Home Assistant the ten minutes start again.
+
+A tablet can be registered too, bound to a Home Assistant user, and shows the Vigil card (`type: custom:vigil-card`); see the [tablet guide](tablet.md).
+
+The ESPHome firmware reads this profile itself. A panel that is not in the register shows *Not linked* with the panel id it expects; a blocked panel shows *Blocked*. The list of sensors and the panel's info page (IP address, signal, firmware, uptime) open with a code: the sensor list with the code of any Vigil user (or the installer code), the info page with the installer code of the panel only; until it is unlocked the panel shows only how many sensors are open. The restrictions are also enforced by Vigil for every call that carries the panel's `source`, whatever the firmware does.
 
 ### Silence and acknowledge
 
@@ -189,11 +217,11 @@ Actions in the lists are icon buttons (edit, copy, delete, test); hover for the 
 | **Sensors** | *Find sensors* proposes sensors from Home Assistant; add, edit, copy and delete sensors. Under each name a sentence says how the sensor reacts and when it is watching. The table shows battery level in its own column. One entity can belong to only one sensor. The *Tamper entity* field links the tamper signal of the same device: Vigil creates a separate tamper sensor that can be bypassed on its own. You can also create a standalone tamper sensor. |
 | **Sensor groups** | Which sensors watch in which modes. A group can *suggest itself* for new door contacts or motion sensors. A group that is still in use cannot be deleted. |
 | **Confirmation rules** | Several sensors must trigger within a time window. A sensor that is in a rule cannot be deleted. |
-| **Users** | (Cannot be copied.) Name, code, allowed modes, right to bypass tamper. Codes are stored hashed and never shown. Leave the code empty when editing to keep it. |
+| **Users** | (Cannot be copied.) Name, code, allowed modes, right to bypass, right to bypass tamper. Codes are stored hashed and never shown. Leave the code empty when editing to keep it. |
 | **Notifications** | `notify` service, kinds of message (alarm, entry delay, arming and disarming, faults and notices, technical alarms), delay, high priority. *Test* sends a test message. |
 | **Sirens** | See above. *Test* sounds the siren for 3 seconds (refused during a real alarm). |
 | **Log** | Everything Vigil publishes as an event, newest first (the newest 200 are shown). *Download* gives the whole log as JSON Lines or CSV (RFC 4180), with times in UTC (RFC 3339) and the fields `time`, `event`, `source`, `user`, `item`, `result` and `detail`. It keeps 90 days by default (*Settings*), holds no codes and survives restarts. |
-| **Settings** | Modes, exit delays, entry delay, alarm duration, battery limit, code required to arm, minimum code length (4 to 12 characters, default 4; applies to new and changed codes, existing codes keep working), days to keep the log (default 90), and the self-test: reminder interval (default 30 days, 0 = off), seconds the siren sounds (1 to 5, default 2), sounding by itself, and the hours it may do so, and the heartbeat address and its interval in minutes (default 5). |
+| **Settings** | Modes, exit delays, entry delay, alarm duration, how long to wait for slow sensors after a restart of Home Assistant (seconds, default 120), the screen of the panels (seconds until the screen goes dark, default 30, and whether it may also go dark during an alarm, default no), battery limit, code required to arm, minimum code length (4 to 12 characters, default 4; applies to new and changed codes, existing codes keep working), days to keep the log (default 90), and the self-test: reminder interval (default 30 days, 0 = off), seconds the siren sounds (1 to 5, default 2), sounding by itself, and the hours it may do so, and the heartbeat address and its interval in minutes (default 5). |
 | **About** | A "new" badge after an update, version, links to the user guide and GitHub, release notes (newest first) and a button that copies the details for a bug report. |
 
 The language of the **notification texts** follows the Home Assistant system language (Settings →

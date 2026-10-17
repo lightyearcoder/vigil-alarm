@@ -6,6 +6,7 @@ rules are the same as in the config flows: both use `editing`.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from types import MappingProxyType
@@ -34,6 +35,17 @@ from .const import (
     LOG_RETENTION_CEILING,
     LOG_RETENTION_FLOOR,
     CONF_MIN_CODE_LENGTH,
+    CONF_SCREEN_OFF_ON_ALARM,
+    CONF_SCREEN_OFF_SECONDS,
+    DEFAULT_SCREEN_OFF_ON_ALARM,
+    DEFAULT_SCREEN_OFF_SECONDS,
+    SCREEN_OFF_RANGE,
+    CONF_STARTUP_WAIT,
+    DEFAULT_STARTUP_WAIT,
+    STARTUP_WAIT_RANGE,
+    LOCK_DEFAULTS,
+    LOCK_TRIES_RANGE,
+    LOCK_WAIT_RANGE,
     MIN_CODE_LENGTH_CEILING,
     MIN_CODE_LENGTH_FLOOR,
     CONF_BATTERY_ENTITY,
@@ -51,6 +63,10 @@ from .const import (
     SUBENTRY_RULE,
     SUBENTRY_NOTIFICATION,
     SUBENTRY_SIREN,
+    SUBENTRY_PANEL,
+    SENSOR_LIST_CHOICES,
+    DEFAULT_UNLOCK_SECONDS,
+    UNLOCK_SECONDS_RANGE,
     SUBENTRY_USER,
     SUBENTRY_SENSOR,
     SUBENTRY_SENSOR_GROUP,
@@ -81,6 +97,7 @@ _EVENT_LABELS = _event_labels()
 _VERSION = json.loads((Path(__file__).parent / "manifest.json").read_text(encoding="utf-8"))["version"]
 PANEL_URL = "vigil_alarm"
 STATIC_URL = "/vigil_alarm_static/vigil-panel.js"
+CARD_URL = "/vigil_alarm_static/vigil-card.js"  # the card for a dashboard, loaded for every user
 LOGO_URL = "/vigil_alarm_static/logo.png"
 # The names the panel uses, and the subentry types they are stored under.
 TYPE_OF = {
@@ -90,6 +107,7 @@ TYPE_OF = {
     "user": SUBENTRY_USER,
     "notification": SUBENTRY_NOTIFICATION,
     "siren": SUBENTRY_SIREN,
+    "panel": SUBENTRY_PANEL,
 }
 KINDS = tuple(TYPE_OF)
 _DATA_KEY = f"{DOMAIN}_panel"
@@ -137,7 +155,8 @@ def form_schema(modes: list[str]) -> dict[str, list[dict[str, Any]]]:
             _f("code", "password"),
             _f("tags", "tags", default=[]),
             _f("allowed_modes", "multiselect", options=modes, default=[]),
-            _f("may_bypass_tamper", "boolean", default=False),
+            _f("may_bypass", "boolean", default=False),
+            _f("may_bypass_tamper", "boolean", default=False, show_if={"may_bypass": [True]}),
         ],
         "notification": [
             _f("name", "text", required=True),
@@ -146,6 +165,21 @@ def form_schema(modes: list[str]) -> dict[str, list[dict[str, Any]]]:
                default=["alarm", "pending", "fault", "technical"], required=True),
             _f("delay", "number", default=0, unit="s", min=0, max=3600),
             _f("priority", "boolean", default=False),
+        ],
+        "panel": [
+            _f("name", "text", required=True),
+            _f("device", "select", options=["esphome", "account"], default="esphome", required=True),
+            _f("panel_id", "text", required=True, show_if={"device": ["esphome"]}),
+            _f("ha_user", "ha_user", required=True, show_if={"device": ["account"]}),
+            _f("language", "select", options=["nl", "en"], default="en"),
+            _f("allowed_modes", "multiselect", options=modes, default=[]),
+            _f("can_disarm", "boolean", default=True),
+            _f("can_bypass", "boolean", default=True),
+            _f("can_silence", "boolean", default=True),
+            _f("sensor_list", "select", options=list(SENSOR_LIST_CHOICES), default="code"),
+            _f("unlock_seconds", "number", unit="s", min=UNLOCK_SECONDS_RANGE[0], max=UNLOCK_SECONDS_RANGE[1], default=DEFAULT_UNLOCK_SECONDS),
+            _f("code", "password"),
+            _f("blocked", "boolean", default=False),
         ],
         "siren": [
             _f("name", "text", required=True),
@@ -174,8 +208,18 @@ def settings_schema() -> list[dict[str, Any]]:
         *[_f(f"exit_delay_{m}", "number", unit="s", min=0, max=3600, show_if={"modes": [m]}, section="alarm") for m in MODES],
         _f("default_entry_delay", "number", unit="s", min=0, max=3600, section="alarm"),
         _f("trigger_time", "number", unit="s", min=0, max=86400, section="alarm"),
+        _f("startup_wait_seconds", "number", unit="s", min=STARTUP_WAIT_RANGE[0], max=STARTUP_WAIT_RANGE[1], section="startup"),
         _f("code_arm_required", "boolean", section="codes"),
         _f("min_code_length", "number", min=MIN_CODE_LENGTH_FLOOR, max=MIN_CODE_LENGTH_CEILING, section="codes"),
+        _f("lock_tries_1", "number", min=LOCK_TRIES_RANGE[0], max=LOCK_TRIES_RANGE[1], section="lock"),
+        _f("lock_wait_1", "number", unit="min", min=LOCK_WAIT_RANGE[0], max=LOCK_WAIT_RANGE[1], section="lock"),
+        _f("lock_tries_2", "number", min=LOCK_TRIES_RANGE[0], max=LOCK_TRIES_RANGE[1], section="lock"),
+        _f("lock_wait_2", "number", unit="min", min=LOCK_WAIT_RANGE[0], max=LOCK_WAIT_RANGE[1], section="lock"),
+        _f("lock_tries_3", "number", min=LOCK_TRIES_RANGE[0], max=LOCK_TRIES_RANGE[1], section="lock"),
+        _f("lock_wait_3", "number", unit="min", min=LOCK_WAIT_RANGE[0], max=LOCK_WAIT_RANGE[1], section="lock"),
+        _f("lock_tries_4", "number", min=LOCK_TRIES_RANGE[0], max=LOCK_TRIES_RANGE[1], section="lock"),
+        _f("screen_off_seconds", "number", unit="s", min=SCREEN_OFF_RANGE[0], max=SCREEN_OFF_RANGE[1], section="screen"),
+        _f("screen_off_on_alarm", "boolean", default=DEFAULT_SCREEN_OFF_ON_ALARM, section="screen"),
         _f("battery_threshold", "number", unit="%", min=1, max=100, section="battery"),
         _f("log_retention_days", "number", unit="d", min=LOG_RETENTION_FLOOR, max=LOG_RETENTION_CEILING, section="log"),
         _f("selftest_interval_days", "number", unit="d", min=st["selftest_interval_days"][0], max=st["selftest_interval_days"][1], section="selftest"),
@@ -197,8 +241,10 @@ def _public(sub: Item) -> dict[str, Any]:
     has_code = bool(data.pop(CONF_CODE_HASH, None))
     data.pop(CONF_CODE_SALT, None)
     data.pop("code_numeric", None)
-    out = {"id": sub.subentry_id, "title": sub.title, "data": data}
     if sub.subentry_type == SUBENTRY_USER:
+        data.setdefault("may_bypass", True)  # a user saved before the right existed keeps it, until you untick it
+    out = {"id": sub.subentry_id, "title": sub.title, "data": data}
+    if sub.subentry_type in (SUBENTRY_USER, SUBENTRY_PANEL):
         out["has_code"] = has_code
     return out
 
@@ -208,7 +254,7 @@ def _entry_for(hass: HomeAssistant) -> ConfigEntry | None:
     return entries[0] if entries else None
 
 
-def _snapshot(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
+def _snapshot(hass: HomeAssistant, entry: ConfigEntry, users: list[Any]) -> dict[str, Any]:
     registry = er.async_get(hass)
     sensor_entities: dict[str, dict[str, str | None]] = {}
     for sid, sub in items_of(entry).items():
@@ -220,7 +266,7 @@ def _snapshot(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
         }
     return {
         "version": _VERSION,
-        "entry": {"id": entry.entry_id, "title": entry.title, "data": {CONF_MIN_CODE_LENGTH: MIN_CODE_LENGTH_FLOOR, CONF_LOG_RETENTION_DAYS: DEFAULT_LOG_RETENTION_DAYS, CONF_HEARTBEAT_INTERVAL: DEFAULT_HEARTBEAT_INTERVAL, **DEFAULT_SELFTEST, **entry.data}},
+        "entry": {"id": entry.entry_id, "title": entry.title, "data": {CONF_STARTUP_WAIT: DEFAULT_STARTUP_WAIT, **LOCK_DEFAULTS, CONF_MIN_CODE_LENGTH: MIN_CODE_LENGTH_FLOOR, CONF_SCREEN_OFF_SECONDS: DEFAULT_SCREEN_OFF_SECONDS, CONF_SCREEN_OFF_ON_ALARM: DEFAULT_SCREEN_OFF_ON_ALARM, CONF_LOG_RETENTION_DAYS: DEFAULT_LOG_RETENTION_DAYS, CONF_HEARTBEAT_INTERVAL: DEFAULT_HEARTBEAT_INTERVAL, **DEFAULT_SELFTEST, **entry.data}},
         "items": {
             kind: [_public(s) for s in items_of(entry).values() if s.subentry_type == TYPE_OF[kind]]
             for kind in KINDS
@@ -230,6 +276,14 @@ def _snapshot(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
         "sensor_entities": sensor_entities,
         "alarm_entity": registry.async_get_entity_id("alarm_control_panel", DOMAIN, entry.entry_id),
         "notify_services": notify_services(hass),
+        # Who a tablet or phone can be: every active account that is not a system account. An administrator
+        # too: that is the administrator's own responsibility (see the guides), and Vigil then treats the account
+        # on that device as an ordinary one: no administrator shortcuts, a code for every disarm and bypass.
+        "ha_users": [
+            {"id": u.id, "name": (u.name or u.id) + (" (admin)" if u.is_admin else "")}
+            for u in sorted(users, key=lambda u: (u.name or "").lower())
+            if u.is_active and not u.system_generated
+        ],
         "siren_presets": siren_preset_ids(),
     }
 
@@ -243,6 +297,7 @@ def _live(entry: ConfigEntry) -> dict[str, Any] | None:
         "mode": manager.engine.mode,
         "sensors": {z: manager.engine.sensor_status(z) for z in manager.config.sensors},
         "problems": manager.supervisor.problems(),
+        "panels": manager.panels.status(),
     }
 
 
@@ -255,13 +310,13 @@ def _no_entry(connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -
 
 @websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/get"})
 @websocket_api.require_admin
-@callback
-def ws_get(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+@websocket_api.async_response
+async def ws_get(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
     entry = _entry_for(hass)
     if entry is None:
         _no_entry(connection, msg)
         return
-    connection.send_result(msg["id"], _snapshot(hass, entry))
+    connection.send_result(msg["id"], _snapshot(hass, entry, await hass.auth.async_get_users()))
 
 
 @websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/about"})
@@ -396,6 +451,77 @@ async def ws_heartbeat(hass: HomeAssistant, connection: websocket_api.ActiveConn
     if msg["test"]:
         await beat.ping()
     connection.send_result(msg["id"], beat.status())
+
+
+def _panel_item(entry: ConfigEntry, item_id: str) -> Item | None:
+    item = items_of(entry).get(item_id)
+    return item if item is not None and item.subentry_type == SUBENTRY_PANEL else None
+
+
+@websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/tablet"})
+@callback
+def ws_tablet(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """For the Vigil card on a tablet, and open to every user (the card is not for administrators only). It tells
+    the card which panel of the register belongs to the logged-in user, and counts as the card saying hello,
+    so Vigil can report a tablet that has gone quiet. It gives away no more than the profile entity does."""
+    entry = _entry_for(hass)
+    if entry is None or getattr(entry, "runtime_data", None) is None:
+        connection.send_result(msg["id"], {"linked": False, "user": connection.user.name})
+        return
+    registry = entry.runtime_data.panels
+    panel = registry.for_user(connection.user.id)
+    alarm = er.async_get(hass).async_get_entity_id("alarm_control_panel", DOMAIN, entry.entry_id)
+    if panel is None:
+        connection.send_result(msg["id"], {"linked": False, "user": connection.user.name})
+        return
+    registry.hello(panel)
+    connection.send_result(msg["id"], {
+        "linked": True,
+        "kind": "tablet",
+        "user": connection.user.name,
+        "panel_id": panel.data["panel_id"],
+        "name": panel.title,
+        "profile_entity": registry.profile_entity_id(panel),
+        "alarm_entity": alarm,
+    })
+
+
+@websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/panel_unlock", vol.Required("subentry_id"): str})
+@websocket_api.require_admin
+@callback
+def ws_panel_unlock(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Unlock a panel from Home Assistant. Only here and never as an action: an action can be called by any
+    user, automation or panel, so a stolen panel could unlock itself."""
+    entry = _entry_for(hass)
+    if entry is None or getattr(entry, "runtime_data", None) is None:
+        _no_entry(connection, msg)
+        return
+    item = _panel_item(entry, msg["subentry_id"])
+    if item is None:
+        connection.send_error(msg["id"], "not_found", "Unknown panel")
+        return
+    try:
+        entry.runtime_data.panels.unlock(item, by=connection.user.name)
+    except Exception as err:  # a blocked panel is refused
+        connection.send_error(msg["id"], "refused", str(err))
+        return
+    connection.send_result(msg["id"], {"ok": True})
+
+
+@websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/panel_clear_lock", vol.Required("subentry_id"): str})
+@websocket_api.require_admin
+@callback
+def ws_panel_clear_lock(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Lift the stored lockout (after wrong codes) of one panel. Only here, never as an action."""
+    entry = _entry_for(hass)
+    if entry is None or getattr(entry, "runtime_data", None) is None:
+        _no_entry(connection, msg)
+        return
+    item = _panel_item(entry, msg["subentry_id"])
+    if item is None:
+        connection.send_error(msg["id"], "not_found", "Unknown panel")
+        return
+    connection.send_result(msg["id"], {"ok": True, "was_locked": entry.runtime_data.panels.clear_lock(item, by=connection.user.name)})
 
 
 @websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/dashboard"})
@@ -617,6 +743,42 @@ async def ws_save_settings(
         )
         return
     data[CONF_LOG_RETENTION_DAYS] = days
+    try:
+        screen = int(data.get(CONF_SCREEN_OFF_SECONDS, DEFAULT_SCREEN_OFF_SECONDS))
+    except (TypeError, ValueError):
+        screen = 0
+    if not SCREEN_OFF_RANGE[0] <= screen <= SCREEN_OFF_RANGE[1]:
+        connection.send_result(
+            msg["id"],
+            _failure(EditError({CONF_SCREEN_OFF_SECONDS: "screen_off_range"}, {"min": SCREEN_OFF_RANGE[0], "max": SCREEN_OFF_RANGE[1]})),
+        )
+        return
+    data[CONF_SCREEN_OFF_SECONDS] = screen
+    try:
+        wait = int(data.get(CONF_STARTUP_WAIT, DEFAULT_STARTUP_WAIT))
+    except (TypeError, ValueError):
+        wait = 0
+    if not STARTUP_WAIT_RANGE[0] <= wait <= STARTUP_WAIT_RANGE[1]:
+        connection.send_result(
+            msg["id"],
+            _failure(EditError({CONF_STARTUP_WAIT: "startup_wait_range"}, {"min": STARTUP_WAIT_RANGE[0], "max": STARTUP_WAIT_RANGE[1]})),
+        )
+        return
+    data[CONF_STARTUP_WAIT] = wait
+    for key, default in LOCK_DEFAULTS.items():
+        low, high = LOCK_WAIT_RANGE if "wait" in key else LOCK_TRIES_RANGE
+        try:
+            value = int(data.get(key, entry.data.get(key, default)))
+        except (TypeError, ValueError):
+            value = low - 1
+        if not low <= value <= high:
+            connection.send_result(
+                msg["id"],
+                _failure(EditError({key: "lock_wait_range" if "wait" in key else "lock_tries_range"}, {"min": low, "max": high})),
+            )
+            return
+        data[key] = value
+    data[CONF_SCREEN_OFF_ON_ALARM] = bool(data.get(CONF_SCREEN_OFF_ON_ALARM, DEFAULT_SCREEN_OFF_ON_ALARM))
     for key, (low, high) in SELFTEST_RANGES.items():
         try:
             value = int(data.get(key, entry.data.get(key, DEFAULT_SELFTEST[key])))
@@ -662,25 +824,38 @@ async def ws_save_settings(
 
 @callback
 def async_register_commands(hass: HomeAssistant) -> None:
-    for command in (ws_get, ws_about, ws_discover, ws_discover_report, ws_readiness, ws_log, ws_log_export, ws_selftest, ws_heartbeat, ws_dashboard, ws_add_phone, ws_create_default_groups, ws_subscribe, ws_save, ws_save_many, ws_delete, ws_save_settings, ws_siren_preset):
+    for command in (ws_get, ws_about, ws_tablet, ws_discover, ws_discover_report, ws_readiness, ws_log, ws_log_export, ws_selftest, ws_heartbeat, ws_panel_unlock, ws_panel_clear_lock, ws_dashboard, ws_add_phone, ws_create_default_groups, ws_subscribe, ws_save, ws_save_many, ws_delete, ws_save_settings, ws_siren_preset):
         websocket_api.async_register_command(hass, command)
 
 
 # ------------------------------------------------------------- panel itself
 
 
+def _asset_version(version: str) -> str:
+    """The version plus a short fingerprint of the two script files. While the integration is built and tested
+    the version number stays the same, and a browser would keep showing the old script; with the fingerprint in
+    the address every change of a file is a new address."""
+    digest = hashlib.sha1()
+    for name in ("vigil-panel.js", "vigil-card.js"):
+        digest.update((Path(__file__).parent / "frontend" / name).read_bytes())
+    return f"{version}-{digest.hexdigest()[:8]}"
+
+
 async def async_register_panel(hass: HomeAssistant, version: str) -> None:
     if hass.data.get(_DATA_KEY):
         return
+    version = await hass.async_add_executor_job(_asset_version, version)
     if not hass.data.get(_STATIC_KEY):
         path = Path(__file__).parent / "frontend" / "vigil-panel.js"
         await hass.http.async_register_static_paths(
             [
                 StaticPathConfig(STATIC_URL, str(path), cache_headers=False),
+                StaticPathConfig(CARD_URL, str(Path(__file__).parent / "frontend" / "vigil-card.js"), cache_headers=False),
                 StaticPathConfig(LOGO_URL, str(Path(__file__).parent / "brand" / "icon@2x.png"), cache_headers=True),
             ]
         )
         hass.data[_STATIC_KEY] = True
+        frontend.add_extra_js_url(hass, f"{CARD_URL}?v={version}")
     await panel_custom.async_register_panel(
         hass,
         frontend_url_path=PANEL_URL,

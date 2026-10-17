@@ -1,104 +1,140 @@
 # Vigil touch panel (ESPHome)
 
 A touch panel for Vigil Alarm: arm, disarm, see what is open and bypass a sensor, without a phone.
-It runs on an ESP32 with an LVGL display and follows Vigil completely: it shows only the modes you
-switched on, asks for a code only when Vigil does, and shows the same state and sensors as Home
-Assistant. It does not decide anything itself, it is a control point.
+It runs on an ESP32 with an LVGL display. It is a *dumb terminal*: it decides nothing. What it may do
+and show is set in Vigil (tab *Panels*) and the panel reads that from its **profile**.
 
 Made for ESPHome 2026.9. The hardware file is for the **Guition ESP32-S3-4848S040** (480x480).
 Other displays work with another hardware file, see below.
 
+> **Status (0.4.0):** tested on a real Guition 4848 panel together with Home Assistant. The logic
+> is also tested on a computer and the YAML is validated with `esphome config`. Please report what
+> you see on other hardware.
+
+## Folder structure
+
+```
+esphome/
+  example-garage.yaml      a device: name, Wi-Fi, keys  (copy this, one per panel)
+  vigil_alarm/             the firmware and the hardware; the same for every panel, do not edit
+    guition-4848.yaml      the hardware: display, touch, backlight  (one per kind of panel)
+    vigil-panel.yaml
+    vigil-panel-row.yaml
+    vigil-panel-row-script.yaml
+    vigil_panel.h
+```
+
+An update of Vigil can bring a new `vigil_alarm/` folder; your own device files stay as they are.
+
+## Installing
+
+1. Copy `example-garage.yaml` and the whole folder `vigil_alarm` into your ESPHome folder (rename
+   the example).
+2. In the new file change `name` (lower case letters, digits and dashes; this is the **panel id**) and
+   `friendly_name`. Add the encryption key to your `secrets.yaml`. Keep it: the key protects the link with
+   Home Assistant (the codes pass through it) and is also what allows an update over Wi-Fi, so others
+   on your network cannot flash the panel. (The example uses `encryption` under `ota`, as ESPHome advises, instead of an OTA password.)
+3. Install it on the panel (the first time through USB).
+4. In Home Assistant: **Settings → Devices & services → ESPHome → the device → Configure** and
+   switch on **Allow the device to perform Home Assistant actions**. Without it the buttons do nothing.
+5. In Vigil open the tab **Panels → Add panel**. Use the device name as *panel id* and set what the
+   panel may do. Until you do, the panel says **Not linked** and shows the panel id it expects.
+
+For a second panel copy the example file again, with another `name`.
+
 ## What it does
 
 - **Main page**: the state in a large coloured card (green disarmed, teal Home, blue Away, violet
-  Night, amber arming, orange waiting for a code, red alarm), the open sensors, and the buttons.
-  The buttons are *Home*, *Away* and *Night*, but only the modes that are switched on in Vigil. When
-  the alarm is on, there is one button: *Disarm*.
-- **Keypad**: opens by itself during the entry delay and during an alarm. Wrong code, a refused
+  Night, amber arming, orange waiting for a code, red alarm) and the buttons. The buttons are *Home*,
+  *Away* and *Night*, only for the modes this panel may arm in. When the alarm is on, there is one
+  button: *Disarm* (if the panel may disarm).
+- **Keypad**: never opens by itself. During the entry delay and an alarm the main page shows what is going on (entry delay with countdown, or ALARM with the cause), with the *Disarm* button; whoever wants to disarm presses it. Wrong code, a refused
   arming and other errors are shown with the text Home Assistant gives.
-- **Sensors**: all sensors with their state and a *Bypass* or *Restore* button. Fire and gas
-  sensors have no button, they can never be bypassed.
-- **Settings**: language (Dutch or English, remembered), connection and Wi-Fi info.
-- The screen goes dark after 30 seconds and lights up on touch and when the alarm changes. After 30
-  seconds without touch the panel forgets a half typed code and returns to the main page.
+- **Sensors**: the sensors with their state and a *Bypass* or *Restore* button (only if the panel may
+  bypass). Fire and gas sensors have no button, they can never be bypassed.
+- **Info** (the round button at the top right): connection, IP address, Wi-Fi signal, uptime, firmware
+  version, panel id and profile version. Never the Wi-Fi password.
+- **Not linked / Blocked**: a panel that is not in the register shows *Not linked*; a blocked panel
+  shows *Blocked* and does nothing.
+- The language is the one set for the panel in Vigil.
+- The screen goes dark after the time set in Vigil (*Settings*, *Panel screen*, default 30 seconds) and lights up on touch and when the alarm changes. It only goes dark in a steady state: alarm off or fully armed. While the alarm counts down (arming, entry delay) it never goes dark. During an alarm it stays on, unless you let it go dark in the same settings. Was a half typed code, the list or the info still open, then the panel first returns to the main page after that time (you see it), and the screen goes dark after the same time again.
 
 ### Codes
 
-- **Disarming** always asks for a code.
-- **Arming and bypassing** ask for a code only if *a code is required to arm* is on in Vigil
-  (Settings tab). If it is off, one tap is enough, also for bypassing.
+- **Disarming and bypassing** always ask for a user code.
+- **Arming** asks for a code only if *a code is required to arm* is on in Vigil (Settings tab).
+- The **list of sensors** opens with the code of **any Vigil user** (or the installer code of the panel). The
+  **info page** opens with the **installer code of the panel** only, which you set in Vigil. The panel sends the
+  code to `vigil_alarm.unlock_panel` (with `scope: sensors` or `scope: info`); Vigil checks it, counts a wrong
+  code towards the lockout (the user code timer of the panel for the list, the installer code timer for the info)
+  and unlocks for the time set in the profile. Unlocking never disarms. Without an installer code the panel
+  says so when you open the info page, and it does not open.
+- **Bypassing and restoring** a sensor need a user code of a user who has the right to bypass (set per user in
+  Vigil); a tamper sensor needs the extra right to bypass tamper. Whoever may bypass may also restore.
 - The keypad has digits only: give users a numeric code.
 
 ### What a passer-by can see
 
-Someone standing at the panel should not learn what your house watches. With the default
-`sensor_list: code` the Sensors button asks for a code first, and the list stays open for
-`sensor_unlock` (the code is also used for bypassing, so you do not have to enter it twice). It is
-forgotten when you leave the list, when the screen goes idle and when the time is up. While the alarm
-is on, the main page shows no sensor names and no names of people, also not which sensor tripped.
-With the alarm off it does show the open sensors, because those are what keep you from arming.
-The code is checked with the action `vigil_alarm.check_code`; a wrong code counts towards the
-lockout like any other.
+Someone standing at the panel should not learn what your house watches. Vigil sends the **names** of
+sensors to the panel only while it may show them: always (`sensor_list: always`), or after the
+installer code (`code`, the default), or never. While locked, the panel only shows *how many*
+sensors are open ("Open: 3"). While the alarm is on, the main page shows no sensor names and no
+names of people unless the panel is unlocked. The names are not in the history of Home Assistant.
 
 ### Who did it
 
-Every panel has a `source`, for example `panel garage`. It is shown in the history of Vigil as
-*Anna (panel garage)*, or just *panel garage* when no code was needed. A wrong code is published
-as the event `code_rejected` with that source, never with the code itself.
-
-## Installing
-
-1. Copy the files of this folder into your ESPHome folder: `vigil-panel.yaml`,
-   `vigil-panel-row.yaml`, `vigil-panel-row-script.yaml`, `vigil_panel.h`, `guition-4848.yaml` and
-   `example-garage.yaml` (rename that last one).
-2. In the new file change `name`, `friendly_name` and `source`. Add the encryption key and an
-   OTA password to your `secrets.yaml`. Keep both: the key protects the link with Home Assistant (the
-   codes pass through it), the password stops others on your network from flashing the panel.
-3. Install it on the panel (the first time through USB).
-4. In Home Assistant: **Settings → Devices & services → ESPHome → the device → Configure** and
-   switch on **Allow the device to perform Home Assistant actions**. Without it the buttons do
-   nothing.
-
-For a second panel copy the example file again, with another `name` and another `source`.
+The device name is the `source` of every call, so the history shows *Anna (vigil-panel-garage)*, or
+just *vigil-panel-garage* when no code was needed. A wrong code is published as the event
+`code_rejected` with that source, never with the code itself.
 
 ## Options
 
-Set these as `substitutions:` in your file, above the packages:
+Set these as `substitutions:` in your device file, above the packages:
 
 | Substitution | Default | Meaning |
 |---|---|---|
+| `name` | (required) | The device name and the panel id in Vigil. |
 | `alarm_entity` | `alarm_control_panel.vigil_alarm` | The Vigil alarm, if you renamed it. |
-| `source` | `panel` | How this panel is called in the history. |
-| `language` | `"0"` | First language: `"0"` Nederlands, `"1"` English. After that the panel remembers its setting. |
-| `allow_bypass` | `"true"` | `"false"` hides the bypass buttons. |
-| `sensor_list` | `code` | Who sees the list of sensors: `code` only after a code, `always` everyone, `never` nobody (the button is gone). |
-| `sensor_unlock` | `60s` | How long the list stays open after a code (with `code`). |
-| `backlight_timeout` | `30s` | How long the screen stays on. |
-| `idle_timeout` | `30s` | Time without touch before the panel returns to the main page. |
+| `profile_entity` | `sensor.<name with underscores>_profile` | The profile sensor Vigil makes for this panel. Only change this if you changed its entity id. |
+| `backlight_timeout_seconds` | `"30"` | Only the start value, until Vigil has told the panel. The real time is a setting in Vigil (*Settings*, *Panel screen*), the same for all panels. |
+
+Everything else (modes, disarm, bypass, language, sensor list, unlock time) is in Vigil.
+
+## What the panel tells Vigil
+
+The firmware adds four diagnostic sensors to the device: *Hardware ID*, *Capabilities*, *Firmware
+version* and *Profile version*. Vigil reads them in the Panels tab, and gives advice (never an
+alarm) when the firmware does not understand the profile or when the hardware is not what you
+registered.
 
 ## Another display
 
-`vigil-panel.yaml` is for the screen only. For other hardware make a file like `guition-4848.yaml`
-with the display, the touch screen and `lvgl:` with the `touchscreens:`. It must provide:
+`vigil_alarm/` is for the screen only. For other hardware make a file like `vigil_alarm/guition-4848.yaml` (or send it to us to add). It
+must provide:
 
+- the substitutions `hardware_id`, `screen_width` and `screen_height` (reported to Vigil),
 - a light with the id `display_backlight`,
-- a touch screen that runs `script.execute: wake` on touch.
+- an `lvgl:` section with the `touchscreens:` and the display,
+- a touch screen that runs `script.execute: wake` on touch (the touch that wakes a dark screen is then not passed on to the button below it).
 
-The layout is made for 480x480. Another size needs other widths in `vigil-panel.yaml`.
+The layout is made for 480x480; the width of cards and buttons follows `screen_width`, the heights do
+not yet. An adaptive layout is planned for 0.4.2.
 
 ## Another language
 
-All texts are in `vigil_panel.h`, one line per text with a column per language. Add a column and an
-entry in `LANGUAGES`, and a button on the settings page. Use plain ASCII: the built-in fonts have no
+All texts are in `vigil_alarm/vigil_panel.h`, one line per text with a column per language. Add a
+column to `TEXTS` and make `parse_language` return it. Use plain ASCII: the built-in fonts have no
 accented letters.
 
 ## What the panel reads from Vigil
 
-Everything comes from the attributes of the alarm entity: `mode`, `delay_end`, `changed_by`,
-`cause`, `cause_sensor`, `open_now_text`, `open_sensors_text`, `faults_text`, `problems_count`,
-`panel_sensors` and Home Assistant's own `supported_features` and `code_arm_required`. They are plain
-text on purpose, because ESPHome cannot read lists. The panel calls `vigil_alarm.arm`, `vigil_alarm.disarm`,
-`vigil_alarm.bypass` and `vigil_alarm.unbypass` with its `source`.
+From the **profile sensor** of the panel: `language`, `blocked`, `modes_mask`, `can_disarm`,
+`can_bypass`, `sensor_list`, `unlock_seconds`, `code_arm_required`, `has_admin_code`, `unlocked`,
+`open_count`, `faults_count`, `problems_count`, and (only while allowed) `open_now_text`,
+`open_sensors_text`, `faults_text` and `sensors`. From the **alarm entity**: the state, `mode`,
+`delay_left` (seconds left; the panel counts down on its own clock), `changed_by`, `cause` and `cause_sensor`. They are plain text on purpose, because
+ESPHome cannot read lists. The panel calls `vigil_alarm.arm`, `disarm`, `bypass`, `unbypass` and
+`unlock_panel` with the device name as `source`.
 
 ## Not on the panel
 
@@ -108,3 +144,12 @@ Silencing a siren, a tag reader and a speaker. Disarming silences everything any
 
 `tests/test_esphome_panel.py` runs the logic of `vigil_panel.h` with a C++ compiler and validates the
 example with `esphome config`. A build and the screen itself can only be tried on the panel.
+
+
+## About the warnings in the build
+
+`GPIO19 is used by the USB-Serial-JTAG interface` and `GPIO20 ...` (twice) are expected for the
+Guition 4848: the board itself connects the touch controller (GPIO19) and a data line of the display
+(GPIO20) to those pins, so they cannot be moved. The warning only matters if you want to use the
+chip's own USB port for logging or flashing while the panel runs; the panel then uses the USB-serial
+adapter of the board, or Wi-Fi updates. Nothing to fix.

@@ -1,30 +1,29 @@
-# Example of a Vigil panel: a Guition 4848 in the garage. Copy this file, the files next to it
-# (guition-4848.yaml, vigil-panel.yaml, vigil-panel-row.yaml, vigil-panel-row-script.yaml and
-# vigil_panel.h) into your ESPHome folder and change the name. For a second panel copy this file
-# again with another name and another `source`.
+# Example of a Vigil panel: a Guition 4848 in the garage. Copy this file and the
+# folder `vigil_alarm` (the firmware and the hardware file guition-4848.yaml) into your ESPHome
+# folder and change the name. For a
+# second panel copy this file again with another name.
+#
+# Then add the panel in Vigil (Panels): the panel id is the device name below. Everything the panel
+# may do (modes, disarm, bypass, sensor list, language) is set there, not here. Until it is added the
+# panel shows "Not linked".
 #
 # In Home Assistant, switch on "Allow the device to perform Home Assistant actions" for this
 # device (Settings > Devices & services > ESPHome > the device > Configure). Without it, the buttons
 # do nothing.
 
 substitutions:
-  name: vigil-panel-garage
+  name: vigil-panel-garage      # the panel id in Vigil: lower case letters, digits and dashes
   friendly_name: Vigil panel garage
-  # How this panel is called in the Vigil history, for example "Anna (panel garage)".
-  source: panel garage
   # alarm_entity: alarm_control_panel.vigil_alarm   # only if you renamed it
-  # language: "1"                                   # 0 = Nederlands (default), 1 = English
-  # allow_bypass: "false"                           # no bypass on this panel
-  # sensor_list: always                             # code (default) | always | never
-  # backlight_timeout: 60s
+  # backlight_timeout_seconds: "60"   # only until Vigil has told the panel (setting in Vigil)
 
 esphome:
   name: ${name}
   friendly_name: ${friendly_name}
 
 packages:
-  hardware: !include guition-4848.yaml
-  vigil: !include vigil-panel.yaml
+  hardware: !include vigil_alarm/guition-4848.yaml
+  vigil: !include vigil_alarm/vigil-panel.yaml
 
 api:
   encryption:
@@ -32,7 +31,7 @@ api:
 
 ota:
   - platform: esphome
-    password: !secret vigil_panel_garage_ota_password  # without it anyone on your network can flash the panel
+    encryption: {}  # uploads use the key of the api above: only whoever has the key can flash the panel
     on_begin:  # stops the screen from flickering during an update
       - light.turn_off:
           id: display_backlight

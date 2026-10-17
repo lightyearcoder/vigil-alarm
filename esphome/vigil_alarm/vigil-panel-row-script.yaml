@@ -26,7 +26,7 @@ then:
       condition:
         lambda: |-
           auto r = vigil::row_at(id(sens_page), ${n});
-          return ${allow_bypass} && r.bypassable && vigil::state_known();
+          return vigil::bypass_allowed() && r.bypassable;
       then:
         - lvgl.widget.show: srow_btn_${n}
       else:

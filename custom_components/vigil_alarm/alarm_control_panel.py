@@ -14,6 +14,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from . import VigilConfigEntry
 from .const import CONF_CODE_HASH, DOMAIN
@@ -105,23 +106,32 @@ class VigilAlarmPanel(AlarmControlPanelEntity):
             "bypassed_sensors": snap["bypassed_sensors"],
             "problems": snap["problems"],
             "delay_end": snap["delay_end"],
+            # Seconds left at the moment this state was written. Displays count down from this on their own
+            # clock, so a clock that is a few seconds off does not show.
+            "delay_left": (
+                round(max(0.0, snap["delay_end"] - dt_util.utcnow().timestamp()), 1)
+                if snap["delay_end"]
+                else None
+            ),
             "refuse_reason": snap["refuse_reason"],
-            # For displays such as the ESPHome panel, which can only read plain text attributes.
-            "open_sensors_text": ", ".join(snap["open_sensors"]),  # open in the current mode
-            "open_now_text": ", ".join(snap["open_now"]),  # open at all, whatever the mode
-            "faults_text": ", ".join(snap["faults"]),
+            # A plain number for displays such as the ESPHome panel. The names of sensors for a panel are in
+            # its profile entity, and only while it may show them.
             "problems_count": len(snap["problems"]),
-            "panel_sensors": snap["panel_sensors"],
         }
 
+    @property
+    def _user_id(self) -> str | None:
+        """The Home Assistant user behind the call (a tablet is recognised by it), if any."""
+        return self._context.user_id if self._context else None
+
     async def async_alarm_disarm(self, code: str | None = None) -> None:
-        await self._manager.async_disarm(code)
+        await self._manager.async_disarm(code, user_id=self._user_id)
 
     async def async_alarm_arm_home(self, code: str | None = None) -> None:
-        await self._manager.async_arm("home", code)
+        await self._manager.async_arm("home", code, user_id=self._user_id)
 
     async def async_alarm_arm_away(self, code: str | None = None) -> None:
-        await self._manager.async_arm("away", code)
+        await self._manager.async_arm("away", code, user_id=self._user_id)
 
     async def async_alarm_arm_night(self, code: str | None = None) -> None:
-        await self._manager.async_arm("night", code)
+        await self._manager.async_arm("night", code, user_id=self._user_id)

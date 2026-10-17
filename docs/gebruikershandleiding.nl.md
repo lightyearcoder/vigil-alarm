@@ -84,8 +84,7 @@ opnieuw; de alarmstand blijft behouden.
      **toch inschakelen (omzeilen)**. Brand en gas kunnen nooit omzeild worden.
    - Voeg eventueel een batterijsensor toe; Vigil waarschuwt dan als hij bijna leeg is.
 3. **Voeg een gebruiker toe** (tabblad *Gebruikers*): een naam en een code. Zonder gebruikers is er
-   helemaal geen code nodig. Een gebruiker kan beperkt worden tot bepaalde modi en mag eventueel
-   sabotagesensoren omzeilen.
+   helemaal geen code nodig. Een gebruiker kan beperkt worden tot bepaalde modi. Omzeilen is een recht dat je een gebruiker geeft (*Mag sensoren omzeilen*): zonder dat recht kan een gebruiker een sensor niet omzeilen en ook niet terugzetten, ook niet met een goede code. Wie een sensor mag omzeilen, mag hem ook terugzetten. Een sabotagesensor vraagt daarnaast het recht *Mag sabotage omzeilen*, voor omzeilen en voor terugzetten. Gebruikers die al bestonden houden het recht tot je het uitvinkt.
 4. **Voeg een melding toe** (tabblad *Meldingen*): kies een `notify`-dienst en de soorten berichten
    die hij krijgt. Met een *vertraging* stuurt het kanaal alarmberichten pas als het alarm na die
    tijd nog actief is: dat is een escalatiekanaal voor een tweede persoon of apparaat.
@@ -149,10 +148,37 @@ omzeilen opheft).
 ### Een aanraakpaneel
 
 Met het ESPHome-paneel (Guition 4848) schakel je in en uit en omzeil je sensoren zonder telefoon.
-Het paneel toont alleen de modi die in Vigil aan staan, vraagt een code zoals Vigil dat doet en kan
-van taal wisselen. Installatie en opties staan in [esphome/README.md](../esphome/README.md). Elk
-paneel heeft een eigen `source` (bijvoorbeeld *paneel garage*), dat in de geschiedenis staat als
-*Anna (paneel garage)*. Een foute code geeft de gebeurtenis `code_rejected`, nooit met de code zelf. Na 5 foute codes binnen 5 minuten zijn alle codes 5 minuten vergrendeld (gebeurtenis `code_locked`, ook gemeld op je storingskanalen); de vergrendeling blijft staan als Home Assistant herstart; een beheerder in het paneel kan dan nog gewoon bedienen.
+Het paneel leest zijn profiel uit Vigil: het toont alleen de modi waarin het mag inschakelen, vraagt een code zoals Vigil dat doet en gebruikt de taal die je ervoor instelt. Installatie en opties staan in [esphome/README.md](../esphome/README.md). De apparaatnaam is het paneel-id en de `source` van elke oproep, en staat in de geschiedenis als
+*Anna (vigil-panel-garage)*. Een foute code geeft de gebeurtenis `code_rejected`, nooit met de code zelf. De vergrendeling gaat in stappen en de getallen stel je in bij *Instellingen*, *Vergrendeling*. Standaard: na 3 foute codes is dat paneel 5 minuten vergrendeld, daarna na nog 2 foute codes 15 minuten, daarna na nog 2 foute codes 60 minuten, en na nog 1 foute code permanent (gebeurtenissen `code_locked` en `code_locked_permanent`, ook gemeld op je storingskanalen). Een permanente vergrendeling gaat alleen weg met *Blokkade opheffen* bij het paneel, en dan begint alles weer bij de eerste stap. Een goede code zet de teller en de stap ook terug naar nul. De vergrendeling blijft staan als Home Assistant herstart; de gedeelde timer voor alles wat geen geregistreerd paneel is (*other*) wordt nooit permanent, omdat niemand die zou kunnen opheffen, maar herhaalt de laatste wachttijd; een beheerder in het paneel kan dan nog gewoon bedienen. Elk geregistreerd paneel (zie hieronder) heeft een eigen timer; al het andere (een telefoon, een automatisering, elke andere naam) deelt één timer.
+
+#### Panelen, tablets en telefoons
+
+Het tabblad *Panelen* is het register van alles wat het alarm mag bedienen behalve de Home Assistant-schermen zelf: ESPHome-panelen (herkend aan hun paneel-id) en tablets of telefoons (herkend aan hun Home Assistant-account). Ze worden allemaal op dezelfde manier ingesteld. Zodra één account is geregistreerd, worden andere gewone accounts geweigerd voordat hun code wordt bekeken (gebeurtenis `user_refused`); beheerders, automatiseringen en ESPHome-panelen blijven ongemoeid. Details, en het advies om een beheerder een tweede, gewoon account voor dagelijks gebruik te geven, staan in de [tabletgids](tablet.nl.md).
+
+#### Een paneel registreren (tabblad *Panelen*)
+
+Een paneel of tablet dat je op het tabblad *Panelen* registreert, is een domme terminal: Vigil bepaalt wat het mag. Je geeft het een naam en een **paneel-id**; dat is de naam van het ESPHome-apparaat en ook de `source` die de oproepen meesturen. Per paneel stel je in:
+
+Bij het toevoegen van een paneel kies je eerst het **soort apparaat**. *ESPHome-paneel* vraagt om de naam van het ESPHome-apparaat (het paneel-id). *Tablet of telefoon met Home Assistant* vraagt alleen om het Home Assistant-account; het paneel-id maakt Vigil zelf uit de naam. De rest (modi, uitschakelen, omzeilen, taal, sensorlijst, installateurscode) is voor beide gelijk. De taal begint als die van de persoon die het paneel toevoegt, anders English.
+
+- in welke modi het mag inschakelen, en of het mag uitschakelen, sensoren omzeilen, en dempen of bevestigen;
+- de taal (standaard die van Home Assistant);
+- of het de sensorlijst mag tonen: *altijd*, *pas na ontgrendelen* (standaard) of *nooit*, en hoe lang het ontgrendeld blijft (standaard 60 seconden);
+- een optionele **installateurscode** voor dit paneel, bewaard als hash, met een eigen timer voor foute codes. Het paneel stuurt die mee met `vigil_alarm.unlock_panel`; Vigil controleert hem en ontgrendelt het paneel voor de ingestelde tijd. Dat opent de infopagina's en (net als de code van een Vigil-gebruiker) de sensorlijst, en schakelt het alarm nooit uit: uitschakelen vraagt altijd een geldige gebruikerscode;
+- wat de firmware **zelf meldt** (hardware, firmwareversie en profielversie) staat op de paneelkaart, en *Klaar voor gebruik?* geeft advies als de firmware het profiel niet begrijpt;
+- **geblokkeerd**: Vigil weigert elke oproep met dat paneel-id en legt het vast.
+
+Wat wordt afgedwongen, aan de serverkant: een oproep van een geregistreerd paneel die zijn profiel niet toestaat, wordt geweigerd en vastgelegd (gebeurtenis `panel_refused`, met de reden). Een sensor omzeilen vanaf een geregistreerd paneel vraagt altijd een gebruikerscode. Een geblokkeerd paneel wordt geweigerd voordat er naar een code wordt gekeken. Oproepen met een bron die niet is geregistreerd, worden hier niet door beperkt.
+
+Elk geregistreerd paneel krijgt een entiteit `sensor.<paneel-id>_profile` (streepjes in het paneel-id worden underscores: `vigil-panel-garage` geeft `sensor.vigil_panel_garage_profile`) met wat het mag en toont. De namen van de sensoren staan er alleen in zolang het paneel is ontgrendeld (of als de lijst op *altijd* staat), en de attributen met die namen blijven buiten de geschiedenis. Er staat nooit een code, hash, sleutel of wachtwoord in. **Eerlijk over wat dit beschermt:** `source` is gewone tekst, dus Vigil kan niet bewijzen dat een oproep echt van dat paneel komt. Het profiel beschermt tegen vergissingen en tegen een paneel dat bepaalde knoppen niet hoort te hebben, niet tegen iemand die al services kan aanroepen. De echte bescherming is de code, de blokkade, de versleutelde verbinding van het paneel en de toegangsregels van Home Assistant zelf.
+
+Twee knoppen per paneel, **Ontgrendelen** en **Blokkade opheffen**, bestaan alleen in het Vigil-paneel (alleen beheerders) en niet als Home Assistant-actie: een actie kan elke gebruiker, automatisering en elk paneel aanroepen, waarmee een gestolen paneel zichzelf kon ontgrendelen. *Ontgrendelen* toont de sensorlijst voor de ingestelde tijd; *Blokkade opheffen* haalt de bewaarde blokkade na foute codes weg (die overleeft een herstart, dus zo hef je hem op). Beide worden vastgelegd met de beheerder die het deed (`panel_unlocked`, `panel_lock_cleared`).
+
+**Niet bereikbaar.** Kan Vigil het ESPHome-apparaat van een paneel 10 minuten niet bereiken, dan krijg je een reparatie *Paneel niet bereikbaar* en een melding op je storingskanalen (gebeurtenissen `panel_offline` en `panel_online`). Een paneel dat niet bereikbaar is, verandert de alarmstatus nooit. Een geblokkeerd paneel geeft geen reparatie. Na een herstart van Home Assistant beginnen de tien minuten opnieuw.
+
+Ook een tablet kan worden geregistreerd, gekoppeld aan een Home Assistant-gebruiker, en toont de Vigil-kaart (`type: custom:vigil-card`); zie de [tabletgids](tablet.nl.md).
+
+De ESPHome-firmware leest dit profiel zelf. Een paneel dat niet in het register staat, toont *Niet gekoppeld* met het paneel-id dat het verwacht; een geblokkeerd paneel toont *Geblokkeerd*. De sensorlijst en de infopagina van het paneel (IP-adres, signaal, firmware, uptime) openen met een code: de sensorlijst met de code van een Vigil-gebruiker (of de installateurscode), de infopagina alleen met de installateurscode van het paneel; zolang het niet ontgrendeld is, toont het paneel alleen hoeveel sensoren open staan. Vigil dwingt de beperkingen ook zelf af voor elke oproep die de `source` van het paneel meestuurt, wat de firmware ook doet.
 
 ### Dempen en bevestigen
 
@@ -192,11 +218,11 @@ Acties in de lijsten zijn icoonknoppen (bewerken, kopiëren, verwijderen, testen
 | **Sensoren** | *Sensoren zoeken* stelt sensoren uit Home Assistant voor; sensoren toevoegen, bewerken, kopiëren en verwijderen. De tabel toont ook het batterijpercentage in een eigen kolom. Eén entiteit kan maar bij één sensor horen. Met het veld *Sabotage-entiteit* koppel je het sabotagesignaal van dezelfde sensor: Vigil maakt daar vanzelf een aparte sabotagesensor van die je los kunt omzeilen. Je kunt ook gewoon een losse sabotagesensor aanmaken. |
 | **Sensorgroepen** | Welke sensoren in welke modi bewaken. Een groep kan zichzelf *voorstellen* voor nieuwe deurcontacten of bewegingssensoren. Een groep die nog in gebruik is kan niet verwijderd worden. |
 | **Bevestigingsregels** | Meerdere sensoren moeten binnen een tijdvenster aanslaan. Een sensor die in een regel zit kan niet verwijderd worden. |
-| **Gebruikers** | (Niet te kopiëren.) Naam, code, toegestane modi, recht om sabotage te omzeilen. Codes worden versleuteld opgeslagen en nooit getoond. Laat de code leeg bij bewerken om hem te behouden. |
+| **Gebruikers** | (Niet te kopiëren.) Naam, code, toegestane modi, recht om te omzeilen, recht om sabotage te omzeilen. Codes worden versleuteld opgeslagen en nooit getoond. Laat de code leeg bij bewerken om hem te behouden. |
 | **Meldingen** | `notify`-dienst, soorten berichten (alarm, inlooptijd, in- en uitschakelen, storingen en mededelingen, technische alarmen), vertraging, hoge prioriteit. *Test* stuurt een testbericht. |
 | **Sirenes** | Zie hierboven. *Test* laat de sirene 3 seconden klinken (geweigerd tijdens een echt alarm). |
 | **Logboek** | Alles wat Vigil als gebeurtenis meldt, de nieuwste bovenaan (de laatste 200 staan in beeld). *Download* geeft het hele logboek als JSON Lines of CSV (RFC 4180), met tijden in UTC (RFC 3339) en de velden `time`, `event`, `source`, `user`, `item`, `result` en `detail`. Standaard 90 dagen bewaard (*Instellingen*), zonder codes, en het blijft bestaan na een herstart. |
-| **Instellingen** | Modi, uitlooptijden, inlooptijd, alarmduur, batterijgrens, code nodig om in te schakelen, minimale codelengte (4 tot 12 tekens, standaard 4; geldt voor nieuwe en gewijzigde codes, bestaande codes blijven werken), dagen dat het logboek bewaard blijft (standaard 90), en de zelftest: herinneringsinterval (standaard 30 dagen, 0 = uit), seconden dat de sirene klinkt (1 tot 5, standaard 2), zelf laten klinken en de uren waarbinnen dat mag, en het hartslag-adres met het interval in minuten (standaard 5). |
+| **Instellingen** | Modi, uitlooptijden, inlooptijd, alarmduur, hoe lang er na een herstart van Home Assistant op trage sensoren wordt gewacht (seconden, standaard 120), het scherm van de panelen (seconden tot het scherm uitgaat, standaard 30, en of het ook tijdens een alarm uit mag gaan, standaard nee), batterijgrens, code nodig om in te schakelen, minimale codelengte (4 tot 12 tekens, standaard 4; geldt voor nieuwe en gewijzigde codes, bestaande codes blijven werken), dagen dat het logboek bewaard blijft (standaard 90), en de zelftest: herinneringsinterval (standaard 30 dagen, 0 = uit), seconden dat de sirene klinkt (1 tot 5, standaard 2), zelf laten klinken en de uren waarbinnen dat mag, en het hartslag-adres met het interval in minuten (standaard 5). |
 | **Over** | Een badge "nieuw" na een update, versie, links naar de handleiding en GitHub, release notes (nieuwste bovenaan) en een knop die de gegevens kopieert voor een foutmelding. |
 
 De taal van de **meldingsteksten** volgt de systeemtaal van Home Assistant (Instellingen → Systeem →

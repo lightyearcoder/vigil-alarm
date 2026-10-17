@@ -32,7 +32,7 @@ static const Text TEXTS[] = {
     {"armed_away", {"Weg", "Away"}},
     {"armed_night", {"Nacht", "Night"}},
     {"arming", {"Inschakelen", "Arming"}},
-    {"pending", {"Voer code in", "Enter code"}},
+    {"pending", {"Binnenkomst", "Entry"}},
     {"triggered", {"ALARM", "ALARM"}},
     {"offline", {"Geen verbinding", "No connection"}},
     {"home", {"Thuis", "Home"}},
@@ -47,6 +47,9 @@ static const Text TEXTS[] = {
     {"bypass_title", {"Omzeilen: ", "Bypass: "}},
     {"unbypass_title", {"Herstellen: ", "Restore: "}},
     {"unlock_title", {"Sensoren bekijken", "View sensors"}},
+    {"admin_code", {"Installateurscode", "Installer code"}},
+    {"hint_user", {"Voer uw gebruikerscode in", "Enter your user code"}},
+    {"hint_admin", {"Voer de installateurscode in", "Enter the installer code"}},
     {"sensors", {"Sensoren", "Sensors"}},
     {"sensors_open", {"open", "open"}},
     {"all_closed", {"Alles dicht", "All closed"}},
@@ -56,15 +59,38 @@ static const Text TEXTS[] = {
     {"enter_in", {"Schakel uit binnen: ", "Disarm within: "}},
     {"by", {"Door ", "By "}},
     {"no_sensors", {"Geen sensoren", "No sensors"}},
-    {"settings", {"Instellingen", "Settings"}},
-    {"language", {"Taal", "Language"}},
-    {"info", {"Info", "Info"}},
+    {"info", {"Paneelinfo", "Panel info"}},
+    {"info_title", {"Paneelinfo bekijken", "View panel info"}},
     {"connected", {"Verbonden met Home Assistant", "Connected to Home Assistant"}},
     {"not_connected", {"Niet verbonden", "Not connected"}},
     {"signal", {"Wifi-signaal: ", "Wi-Fi signal: "}},
     {"uptime", {"Aan sinds: ", "Uptime: "}},
     {"minutes", {" min", " min"}},
+    {"firmware", {"Firmware: ", "Firmware: "}},
+    {"panel_id", {"Paneel: ", "Panel: "}},
+    {"profile", {"Profiel: ", "Profile: "}},
+    {"n_open", {" open", " open"}},
+    {"blocked", {"Geblokkeerd", "Blocked"}},
+    {"blocked_sub", {"Dit paneel is geblokkeerd in Vigil", "This panel is blocked in Vigil"}},
+    {"not_linked", {"Niet gekoppeld", "Not linked"}},
+    {"not_linked_sub", {"Voeg dit paneel toe in Vigil (paneel-id: ", "Add this panel in Vigil (panel id: "}},
+    {"not_linked_entity", {"Of controleer of deze sensor bestaat: ", "Or check that this sensor exists: "}},
+    {"old_profile", {"Update de firmware of Vigil", "Update the firmware or Vigil"}},
+    {"no_admin_code", {"Stel eerst een installateurscode in Vigil in", "Set an installer code in Vigil first"}},
     {"page", {"Pagina ", "Page "}},
+    // what Vigil answers when a code or an action is refused (see localize_error)
+    {"err_invalid_code", {"Ongeldige code", "Invalid code"}},
+    {"err_code_required", {"Voer een code in", "A code is required"}},
+    {"err_locked_pre", {"Te veel foute codes. Probeer het over ", "Too many wrong codes. Try again in "}},
+    {"err_locked_post", {" min opnieuw", " min"}},
+    {"err_locked", {"Te veel foute codes. Even wachten", "Too many wrong codes. Wait a moment"}},
+    {"err_locked_permanent", {"Te veel foute codes. Vergrendeld totdat een beheerder dit in Vigil opheft", "Too many wrong codes. Locked until an administrator unlocks it in Vigil"}},
+    {"err_bypass_tamper", {"U mag sabotage niet omzeilen of terugzetten", "You may not bypass or restore tamper"}},
+    {"err_bypass", {"U mag sensoren niet omzeilen of terugzetten", "You may not bypass or restore sensors"}},
+    {"err_blocked", {"Dit paneel is geblokkeerd", "This panel is blocked"}},
+    {"err_not_allowed", {"Dit paneel mag dit niet", "This panel may not do this"}},
+    {"err_no_installer_code", {"Stel eerst een installateurscode in Vigil in", "Set an installer code in Vigil first"}},
+    {"err_not_bypassable", {"Deze sensor kan niet worden omzeild", "This sensor cannot be bypassed"}},
     // sensor states
     {"st_closed", {"dicht", "closed"}},
     {"st_open", {"open", "open"}},
@@ -82,8 +108,10 @@ static const Text TEXTS[] = {
     {"code_hint", {"Code", "Code"}},
 };
 
-// The name shown on the settings page, in the language itself.
-static const char *const LANGUAGES[LANGUAGE_COUNT] = {"Nederlands", "English"};
+// The version of the profile this firmware understands (PROFILE_VERSION in Vigil) and of this firmware.
+constexpr int PROFILE_VERSION = 1;
+
+inline int parse_language(const std::string &s) { return s.rfind("nl", 0) == 0 ? NL : EN; }
 
 // -------------------------------------------------------------------------------- the state
 
@@ -102,8 +130,19 @@ struct Context {
   bool ha_connected = false;
   std::string state;      // alarm_control_panel state
   std::string mode;       // home / away / night: the armed mode, or the target while arming
-  int features = 0;       // supported_features bitmask: 1 home, 2 away, 4 night
+  // From the profile entity of this panel in Vigil:
+  int profile_version = 0;  // 0 until the profile is there (not added in Vigil yet, or Vigil is too old)
+  std::string panel_id;
+  bool blocked = false;
+  int modes_mask = 0;       // 1 home, 2 away, 4 night; 0 if blocked
+  bool can_disarm = true;
+  bool can_bypass = true;
+  bool has_admin_code = false;
+  bool profile_unlocked = false;  // Vigil unlocked this panel (by the installer code) and still does
+  int open_total = 0;       // number of open sensors, also when the names are hidden
+  int faults_total = 0;
   bool code_arm_required = true;
+  bool screen_off_on_alarm = false;  // may the screen go dark while the alarm is going off
   double delay_end = NAN;  // epoch seconds of the end of the exit or entry delay
   double now = NAN;        // the time in epoch seconds, NAN until the clock is set
   std::string changed_by;
@@ -112,11 +151,13 @@ struct Context {
   std::string open_now;   // names of the sensors that are open at all
   std::string open_mode;  // names of the sensors that are open in the current mode
   std::string faults;
-  int problems = 0;
+  int problems = 0;       // number of problems (alarm entity or profile)
   std::string sensors;    // one "name|entity|status|bypassable" line per sensor
   std::string message;    // an error to show for a while
   int sensor_list = LIST_CODE;     // see SensorList
-  bool sensors_unlocked = false;   // a code was entered a moment ago
+  bool sensors_unlocked = false;   // a code (user or installer) was entered a moment ago, on this panel
+  bool installer_unlocked = false; // the installer code was entered a moment ago: the info page may open
+  std::string device_name;        // the ESPHome name: the panel id and the source of every call
 };
 
 inline Context ctx;
@@ -128,7 +169,51 @@ inline std::string tr(const char *key) {
   return key;  // a missing text is visible instead of blank
 }
 
+// Home Assistant answers a refused action with a text in ITS language (often English), while the panel speaks
+// the language of the panel. Texts Vigil is known to send, in English and in Dutch, are replaced by the same
+// text in the panel's language; anything else is shown as it came. The phrases must keep matching the
+// `exceptions` in translations/en.json and nl.json (a test checks that). The order matters: the first row
+// that fits wins.
+struct ErrorRow {
+  const char *en;
+  const char *nl;
+  const char *key;
+};
+
+inline const ErrorRow *error_rows(size_t &count) {
+  static const ErrorRow rows[] = {
+      {"until an administrator", "totdat een beheerder", "err_locked_permanent"},
+      {"Too many wrong codes", "Te veel foute codes", "err_locked"},
+      {"Invalid code", "Ongeldige code", "err_invalid_code"},
+      {"A code is required", "Een code is vereist", "err_code_required"},
+      {"right to bypass tamper", "recht om sabotage te omzeilen", "err_bypass_tamper"},
+      {"right to bypass", "recht om te omzeilen", "err_bypass"},
+      {"is blocked", "is geblokkeerd", "err_blocked"},
+      {"may not do this", "mag dit niet", "err_not_allowed"},
+      {"no installer code", "geen installateurscode", "err_no_installer_code"},
+      {"cannot be bypassed", "kan niet worden omzeild", "err_not_bypassable"},
+  };
+  count = sizeof(rows) / sizeof(rows[0]);
+  return rows;
+}
+
 // ---------------------------------------------------------------------------- small helpers
+
+inline std::string localize_error(const std::string &raw) {
+  size_t count = 0;
+  const ErrorRow *rows = error_rows(count);
+  for (size_t i = 0; i < count; i++) {
+    if (raw.find(rows[i].en) == std::string::npos && raw.find(rows[i].nl) == std::string::npos) continue;
+    std::string key = rows[i].key;
+    if (key != "err_locked") return tr(rows[i].key);
+    // "Try again in 5 min": the number of minutes is the first number in the text
+    size_t start = raw.find_first_of("0123456789");
+    if (start == std::string::npos) return tr("err_locked");
+    size_t end = raw.find_first_not_of("0123456789", start);
+    return tr("err_locked_pre") + raw.substr(start, end == std::string::npos ? std::string::npos : end - start) + tr("err_locked_post");
+  }
+  return raw;
+}
 
 // Home Assistant sends "None", "unknown" and so on for an attribute that has no value.
 inline std::string clean(const std::string &s) {
@@ -146,6 +231,24 @@ inline double parse_number(const std::string &s) {
   double v = std::strtod(s.c_str(), &end);
   return end == s.c_str() ? NAN : v;
 }
+
+// A whole number from an attribute, or `fallback` if there is none.
+inline int to_int(const std::string &s, int fallback) {
+  double v = parse_number(s);
+  return std::isnan(v) ? fallback : (int) v;
+}
+
+// ------------------------------------------------------------------------- linked and allowed
+
+inline bool state_known() {
+  return ctx.ha_connected && !ctx.state.empty() && ctx.state != "unknown" && ctx.state != "unavailable";
+}
+
+// Is there a profile this firmware understands? Without one this panel is not (yet) known to Vigil.
+inline bool linked() { return ctx.profile_version == PROFILE_VERSION; }
+
+// May the panel work at all: connected, known to Vigil, a profile it understands, not blocked.
+inline bool usable() { return state_known() && linked() && !ctx.blocked; }
 
 // ---------------------------------------------------------------------------------- sensors
 
@@ -219,29 +322,32 @@ inline int open_count() {
   return n;
 }
 
+// How many sensors are open: counted from the list when Vigil sent the names, otherwise the number
+// Vigil sent. The number is always there; the names are only there while this panel may show them.
+inline int open_total_count() { return sensor_rows().empty() ? ctx.open_total : open_count(); }
+
+// Did the installer code unlock this panel, and does Vigil still agree?
+inline bool unlocked_now() { return ctx.sensors_unlocked && ctx.profile_unlocked; }
+
 // May the list of sensors be shown right now?
-inline bool sensors_visible() { return ctx.sensor_list == LIST_ALWAYS || (ctx.sensor_list == LIST_CODE && ctx.sensors_unlocked); }
+inline bool sensors_visible() { return ctx.sensor_list == LIST_ALWAYS || (ctx.sensor_list == LIST_CODE && unlocked_now()); }
 
 // Is there a button for the list at all?
-inline bool show_sensors_button() { return ctx.sensor_list != LIST_NEVER; }
+inline bool show_sensors_button() { return ctx.sensor_list != LIST_NEVER && usable(); }
 
 // Names of sensors and of people on the main page while the alarm is on: only when the list is
 // open to everyone. Otherwise someone standing at the panel would learn what is being watched.
-inline bool details_visible() { return ctx.sensor_list == LIST_ALWAYS || ctx.sensors_unlocked; }
+inline bool details_visible() { return ctx.sensor_list == LIST_ALWAYS || unlocked_now(); }
 
 inline std::string sensors_button_text() {
   std::string text = tr("sensors");
-  int open = open_count();
-  // With the alarm off the open sensors are what keeps you from arming, so those may be shown.
-  if (open > 0 && (ctx.state == "disarmed" || sensors_visible())) text += "  (" + std::to_string(open) + " " + tr("sensors_open") + ")";
+  int open = open_total_count();
+  // The number of open sensors is no secret; the names are.
+  if (open > 0) text += "  (" + std::to_string(open) + " " + tr("sensors_open") + ")";
   return text;
 }
 
 // ---------------------------------------------------------------------------- the main page
-
-inline bool state_known() {
-  return ctx.ha_connected && !ctx.state.empty() && ctx.state != "unknown" && ctx.state != "unavailable";
-}
 
 inline bool is_armed_state(const std::string &s) {
   return s == "armed_home" || s == "armed_away" || s == "armed_night";
@@ -256,6 +362,8 @@ inline std::string mode_name(const std::string &mode) {
 
 inline std::string state_title() {
   if (!state_known()) return tr("offline");
+  if (ctx.profile_version == 0 || !linked()) return tr("not_linked");
+  if (ctx.blocked) return tr("blocked");
   if (ctx.state == "disarmed" || ctx.state == "arming" || ctx.state == "pending" || ctx.state == "triggered" ||
       is_armed_state(ctx.state)) {
     return tr(ctx.state.c_str());
@@ -264,7 +372,7 @@ inline std::string state_title() {
 }
 
 inline uint32_t state_color() {
-  if (!state_known()) return 0x475569;
+  if (!usable()) return 0x475569;
   if (ctx.state == "disarmed") return 0x16A34A;
   if (ctx.state == "armed_home") return 0x0D9488;
   if (ctx.state == "armed_away") return 0x2563EB;
@@ -302,14 +410,24 @@ inline void add_line(std::string &out, const std::string &line) {
 inline std::string state_sub(double now) {
   if (!ctx.message.empty()) return ctx.message;
   if (!state_known()) return "";
+  if (ctx.profile_version == 0) {
+    // The firmware reads sensor.<panel id with underscores>_profile; show it, so a mismatch is easy to see.
+    std::string id = ctx.device_name;
+    for (auto &c : id) if (c == '-') c = '_';
+    return tr("not_linked_sub") + ctx.device_name + "). " + tr("not_linked_entity") + "sensor." + id + "_profile";
+  }
+  if (!linked()) return tr("old_profile");
+  if (ctx.blocked) return tr("blocked_sub");
   std::string out;
   const std::string &s = ctx.state;
   int left = seconds_left(now);
   if (s == "disarmed") {
-    add_line(out, ctx.open_now.empty() ? tr("all_closed") : tr("open") + ctx.open_now);
-    if (!ctx.faults.empty() || ctx.problems > 0) {
-      add_line(out, tr("problems") + (ctx.faults.empty() ? std::to_string(ctx.problems) : ctx.faults));
-    }
+    // Only how many are open: the names are on the sensor list, also after that list was unlocked.
+    int open = open_total_count();
+    if (open > 0) add_line(out, tr("open") + std::to_string(open));
+    else add_line(out, tr("all_closed"));
+    if (!ctx.faults.empty()) add_line(out, tr("problems") + ctx.faults);
+    else if (ctx.faults_total > 0 || ctx.problems > 0) add_line(out, tr("problems") + std::to_string(ctx.faults_total > 0 ? ctx.faults_total : ctx.problems));
   } else if (is_armed_state(s)) {
     if (details_visible()) {
       if (!ctx.changed_by.empty()) add_line(out, tr("by") + ctx.changed_by);
@@ -331,21 +449,33 @@ inline std::string state_sub(double now) {
 
 // Which buttons are there? Only the modes that are switched on in Vigil, and while the alarm is
 // off. As soon as it is on, there is one button: disarm.
-inline bool show_home() { return state_known() && ctx.state == "disarmed" && (ctx.features & 1); }
-inline bool show_away() { return state_known() && ctx.state == "disarmed" && (ctx.features & 2); }
-inline bool show_night() { return state_known() && ctx.state == "disarmed" && (ctx.features & 4); }
-inline bool show_disarm() { return state_known() && ctx.state != "disarmed"; }
+inline bool show_home() { return usable() && ctx.state == "disarmed" && (ctx.modes_mask & 1); }
+inline bool show_away() { return usable() && ctx.state == "disarmed" && (ctx.modes_mask & 2); }
+inline bool show_night() { return usable() && ctx.state == "disarmed" && (ctx.modes_mask & 4); }
+inline bool show_disarm() { return usable() && ctx.state != "disarmed" && ctx.can_disarm; }
 
-// Does an action on the keypad need a code? Disarming always does. Arming and bypassing only
+// May sensors be bypassed from this panel? Only a panel that is allowed to, and only while it works.
+inline bool bypass_allowed() { return usable() && ctx.can_bypass; }
+
+// Does an action on the keypad need a code? Disarming and bypassing always do (the profile of a
+// panel says so), the installer code of the panel unlocks the list and the info. Arming only
 // when Vigil asks for a code to arm, the same as in Home Assistant itself.
-enum Action { NONE = 0, ARM_HOME = 1, ARM_AWAY = 2, ARM_NIGHT = 3, DISARM = 4, BYPASS = 5, UNBYPASS = 6, UNLOCK = 7 };
+enum Action {
+  NONE = 0, ARM_HOME = 1, ARM_AWAY = 2, ARM_NIGHT = 3, DISARM = 4, BYPASS = 5, UNBYPASS = 6, UNLOCK = 7, INFO = 8
+};
 
 inline bool needs_code(int action) {
-  if (action == DISARM || action == UNLOCK) return true;
-  // Bypassing right after the list was unlocked with a code: that code is used, no second question.
-  if ((action == BYPASS || action == UNBYPASS) && ctx.sensors_unlocked) return false;
+  if (action == DISARM || action == UNLOCK || action == INFO || action == BYPASS || action == UNBYPASS) return true;
   return ctx.code_arm_required;
 }
+
+// Only the info page needs the installer code. The list of sensors opens with the code of any Vigil user (or the
+// installer code); both are sent to Vigil with the action `unlock_panel`, which then says what it was for.
+inline bool is_admin_action(int action) { return action == INFO; }
+inline bool is_unlock_action(int action) { return action == UNLOCK || action == INFO; }
+
+// Which code is expected: the code of a user, or the installer code of this panel.
+inline std::string keypad_hint(int action) { return tr(is_admin_action(action) ? "hint_admin" : "hint_user"); }
 
 inline std::string keypad_title(int action, const std::string &sensor_name) {
   switch (action) {
@@ -356,21 +486,28 @@ inline std::string keypad_title(int action, const std::string &sensor_name) {
     case BYPASS: return tr("bypass_title") + sensor_name;
     case UNBYPASS: return tr("unbypass_title") + sensor_name;
     case UNLOCK: return tr("unlock_title");
+    case INFO: return tr("info_title");
   }
   return "";
 }
 
-// Should the keypad open by itself? Yes, as soon as someone has to disarm within the delay.
-inline bool wants_disarm_keypad() {
-  return state_known() && (ctx.state == "pending" || ctx.state == "triggered");
+// May the screen go dark now? Only in a steady state: disarmed or fully armed. Never while the alarm counts down
+// (arming, entry delay): somebody is busy with the panel. During an alarm it is a setting of Vigil. Without a
+// connection there is no alarm to look at, so it may.
+inline bool screen_may_sleep() {
+  if (!ctx.ha_connected) return true;
+  const std::string &s = ctx.state;
+  if (s == "arming" || s == "pending") return false;
+  if (s == "triggered") return ctx.screen_off_on_alarm;
+  return true;
 }
 
-// What to do with the keypad when something changed: 0 nothing, 1 open it to disarm, 2 close it.
-// `action` is the action the open keypad is for (0 if it is closed).
+// What to do with the keypad when something changed: 0 nothing, 2 close it. It never opens by itself, not even
+// during the entry delay or an alarm: whoever sees what is going on presses Disarm. `action` is the action the
+// open keypad is for (0 if it is closed).
 inline int keypad_route(bool keypad_open, int action) {
-  if (wants_disarm_keypad()) return (keypad_open && action == DISARM) ? 0 : 1;
   if (!keypad_open) return 0;
-  if (action == DISARM) return 2;  // nobody has to disarm any more
+  if (action == DISARM) return ctx.state == "disarmed" ? 2 : 0;  // nobody has to disarm any more
   if ((action == ARM_HOME || action == ARM_AWAY || action == ARM_NIGHT) && ctx.state != "disarmed") return 2;
   return 0;
 }

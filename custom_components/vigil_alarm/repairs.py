@@ -47,6 +47,7 @@ class VigilRepairs:
                 )
         wanted.update(self.manager.selftest.issues())
         wanted.update(self.manager.heartbeat.issues())
+        wanted.update(self.manager.panels.issues())
         return wanted
 
     @callback

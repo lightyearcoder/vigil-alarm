@@ -12,6 +12,7 @@ SUBENTRY_SENSOR_GROUP = "sensor_group"
 SUBENTRY_USER = "user"
 SUBENTRY_NOTIFICATION = "notification"
 SUBENTRY_SIREN = "siren"
+SUBENTRY_PANEL = "panel"
 
 # Modes available in release 1; the rest of the code derives everything from
 # the enabled modes, so a mode can be added here later.
@@ -101,12 +102,18 @@ LOG_RETENTION_CEILING = 3650
 CONF_MIN_CODE_LENGTH = "min_code_length"
 MIN_CODE_LENGTH_FLOOR = 4  # the lowest value the setting accepts
 MIN_CODE_LENGTH_CEILING = 12
+CONF_SCREEN_OFF_SECONDS = "screen_off_seconds"  # how long a panel screen stays on without touch
+DEFAULT_SCREEN_OFF_SECONDS = 30
+SCREEN_OFF_RANGE = (5, 3600)
+CONF_SCREEN_OFF_ON_ALARM = "screen_off_on_alarm"  # may the screen go dark while the alarm is going off
+DEFAULT_SCREEN_OFF_ON_ALARM = False
 
 CONF_CODE = "code"
 CONF_CODE_HASH = "code_hash"
 CONF_CODE_SALT = "code_salt"
 CONF_TAGS = "tags"
 CONF_ALLOWED_MODES = "allowed_modes"
+CONF_MAY_BYPASS = "may_bypass"  # a user may bypass sensors; users saved before this existed keep the right
 CONF_MAY_BYPASS_TAMPER = "may_bypass_tamper"
 
 # Event vocabulary of the event entity (the public extension contract).
@@ -145,16 +152,55 @@ EVENT_TYPES = [
     "alarm_acknowledged",
     "code_rejected",
     "code_locked",
+    "startup_settled",
+    "code_locked_permanent",
     "selftest_checked",
     "selftest_reminder",
     "selftest_siren_tested",
+    "panel_refused",
+    "user_refused",
+    "panel_unlocked",
+    "panel_lock_cleared",
+    "panel_offline",
+    "panel_online",
 ]
 
-CODE_MAX_FAILURES = 5  # wrong codes within CODE_FAILURE_WINDOW seconds lock all codes
-CODE_FAILURE_WINDOW = 300
-CODE_LOCK_SECONDS = 300
+# Control points (panels, tablets): the register and the profile each one gets.
+CONF_PANEL_ID = "panel_id"
+CONF_LANGUAGE = "language"
+CONF_CAN_DISARM = "can_disarm"
+CONF_CAN_BYPASS = "can_bypass"
+CONF_CAN_SILENCE = "can_silence"
+CONF_SENSOR_LIST = "sensor_list"
+CONF_UNLOCK_SECONDS = "unlock_seconds"
+CONF_BLOCKED = "blocked"
+CONF_HA_USER = "ha_user"  # a tablet: the Home Assistant user it is logged in as
+SENSOR_LIST_CHOICES = ("always", "code", "never")
+DEFAULT_UNLOCK_SECONDS = 60
+UNLOCK_SECONDS_RANGE = (10, 600)
+PROFILE_VERSION = 1
+PANEL_OFFLINE_SECONDS = 600  # without a connection for this long: a Repair and a message
+
+# The lockout after wrong codes goes in steps. Settings (all in Settings, card "Locking"): after `lock_tries_1`
+# wrong codes the first lock lasts `lock_wait_1` minutes; after that `lock_tries_2` wrong codes give the second
+# lock, then `lock_tries_3` the third; then `lock_tries_4` more wrong codes lock for good (until an administrator
+# unlocks the panel). A right code starts all over.
+LOCK_DEFAULTS = {
+    "lock_tries_1": 3, "lock_wait_1": 5,
+    "lock_tries_2": 2, "lock_wait_2": 15,
+    "lock_tries_3": 2, "lock_wait_3": 60,
+    "lock_tries_4": 1,
+}
+LOCK_TRIES_RANGE = (1, 10)
+LOCK_WAIT_RANGE = (1, 1440)  # minutes
 
 STARTUP_GRACE = 10  # seconds after HA start before sensor states are trusted
+# After a restart a sensor that is still "unavailable" (an MQTT or Zigbee integration that is not up yet) is not
+# reported as lost straight away: Vigil waits until every sensor is there, or this long (a setting), and only then
+# reports the ones that are really gone.
+CONF_STARTUP_WAIT = "startup_wait_seconds"
+DEFAULT_STARTUP_WAIT = 120
+STARTUP_WAIT_RANGE = (10, 900)
 STORAGE_VERSION = 1
 SAVE_DELAY = 1.0
 PBKDF2_ITERATIONS = 100_000
@@ -168,4 +214,5 @@ SERVICE_TEST_NOTIFICATION = "test_notification"
 SERVICE_TEST_SIREN = "test_siren"
 SERVICE_SILENCE = "silence"
 SERVICE_ACKNOWLEDGE = "acknowledge"
+SERVICE_UNLOCK_PANEL = "unlock_panel"
 ATTR_SENSOR = "sensor"

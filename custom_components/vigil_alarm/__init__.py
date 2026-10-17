@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
@@ -9,11 +11,12 @@ from homeassistant.const import ATTR_ENTITY_ID, Platform
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv, device_registry as dr, entity_registry as er
+from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
-from .const import ATTR_SENSOR, DOMAIN, SERVICE_ACKNOWLEDGE, SERVICE_ARM, SERVICE_BYPASS, SERVICE_CHECK_CODE, SERVICE_DISARM, SERVICE_SILENCE, SERVICE_TEST_NOTIFICATION, SERVICE_TEST_SIREN, SERVICE_UNBYPASS
-from .manager import VigilManager
+from .const import ATTR_SENSOR, DOMAIN, SERVICE_ACKNOWLEDGE, SERVICE_ARM, SERVICE_BYPASS, SERVICE_CHECK_CODE, SERVICE_DISARM, SERVICE_SILENCE, SERVICE_TEST_NOTIFICATION, SERVICE_TEST_SIREN, SERVICE_UNBYPASS, SERVICE_UNLOCK_PANEL
+from .manager import SIGNAL_UPDATE, VigilManager
 from .migration import async_migrate_entry  # noqa: F401  (Home Assistant looks it up here)
 from homeassistant.helpers.storage import Store
 
@@ -21,6 +24,7 @@ from .eventlog import STORAGE_VERSION as EVENTLOG_STORAGE_VERSION
 from .repairs import VigilRepairs
 from .lockout import STORAGE_VERSION as LOCKOUT_STORAGE_VERSION
 from .selftest import STORAGE_VERSION as SELFTEST_STORAGE_VERSION
+from .panels import profile_object_id
 from .panel import async_register_commands, async_register_panel, async_remove_panel
 from .vigil_core import ConfigError
 
@@ -42,6 +46,8 @@ SERVICE_SCHEMA = vol.Schema(
     }
 )
 
+_LOGGER = logging.getLogger(__name__)
+
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Register the services (once, not per config entry)."""
@@ -56,7 +62,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 is_admin = await manager.async_is_admin(call.context)
                 await manager.async_bypass(
                     sensor_id, call.data.get("code"), is_admin=is_admin, bypass=bypass,
-                    source=call.data.get("source"),
+                    source=call.data.get("source"), user_id=call.context.user_id,
                 )
                 return
         raise ServiceValidationError(translation_domain=DOMAIN, translation_key="unknown_sensor")
@@ -72,7 +78,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             manager: VigilManager = entry.runtime_data
             is_admin = await manager.async_is_admin(call.context)
             await getattr(manager, action)(
-                call.data.get("code"), is_admin=is_admin, source=call.data.get("source")
+                call.data.get("code"), is_admin=is_admin, source=call.data.get("source"),
+                user_id=call.context.user_id,
             )
 
     async def silence(call: ServiceCall) -> None:
@@ -87,11 +94,13 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     async def arm(call: ServiceCall) -> None:
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
-            await entry.runtime_data.async_arm(call.data["mode"], call.data.get("code"), call.data.get("source"))
+            await entry.runtime_data.async_arm(
+                call.data["mode"], call.data.get("code"), call.data.get("source"), call.context.user_id
+            )
 
     async def disarm(call: ServiceCall) -> None:
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
-            await entry.runtime_data.async_disarm(call.data.get("code"), call.data.get("source"))
+            await entry.runtime_data.async_disarm(call.data.get("code"), call.data.get("source"), call.context.user_id)
 
     # Arm and disarm with the name of the control point (a panel, a keypad) in the log.
     hass.services.async_register(
@@ -106,10 +115,32 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     async def check_code(call: ServiceCall) -> None:
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
-            await entry.runtime_data.async_check_code(call.data.get("code"), call.data.get("source"))
+            await entry.runtime_data.async_check_code(call.data.get("code"), call.data.get("source"), call.context.user_id)
 
     # Only checks a code and changes nothing: a panel uses it to unlock the list of sensors.
     hass.services.async_register(DOMAIN, SERVICE_CHECK_CODE, check_code, schema=code_schema)
+
+    async def unlock_panel(call: ServiceCall) -> None:
+        found = False
+        for entry in hass.config_entries.async_loaded_entries(DOMAIN):
+            source = await entry.runtime_data._operator(call.data["source"], call.context.user_id, "unlock_panel")
+            if entry.runtime_data.panels.get(source):
+                found = True
+                await entry.runtime_data.panels.async_unlock_with_code(call.data["code"], source, call.data["scope"])
+        if not found:
+            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="unknown_panel")
+
+    # The panel sends a code; Vigil checks it. A Home Assistant action, but it only opens the
+    # sensor list and the information pages for a short time and never disarms.
+    hass.services.async_register(
+        DOMAIN, SERVICE_UNLOCK_PANEL, unlock_panel,
+        schema=vol.Schema({
+            vol.Required("code"): cv.string,
+            vol.Required("source"): cv.string,
+            # "sensors": the sensor list, a user code or the installer code; "info": the information pages, the installer code
+            vol.Optional("scope", default="info"): vol.In(["sensors", "info"]),
+        }),
+    )
 
     async def test_notification(call: ServiceCall) -> None:
         sent = 0
@@ -162,8 +193,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> boo
     await manager.async_setup()
     entry.runtime_data = manager
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    # The platforms are set up side by side: a panel profile can be written before the alarm entity exists.
+    async_dispatcher_send(hass, SIGNAL_UPDATE.format(entry.entry_id))
     await async_register_panel(hass, (await async_get_integration(hass, DOMAIN)).version.string)
     _remove_orphans(hass, entry, manager)
+    _align_profile_ids(hass, entry, manager)
     await manager.selftest.async_start()
     entry.async_on_unload(manager.selftest.stop)
     manager.heartbeat.start()
@@ -176,20 +210,38 @@ async def async_setup_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> boo
 
 def _remove_orphans(hass: HomeAssistant, entry: VigilConfigEntry, manager) -> None:
     """Remove the entities and devices of sensors that were deleted in the panel."""
-    known = {s.subentry_id for s in manager.sensor_items()}
+    known = {s.subentry_id for s in manager.sensor_items()} | {p.subentry_id for p in manager.panels.items()}
     prefix = f"{entry.entry_id}_"
     ent_reg = er.async_get(hass)
     for ent in er.async_entries_for_config_entry(ent_reg, entry.entry_id):
         uid = ent.unique_id
         if uid.startswith(prefix) and uid.count("_") >= 2:
             sid = uid[len(prefix):].rsplit("_", 1)[0]
-            if sid not in known and (uid.endswith("_status") or uid.endswith("_bypass")):
+            if sid not in known and (uid.endswith("_status") or uid.endswith("_bypass") or uid.endswith("_profile")):
                 ent_reg.async_remove(ent.entity_id)
     dev_reg = dr.async_get(hass)
     for dev in dr.async_entries_for_config_entry(dev_reg, entry.entry_id):
         for domain, ident in dev.identifiers:
             if domain == DOMAIN and ident.startswith(prefix) and ident[len(prefix):] not in known:
                 dev_reg.async_remove_device(dev.id)
+
+
+def _align_profile_ids(hass: HomeAssistant, entry: VigilConfigEntry, manager) -> None:
+    """A profile sensor made by an earlier version (or before the panel id was changed) has an entity id that
+    follows the name it had then; the firmware looks for the one that follows the panel id. Home Assistant never
+    renames an entity by itself, so it is done here, once, if the right id is free."""
+    ent_reg = er.async_get(hass)
+    for panel in manager.panels.items():
+        current = manager.panels.profile_entity_id(panel)
+        wanted = f"sensor.{profile_object_id(panel.data['panel_id'])}"
+        if not current or current == wanted:
+            continue
+        if ent_reg.async_get(wanted) is None:
+            ent_reg.async_update_entity(current, new_entity_id=wanted)
+        else:
+            _LOGGER.warning("The profile sensor of panel %s is %s, but %s is taken by another entity; the panel "
+                            "will not find its profile until that one is removed or renamed",
+                            panel.data["panel_id"], current, wanted)
 
 
 async def _reload(hass: HomeAssistant, entry: VigilConfigEntry) -> None:
@@ -209,3 +261,4 @@ async def async_remove_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> No
     await Store(hass, EVENTLOG_STORAGE_VERSION, f"{DOMAIN}.log.{entry.entry_id}").async_remove()
     await Store(hass, SELFTEST_STORAGE_VERSION, f"{DOMAIN}.selftest.{entry.entry_id}").async_remove()
     await Store(hass, LOCKOUT_STORAGE_VERSION, f"{DOMAIN}.lockout.{entry.entry_id}").async_remove()
+    await Store(hass, 1, f"{DOMAIN}.tablets.{entry.entry_id}").async_remove()

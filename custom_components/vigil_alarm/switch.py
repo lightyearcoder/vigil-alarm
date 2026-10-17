@@ -45,7 +45,8 @@ class VigilBypassSwitch(VigilSensorEntity, SwitchEntity):
     async def _set(self, bypass: bool) -> None:
         manager = self._manager
         is_admin = await manager.async_is_admin(self._context)
-        await manager.async_bypass(self._sensor_id, None, is_admin=is_admin, bypass=bypass)
+        user_id = self._context.user_id if self._context else None
+        await manager.async_bypass(self._sensor_id, None, is_admin=is_admin, bypass=bypass, user_id=user_id)
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self._set(True)

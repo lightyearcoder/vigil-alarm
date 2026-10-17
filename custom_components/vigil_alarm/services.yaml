@@ -111,3 +111,22 @@ check_code:
       required: false
       selector:
         text:
+unlock_panel:
+  fields:
+    code:
+      required: true
+      selector:
+        text:
+          type: password
+    scope:
+      required: false
+      default: info
+      selector:
+        select:
+          options:
+            - sensors
+            - info
+    source:
+      required: true
+      selector:
+        text:

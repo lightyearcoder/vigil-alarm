@@ -1,4 +1,0 @@
-{
-  "tests/ha/test_translations.py::test_every_error_code_in_editing_has_a_text_in_its_flow_and_in_the_panel": true,
-  "tests/ha/test_eventlog.py::test_the_log_names_the_sensor_and_the_reason": true
-}

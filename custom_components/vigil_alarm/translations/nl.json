@@ -15,6 +15,16 @@
           "code_arm_required": "Code vereist om in te schakelen",
           "min_code_length": "Minimale codelengte",
           "battery_threshold": "Batterij laag bij of onder",
+          "lock_tries_1": "Foute codes voor de eerste vergrendeling",
+          "lock_wait_1": "Eerste vergrendeling duurt (minuten)",
+          "lock_tries_2": "Daarna foute codes voor de tweede vergrendeling",
+          "lock_wait_2": "Tweede vergrendeling duurt (minuten)",
+          "lock_tries_3": "Daarna foute codes voor de derde vergrendeling",
+          "lock_wait_3": "Derde vergrendeling duurt (minuten)",
+          "lock_tries_4": "Daarna foute codes voor de permanente vergrendeling",
+          "startup_wait_seconds": "Wachten op sensoren na een herstart (seconden)",
+          "screen_off_seconds": "Scherm uit na (seconden)",
+          "screen_off_on_alarm": "Scherm uit laten gaan tijdens een alarm",
           "log_retention_days": "Dagen dat het gebeurtenissenlogboek bewaard blijft",
           "selftest_interval_days": "Dagen tussen herinneringen voor de siretest (0 = uit)",
           "selftest_siren_seconds": "Seconden dat de sirene klinkt bij een test",
@@ -39,6 +49,16 @@
           "code_arm_required": "Code vereist om in te schakelen",
           "min_code_length": "Minimale codelengte",
           "battery_threshold": "Batterij laag bij of onder",
+          "lock_tries_1": "Foute codes voor de eerste vergrendeling",
+          "lock_wait_1": "Eerste vergrendeling duurt (minuten)",
+          "lock_tries_2": "Daarna foute codes voor de tweede vergrendeling",
+          "lock_wait_2": "Tweede vergrendeling duurt (minuten)",
+          "lock_tries_3": "Daarna foute codes voor de derde vergrendeling",
+          "lock_wait_3": "Derde vergrendeling duurt (minuten)",
+          "lock_tries_4": "Daarna foute codes voor de permanente vergrendeling",
+          "startup_wait_seconds": "Wachten op sensoren na een herstart (seconden)",
+          "screen_off_seconds": "Scherm uit na (seconden)",
+          "screen_off_on_alarm": "Scherm uit laten gaan tijdens een alarm",
           "log_retention_days": "Dagen dat het gebeurtenissenlogboek bewaard blijft",
           "selftest_interval_days": "Dagen tussen herinneringen voor de siretest (0 = uit)",
           "selftest_siren_seconds": "Seconden dat de sirene klinkt bij een test",
@@ -111,9 +131,17 @@
               "alarm_acknowledged": "Alarm bevestigd",
               "code_rejected": "Code geweigerd",
               "code_locked": "Codes vergrendeld na te veel foute codes",
+              "code_locked_permanent": "Codes voorgoed vergrendeld na te veel foute codes",
+              "startup_settled": "Opstarten klaar (wachten op sensoren)",
               "selftest_checked": "Zelfcontrole gedaan",
               "selftest_reminder": "Testherinnering verstuurd",
-              "selftest_siren_tested": "Sirene getest"
+              "selftest_siren_tested": "Sirene getest",
+              "panel_refused": "Paneeloproep geweigerd",
+              "user_refused": "Gebruikersoproep geweigerd",
+              "panel_unlocked": "Paneel ontgrendeld",
+              "panel_lock_cleared": "Blokkade van paneel opgeheven",
+              "panel_offline": "Paneel niet bereikbaar",
+              "panel_online": "Paneel weer bereikbaar"
             }
           }
         }
@@ -168,10 +196,21 @@
           "alarm_acknowledged": "Alarm bevestigd",
           "code_rejected": "Code geweigerd",
           "code_locked": "Codes vergrendeld na te veel foute codes",
+          "code_locked_permanent": "Codes voorgoed vergrendeld na te veel foute codes",
+          "startup_settled": "Opstarten klaar (wachten op sensoren)",
           "selftest_checked": "Zelfcontrole gedaan",
           "selftest_reminder": "Testherinnering verstuurd",
-          "selftest_siren_tested": "Sirene getest"
+          "selftest_siren_tested": "Sirene getest",
+          "panel_refused": "Paneeloproep geweigerd",
+          "user_refused": "Gebruikersoproep geweigerd",
+          "panel_unlocked": "Paneel ontgrendeld",
+          "panel_lock_cleared": "Blokkade van paneel opgeheven",
+          "panel_offline": "Paneel niet bereikbaar",
+          "panel_online": "Paneel weer bereikbaar"
         }
+      },
+      "panel_profile": {
+        "name": "Profiel"
       }
     },
     "switch": {
@@ -226,8 +265,11 @@
     "code_required": {
       "message": "Een code is vereist."
     },
+    "code_locked_permanent": {
+      "message": "Te veel foute codes. Dit blijft vergrendeld totdat een beheerder het in Vigil opheft."
+    },
     "code_locked": {
-      "message": "Te veel foute codes. Codes zijn enkele minuten vergrendeld."
+      "message": "Te veel foute codes. Probeer het over {minutes} min opnieuw."
     },
     "invalid_code": {
       "message": "Ongeldige code."
@@ -245,7 +287,7 @@
       "message": "Onbekende sensor."
     },
     "tamper_bypass_not_allowed": {
-      "message": "Sabotage omzeilen vereist het recht om sabotage te omzeilen, of een Home Assistant-beheerder."
+      "message": "Sabotage omzeilen of terugzetten vereist het recht om sabotage te omzeilen, of een Home Assistant-beheerder."
     },
     "sensor_not_bypassable": {
       "message": "Deze sensor kan niet worden omzeild."
@@ -264,6 +306,24 @@
     },
     "mode_not_enabled": {
       "message": "Modus {mode} staat niet aan."
+    },
+    "panel_blocked": {
+      "message": "Het paneel {panel} is geblokkeerd."
+    },
+    "panel_not_allowed": {
+      "message": "Het paneel {panel} mag dit niet."
+    },
+    "unknown_panel": {
+      "message": "Dit is geen geregistreerd paneel."
+    },
+    "user_not_registered": {
+      "message": "Je Home Assistant-account is niet geregistreerd in Vigil en mag het alarm dus niet bedienen."
+    },
+    "no_admin_code": {
+      "message": "Dit paneel heeft geen installateurscode. Stel er een in op het tabblad Panelen, of ontgrendel het daar."
+    },
+    "bypass_not_allowed": {
+      "message": "Sensoren omzeilen of terugzetten vereist het recht om te omzeilen, dat deze gebruiker in Vigil heeft gekregen, of een Home Assistant-beheerder."
     }
   },
   "services": {
@@ -400,6 +460,24 @@
           "description": "Naam van het bedieningspunt, bijvoorbeeld een paneel."
         }
       }
+    },
+    "unlock_panel": {
+      "name": "Paneel ontgrendelen",
+      "description": "Ontgrendel de sensorlijst of de infopagina's van een geregistreerd paneel. Schakelt het alarm nooit uit.",
+      "fields": {
+        "code": {
+          "name": "Code",
+          "description": "Een Vigil-gebruikerscode of de installateurscode van dit paneel voor de sensorlijst; de installateurscode voor de infopagina's."
+        },
+        "scope": {
+          "name": "Doel",
+          "description": "sensors: de sensorlijst (een gebruikerscode of de installateurscode). info: de infopagina's (alleen de installateurscode)."
+        },
+        "source": {
+          "name": "Bron",
+          "description": "Het id van het paneel."
+        }
+      }
     }
   },
   "issues": {
@@ -434,6 +512,10 @@
     "heartbeat_failing": {
       "title": "Hartslag kan niet worden verstuurd",
       "description": "Vigil Alarm kan het hartslag-adres al een paar keer achter elkaar niet bereiken ({reason}). Een bewakingsdienst die de hartslag verwacht, zal dit melden. Controleer het adres bij Instellingen in het Vigil Alarm-paneel en je internetverbinding. Deze melding verdwijnt vanzelf als de hartslag weer werkt."
+    },
+    "panel_offline": {
+      "title": "Paneel niet bereikbaar: {name}",
+      "description": "Vigil Alarm kan het paneel {name} al tien minuten niet bereiken. Controleer de voeding en de wifi van het paneel. Het alarm zelf blijft werken. Deze melding verdwijnt vanzelf als het paneel terug is."
     }
   }
 }

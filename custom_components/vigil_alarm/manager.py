@@ -29,12 +29,10 @@ from homeassistant.util import dt as dt_util
 
 from .items import Item, items_of
 from .const import (
-    CODE_FAILURE_WINDOW,
-    CODE_LOCK_SECONDS,
-    CODE_MAX_FAILURES,
     CONF_AT_ARM_OPEN,
     CONF_CLS,
     CONF_CODE_ARM_REQUIRED,
+    CONF_HA_USER,
     CONF_DEFAULT_ENTRY_DELAY,
     CONF_ENTITY_ID,
     CONF_ENTRY_DELAY,
@@ -42,6 +40,7 @@ from .const import (
     CONF_EXIT_DELAY,
     CONF_GAS_TYPE,
     CONF_ALLOWED_MODES,
+    CONF_MAY_BYPASS,
     CONF_MAY_BYPASS_TAMPER,
     CONF_MODES,
     CONF_ON_UNAVAILABLE,
@@ -55,6 +54,8 @@ from .const import (
     DEFAULT_EXIT_DELAY,
     DOMAIN,
     SAVE_DELAY,
+    CONF_STARTUP_WAIT,
+    DEFAULT_STARTUP_WAIT,
     STARTUP_GRACE,
     STORAGE_VERSION,
     SUBENTRY_RULE,
@@ -68,6 +69,7 @@ from .eventlog import EventLog
 from .notifier import Notifier
 from .heartbeat import Heartbeat
 from .lockout import CodeLockout
+from .panels import PanelRegistry
 from .selftest import SelfTest
 from .sirens import SirenController
 from .supervisor import Supervisor
@@ -77,7 +79,7 @@ _LOGGER = logging.getLogger(__name__)
 
 SIGNAL_UPDATE = f"{DOMAIN}_update_{{}}"
 SIGNAL_EVENT = f"{DOMAIN}_event_{{}}"
-ROUTINE_EVENTS = {"selftest_checked", "selftest_reminder", "selftest_siren_tested"}
+ROUTINE_EVENTS = {"selftest_checked", "selftest_reminder", "selftest_siren_tested", "startup_settled"}
 
 
 def build_config(entry: ConfigEntry, extra: dict[str, Item] | None = None) -> Config:
@@ -148,6 +150,17 @@ def sensor_value(state: Any) -> str:
     return "unavailable"
 
 
+def _bypass_rank(status: str, bypassable: bool) -> int:
+    """Order of the sensor list on a panel: what is most likely to be bypassed comes first."""
+    if status in ("open", "waiting"):
+        return 0 if bypassable else 2
+    if status == "unavailable":
+        return 1 if bypassable else 3
+    if status in ("bypassed", "bypassed_at_arm"):
+        return 4  # next in line: the ones to restore
+    return 5  # closed and fine
+
+
 class VigilManager:
     """Runs the engine of one config entry."""
 
@@ -157,9 +170,13 @@ class VigilManager:
         self.config = build_config(entry)  # raises ConfigError
         self.engine = Engine(self.config, now=self._wall(), on_event=self._handle_event)
         self.ready = False
+        self._settling = False  # after a restart: sensors that are not there yet are not reported as lost yet
+        self._settle_timer: CALLBACK_TYPE | None = None
+        self._started_at = 0.0
         self.early_events: list[dict[str, Any]] = []
         self.eventlog = EventLog(hass, entry, self)
-        self.lockout = CodeLockout(hass, entry, lambda: self._clock())
+        self.panels = PanelRegistry(hass, self)
+        self.lockout = CodeLockout(hass, entry, lambda: self._clock(), self.panels.ids)
         self.last_event: dict[str, Any] | None = None
         self.changed_by: str | None = None
         self._store: Store[dict[str, Any]] = Store(
@@ -206,9 +223,17 @@ class VigilManager:
     def code_arm_required(self) -> bool:
         return bool(self.users) and self.entry.data.get(CONF_CODE_ARM_REQUIRED, True)
 
+    @property
+    def only_registered(self) -> bool:
+        """Is the list of Home Assistant accounts in use? As soon as one panel is bound to an account (a tablet, a
+        phone), every other ordinary account is refused. With no such account nothing changes, so an update from
+        an older version changes nothing."""
+        return any(p.data.get(CONF_HA_USER) for p in self.panels.items())
+
     async def async_setup(self) -> None:
         await self.eventlog.async_load()
         await self.lockout.async_load()
+        await self.panels.async_load()
         await self._async_restore()
         self._sync()
         if self.hass.is_running:
@@ -218,20 +243,33 @@ class VigilManager:
 
     @callback
     def _started(self, _hass: HomeAssistant) -> None:
+        self._started_at = self._clock()
         self._unsubs.append(async_call_later(self.hass, STARTUP_GRACE, self._after_grace))
 
     @callback
     def _after_grace(self, _now: datetime) -> None:
-        self._start_feeding()
+        self._start_feeding(settle=True)
 
     @callback
-    def _start_feeding(self) -> None:
-        """Trust the sensor entities from now on: take their states and follow them."""
+    def _unavailable_sensors(self) -> list[str]:
+        return [sid for sid, eid in self._sensor_entity.items()
+                if sensor_value(self.hass.states.get(eid)) == "unavailable"]
+
+    @callback
+    def _start_feeding(self, settle: bool = False) -> None:
+        """Trust the sensor entities from now on: take their states and follow them.
+
+        `settle`: Home Assistant has just started. A sensor that is not available yet (MQTT or Zigbee still starting)
+        is left alone, neither lost nor an alarm, until all sensors are there or the wait is over."""
         if self.ready:
             return
         self._sync()
+        self._settling = settle and bool(self._sensor_entity)
         for sid, entity_id in self._sensor_entity.items():
-            self.engine.set_sensor(sid, sensor_value(self.hass.states.get(entity_id)))
+            value = sensor_value(self.hass.states.get(entity_id))
+            if value == "unavailable" and self._settling:
+                continue
+            self.engine.set_sensor(sid, value)
         if self._sensor_entity:
             self._unsubs.append(
                 async_track_state_change_event(
@@ -239,24 +277,57 @@ class VigilManager:
                 )
             )
         self.ready = True
+        if self._settling:
+            if self._unavailable_sensors():
+                wait = max(0, int(self.entry.data.get(CONF_STARTUP_WAIT, DEFAULT_STARTUP_WAIT)) - STARTUP_GRACE)
+                self._settle_timer = async_call_later(self.hass, wait, self._settle_timeout)
+            else:
+                self._finish_settle()
         self.notifier.resume_after_restart()
         self.sirens.resume_after_restart()
         self.supervisor.start()
+        self.panels.start()
+        self._after()
+
+    @callback
+    def _settle_timeout(self, _now: datetime) -> None:
+        self._settle_timer = None
+        self._finish_settle()
+
+    @callback
+    def _finish_settle(self) -> None:
+        """All sensors are there, or the wait is over: from now on a missing sensor is a real problem."""
+        if not self._settling:
+            return
+        self._settling = False
+        if self._settle_timer:
+            self._settle_timer()
+            self._settle_timer = None
+        gone = self._unavailable_sensors()
+        self.publish("startup_settled", waited=round(self._clock() - self._started_at), unavailable=len(gone),
+                     sensors=", ".join(self._sensor_name.get(s, s) for s in gone))
+        for sid in gone:
+            self.engine.set_sensor(sid, "unavailable")  # now it is reported (and may trigger)
         self._after()
 
     async def async_unload(self) -> None:
+        if self._settle_timer:
+            self._settle_timer()
+            self._settle_timer = None
         for unsub in self._unsubs:
             unsub()
         self._unsubs.clear()
         self.notifier.async_stop()
         self.sirens.async_stop()
         self.supervisor.stop()
+        self.panels.stop()
         if self._unsub_timer:
             self._unsub_timer()
             self._unsub_timer = None
         await self._store.async_save(self.engine.export_state())
         await self.eventlog.async_flush()
         await self.lockout.async_flush()
+        await self.panels.async_flush()
 
     # ---------------------------------------------------------- persistence
 
@@ -306,10 +377,14 @@ class VigilManager:
     def _sensor_changed(self, event: Event) -> None:
         entity_id = event.data["entity_id"]
         value = sensor_value(event.data.get("new_state"))
+        if self._settling and value == "unavailable":
+            return  # still starting up: wait for the end of the wait before calling it lost
         self._sync()
         for sid, eid in self._sensor_entity.items():
             if eid == entity_id:
                 self.engine.set_sensor(sid, value)
+        if self._settling and not self._unavailable_sensors():
+            self._finish_settle()
         self._after()
 
     def _handle_event(self, event: dict[str, Any]) -> None:
@@ -352,8 +427,23 @@ class VigilManager:
 
     # ------------------------------------------------------------- commands
 
+    async def _operator(self, source: str | None, user_id: str | None, action: str) -> str | None:
+        """Who is calling? Returns the source (the panel id of a registered account wins over a made-up text).
+
+        Once an account is registered, a Home Assistant account that is neither registered nor an administrator
+        is refused here, before any code is looked at and without counting towards a lockout. A call without a
+        user (an automation, a script, an ESPHome panel) is not touched: those are your own."""
+        source = self.panels.source_for(source, user_id)
+        if not user_id or self.panels.for_user(user_id) or not self.only_registered:
+            return source
+        account = await self.hass.auth.async_get_user(user_id)
+        if account is not None and not account.is_admin and not account.system_generated:
+            self.publish("user_refused", user=account.name, source=source, action=action)
+            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="user_not_registered")
+        return source
+
     async def _authenticate(
-        self, code: str | None, *, required: bool, source: str | None = None, action: str | None = None
+        self, code: str | None, *, required: bool, source: str | None = None, action: str | None = None,
     ) -> Item | None:
         """Find the user for a code. No users configured: everything is allowed."""
         if not self.users:
@@ -364,16 +454,39 @@ class VigilManager:
                     translation_domain=DOMAIN, translation_key="code_required"
                 )
             return None
-        if self.lockout.remaining(source):  # before hashing: a locked control point also costs no CPU
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="code_locked")
+        if self.lockout.refusal(source):  # before hashing: a locked control point also costs no CPU
+            raise self.lock_error(source)
         user = await self.hass.async_add_executor_job(find_user_by_code, code, self.users)
-        if user is None:
+        if user is not None:
+            self.lockout.record_success(source)
+        else:
             if locked := self.lockout.record_failure(source):
-                self.publish("code_locked", source=source, action=action, timer=locked, minutes=CODE_LOCK_SECONDS // 60)
+                self.publish_lock(locked, source, action)
             # Never log the code itself; the source (for example a panel) and the action are enough.
             self.publish("code_rejected", source=source, action=action)
+            if locked:  # this wrong code started a lock: say so at once, not only at the next try
+                raise self.lock_error(source, started=locked)
             raise ServiceValidationError(translation_domain=DOMAIN, translation_key="invalid_code")
         return user
+
+    def lock_error(self, source: str | None, bucket: str | None = None, started=None) -> ServiceValidationError:
+        """The error for a locked control point: for good, or for so many more minutes (rounded up)."""
+        if started is not None:
+            permanent, seconds = started.minutes is None, (started.minutes or 0) * 60
+        else:
+            permanent, seconds = self.lockout.is_permanent(source, bucket), self.lockout.remaining(source, bucket)
+        return ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="code_locked_permanent" if permanent else "code_locked",
+            translation_placeholders={"minutes": str(max(1, -(-int(seconds) // 60)))},
+        )
+
+    def publish_lock(self, locked, source: str | None, action: str | None) -> None:
+        """Tell that a lock has just started: for a while, or for good."""
+        if locked.minutes is None:
+            self.publish("code_locked_permanent", source=source, action=action, timer=locked.bucket)
+        else:
+            self.publish("code_locked", source=source, action=action, timer=locked.bucket, minutes=locked.minutes)
 
     @staticmethod
     def _actor(user: Item | None, source: str | None) -> str | None:
@@ -386,7 +499,8 @@ class VigilManager:
     def _sensor_names(self, ids: list[str]) -> str:
         return ", ".join(self._sensor_name.get(z, z) for z in ids) or "-"
 
-    async def async_arm(self, mode: str, code: str | None, source: str | None = None) -> None:
+    async def async_arm(self, mode: str, code: str | None, source: str | None = None, user_id: str | None = None) -> None:
+        source = await self._operator(source, user_id, "arm")
         if not self.ready:
             raise ServiceValidationError(translation_domain=DOMAIN, translation_key="not_ready")
         if mode not in self.config.modes:
@@ -395,6 +509,7 @@ class VigilManager:
                 translation_key="mode_not_enabled",
                 translation_placeholders={"mode": mode},
             )
+        self.panels.check(source, "arm", mode)
         user = await self._authenticate(code, required=self.code_arm_required, source=source, action="arm")
         if user is not None:
             allowed = user.data.get(CONF_ALLOWED_MODES) or list(self.config.modes)
@@ -419,28 +534,40 @@ class VigilManager:
                 },
             )
 
-    async def async_check_code(self, code: str | None, source: str | None = None) -> None:
+    async def async_check_code(self, code: str | None, source: str | None = None, user_id: str | None = None) -> None:
         """Is this a valid code? Counts as a try for the lockout. For a panel that hides things behind a code."""
+        source = await self._operator(source, user_id, "check_code")
+        self.panels.check(source, "check_code")
         await self._authenticate(code, required=True, source=source, action="check_code")
 
-    async def async_disarm(self, code: str | None, source: str | None = None) -> None:
+    async def async_disarm(self, code: str | None, source: str | None = None, user_id: str | None = None) -> None:
+        source = await self._operator(source, user_id, "disarm")
+        self.panels.check(source, "disarm")
         user = await self._authenticate(code, required=True, source=source, action="disarm")
         self._sync()
         self.engine.disarm(user=self._actor(user, source))
         self._after()
 
     async def async_bypass(
-        self, sensor_id: str, code: str | None, *, is_admin: bool, bypass: bool, source: str | None = None
+        self, sensor_id: str, code: str | None, *, is_admin: bool, bypass: bool, source: str | None = None,
+        user_id: str | None = None,
     ) -> None:
+        source = await self._operator(source, user_id, "bypass" if bypass else "unbypass")
         if sensor_id not in self.config.sensors:
             raise ServiceValidationError(translation_domain=DOMAIN, translation_key="unknown_sensor")
         sensor = self.config.sensors[sensor_id]
-        # Like arming: a code is only needed when arming needs one (`code_arm_required`).
+        action = "bypass" if bypass else "unbypass"
+        panel = self.panels.check(source, action)
+        # Like arming: a code is only needed when arming needs one (`code_arm_required`). From a registered
+        # panel a code is always needed: that is part of the standard profile.
         user = await self._authorize(
-            code, is_admin, required=self.code_arm_required, source=source,
+            code, is_admin, required=self.code_arm_required or panel is not None, source=source,
             action="bypass" if bypass else "unbypass",
         )
-        if bypass and sensor.cls == "tamper" and not is_admin:
+        # Putting a sensor back follows the same rules as bypassing it: who may bypass it may restore it.
+        if not is_admin and user is not None and not user.data.get(CONF_MAY_BYPASS, True):
+            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="bypass_not_allowed")
+        if sensor.cls == "tamper" and not is_admin:
             if user is None or not user.data.get(CONF_MAY_BYPASS_TAMPER, False):
                 raise ServiceValidationError(
                     translation_domain=DOMAIN, translation_key="tamper_bypass_not_allowed"
@@ -465,17 +592,27 @@ class VigilManager:
         """An administrator in the UI, or a user with a valid code (when one is needed)."""
         if not is_admin:
             return await self._authenticate(code, required=required, source=source, action=action)
-        return await self._authenticate(code, required=False, source=source, action=action) if code else None
+        if code:
+            return await self._authenticate(code, required=False, source=source, action=action)
+        return None
 
-    async def async_silence(self, code: str | None, *, is_admin: bool, source: str | None = None) -> None:
+    async def async_silence(
+        self, code: str | None, *, is_admin: bool, source: str | None = None, user_id: str | None = None
+    ) -> None:
         """Stop the sirens; the alarm itself stays triggered."""
+        source = await self._operator(source, user_id, "silence")
+        self.panels.check(source, "silence")
         user = await self._authorize(code, is_admin, source=source, action="silence")
         name = self._actor(user, source)
         self.sirens.silence()
         self.publish("alarm_silenced", user=name)
 
-    async def async_acknowledge(self, code: str | None, *, is_admin: bool, source: str | None = None) -> None:
+    async def async_acknowledge(
+        self, code: str | None, *, is_admin: bool, source: str | None = None, user_id: str | None = None
+    ) -> None:
         """Confirm that the alarm has been seen: pending escalations are cancelled."""
+        source = await self._operator(source, user_id, "acknowledge")
+        self.panels.check(source, "acknowledge")
         user = await self._authorize(code, is_admin, source=source, action="acknowledge")
         name = self._actor(user, source)
         self.notifier.cancel_escalations()
@@ -484,6 +621,8 @@ class VigilManager:
     async def async_is_admin(self, context: Context | None) -> bool:
         """Calls from the UI carry a user; automations and scripts do not."""
         if context is None or not context.user_id:
+            return False
+        if self.panels.for_user(context.user_id):  # a tablet is never an administrator for Vigil
             return False
         user = await self.hass.auth.async_get_user(context.user_id)
         return bool(user and user.is_admin)
@@ -517,19 +656,20 @@ class VigilManager:
             names.get(z, z) for z in self.config.sensors if self.engine.sensor_status(z) in ("open", "waiting")
         ]
         # One line per sensor, "name|entity|status|1 or 0 (bypassable)": plain text, because a display
-        # (ESPHome) only reads plain attribute values, not lists.
-        snap["panel_sensors"] = "\n".join(
-            "|".join(
-                (
-                    s.title.replace("|", "/").replace("\n", " "),
-                    s.data[CONF_ENTITY_ID],
-                    self.engine.sensor_status(s.subentry_id),
-                    "0" if self.config.sensors[s.subentry_id].cls in ("fire", "gas") else "1",
-                )
-            )
-            for s in self.sensor_items()
-            if s.subentry_id in self.config.sensors
-        )
+        # (ESPHome) only reads plain attribute values, not lists. The sensors that come first for a bypass come
+        # first in the list, so nobody has to page through closed doors to find the open one.
+        rows = []
+        for s in self.sensor_items():
+            if s.subentry_id not in self.config.sensors:
+                continue
+            status = self.engine.sensor_status(s.subentry_id)
+            bypassable = self.config.sensors[s.subentry_id].cls not in ("fire", "gas")
+            rows.append((
+                _bypass_rank(status, bypassable), s.title.lower(),
+                "|".join((s.title.replace("|", "/").replace("\n", " "), s.data[CONF_ENTITY_ID], status,
+                          "1" if bypassable else "0")),
+            ))
+        snap["panel_sensors"] = "\n".join(row for _rank, _name, row in sorted(rows))
         snap["bypassed_sensors"] = [
             names.get(z, z) for z in self.config.sensors
             if self.engine.sensor_status(z) in ("bypassed", "bypassed_at_arm")

@@ -29,6 +29,17 @@ from .const import (
     LOG_RETENTION_CEILING,
     LOG_RETENTION_FLOOR,
     CONF_MIN_CODE_LENGTH,
+    CONF_SCREEN_OFF_ON_ALARM,
+    CONF_SCREEN_OFF_SECONDS,
+    DEFAULT_SCREEN_OFF_ON_ALARM,
+    DEFAULT_SCREEN_OFF_SECONDS,
+    SCREEN_OFF_RANGE,
+    CONF_STARTUP_WAIT,
+    DEFAULT_STARTUP_WAIT,
+    STARTUP_WAIT_RANGE,
+    LOCK_DEFAULTS,
+    LOCK_TRIES_RANGE,
+    LOCK_WAIT_RANGE,
     MIN_CODE_LENGTH_CEILING,
     MIN_CODE_LENGTH_FLOOR,
     CONF_EXIT_DELAY,
@@ -89,12 +100,28 @@ def _entry_schema(d: dict[str, Any]) -> vol.Schema:
     fields[vol.Required(CONF_BATTERY_THRESHOLD, default=d.get(CONF_BATTERY_THRESHOLD, DEFAULT_BATTERY_THRESHOLD))] = selector.NumberSelector(
         selector.NumberSelectorConfig(min=1, max=100, step=1, unit_of_measurement="%", mode=selector.NumberSelectorMode.BOX)
     )
+    fields[vol.Required(CONF_STARTUP_WAIT, default=d.get(CONF_STARTUP_WAIT, DEFAULT_STARTUP_WAIT))] = selector.NumberSelector(
+        selector.NumberSelectorConfig(
+            min=STARTUP_WAIT_RANGE[0], max=STARTUP_WAIT_RANGE[1], step=1, unit_of_measurement="s", mode=selector.NumberSelectorMode.BOX
+        )
+    )
     fields[vol.Required(CONF_CODE_ARM_REQUIRED, default=d.get(CONF_CODE_ARM_REQUIRED, True))] = bool
     fields[vol.Required(CONF_MIN_CODE_LENGTH, default=d.get(CONF_MIN_CODE_LENGTH, MIN_CODE_LENGTH_FLOOR))] = selector.NumberSelector(
         selector.NumberSelectorConfig(
             min=MIN_CODE_LENGTH_FLOOR, max=MIN_CODE_LENGTH_CEILING, step=1, mode=selector.NumberSelectorMode.BOX
         )
     )
+    fields[vol.Required(CONF_SCREEN_OFF_SECONDS, default=d.get(CONF_SCREEN_OFF_SECONDS, DEFAULT_SCREEN_OFF_SECONDS))] = selector.NumberSelector(
+        selector.NumberSelectorConfig(
+            min=SCREEN_OFF_RANGE[0], max=SCREEN_OFF_RANGE[1], step=1, unit_of_measurement="s", mode=selector.NumberSelectorMode.BOX
+        )
+    )
+    fields[vol.Required(CONF_SCREEN_OFF_ON_ALARM, default=d.get(CONF_SCREEN_OFF_ON_ALARM, DEFAULT_SCREEN_OFF_ON_ALARM))] = bool
+    for key, default in LOCK_DEFAULTS.items():
+        low, high = LOCK_WAIT_RANGE if "wait" in key else LOCK_TRIES_RANGE
+        fields[vol.Required(key, default=d.get(key, default))] = selector.NumberSelector(
+            selector.NumberSelectorConfig(min=low, max=high, step=1, mode=selector.NumberSelectorMode.BOX)
+        )
     fields[vol.Required(CONF_LOG_RETENTION_DAYS, default=d.get(CONF_LOG_RETENTION_DAYS, DEFAULT_LOG_RETENTION_DAYS))] = selector.NumberSelector(
         selector.NumberSelectorConfig(
             min=LOG_RETENTION_FLOOR, max=LOG_RETENTION_CEILING, step=1, unit_of_measurement="d", mode=selector.NumberSelectorMode.BOX

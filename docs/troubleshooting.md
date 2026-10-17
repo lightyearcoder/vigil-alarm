@@ -47,7 +47,7 @@ Find what you see below. For each symptom: the likely causes, where to check, an
 ## My code is refused
 
 - **Too short:** the minimum length is in *Settings* (4 to 12 characters).
-- **Locked:** five wrong codes within five minutes lock all codes for five minutes, including the right one. Wait a moment; the event log shows `code_locked`.
+- **Locked:** after some wrong codes Vigil locks that place in steps (by default 5, then 15, then 60 minutes), including for the right code. Wait a moment; the event log shows `code_locked`. If it shows `code_locked_permanent`, the panel stays closed until an administrator presses *Clear lock* under Panels. The numbers are under *Settings*, *Locking*.
 - **Not allowed:** the user may only use certain modes. Check *Allowed modes*. Disarming always works with a valid code.
 
 ## False alarms

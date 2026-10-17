@@ -1,5 +1,14 @@
 # Hardware of the Guition ESP32-S3-4848S040: 4 inch 480x480 RGB display (ST7701S) with GT911 touch.
-# Use together with vigil-panel.yaml, see example-garage.yaml.
+# Use together with vigil-panel.yaml (same folder), see ../example-garage.yaml.
+#
+# A hardware file for another panel starts the same way: it names the hardware and the size of the
+# screen (the firmware reports both to Vigil), and provides the display, the touch screen, the
+# backlight light `display_backlight` and an `lvgl:` section.
+
+substitutions:
+  hardware_id: guition-4848
+  screen_width: "480"
+  screen_height: "480"
 
 esp32:
   board: esp32-s3-devkitc-1
@@ -46,8 +55,8 @@ display:
   - platform: st7701s
     id: tft_display
     dimensions:
-      width: 480
-      height: 480
+      width: ${screen_width}
+      height: ${screen_height}
     spi_mode: MODE3
     data_rate: 2MHz
     color_order: RGB

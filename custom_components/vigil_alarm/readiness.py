@@ -116,6 +116,11 @@ def async_readiness(hass: HomeAssistant, entry: ConfigEntry) -> list[dict[str, A
             unlinked.append(s)
     if unlinked:
         found.append(_finding("tamper_unlinked", "advice", "sensor", n=len(unlinked), names=_names(unlinked)))
+    manager = getattr(entry, "runtime_data", None)
+    if manager is not None:
+        for problem in manager.panels.problems():
+            code = problem.pop("code")
+            found.append(_finding(code, "advice", "panel", **problem))
     return found
 
 

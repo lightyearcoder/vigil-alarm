@@ -20,16 +20,17 @@ const TXT = {
       disclaimer: "Vigil Alarm is geen gecertificeerd alarmsysteem. Test het regelmatig en vertrouw er niet als enige bescherming op.",
       unreleased: "Nog niet uitgebracht", firstRelease: "eerste versie",
     },
-    tabs: { overview: "Overzicht", sensor: "Sensoren", sensor_group: "Sensorgroepen", rule: "Bevestigingsregels", user: "Gebruikers", notification: "Meldingen", siren: "Sirenes", log: "Logboek", settings: "Instellingen", about: "Over" },
-    add: { sensor: "Sensor toevoegen", sensor_group: "Sensorgroep toevoegen", rule: "Bevestigingsregel toevoegen", user: "Gebruiker toevoegen", notification: "Melding toevoegen", siren: "Sirene toevoegen" },
-    edit: { sensor: "Sensor bewerken", sensor_group: "Sensorgroep bewerken", rule: "Bevestigingsregel bewerken", user: "Gebruiker bewerken", notification: "Melding bewerken", siren: "Sirene bewerken" },
+    tabs: { overview: "Overzicht", sensor: "Sensoren", sensor_group: "Sensorgroepen", rule: "Bevestigingsregels", user: "Gebruikers", notification: "Meldingen", siren: "Sirenes", log: "Logboek", settings: "Instellingen", about: "Over", panel: "Panelen" },
+    add: { sensor: "Sensor toevoegen", sensor_group: "Sensorgroep toevoegen", rule: "Bevestigingsregel toevoegen", user: "Gebruiker toevoegen", notification: "Melding toevoegen", siren: "Sirene toevoegen", panel: "Paneel toevoegen" },
+    edit: { sensor: "Sensor bewerken", sensor_group: "Sensorgroep bewerken", rule: "Bevestigingsregel bewerken", user: "Gebruiker bewerken", notification: "Melding bewerken", siren: "Sirene bewerken", panel: "Paneel bewerken" },
     intro: {
       sensor: "Eén melder, zoals een deurcontact, PIR of rookmelder. Bij een inbraaksensor kies je in welke sensorgroepen hij zit. Brand-, gas-, water- en sabotagesensoren bewaken altijd en hebben geen sensorgroep nodig.",
       sensor_group: "Een sensorgroep bepaalt in welke modi de sensoren erin bewaken. Bijvoorbeeld: Buitenschil (deuren en ramen) bij Thuis, Weg en Nacht, en Binnen (beweging) alleen bij Weg.",
       rule: "Een alarm volgt pas als het opgegeven aantal verschillende sensoren binnen het tijdvenster afgaat. Handig tegen een vals alarm door één PIR.",
-      user: "Wie het alarm met een code kan bedienen.",
+      user: "Personen die het alarm met een code kunnen bedienen. Wie bedient, bepaalt de code; welk apparaat bedient, regel je onder Panelen.",
       notification: "Naar wie en wanneer berichten gaan. Elke melding is één notify-dienst.",
       siren: "Optioneel. Zonder sirene werkt het alarm met meldingen.",
+      panel: "Een apparaat aan de muur: een ESPHome-paneel, of een tablet of telefoon met een eigen Home Assistant-account Vigil bepaalt wat elk paneel mag en welke gegevens het krijgt; het paneel zelf beslist niets. Het paneel-id is de naam van het ESPHome-apparaat. Zodra één account is gekoppeld, kunnen andere gewone accounts het alarm niet meer bedienen.",
     },
     empty: {
       sensor: "Nog geen sensoren. Voeg eerst een sensorgroep toe als er nog geen is, en daarna je sensoren.",
@@ -38,6 +39,7 @@ const TXT = {
       user: "Nog geen gebruikers. Zonder gebruiker is er geen code nodig om te bedienen.",
       notification: "Nog geen meldingen. Voeg een notify-dienst toe om berichten te krijgen.",
       siren: "Nog geen sirene. Dit is optioneel; zonder sirene werkt het alarm met meldingen.",
+      panel: "Nog geen panelen. Zonder geregistreerd paneel krijgt een ESPHome-paneel geen profiel en bedient het niets.",
     },
     save: "Opslaan", cancel: "Annuleren", del: "Verwijderen", dup: "Kopiëren", editBtn: "Bewerken", testBtn: "Test", close: "Sluiten",
     ready: {
@@ -53,6 +55,7 @@ const TXT = {
         no_siren: "Er is geen sirene. Het alarm werkt dan alleen met meldingen.",
         battery_missing: "{n} sensoren hebben geen batterijsensor, dus je hoort niet als de batterij leeg raakt: {names}.",
         tamper_unlinked: "{n} sensoren hebben een sabotagesensor op hetzelfde apparaat die nergens aan gekoppeld is: {names}.",
+        panel_firmware: "De firmware van paneel {name} begrijpt profielversie {seen}, Vigil gebruikt versie {wanted}. Werk de firmware van het paneel bij.",
       },
     },
     heartbeat: { title: "Hartslag", off: "Uit. Vul bij Instellingen een hartslag-adres in om te beginnen.", lastOk: "Laatst gelukt", lastFail: "Laatst mislukt", never: "nog niet", every: "Elke {n} minuten", test: "Nu testen", ok: "De hartslag is aangekomen.", failed: "De hartslag is niet aangekomen ({reason}).", reason: { timeout: "geen antwoord binnen 10 seconden", connection: "geen verbinding", } , failing: "Mislukt: {reason}" },
@@ -81,6 +84,9 @@ const TXT = {
     sections: {
       alarm: ["Modi en vertragingen", "Welke modi je gebruikt en hoe lang je hebt om te vertrekken, binnen te komen en hoe lang het alarm duurt."],
       codes: ["Codes", "Of een code nodig is om in te schakelen en hoe lang een code minstens moet zijn."],
+      startup: ["Opstarten", "Na een herstart van Home Assistant wacht Vigil tot al je sensoren beschikbaar zijn (bijvoorbeeld MQTT of Zigbee die nog opstarten) voordat het een sensor als weggevallen meldt of er een alarm van maakt. Zijn ze na deze tijd nog weg, dan volgt de melding wel."],
+      lock: ["Vergrendeling", "Wat er gebeurt na foute codes, per paneel: eerst een korte vergrendeling, dan langere, en daarna een permanente die alleen weggaat met Blokkade opheffen bij Panelen. Een goede code begint weer bij nul."],
+      screen: ["Scherm van de panelen", "Wanneer het scherm van een ESPHome-paneel uitgaat. Het scherm gaat alleen uit als het alarm uit of volledig ingeschakeld is, nooit tijdens het aftellen om in of uit te schakelen."],
       battery: ["Batterijen", "Vanaf welk niveau een batterij als bijna leeg geldt."],
       log: ["Logboek", "Hoe lang Vigil de gebeurtenissen bewaart."],
       selftest: ["Zelftest", "Vigil herinnert je eraan de sirene te testen. Zet het interval op 0 om de herinnering uit te zetten."],
@@ -96,10 +102,12 @@ const TXT = {
     cols: {
       name: "Naam", entity: "Entiteit", cls: "Klasse", type: "Type", groups: "Sensorgroepen", rule: "Bevestigingsregel", status: "Status", battery: "Batterij",
       modes: "Actief in modi", sensors: "Sensoren", suggest: "Voorstel voor", condition: "Voorwaarde", escalate: "Onbevestigd melden",
-      code: "Code", tags: "Tags", tamper: "Sabotage omzeilen",
+      code: "Code", tags: "Tags", bypass: "Omzeilen", tamper: "Sabotage omzeilen",
       service: "Dienst", categories: "Categorieën", delay: "Vertraging",
       device: "Apparaat", causes: "Bij", maxdur: "Max. duur",
+      panelId: "Paneel-id", conn: "Verbinding", allowed: "Beperkingen",
     },
+    panel: { tablet: "Account", noUser: "gebruiker niet gevonden", connected: "Verbonden", offline: "Niet bereikbaar", noConnection: "Geen verbinding", noCard: "Geen Vigil-kaart gezien", cardSeen: "Vigil-kaart actief", notFound: "Niet gevonden in ESPHome", unlocked: "Ontgrendeld", locked: "Vergrendeld voor {s} s", lockedPermanent: "Permanent vergrendeld", blocked: "Geblokkeerd", unlock: "Ontgrendelen", unlockedDone: "Ontgrendeld voor {s} seconden.", clear: "Blokkade opheffen", cleared: "Blokkade opgeheven.", nothingLocked: "Dit paneel had geen blokkade.", all: "alle modi", noDisarm: "niet uitschakelen", noBypass: "niet omzeilen", noSilence: "niet dempen", hint: "Ontgrendelen en blokkade opheffen kunnen alleen hier, niet als Home Assistant-actie.", refused: "Dit kan niet." },
     yes: "ja", no: "nee", none: "—", immediately: "direct",
     condition: "{n} binnen {s} s",
     fields: {
@@ -107,13 +115,14 @@ const TXT = {
       entry_delay: "Inlooptijd (leeg = standaard)", gas_type: "Soort gas", on_unavailable: "Als de sensor onbereikbaar wordt", battery_entity: "Batterijsensor", tamper_entity: "Sabotage-entiteit (optioneel)",
       "sensor_group.modes": "Actief in modi", suggest_for: "Voorstellen voor nieuwe sensoren",
       sensors: "Sensoren", required: "Benodigde sensoren", window: "Tijdvenster", escalate: "Melden als onbevestigd",
-      code: "Code", tags: "Tags (komma-gescheiden)", allowed_modes: "Mag bedienen in modi (leeg = alle)", may_bypass_tamper: "Mag sabotage omzeilen",
+      code: "Code", tags: "Tags (komma-gescheiden)", allowed_modes: "Mag bedienen in modi (leeg = alle)", may_bypass: "Mag sensoren omzeilen", may_bypass_tamper: "Mag sabotage omzeilen",
       service: "Notify-dienst", categories: "Soorten meldingen", delay: "Vertraging", priority: "Hoge prioriteit",
       control: "Sirene (siren, schakelaar of lamp)", causes: "Laat klinken bij", max_duration: "Maximale duur (0 = tot uitschakelen)", repeat_every: "Herhaal elke (0 = niet)",
       light: "Flitslicht", tone_entity: "Toonkeuze-entiteit", volume_entity: "Volume-entiteit", power_entity: "Voedingsmodus-entiteit", power_battery_value: "Waarde bij batterijvoeding",
       tone: "Toon", volume: "Volume", preset: "Voorinstelling",
+      device: "Soort apparaat", panel_id: "Naam van het ESPHome-apparaat (paneel-id)", ha_user: "Home Assistant-account (tablet of telefoon)", language: "Taal", can_disarm: "Mag uitschakelen (met code)", can_bypass: "Mag sensoren omzeilen (met code)", can_silence: "Mag dempen en bevestigen", sensor_list: "Sensorlijst tonen", unlock_seconds: "Ontgrendeld blijft (seconden)", blocked: "Paneel geblokkeerd", "panel.code": "Installateurscode van dit paneel (leeg = geen)", "panel.allowed_modes": "Mag inschakelen in modi (leeg = alle)",
       "s.modes": "Beschikbare modi", exit_delay_home: "Uitlooptijd thuis", exit_delay_away: "Uitlooptijd weg", exit_delay_night: "Uitlooptijd nacht",
-      default_entry_delay: "Standaard inlooptijd", trigger_time: "Alarmduur (0 = tot uitschakelen)", battery_threshold: "Batterijgrens", code_arm_required: "Code nodig om in te schakelen", min_code_length: "Minimale codelengte (cijfers/tekens)", log_retention_days: "Logboek bewaren (dagen)", selftest_interval_days: "Herinnering sirenetest (dagen, 0 = uit)", selftest_siren_seconds: "Sirene klinkt bij test (seconden)", selftest_auto: "Sirene zelf laten klinken voor de test", selftest_window_start: "Test niet voor (uur)", selftest_window_end: "Test niet na (uur)", heartbeat_url: "Hartslag-adres (leeg = uit)", heartbeat_interval_minutes: "Minuten tussen hartslagen",
+      default_entry_delay: "Standaard inlooptijd", trigger_time: "Alarmduur (0 = tot uitschakelen)", battery_threshold: "Batterijgrens", code_arm_required: "Code nodig om in te schakelen", startup_wait_seconds: "Maximaal wachten op sensoren na een herstart (seconden)", lock_tries_1: "Foute codes voor de eerste vergrendeling", lock_wait_1: "Eerste vergrendeling duurt (minuten)", lock_tries_2: "Daarna foute codes voor de tweede vergrendeling", lock_wait_2: "Tweede vergrendeling duurt (minuten)", lock_tries_3: "Daarna foute codes voor de derde vergrendeling", lock_wait_3: "Derde vergrendeling duurt (minuten)", lock_tries_4: "Daarna foute codes voor de permanente vergrendeling", screen_off_seconds: "Scherm uit na (seconden zonder aanraking)", screen_off_on_alarm: "Scherm ook uit laten gaan tijdens een alarm", min_code_length: "Minimale codelengte (cijfers/tekens)", log_retention_days: "Logboek bewaren (dagen)", selftest_interval_days: "Herinnering sirenetest (dagen, 0 = uit)", selftest_siren_seconds: "Sirene klinkt bij test (seconden)", selftest_auto: "Sirene zelf laten klinken voor de test", selftest_window_start: "Test niet voor (uur)", selftest_window_end: "Test niet na (uur)", heartbeat_url: "Hartslag-adres (leeg = uit)", heartbeat_interval_minutes: "Minuten tussen hartslagen",
     },
     helpMore: {
       at_arm_open: "Wat er gebeurt als deze sensor nog open staat wanneer de uitlooptijd voorbij is:\n• Omzeilen met melding (standaard): het alarm gaat aan zonder deze sensor en je krijgt een melding. Zodra de sensor dicht gaat, bewaakt hij weer.\n• Wachten tot dicht: het alarm gaat aan en deze sensor wordt genegeerd tot hij één keer dicht is geweest, zonder melding. Daarna bewaakt hij weer.\n• Inschakelen weigeren: het alarm gaat niet aan en je ziet welke sensor open staat. Sluit hem eerst.\n• Inlooptijd starten: het alarm gaat aan en de open sensor telt meteen als geactiveerd. Een directe sensor geeft alarm, bij een vertraagde sensor start de inlooptijd.",
@@ -121,6 +130,9 @@ const TXT = {
     },
     moreInfo: "Meer uitleg",
     help: {
+      may_bypass: "Zonder dit recht kan deze gebruiker een sensor niet omzeilen en ook niet terugzetten, ook niet met een goede code. Een beheerder in Home Assistant mag altijd.",
+      screen_off_seconds: "Geldt voor alle ESPHome-panelen. Was er een half ingetikte code of een open lijst, dan gaat het paneel eerst na deze tijd terug naar het hoofdscherm en gaat het scherm pas na nog eens deze tijd uit.",
+      screen_off_on_alarm: "Uit: het scherm blijft aan zolang er een alarm loopt, zodat het ALARM en de oorzaak zichtbaar blijven. Aan: het scherm gaat dan ook uit. Tijdens het aftellen om in te schakelen of binnen te komen gaat het scherm nooit uit.",
       entity_id: "Een binary sensor: aan betekent open of alarm.",
       tamper_entity: "Optioneel: het sabotagecontact van dit apparaat.",
       at_arm_open: "Wat er gebeurt met deze sensor als hij nog open staat bij het inschakelen.",
@@ -129,6 +141,8 @@ const TXT = {
       suggest_for: "Optioneel. Een nieuwe sensor van dit soort (deurcontact of beweging) wordt automatisch in deze groep gezet.",
       sensors: "Alleen directe inbraaksensoren.",
       code: "Leeg laten = ongewijzigd.",
+      device: "ESPHome-paneel: een scherm met eigen firmware, herkend aan de naam van het ESPHome-apparaat. Tablet of telefoon: een apparaat met de Home Assistant-app of -browser, herkend aan het account waarmee het is ingelogd.",
+      ha_user: "Voor een tablet of telefoon: het account waarmee het apparaat is ingelogd. Vigil herkent het apparaat aan dat account, niet aan een tekst, dus dat kan niet worden nagemaakt. Een beheerder mag ook, maar let op: de instellingen van dit paneel gelden dan voor alles wat dat account doet, op elk apparaat waar het is ingelogd, en Vigil geeft het account hier geen beheerdersrechten (een code is altijd nodig). Beter is een tweede, gewoon account voor dagelijks gebruik.",
       removeCode: "Code verwijderen",
       tags: "Tags hebben geen functie: bedien het alarm met een code.",
       categories: "Kies welke berichten dit kanaal krijgt.",
@@ -150,6 +164,9 @@ const TXT = {
       cause: { intrusion: "Inbraak", fire: "Brand", gas: "Gas", tamper: "Sabotage" },
       mode: { home: "Thuis", away: "Weg", night: "Nacht" },
       suggest_for: { "": "Geen", contacts: "Deuren en ramen (contacten)", motion: "Beweging" },
+      language: { nl: "Nederlands", en: "English" },
+      device: { esphome: "ESPHome-paneel (zelfbouwscherm)", account: "Tablet of telefoon met Home Assistant" },
+      sensor_list: { always: "Altijd tonen", code: "Pas na ontgrendelen", never: "Nooit tonen" },
     },
     errors: {
       name_required: "Geef een naam op.", name_in_use: "Deze naam bestaat al.", required: "Verplicht.",
@@ -157,12 +174,13 @@ const TXT = {
       entity_in_use: "Deze entiteit is al een sensor.", tamper_same_entity: "De sabotage-entiteit moet een andere zijn dan de sensor zelf.", tamper_entity_in_use: "Deze entiteit is al een sensor.",
       no_sensor_group: "Kies minstens één sensorgroep.", unknown_sensor_group: "Onbekende sensorgroep.",
       unknown_mode: "Onbekende modus.", unknown_suggestion: "Onbekende keuze.",
-      code_in_use: "Deze code is al in gebruik.", code_too_short: "De code moet minstens {min} tekens hebben (instelbaar bij Instellingen).", code_length_range: "Kies een waarde van {min} tot {max}.", log_retention_range: "Kies een aantal dagen van {min} tot {max}.", selftest_range: "Kies een waarde van {min} tot {max}.", selftest_window: "Het laatste uur moet na het vroegste uur liggen.", heartbeat_url_invalid: "Dit is geen webadres. Het moet beginnen met http:// of https://.", heartbeat_range: "Kies een aantal minuten van {min} tot {max}.", tag_in_use: "Deze tag is al in gebruik.", no_credential: "Geef een code of minstens één tag op.",
+      code_in_use: "Deze code is al in gebruik.", code_too_short: "De code moet minstens {min} tekens hebben (instelbaar bij Instellingen).", code_length_range: "Kies een waarde van {min} tot {max}.", screen_off_range: "Kies een aantal seconden van {min} tot {max}.", startup_wait_range: "Kies een aantal seconden van {min} tot {max}.", lock_tries_range: "Kies een aantal keren van {min} tot {max}.", lock_wait_range: "Kies een aantal minuten van {min} tot {max}.", log_retention_range: "Kies een aantal dagen van {min} tot {max}.", selftest_range: "Kies een waarde van {min} tot {max}.", selftest_window: "Het laatste uur moet na het vroegste uur liggen.", heartbeat_url_invalid: "Dit is geen webadres. Het moet beginnen met http:// of https://.", heartbeat_range: "Kies een aantal minuten van {min} tot {max}.", tag_in_use: "Deze tag is al in gebruik.", no_credential: "Geef een code of minstens één tag op.",
       service_not_found: "Deze notify-dienst bestaat niet (meer).", no_categories: "Kies minstens één soort melding.",
       no_causes: "Kies minstens één oorzaak.", tone_without_entity: "Een toon kan alleen met een toonkeuze-entiteit.", volume_without_entity: "Een volume kan alleen met een volume-entiteit.",
       sensor_in_rule: "Deze sensor zit nog in bevestigingsregel: {rules}. Haal hem daar eerst uit.",
       sensor_group_in_use: "Deze sensorgroep wordt nog gebruikt door: {sensors}. Haal de groep eerst bij die sensoren weg.",
       no_modes: "Kies minstens één modus.", unknown_kind: "Onbekend onderdeel.",
+      panel_id_invalid: "Gebruik kleine letters, cijfers, - en _ (zoals de apparaatnaam in ESPHome).", panel_id_in_use: "Dit paneel-id is al geregistreerd.", unlock_range: "Kies een waarde van {low} tot {high}.", unknown_choice: "Onbekende keuze.", ha_user_unknown: "Deze gebruiker bestaat niet of is niet actief.",ha_user_in_use: "Deze gebruiker is al aan een ander paneel gekoppeld.",
       generic: "Er ging iets mis.",
     },
   },
@@ -180,16 +198,17 @@ const TXT = {
       disclaimer: "Vigil Alarm is not a certified alarm system. Test it regularly and do not rely on it as your only protection.",
       unreleased: "Not released yet", firstRelease: "first release",
     },
-    tabs: { overview: "Overview", sensor: "Sensors", sensor_group: "Sensor groups", rule: "Confirmation rules", user: "Users", notification: "Notifications", siren: "Sirens", log: "Log", settings: "Settings", about: "About" },
-    add: { sensor: "Add sensor", sensor_group: "Add sensor group", rule: "Add confirmation rule", user: "Add user", notification: "Add notification", siren: "Add siren" },
-    edit: { sensor: "Edit sensor", sensor_group: "Edit sensor group", rule: "Edit confirmation rule", user: "Edit user", notification: "Edit notification", siren: "Edit siren" },
+    tabs: { overview: "Overview", sensor: "Sensors", sensor_group: "Sensor groups", rule: "Confirmation rules", user: "Users", notification: "Notifications", siren: "Sirens", log: "Log", settings: "Settings", about: "About", panel: "Panels" },
+    add: { sensor: "Add sensor", sensor_group: "Add sensor group", rule: "Add confirmation rule", user: "Add user", notification: "Add notification", siren: "Add siren", panel: "Add panel" },
+    edit: { sensor: "Edit sensor", sensor_group: "Edit sensor group", rule: "Edit confirmation rule", user: "Edit user", notification: "Edit notification", siren: "Edit siren", panel: "Edit panel" },
     intro: {
       sensor: "One detector, such as a door contact, PIR or smoke detector. For an intrusion sensor you choose which sensor groups it is in. Fire, gas, water and tamper sensors always watch and need no sensor group.",
       sensor_group: "A sensor group decides in which modes the sensors in it are watching. For example: Perimeter (doors and windows) for Home, Away and Night, and Interior (motion) for Away only.",
       rule: "An alarm follows only when the given number of different sensors trigger within the time window. Handy against a false alarm from a single PIR.",
-      user: "Who can operate the alarm with a code.",
+      user: "People who can operate the alarm with a code. The code says who operates; which devices may operate is set under Panels.",
       notification: "Who gets messages and when. Each notification is one notify service.",
       siren: "Optional. Without a siren the alarm works with notifications.",
+      panel: "A device on the wall: an ESPHome panel, or a tablet or phone with its own Home Assistant account Vigil decides what each panel may do and which data it gets; the panel itself decides nothing. The panel id is the name of the ESPHome device. As soon as one account is linked, other ordinary accounts can no longer operate the alarm.",
     },
     empty: {
       sensor: "No sensors yet. Add a sensor group first if there is none, then your sensors.",
@@ -198,6 +217,7 @@ const TXT = {
       user: "No users yet. Without a user no code is needed to operate the alarm.",
       notification: "No notifications yet. Add a notify service to receive messages.",
       siren: "No siren yet. This is optional; without a siren the alarm works with notifications.",
+      panel: "No panels yet. Without a registered panel an ESPHome panel gets no profile and operates nothing.",
     },
     save: "Save", cancel: "Cancel", del: "Delete", dup: "Copy", editBtn: "Edit", testBtn: "Test", close: "Close",
     ready: {
@@ -213,6 +233,7 @@ const TXT = {
         no_siren: "There is no siren. The alarm then works with notifications only.",
         battery_missing: "{n} sensors have no battery sensor, so you will not hear when a battery runs low: {names}.",
         tamper_unlinked: "{n} sensors have a tamper contact on the same device that is not connected to anything: {names}.",
+        panel_firmware: "The firmware of panel {name} understands profile version {seen}, Vigil uses version {wanted}. Update the firmware of the panel.",
       },
     },
     heartbeat: { title: "Heartbeat", off: "Off. Enter a heartbeat address under Settings to start.", lastOk: "Last succeeded", lastFail: "Last failed", never: "not yet", every: "Every {n} minutes", test: "Test now", ok: "The heartbeat arrived.", failed: "The heartbeat did not arrive ({reason}).", reason: { timeout: "no answer within 10 seconds", connection: "no connection" }, failing: "Failing: {reason}" },
@@ -241,6 +262,9 @@ const TXT = {
     sections: {
       alarm: ["Modes and delays", "Which modes you use, and how long you have to leave, to come in, and how long the alarm lasts."],
       codes: ["Codes", "Whether a code is needed to arm and how long a code must be at least."],
+      startup: ["Start-up", "After Home Assistant restarts, Vigil waits until all your sensors are available (for example MQTT or Zigbee still starting) before it reports a sensor as lost or raises an alarm for it. If they are still gone after this time, the report follows."],
+      lock: ["Locking", "What happens after wrong codes, per panel: first a short lock, then longer ones, then a permanent lock that only goes away with Clear lock under Panels. A right code starts again from zero."],
+      screen: ["Panel screen", "When the screen of an ESPHome panel goes dark. It only goes dark while the alarm is off or fully armed, never during the countdown to arm or to disarm."],
       battery: ["Batteries", "From which level a battery counts as low."],
       log: ["Event log", "How long Vigil keeps the events."],
       selftest: ["Self-test", "Vigil reminds you to test the siren. Set the interval to 0 to turn the reminder off."],
@@ -256,10 +280,12 @@ const TXT = {
     cols: {
       name: "Name", entity: "Entity", cls: "Class", type: "Type", groups: "Sensor groups", rule: "Confirmation rule", status: "Status", battery: "Battery",
       modes: "Active in modes", sensors: "Sensors", suggest: "Suggested for", condition: "Condition", escalate: "Report unconfirmed",
-      code: "Code", tags: "Tags", tamper: "May bypass tamper",
+      code: "Code", tags: "Tags", bypass: "Bypass", tamper: "May bypass tamper",
       service: "Service", categories: "Categories", delay: "Delay",
       device: "Device", causes: "For", maxdur: "Max. duration",
+      panelId: "Panel id", conn: "Connection", allowed: "Restrictions",
     },
+    panel: { tablet: "Account", noUser: "user not found", connected: "Connected", offline: "Not reachable", noConnection: "No connection", noCard: "No Vigil card seen", cardSeen: "Vigil card active", notFound: "Not found in ESPHome", unlocked: "Unlocked", locked: "Locked for {s} s", lockedPermanent: "Locked for good", blocked: "Blocked", unlock: "Unlock", unlockedDone: "Unlocked for {s} seconds.", clear: "Clear lock", cleared: "Lock cleared.", nothingLocked: "This panel was not locked.", all: "all modes", noDisarm: "no disarming", noBypass: "no bypass", noSilence: "no silencing", hint: "Unlocking and clearing the lock can only be done here, not as a Home Assistant action.", refused: "This is not possible." },
     yes: "yes", no: "no", none: "—", immediately: "immediately",
     condition: "{n} within {s} s",
     fields: {
@@ -267,13 +293,14 @@ const TXT = {
       entry_delay: "Entry delay (empty = default)", gas_type: "Type of gas", on_unavailable: "When the sensor becomes unreachable", battery_entity: "Battery sensor", tamper_entity: "Tamper entity (optional)",
       "sensor_group.modes": "Active in modes", suggest_for: "Suggest for new sensors",
       sensors: "Sensors", required: "Sensors needed", window: "Time window", escalate: "Report when unconfirmed",
-      code: "Code", tags: "Tags (comma separated)", allowed_modes: "May operate in modes (empty = all)", may_bypass_tamper: "May bypass tamper",
+      code: "Code", tags: "Tags (comma separated)", allowed_modes: "May operate in modes (empty = all)", may_bypass: "May bypass sensors", may_bypass_tamper: "May bypass tamper",
       service: "Notify service", categories: "Kinds of messages", delay: "Delay", priority: "High priority",
       control: "Siren (siren, switch or light)", causes: "Sound for", max_duration: "Maximum duration (0 = until disarmed)", repeat_every: "Repeat every (0 = no)",
       light: "Flash light", tone_entity: "Tone selection entity", volume_entity: "Volume entity", power_entity: "Power mode entity", power_battery_value: "Value when on battery",
       tone: "Tone", volume: "Volume", preset: "Preset",
+      device: "Kind of device", panel_id: "Name of the ESPHome device (panel id)", ha_user: "Home Assistant account (tablet or phone)", language: "Language", can_disarm: "May disarm (with a code)", can_bypass: "May bypass sensors (with a code)", can_silence: "May silence and acknowledge", sensor_list: "Show the sensor list", unlock_seconds: "Stays unlocked for (seconds)", blocked: "Panel blocked", "panel.code": "Installer code of this panel (empty = none)", "panel.allowed_modes": "May arm in modes (empty = all)",
       "s.modes": "Available modes", exit_delay_home: "Exit delay home", exit_delay_away: "Exit delay away", exit_delay_night: "Exit delay night",
-      default_entry_delay: "Default entry delay", trigger_time: "Alarm duration (0 = until disarmed)", battery_threshold: "Battery threshold", code_arm_required: "Code required to arm", log_retention_days: "Keep the log (days)", selftest_interval_days: "Siren test reminder (days, 0 = off)", selftest_siren_seconds: "Siren sounds in a test (seconds)", selftest_auto: "Sound the siren by itself for the test", selftest_window_start: "Not before (hour)", selftest_window_end: "Not after (hour)", heartbeat_url: "Heartbeat address (empty = off)", heartbeat_interval_minutes: "Minutes between heartbeats", min_code_length: "Minimum code length (characters)",
+      default_entry_delay: "Default entry delay", trigger_time: "Alarm duration (0 = until disarmed)", battery_threshold: "Battery threshold", code_arm_required: "Code required to arm", startup_wait_seconds: "Longest wait for sensors after a restart (seconds)", lock_tries_1: "Wrong codes before the first lock", lock_wait_1: "First lock lasts (minutes)", lock_tries_2: "Then wrong codes before the second lock", lock_wait_2: "Second lock lasts (minutes)", lock_tries_3: "Then wrong codes before the third lock", lock_wait_3: "Third lock lasts (minutes)", lock_tries_4: "Then wrong codes before the permanent lock", screen_off_seconds: "Screen off after (seconds without touch)", screen_off_on_alarm: "Also let the screen go dark during an alarm", log_retention_days: "Keep the log (days)", selftest_interval_days: "Siren test reminder (days, 0 = off)", selftest_siren_seconds: "Siren sounds in a test (seconds)", selftest_auto: "Sound the siren by itself for the test", selftest_window_start: "Not before (hour)", selftest_window_end: "Not after (hour)", heartbeat_url: "Heartbeat address (empty = off)", heartbeat_interval_minutes: "Minutes between heartbeats", min_code_length: "Minimum code length (characters)",
     },
     helpMore: {
       at_arm_open: "What happens if this sensor is still open when the exit delay ends:\n• Bypass with a notice (default): the alarm arms without this sensor and you get a notice. As soon as the sensor closes, it is watched again.\n• Wait until closed: the alarm arms and this sensor is ignored until it has closed once, without a notice. After that it is watched again.\n• Refuse to arm: the alarm does not arm and you see which sensor is open. Close it first.\n• Start entry delay: the alarm arms and the open sensor counts as triggered right away. A direct sensor sounds the alarm, a delayed sensor starts the entry delay.",
@@ -281,6 +308,9 @@ const TXT = {
     },
     moreInfo: "More information",
     help: {
+      may_bypass: "Without this right the user can neither bypass nor restore a sensor, even with a right code. A Home Assistant administrator always may.",
+      screen_off_seconds: "Applies to all ESPHome panels. With a half typed code or an open list the panel first returns to the main page after this time, and the screen goes dark after the same time again.",
+      screen_off_on_alarm: "Off: the screen stays on while an alarm is going, so the ALARM and its cause stay visible. On: the screen goes dark then too. During the countdown to arm or to enter, the screen never goes dark.",
       entity_id: "A binary sensor: on means open or alarm.",
       tamper_entity: "Optional: the tamper contact of this device.",
       at_arm_open: "What happens to this sensor if it is still open when the alarm arms.",
@@ -289,6 +319,8 @@ const TXT = {
       suggest_for: "Optional. A new sensor of this kind (door contact or motion) is put in this group automatically.",
       sensors: "Instant intrusion sensors only.",
       code: "Leave empty to keep it unchanged.",
+      device: "ESPHome panel: a screen with its own firmware, recognised by the name of the ESPHome device. Tablet or phone: a device running the Home Assistant app or browser, recognised by the account it is logged in as.",
+      ha_user: "For a tablet or phone: the account the device is logged in as. Vigil recognises the device by that account, not by a text, so it cannot be imitated. An administrator may be chosen too, but note: the settings of this panel then apply to everything that account does, on every device it is logged in on, and Vigil gives the account no administrator rights here (a code is always needed). A second, ordinary account for daily use is better.",
       removeCode: "Remove code",
       tags: "Tags have no function: operate the alarm with a code.",
       categories: "Choose which messages this channel receives.",
@@ -310,6 +342,9 @@ const TXT = {
       cause: { intrusion: "Intrusion", fire: "Fire", gas: "Gas", tamper: "Tamper" },
       mode: { home: "Home", away: "Away", night: "Night" },
       suggest_for: { "": "None", contacts: "Doors and windows (contacts)", motion: "Motion" },
+      language: { nl: "Nederlands", en: "English" },
+      device: { esphome: "ESPHome panel (DIY screen)", account: "Tablet or phone running Home Assistant" },
+      sensor_list: { always: "Always show", code: "Only after unlocking", never: "Never show" },
     },
     errors: {
       name_required: "Enter a name.", name_in_use: "This name already exists.", required: "Required.",
@@ -317,12 +352,13 @@ const TXT = {
       entity_in_use: "This entity is already a sensor.", tamper_same_entity: "The tamper entity must be another one than the sensor itself.", tamper_entity_in_use: "This entity is already a sensor.",
       no_sensor_group: "Choose at least one sensor group.", unknown_sensor_group: "Unknown sensor group.",
       unknown_mode: "Unknown mode.", unknown_suggestion: "Unknown choice.",
-      code_in_use: "This code is already in use.", code_too_short: "The code must have at least {min} characters (set under Settings).", code_length_range: "Choose a value from {min} to {max}.", log_retention_range: "Choose a number of days from {min} to {max}.", selftest_range: "Choose a value from {min} to {max}.", selftest_window: "The latest hour must be after the earliest hour.", heartbeat_url_invalid: "That is not a web address. It must start with http:// or https://.", heartbeat_range: "Choose a number of minutes from {min} to {max}.", tag_in_use: "This tag is already in use.", no_credential: "Enter a code or at least one tag.",
+      code_in_use: "This code is already in use.", code_too_short: "The code must have at least {min} characters (set under Settings).", code_length_range: "Choose a value from {min} to {max}.", screen_off_range: "Choose a number of seconds from {min} to {max}.", startup_wait_range: "Choose a number of seconds from {min} to {max}.", lock_tries_range: "Choose a number of times from {min} to {max}.", lock_wait_range: "Choose a number of minutes from {min} to {max}.", log_retention_range: "Choose a number of days from {min} to {max}.", selftest_range: "Choose a value from {min} to {max}.", selftest_window: "The latest hour must be after the earliest hour.", heartbeat_url_invalid: "That is not a web address. It must start with http:// or https://.", heartbeat_range: "Choose a number of minutes from {min} to {max}.", tag_in_use: "This tag is already in use.", no_credential: "Enter a code or at least one tag.",
       service_not_found: "This notify service does not exist (any more).", no_categories: "Choose at least one kind of message.",
       no_causes: "Choose at least one cause.", tone_without_entity: "A tone needs a tone selection entity.", volume_without_entity: "A volume needs a volume entity.",
       sensor_in_rule: "This sensor is still in confirmation rule: {rules}. Remove it there first.",
       sensor_group_in_use: "This sensor group is still used by: {sensors}. Remove the group from those sensors first.",
       no_modes: "Choose at least one mode.", unknown_kind: "Unknown item.",
+      panel_id_invalid: "Use lowercase letters, digits, - and _ (like the device name in ESPHome).", panel_id_in_use: "This panel id is already registered.", unlock_range: "Choose a value from {low} to {high}.", unknown_choice: "Unknown choice.", ha_user_unknown: "This user does not exist or is not active.",ha_user_in_use: "This user is already bound to another panel.",
       generic: "Something went wrong.",
     },
   },
@@ -340,6 +376,8 @@ const ICONS = {
   github: ["M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4", "M9 18c-4.51 2-5-2-7-2"],
   tag: ["M12 2H2v10l9.29 9.29a1 1 0 0 0 1.42 0l6.58-6.58a1 1 0 0 0 0-1.42Z", "M7 7h.01"],
   alert: ["M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Z", "M12 8v4", "M12 16h.01"],
+  unlock: ["M7 11V7a5 5 0 0 1 9.9-1", "M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"],
+  reset: ["M3 12a9 9 0 1 0 3-6.7", "M3 4v5h5"],
   tablet: ["M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z", "M12 18h.01"],
   file: ["M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2Z", "M14 2v6h6"],
 };
@@ -366,7 +404,7 @@ function iconButton(name, label, cls, onclick) {
 const OPTION_GROUP = { modes: "mode", allowed_modes: "mode" };
 const CONTACT_CLASSES = ["door", "window", "opening", "garage_door"];
 const MOTION_CLASSES = ["motion", "occupancy", "presence", "moving"];
-const KINDS = ["sensor", "sensor_group", "rule", "user", "notification", "siren"];
+const KINDS = ["sensor", "sensor_group", "rule", "user", "notification", "siren", "panel"];
 const TABS = ["overview", ...KINDS, "log", "settings", "about"];
 
 const CSS = `
@@ -913,6 +951,7 @@ class VigilPanel extends HTMLElement {
         [C.code, (i) => (i.has_code ? "✓" : t.none)],
         [C.tags, (i) => (i.data.tags && i.data.tags.length ? i.data.tags.length : t.none)],
         [C.modes, (i) => (i.data.allowed_modes && i.data.allowed_modes.length ? this._optList("allowed_modes", i.data.allowed_modes) : "*")],
+        [C.bypass, (i) => (i.data.may_bypass !== false ? t.yes : t.no)],
         [C.tamper, (i) => (i.data.may_bypass_tamper ? t.yes : t.no)],
       ];
       case "notification": return [
@@ -920,6 +959,12 @@ class VigilPanel extends HTMLElement {
         [C.service, (i) => `notify.${i.data.service}`],
         [C.categories, (i) => this._optList("categories", i.data.categories)],
         [C.delay, (i) => (i.data.delay ? `${i.data.delay} s` : t.immediately)],
+      ];
+      case "panel": return [
+        [C.name, (i) => i.title],
+        [C.panelId, (i) => i.data.panel_id],
+        [C.conn, (i) => this._panelBadges(i)],
+        [C.allowed, (i) => this._panelLimits(i)],
       ];
       case "siren": return [
         [C.name, (i) => i.title],
@@ -935,6 +980,49 @@ class VigilPanel extends HTMLElement {
     return [];
   }
 
+  // The live state of one register entry, from the subscription.
+  _panelLive(item) {
+    return ((this._live && this._live.panels) || []).find((p) => p.id === item.id) || null;
+  }
+  _panelBadges(item) {
+    const P = this.t.panel;
+    const live = this._panelLive(item);
+    const badge = (cls, text) => el("span", { class: "badge " + cls, text });
+    const out = [];
+    if (item.data.blocked) out.push(badge("bad", P.blocked));
+    else if (item.data.ha_user) {
+      const who = ((this._data.ha_users || []).find((u) => u.id === item.data.ha_user) || {}).name;
+      out.push(badge(who ? "ok" : "warn", who ? `${P.tablet}: ${who}` : `${P.tablet}: ${P.noUser}`));
+      // Only the Vigil card says hello, so only then can Vigil tell that the tablet has gone quiet.
+      if (live && live.card) out.push(badge(live.offline ? "bad" : "ok", live.offline ? P.offline : P.cardSeen));
+      else out.push(badge("", P.noCard));
+    }
+    else if (!live) out.push(badge("", this.t.none));
+    else if (live.connected === null) out.push(badge("warn", P.notFound));
+    else if (live.connected) out.push(badge("ok", P.connected));
+    else out.push(badge(live.offline ? "bad" : "warn", live.offline ? P.offline : P.noConnection));
+    if (live && live.unlocked) out.push(badge("", P.unlocked));
+    if (live && live.locked_permanent) out.push(badge("bad", P.lockedPermanent));
+    else if (live && live.locked_for > 0) out.push(badge("warn", fill(P.locked, { s: Math.ceil(live.locked_for) })));
+    const seen = (live && live.reported) || {};
+    const about = [seen.hardware, seen.firmware ? "v" + seen.firmware : null].filter(Boolean).join(" · ");
+    return el("span", { class: "tags" }, out, about ? el("span", { class: "sub", text: about }) : null);
+  }
+  _panelLimits(item) {
+    const P = this.t.panel;
+    const d = item.data;
+    const modes = d.allowed_modes && d.allowed_modes.length ? this._optList("allowed_modes", d.allowed_modes) : P.all;
+    const no = [d.can_disarm === false ? P.noDisarm : null, d.can_bypass === false ? P.noBypass : null, d.can_silence === false ? P.noSilence : null].filter(Boolean);
+    return [modes, ...no].join(", ");
+  }
+  async _panelAction(item, type, doneText) {
+    const P = this.t.panel;
+    const res = await this._call({ type, subentry_id: item.id });
+    if (!res || !res.ok) { this._toast(P.refused); return; }
+    if (type === "vigil_alarm/panel_clear_lock" && !res.was_locked) { this._toast(P.nothingLocked); return; }
+    this._toast(doneText);
+  }
+
   _list(kind) {
     const t = this.t;
     const items = this._shown(kind);
@@ -947,6 +1035,8 @@ class VigilPanel extends HTMLElement {
             cols.map(([h, render]) => el("td", { "data-label": h }, render(item))),
             el("td", { class: "actions" },
               canTest ? iconButton("play", t.testBtn, "", () => this._test(kind, item)) : null,
+              kind === "panel" ? iconButton("unlock", t.panel.unlock, "", () => this._panelAction(item, "vigil_alarm/panel_unlock", fill(t.panel.unlockedDone, { s: item.data.unlock_seconds || 60 }))) : null,
+              kind === "panel" ? iconButton("reset", t.panel.clear, "", () => this._panelAction(item, "vigil_alarm/panel_clear_lock", t.panel.cleared)) : null,
               iconButton("edit", t.editBtn, "", () => this._openForm(kind, item)),
               kind === "user" ? null : iconButton("copy", t.dup, "", () => this._openForm(kind, item, true)),
               iconButton("trash", t.del, "danger", () => this._confirmDelete(item))))))))
@@ -955,6 +1045,7 @@ class VigilPanel extends HTMLElement {
       el("div", { class: "bar" }, el("p", { class: "intro", text: t.intro[kind] }),
         kind === "sensor" ? el("button", { class: "btn", text: t.find.button, onclick: () => this._openFind() }) : null,
         el("button", { class: "btn primary", text: t.add[kind], onclick: () => this._openForm(kind) })),
+      kind === "panel" ? el("p", { class: "muted", text: t.panel.hint }) : null,
       el("div", { class: "card" }, table));
   }
 
@@ -1318,6 +1409,12 @@ class VigilPanel extends HTMLElement {
         state[f.key] = initial[f.key] !== undefined ? initial[f.key] : f.default;
       }
     }
+    if (opts.ctx === "panel") state.device = initial.device || (initial.ha_user ? "account" : "esphome");
+    // A panel always has a language: that of the person who is logged in, English if there is no match.
+    if (opts.ctx === "panel" && (!opts.editing || !["nl", "en"].includes(state.language))) {
+      const mine = (this._hass.locale && this._hass.locale.language) || this._hass.language || "en";
+      state.language = String(mine).toLowerCase().startsWith("nl") ? "nl" : "en";
+    }
     if (opts.kind === "settings") {
       for (const f of schema) if (state[f.key] === undefined) state[f.key] = f.type === "number" ? 0 : f.default;
     }
@@ -1490,6 +1587,13 @@ class VigilPanel extends HTMLElement {
       case "tags": {
         const v = Array.isArray(state[key]) ? state[key].join(", ") : state[key] || "";
         return wrap(el("input", { type: "text", value: v, autocomplete: "off", oninput: (e) => { state[key] = e.target.value; } }));
+      }
+      case "ha_user": {
+        const users = [...(this._data.ha_users || [])];
+        const select = el("select", { onchange: (e) => { state[key] = e.target.value; } },
+          el("option", { value: "", text: "—" }),
+          users.map((u) => el("option", { value: u.id, selected: state[key] === u.id, text: u.name })));
+        return wrap(select);
       }
       case "notify": {
         const services = [...this._data.notify_services];

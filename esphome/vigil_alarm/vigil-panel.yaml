@@ -2,35 +2,29 @@
 #
 # This file is the part that is the same for every panel. The hardware (display, touch, backlight)
 # is in a second file, for example guition-4848.yaml, and the device itself (name, Wi-Fi, keys) in
-# a third, see example-garage.yaml. What the hardware file must provide:
+# a third, see ../example-garage.yaml. What the hardware file must provide:
+#   - the substitutions `hardware_id`, `screen_width` and `screen_height`
 #   - a light with the id `display_backlight`
 #   - an `lvgl:` with the `touchscreens:` (and the display) of the panel
-#   - the touch screen calls `script.execute: wake` when touched
+#   - the touch screen calls `script.execute: wake` when touched (the touch that wakes a dark
+#     screen is then not passed on to the button under the finger)
 #
-# What the panel shows follows Home Assistant, not this file: the buttons for Home, Away and Night
-# are there only if that mode is switched on in Vigil, a code is asked only when Vigil asks for one
-# to arm, and disarming always asks for a code.
-#
-# Every panel is a control point of its own: `source` is shown in the history of Vigil as who did it.
+# Nothing about what the panel may do is set here. The panel is added in Vigil (Panels), with the
+# ESPHome device name as panel id, and reads its profile from the sensor Vigil makes for it: which
+# modes there are, whether it may disarm or bypass, whether it may show the sensors, the language.
+# The device name is also the source shown in the history: "Anna (vigil-panel-garage)".
 
 substitutions:
   # The Vigil alarm entity. Only change this if you renamed it.
   alarm_entity: alarm_control_panel.vigil_alarm
-  # Shown in the history of Vigil, for example "Anna (panel garage)". Give every panel its own.
-  source: panel
-  # The language the panel starts in, until someone changes it on the panel: 0 = Nederlands, 1 = English
-  language: "0"
-  # Allow sensors to be bypassed on the panel? "true" or "false"
-  allow_bypass: "true"
-  # Who may see the list of sensors on the panel (and which sensor tripped, and who armed):
-  #   code   = only after a code, for sensor_unlock (default; a thief at the panel learns nothing)
-  #   always = everyone
-  #   never  = nobody, the Sensors button is gone
-  sensor_list: code
-  sensor_unlock: 60s
-  # The screen goes dark after this time without touch, and back to the main page.
-  backlight_timeout: 30s
-  idle_timeout: 30s
+  # The profile sensor Vigil makes for this panel: the panel id (the device name) with underscores.
+  profile_entity: sensor.${ name | replace("-", "_") }_profile
+  # How long the screen stays on without touch, until Vigil has told the panel (setting "Screen off after" in Vigil).
+  backlight_timeout_seconds: "30"
+  # The version of this firmware, reported to Vigil.
+  firmware_version: "0.4.0"
+  # The width of the cards and buttons: the screen minus a margin on both sides.
+  content_w: ${ screen_width | int - 24 }
 
 esphome:
   includes:
@@ -39,8 +33,7 @@ esphome:
     priority: -100
     then:
       - lambda: |-
-          vigil::ctx.lang = id(lang);
-          vigil::ctx.sensor_list = vigil::parse_sensor_list("${sensor_list}");
+          vigil::ctx.device_name = "${name}";
       - script.execute: refresh_texts
       - script.execute: refresh_ui
       - script.execute: wake
@@ -50,10 +43,6 @@ time:
     id: ha_time
 
 globals:
-  - id: lang  # 0 = Nederlands, 1 = English; remembered over a restart
-    type: int
-    restore_value: true
-    initial_value: ${language}
   - id: pending_action  # what the keypad is for, see Action in vigil_panel.h
     type: int
     initial_value: "0"
@@ -67,14 +56,207 @@ globals:
   - id: on_sensors_page  # is the list of sensors on the screen?
     type: bool
     initial_value: "false"
-  - id: unlock_code  # the code that unlocked the list, kept in memory for a moment, never stored
-    type: std::string
+  - id: on_info_page  # is the info page on the screen?
+    type: bool
+    initial_value: "false"
+  - id: screen_off_ms  # how long the screen stays on without touch, from Vigil
+    type: int
+    initial_value: "${backlight_timeout_seconds} * 1000"
+  - id: unlock_ms  # how long the list and the info stay open after the installer code, from the profile
+    type: int
+    initial_value: "60000"
   - id: sens_page  # the page of the sensors list, from 0
     type: int
     initial_value: "0"
 
 # ----------------------------------------------------------------- what Home Assistant tells us
 text_sensor:
+  # ---- the profile of this panel (a sensor Vigil makes; its state is the version of the profile)
+  - platform: homeassistant
+    id: ha_profile
+    entity_id: ${profile_entity}
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.profile_version = vigil::to_int(x, 0);
+        - script.execute: refresh_texts
+  - platform: homeassistant
+    id: ha_profile_language
+    entity_id: ${profile_entity}
+    attribute: language
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.lang = vigil::parse_language(x);
+        - script.execute: refresh_texts
+  - platform: homeassistant
+    id: ha_profile_blocked
+    entity_id: ${profile_entity}
+    attribute: blocked
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.blocked = vigil::truthy(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_modes
+    entity_id: ${profile_entity}
+    attribute: modes_mask
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.modes_mask = vigil::to_int(x, 0);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_can_disarm
+    entity_id: ${profile_entity}
+    attribute: can_disarm
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.can_disarm = vigil::truthy(x);
+        - script.execute: refresh_ui
+        - script.execute: route
+  - platform: homeassistant
+    id: ha_profile_can_bypass
+    entity_id: ${profile_entity}
+    attribute: can_bypass
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.can_bypass = vigil::truthy(x);
+        - script.execute: refresh_sensors
+  - platform: homeassistant
+    id: ha_profile_sensor_list
+    entity_id: ${profile_entity}
+    attribute: sensor_list
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.sensor_list = vigil::parse_sensor_list(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_unlock_seconds
+    entity_id: ${profile_entity}
+    attribute: unlock_seconds
+    internal: true
+    on_value:
+      then:
+        - lambda: id(unlock_ms) = vigil::to_int(x, 60) * 1000;
+  - platform: homeassistant
+    id: ha_profile_screen_off_seconds
+    entity_id: ${profile_entity}
+    attribute: screen_off_seconds
+    internal: true
+    on_value:
+      then:
+        - lambda: |-
+            int seconds = vigil::to_int(x, 30);
+            id(screen_off_ms) = (seconds < 5 ? 5 : seconds) * 1000;
+  - platform: homeassistant
+    id: ha_profile_screen_off_on_alarm
+    entity_id: ${profile_entity}
+    attribute: screen_off_on_alarm
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.screen_off_on_alarm = vigil::truthy(x);
+  - platform: homeassistant
+    id: ha_profile_code_arm_required
+    entity_id: ${profile_entity}
+    attribute: code_arm_required
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.code_arm_required = vigil::truthy(x);
+  - platform: homeassistant
+    id: ha_profile_has_admin_code
+    entity_id: ${profile_entity}
+    attribute: has_admin_code
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.has_admin_code = vigil::truthy(x);
+  - platform: homeassistant
+    id: ha_profile_unlocked
+    entity_id: ${profile_entity}
+    attribute: unlocked
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.profile_unlocked = vigil::truthy(x);
+        - if:
+            condition:
+              lambda: return !vigil::ctx.profile_unlocked;
+            then:
+              - script.execute: lock_sensors
+            else:
+              - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_open_total
+    entity_id: ${profile_entity}
+    attribute: open_count
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.open_total = vigil::to_int(x, 0);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_faults_total
+    entity_id: ${profile_entity}
+    attribute: faults_count
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.faults_total = vigil::to_int(x, 0);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_problems
+    entity_id: ${profile_entity}
+    attribute: problems_count
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.problems = vigil::to_int(x, 0);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_open_now
+    entity_id: ${profile_entity}
+    attribute: open_now_text
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.open_now = vigil::clean(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_open_mode
+    entity_id: ${profile_entity}
+    attribute: open_sensors_text
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.open_mode = vigil::clean(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_faults
+    entity_id: ${profile_entity}
+    attribute: faults_text
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.faults = vigil::clean(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_sensors
+    entity_id: ${profile_entity}
+    attribute: sensors
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.sensors = vigil::clean(x);
+        - script.execute: refresh_ui
+        - script.execute: refresh_sensors
+  # ---- the alarm itself
   - platform: homeassistant
     id: ha_state
     entity_id: ${alarm_entity}
@@ -82,7 +264,7 @@ text_sensor:
     on_value:
       then:
         - lambda: vigil::ctx.state = x;
-        - script.execute: wake
+        - script.execute: wake_event
         - script.execute: refresh_ui
         - script.execute: route
   - platform: homeassistant
@@ -95,30 +277,17 @@ text_sensor:
         - lambda: vigil::ctx.mode = vigil::clean(x);
         - script.execute: refresh_ui
   - platform: homeassistant
-    id: ha_features
+    id: ha_delay_left
     entity_id: ${alarm_entity}
-    attribute: supported_features
+    attribute: delay_left
     internal: true
     on_value:
       then:
-        - lambda: vigil::ctx.features = (int) vigil::parse_number(x);
-        - script.execute: refresh_ui
-  - platform: homeassistant
-    id: ha_code_arm_required
-    entity_id: ${alarm_entity}
-    attribute: code_arm_required
-    internal: true
-    on_value:
-      then:
-        - lambda: vigil::ctx.code_arm_required = vigil::truthy(x);
-  - platform: homeassistant
-    id: ha_delay_end
-    entity_id: ${alarm_entity}
-    attribute: delay_end
-    internal: true
-    on_value:
-      then:
-        - lambda: vigil::ctx.delay_end = vigil::parse_number(x);
+        # Seconds left, counted from the clock of this panel: a clock that is off does not matter.
+        - lambda: |-
+            auto t = id(ha_time).now();
+            double left = vigil::parse_number(x);
+            vigil::ctx.delay_end = (std::isnan(left) || !t.is_valid()) ? NAN : (double) t.timestamp + left;
         - script.execute: refresh_ui
   - platform: homeassistant
     id: ha_changed_by
@@ -147,52 +316,27 @@ text_sensor:
       then:
         - lambda: vigil::ctx.cause_sensor = vigil::clean(x);
         - script.execute: refresh_ui
-  - platform: homeassistant
-    id: ha_open_now
-    entity_id: ${alarm_entity}
-    attribute: open_now_text
-    internal: true
-    on_value:
-      then:
-        - lambda: vigil::ctx.open_now = vigil::clean(x);
-        - script.execute: refresh_ui
-  - platform: homeassistant
-    id: ha_open_mode
-    entity_id: ${alarm_entity}
-    attribute: open_sensors_text
-    internal: true
-    on_value:
-      then:
-        - lambda: vigil::ctx.open_mode = vigil::clean(x);
-        - script.execute: refresh_ui
-  - platform: homeassistant
-    id: ha_faults
-    entity_id: ${alarm_entity}
-    attribute: faults_text
-    internal: true
-    on_value:
-      then:
-        - lambda: vigil::ctx.faults = vigil::clean(x);
-        - script.execute: refresh_ui
-  - platform: homeassistant
-    id: ha_problems
-    entity_id: ${alarm_entity}
-    attribute: problems_count
-    internal: true
-    on_value:
-      then:
-        - lambda: vigil::ctx.problems = (int) vigil::parse_number(x);
-        - script.execute: refresh_ui
-  - platform: homeassistant
-    id: ha_sensors
-    entity_id: ${alarm_entity}
-    attribute: panel_sensors
-    internal: true
-    on_value:
-      then:
-        - lambda: vigil::ctx.sensors = vigil::clean(x);
-        - script.execute: refresh_ui
-        - script.execute: refresh_sensors
+  # ---- what this panel tells Vigil about itself (Vigil reads these by name, see PanelRegistry)
+  - platform: template
+    name: Hardware ID
+    entity_category: diagnostic
+    update_interval: 1h
+    lambda: 'return std::string("${hardware_id}");'
+  - platform: template
+    name: Capabilities
+    entity_category: diagnostic
+    update_interval: 1h
+    lambda: 'return std::string("lvgl,touch,${screen_width}x${screen_height}");'
+  - platform: template
+    name: Firmware version
+    entity_category: diagnostic
+    update_interval: 1h
+    lambda: 'return std::string("${firmware_version}");'
+  - platform: template
+    name: Profile version
+    entity_category: diagnostic
+    update_interval: 1h
+    lambda: 'return std::to_string(vigil::PROFILE_VERSION);'
   - platform: wifi_info
     ip_address:
       id: wifi_ip
@@ -249,15 +393,65 @@ interval:
 
 # ------------------------------------------------------------------------------------- scripts
 script:
-  # The screen on, and off again after a while without touch.
+  # The screen on, and off again after a while without touch. As long as the screen is dark a see-through shield
+  # lies over everything (see `top_layer` below), so the touch that wakes the panel does not also press the button
+  # under the finger. The shield goes when that finger is lifted. `wake` and `wake_touch` are the same thing, so a
+  # hardware file that still calls `wake` on touch works too.
+  # The screen is on after a touch, or because the alarm changed. After the screen-off time without touch:
+  #  1. a half typed code, the list or the info is still open? Back to the main page (visible), and wait once more;
+  #  2. the alarm is counting down, or going off and Vigil says the screen must stay on? Then stay on. The state
+  #     changing again starts this script again;
+  #  3. otherwise the screen goes dark.
   - id: wake
     mode: restart
     then:
       - light.turn_on:
           id: display_backlight
           brightness: 100%
-      - delay: ${backlight_timeout}
+      - delay: !lambda 'return id(screen_off_ms);'
+      - if:
+          condition:
+            lambda: return id(keypad_open) || id(on_sensors_page) || id(on_info_page);
+          then:
+            - script.execute: reset_ui
+            - delay: !lambda 'return id(screen_off_ms);'
+      - if:
+          condition:
+            lambda: return !vigil::screen_may_sleep();
+          then:
+            - script.stop: wake
       - light.turn_off: display_backlight
+      - lvgl.widget.show: wake_shield
+      # The backlight fades out (transition of the light, 1 s). Wait until it is really dark before touching the
+      # screen again, so nobody sees it change.
+      - delay: 1500ms
+      - script.execute: reset_ui
+
+  - id: reset_ui
+    then:
+      - lambda: |-
+          id(keypad_open) = false;
+          id(pending_action) = 0;
+          id(sens_page) = 0;
+          id(on_sensors_page) = false;
+          id(on_info_page) = false;
+          vigil::ctx.sensors_unlocked = false;  // the panel forgets the unlock
+          vigil::ctx.installer_unlocked = false;
+      - lvgl.textarea.update:
+          id: pin_text
+          text: ""
+      - lvgl.page.show: page_main
+      - script.execute: route
+
+  - id: wake_touch
+    then:
+      - script.execute: wake
+
+  # The screen on for another reason than a touch (the alarm changed, start-up): no shield, a touch counts at once.
+  - id: wake_event
+    then:
+      - lvgl.widget.hide: wake_shield
+      - script.execute: wake
 
   - id: set_connected
     parameters:
@@ -345,11 +539,8 @@ script:
           id: lbl_sens_title
           text: !lambda 'return vigil::tr("sensors");'
       - lvgl.label.update:
-          id: lbl_set_title
-          text: !lambda 'return vigil::tr("settings");'
-      - lvgl.label.update:
-          id: lbl_set_language
-          text: !lambda 'return vigil::tr("language");'
+          id: lbl_info_title
+          text: !lambda 'return vigil::tr("info");'
       - lvgl.label.update:
           id: lbl_info_conn
           text: !lambda 'return vigil::ctx.ha_connected ? vigil::tr("connected") : vigil::tr("not_connected");'
@@ -366,12 +557,15 @@ script:
           id: lbl_info_up
           text: !lambda |-
             return vigil::tr("uptime") + std::to_string((int) (id(uptime_s).state / 60)) + vigil::tr("minutes");
-      - lvgl.obj.update:
-          id: btn_lang_0
-          bg_color: !lambda 'return lv_color_hex(vigil::ctx.lang == 0 ? 0x2563EB : 0x1C2430);'
-      - lvgl.obj.update:
-          id: btn_lang_1
-          bg_color: !lambda 'return lv_color_hex(vigil::ctx.lang == 1 ? 0x2563EB : 0x1C2430);'
+      - lvgl.label.update:
+          id: lbl_info_fw
+          text: !lambda 'return vigil::tr("firmware") + "${firmware_version}";'
+      - lvgl.label.update:
+          id: lbl_info_id
+          text: !lambda 'return vigil::tr("panel_id") + "${name}";'
+      - lvgl.label.update:
+          id: lbl_info_profile
+          text: !lambda 'return vigil::tr("profile") + std::to_string(vigil::ctx.profile_version);'
       - script.execute: refresh_ui
       - script.execute: refresh_sensors
 
@@ -419,7 +613,8 @@ script:
           id(pending_action) = vigil::is_bypassed(row.status) ? vigil::UNBYPASS : vigil::BYPASS;
       - script.execute: start_action
 
-  # The Sensors button: straight to the list, or first a code, depending on `sensor_list`.
+  # The Sensors button: straight to the list, or first the installer code, depending on the
+  # profile (`sensor_list`).
   - id: open_sensors
     then:
       - if:
@@ -434,35 +629,78 @@ script:
                 id(pending_action) = vigil::UNLOCK;
             - script.execute: start_action
 
+  # The gear: the info page, always behind the installer code.
+  - id: open_info
+    then:
+      - if:
+          condition:
+            lambda: return vigil::ctx.installer_unlocked && vigil::unlocked_now();
+          then:
+            - script.execute: show_info
+          else:
+            - lambda: |-
+                id(pending_entity) = "";
+                id(pending_name) = "";
+                id(pending_action) = vigil::INFO;
+            - script.execute: start_action
+
+  - id: show_info
+    then:
+      - lambda: id(on_info_page) = true;
+      - script.execute: refresh_texts
+      - lvgl.page.show: page_info
+
   - id: show_sensors
     then:
       - lambda: id(on_sensors_page) = true;
       - script.execute: refresh_sensors
       - lvgl.page.show: page_sensors
 
-  # Forget the code and close the list, now or when the time is up.
+  # Forget the unlock and close the list or the info, now or when the time is up.
   - id: lock_sensors
     then:
       - lambda: |-
           vigil::ctx.sensors_unlocked = false;
-          id(unlock_code) = "";
+          vigil::ctx.installer_unlocked = false;
       - if:
           condition:
-            lambda: return id(on_sensors_page);
+            lambda: return id(on_sensors_page) || id(on_info_page);
           then:
-            - lambda: id(on_sensors_page) = false;
+            - lambda: |-
+                id(on_sensors_page) = false;
+                id(on_info_page) = false;
             - lvgl.page.show: page_main
       - script.execute: refresh_ui
 
   - id: unlock_timer
     mode: restart
     then:
-      - delay: ${sensor_unlock}
+      - delay: !lambda 'return id(unlock_ms);'
       - script.execute: lock_sensors
+
+  # Shows a message on the main page for a moment, for example that no installer code is set.
+  - id: show_message
+    parameters:
+      message: string
+    then:
+      - lambda: vigil::ctx.message = message;
+      - script.execute: refresh_ui
+      - script.execute: clear_message
 
   # An action was chosen: ask for the code if that is needed, otherwise do it straight away.
   - id: start_action
     then:
+      # The info opens with the installer code of this panel; without one set in Vigil there is nothing to ask for,
+      # and it does not open. The list of sensors opens with the code of any user.
+      - if:
+          condition:
+            lambda: return vigil::is_admin_action(id(pending_action)) && !vigil::ctx.has_admin_code;
+          then:
+            - lambda: id(pending_action) = 0;
+            - script.execute:
+                id: show_message
+                message: !lambda 'return vigil::tr("no_admin_code");'
+            - script.stop: start_action
       - if:
           condition:
             lambda: return vigil::needs_code(id(pending_action));
@@ -476,15 +714,18 @@ script:
       - lambda: |-
           id(keypad_open) = true;
           id(on_sensors_page) = false;
+          id(on_info_page) = false;
           // Stars only, and never the digit itself, not even for a moment.
           lv_textarea_set_password_show_time(id(pin_text), 0);
           lv_textarea_set_password_bullet(id(pin_text), "*");
       - lvgl.label.update:
           id: lbl_kp_title
           text: !lambda 'return vigil::keypad_title(id(pending_action), id(pending_name));'
+      # Under the code: which code is expected, in grey; an error replaces it, in red.
+      - lambda: lv_obj_set_style_text_color(id(lbl_kp_err), lv_color_hex(0x94A3B8), 0);
       - lvgl.label.update:
           id: lbl_kp_err
-          text: ""
+          text: !lambda 'return vigil::keypad_hint(id(pending_action));'
       - lvgl.textarea.update:
           id: pin_text
           text: ""
@@ -496,22 +737,15 @@ script:
           id(keypad_open) = false;
           id(pending_action) = 0;
           id(on_sensors_page) = false;
+          id(on_info_page) = false;
       - lvgl.textarea.update:
           id: pin_text
           text: ""
       - lvgl.page.show: page_main
 
-  # The keypad should open, or close, because of what the alarm is doing.
+  # The keypad closes when what it was for is over. It never opens by itself.
   - id: route
     then:
-      - if:
-          condition:
-            lambda: return vigil::keypad_route(id(keypad_open), id(pending_action)) == 1;
-          then:
-            - lambda: |-
-                id(pending_action) = vigil::DISARM;
-                id(pending_entity) = "";
-            - script.execute: open_keypad
       - if:
           condition:
             lambda: return vigil::keypad_route(id(keypad_open), id(pending_action)) == 2;
@@ -541,7 +775,7 @@ script:
                 data:
                   mode: !lambda |-
                     return id(pending_action) == vigil::ARM_HOME ? "home" : (id(pending_action) == vigil::ARM_AWAY ? "away" : "night");
-                  source: ${source}
+                  source: ${name}
                   code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
                 on_success:
                   - script.execute: action_done
@@ -556,7 +790,7 @@ script:
             - homeassistant.action:
                 action: vigil_alarm.disarm
                 data:
-                  source: ${source}
+                  source: ${name}
                   code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
                 on_success:
                   - script.execute: action_done
@@ -566,12 +800,13 @@ script:
                       message: !lambda 'return error;'
       - if:
           condition:
-            lambda: return id(pending_action) == vigil::UNLOCK;
+            lambda: return vigil::is_unlock_action(id(pending_action));
           then:
             - homeassistant.action:
-                action: vigil_alarm.check_code
+                action: vigil_alarm.unlock_panel
                 data:
-                  source: ${source}
+                  source: ${name}
+                  scope: !lambda 'return id(pending_action) == vigil::INFO ? "info" : "sensors";'
                   code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
                 on_success:
                   - script.execute: action_done
@@ -587,8 +822,8 @@ script:
                 action: vigil_alarm.bypass
                 data:
                   sensor: !lambda 'return id(pending_entity);'
-                  source: ${source}
-                  code: !lambda 'return vigil::ctx.sensors_unlocked ? id(unlock_code) : std::string(lv_textarea_get_text(id(pin_text)));'
+                  source: ${name}
+                  code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
                 on_success:
                   - script.execute: action_done
                 on_error:
@@ -603,8 +838,8 @@ script:
                 action: vigil_alarm.unbypass
                 data:
                   sensor: !lambda 'return id(pending_entity);'
-                  source: ${source}
-                  code: !lambda 'return vigil::ctx.sensors_unlocked ? id(unlock_code) : std::string(lv_textarea_get_text(id(pin_text)));'
+                  source: ${name}
+                  code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
                 on_success:
                   - script.execute: action_done
                 on_error:
@@ -615,21 +850,30 @@ script:
   - id: action_done
     then:
       - lambda: vigil::ctx.message = "";
+      # The installer code was right: Vigil has unlocked this panel. Show the list or the info until the time is up.
       - if:
           condition:
-            lambda: return id(pending_action) == vigil::UNLOCK;
+            lambda: return vigil::is_unlock_action(id(pending_action));
           then:
-            # The code was right: keep it in memory for a moment, so bypassing needs no second code.
             - lambda: |-
-                id(unlock_code) = std::string(lv_textarea_get_text(id(pin_text)));
+                bool info = id(pending_action) == vigil::INFO;
                 vigil::ctx.sensors_unlocked = true;
+                vigil::ctx.installer_unlocked = info;
                 id(keypad_open) = false;
                 id(pending_action) = 0;
+                id(on_info_page) = info;
+                id(on_sensors_page) = !info;
             - lvgl.textarea.update:
                 id: pin_text
                 text: ""
             - script.execute: unlock_timer
-            - script.execute: show_sensors
+            - if:
+                condition:
+                  lambda: return id(on_info_page);
+                then:
+                  - script.execute: show_info
+                else:
+                  - script.execute: show_sensors
       - if:
           condition:
             lambda: return id(pending_action) == vigil::BYPASS || id(pending_action) == vigil::UNBYPASS;
@@ -655,7 +899,7 @@ script:
     parameters:
       message: string
     then:
-      - lambda: vigil::ctx.message = message;
+      - lambda: vigil::ctx.message = vigil::localize_error(message);
       - lvgl.textarea.update:
           id: pin_text
           text: ""
@@ -663,9 +907,10 @@ script:
           condition:
             lambda: return id(keypad_open);
           then:
+            - lambda: lv_obj_set_style_text_color(id(lbl_kp_err), lv_color_hex(0xF87171), 0);
             - lvgl.label.update:
                 id: lbl_kp_err
-                text: !lambda 'return message;'
+                text: !lambda 'return vigil::ctx.message;'
           else:
             - lvgl.page.show: page_main
       - script.execute: refresh_ui
@@ -675,10 +920,12 @@ script:
     mode: restart
     then:
       - delay: 8s
-      - lambda: vigil::ctx.message = "";
+      - lambda: |-
+          vigil::ctx.message = "";
+          lv_obj_set_style_text_color(id(lbl_kp_err), lv_color_hex(0x94A3B8), 0);
       - lvgl.label.update:
           id: lbl_kp_err
-          text: ""
+          text: !lambda 'return id(keypad_open) ? vigil::keypad_hint(id(pending_action)) : std::string("");'
       - script.execute: refresh_ui
 
 # --------------------------------------------------------------------------------------- screen
@@ -686,23 +933,23 @@ lvgl:
   default_font: montserrat_20
   text_color: 0xE6EAF0
   bg_color: 0x0B0F14
-  # After a while without touch: forget the code and go back to the main page. Is someone still
-  # supposed to disarm, then the keypad comes back.
-  on_idle:
-    timeout: ${idle_timeout}
-    then:
-      - lambda: |-
-          id(keypad_open) = false;
-          id(pending_action) = 0;
-          id(sens_page) = 0;
-          id(on_sensors_page) = false;
-          vigil::ctx.sensors_unlocked = false;  // forget the code
-          id(unlock_code) = "";
-      - lvgl.textarea.update:
-          id: pin_text
-          text: ""
-      - lvgl.page.show: page_main
-      - script.execute: route
+  # A see-through layer over everything, there while the screen is dark: it takes the touch that wakes the panel.
+  top_layer:
+    widgets:
+      - obj:
+          id: wake_shield
+          width: 100%
+          height: 100%
+          align: CENTER
+          bg_opa: TRANSP
+          border_width: 0
+          radius: 0
+          shadow_width: 0
+          scrollable: false
+          hidden: true
+          clickable: true
+          on_release:
+            - lvgl.widget.hide: wake_shield
   pages:
     # ================================================================== MAIN
     - id: page_main
@@ -737,7 +984,7 @@ lvgl:
             shadow_width: 0
             on_click:
               then:
-                - lvgl.page.show: page_settings
+                - script.execute: open_info
             widgets:
               - label:
                   text: ""
@@ -746,7 +993,7 @@ lvgl:
         # The state
         - obj:
             id: card_state
-            width: 456
+            width: ${content_w}
             height: 210
             align: TOP_MID
             y: 70
@@ -776,7 +1023,7 @@ lvgl:
         # The buttons: only the modes that are on, or Disarm
         - obj:
             id: row_modes
-            width: 456
+            width: ${content_w}
             height: 96
             align: TOP_MID
             y: 296
@@ -873,7 +1120,7 @@ lvgl:
                         align: CENTER
         - button:
             id: btn_sensors
-            width: 456
+            width: ${content_w}
             height: 64
             align: TOP_MID
             y: 404
@@ -949,7 +1196,7 @@ lvgl:
             y: 146
         - buttonmatrix:
             id: keypad
-            width: 456
+            width: ${content_w}
             height: 276
             align: TOP_MID
             y: 196
@@ -1011,7 +1258,7 @@ lvgl:
             shadow_width: 0
             on_click:
               then:
-                - script.execute: lock_sensors  # forget the code when leaving the list
+                - script.execute: lock_sensors  # forget the unlock when leaving the list
                 - lvgl.page.show: page_main
             widgets:
               - label:
@@ -1073,13 +1320,13 @@ lvgl:
                   text: ""
                   align: CENTER
 
-    # ============================================================== SETTINGS
-    - id: page_settings
+    # ================================================================== INFO
+    - id: page_info
       bg_color: 0x0B0F14
       scrollable: false
       widgets:
         - button:
-            id: btn_set_back
+            id: btn_info_back
             width: 52
             height: 52
             align: TOP_LEFT
@@ -1090,73 +1337,22 @@ lvgl:
             shadow_width: 0
             on_click:
               then:
-                - lvgl.page.show: page_main
+                - script.execute: lock_sensors  # forget the unlock when leaving the info
             widgets:
               - label:
                   text: ""
                   align: CENTER
         - label:
-            id: lbl_set_title
-            text: "Settings"
+            id: lbl_info_title
+            text: "Info"
             text_font: montserrat_28
             align: TOP_MID
             y: 16
-        - label:
-            id: lbl_set_language
-            text: "Language"
-            text_color: 0x8A94A3
-            align: TOP_LEFT
-            x: 24
-            y: 84
-        - button:
-            id: btn_lang_0
-            width: 214
-            height: 72
-            align: TOP_LEFT
-            x: 12
-            y: 116
-            radius: 20
-            bg_color: 0x2563EB
-            shadow_width: 0
-            on_click:
-              then:
-                - lambda: |-
-                    id(lang) = 0;
-                    vigil::ctx.lang = 0;
-                - script.execute: refresh_texts
-            widgets:
-              - label:
-                  text: "Nederlands"
-                  text_font: montserrat_28
-                  text_color: 0xFFFFFF
-                  align: CENTER
-        - button:
-            id: btn_lang_1
-            width: 214
-            height: 72
-            align: TOP_RIGHT
-            x: -12
-            y: 116
-            radius: 20
-            bg_color: 0x1C2430
-            shadow_width: 0
-            on_click:
-              then:
-                - lambda: |-
-                    id(lang) = 1;
-                    vigil::ctx.lang = 1;
-                - script.execute: refresh_texts
-            widgets:
-              - label:
-                  text: "English"
-                  text_font: montserrat_28
-                  text_color: 0xFFFFFF
-                  align: CENTER
         - obj:
-            width: 456
-            height: 190
+            width: ${content_w}
+            height: 320
             align: TOP_MID
-            y: 216
+            y: 84
             radius: 22
             bg_color: 0x141A22
             border_width: 0
@@ -1176,18 +1372,41 @@ lvgl:
                   text_color: 0x8A94A3
                   align: TOP_LEFT
                   x: 18
-                  y: 56
+                  y: 60
               - label:
                   id: lbl_info_wifi
                   text: ""
                   text_color: 0x8A94A3
                   align: TOP_LEFT
                   x: 18
-                  y: 96
+                  y: 100
               - label:
                   id: lbl_info_up
                   text: ""
                   text_color: 0x8A94A3
                   align: TOP_LEFT
                   x: 18
-                  y: 136
+                  y: 140
+              - label:
+                  id: lbl_info_fw
+                  text: ""
+                  text_color: 0x8A94A3
+                  align: TOP_LEFT
+                  x: 18
+                  y: 180
+              - label:
+                  id: lbl_info_id
+                  text: ""
+                  text_color: 0x8A94A3
+                  long_mode: DOT
+                  width: 420
+                  align: TOP_LEFT
+                  x: 18
+                  y: 220
+              - label:
+                  id: lbl_info_profile
+                  text: ""
+                  text_color: 0x8A94A3
+                  align: TOP_LEFT
+                  x: 18
+                  y: 260

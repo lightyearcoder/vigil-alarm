@@ -15,6 +15,16 @@
           "code_arm_required": "Require a code to arm",
           "min_code_length": "Minimum code length",
           "battery_threshold": "Battery low at or below",
+          "lock_tries_1": "Wrong codes before the first lock",
+          "lock_wait_1": "First lock lasts (minutes)",
+          "lock_tries_2": "Then wrong codes before the second lock",
+          "lock_wait_2": "Second lock lasts (minutes)",
+          "lock_tries_3": "Then wrong codes before the third lock",
+          "lock_wait_3": "Third lock lasts (minutes)",
+          "lock_tries_4": "Then wrong codes before the permanent lock",
+          "startup_wait_seconds": "Wait for sensors after a restart (seconds)",
+          "screen_off_seconds": "Screen off after (seconds)",
+          "screen_off_on_alarm": "Let the screen go dark during an alarm",
           "log_retention_days": "Days to keep the event log",
           "selftest_interval_days": "Days between siren test reminders (0 = off)",
           "selftest_siren_seconds": "Seconds the siren sounds in a test",
@@ -39,6 +49,16 @@
           "code_arm_required": "Require a code to arm",
           "min_code_length": "Minimum code length",
           "battery_threshold": "Battery low at or below",
+          "lock_tries_1": "Wrong codes before the first lock",
+          "lock_wait_1": "First lock lasts (minutes)",
+          "lock_tries_2": "Then wrong codes before the second lock",
+          "lock_wait_2": "Second lock lasts (minutes)",
+          "lock_tries_3": "Then wrong codes before the third lock",
+          "lock_wait_3": "Third lock lasts (minutes)",
+          "lock_tries_4": "Then wrong codes before the permanent lock",
+          "startup_wait_seconds": "Wait for sensors after a restart (seconds)",
+          "screen_off_seconds": "Screen off after (seconds)",
+          "screen_off_on_alarm": "Let the screen go dark during an alarm",
           "log_retention_days": "Days to keep the event log",
           "selftest_interval_days": "Days between siren test reminders (0 = off)",
           "selftest_siren_seconds": "Seconds the siren sounds in a test",
@@ -111,9 +131,17 @@
               "alarm_acknowledged": "Alarm acknowledged",
               "code_rejected": "Code rejected",
               "code_locked": "Codes locked after too many wrong codes",
+              "code_locked_permanent": "Codes locked for good after too many wrong codes",
+              "startup_settled": "Start-up finished (waiting for sensors)",
               "selftest_checked": "Self-check done",
               "selftest_reminder": "Test reminder sent",
-              "selftest_siren_tested": "Siren tested"
+              "selftest_siren_tested": "Siren tested",
+              "panel_refused": "Panel call refused",
+              "user_refused": "User call refused",
+              "panel_unlocked": "Panel unlocked",
+              "panel_lock_cleared": "Panel lock cleared",
+              "panel_offline": "Panel not reachable",
+              "panel_online": "Panel reachable again"
             }
           }
         }
@@ -168,10 +196,21 @@
           "alarm_acknowledged": "Alarm acknowledged",
           "code_rejected": "Code rejected",
           "code_locked": "Codes locked after too many wrong codes",
+          "code_locked_permanent": "Codes locked for good after too many wrong codes",
+          "startup_settled": "Start-up finished (waiting for sensors)",
           "selftest_checked": "Self-check done",
           "selftest_reminder": "Test reminder sent",
-          "selftest_siren_tested": "Siren tested"
+          "selftest_siren_tested": "Siren tested",
+          "panel_refused": "Panel call refused",
+          "user_refused": "User call refused",
+          "panel_unlocked": "Panel unlocked",
+          "panel_lock_cleared": "Panel lock cleared",
+          "panel_offline": "Panel not reachable",
+          "panel_online": "Panel reachable again"
         }
+      },
+      "panel_profile": {
+        "name": "Profile"
       }
     },
     "switch": {
@@ -226,8 +265,11 @@
     "code_required": {
       "message": "A code is required."
     },
+    "code_locked_permanent": {
+      "message": "Too many wrong codes. This is locked until an administrator unlocks it in Vigil."
+    },
     "code_locked": {
-      "message": "Too many wrong codes. Codes are locked for a few minutes."
+      "message": "Too many wrong codes. Try again in {minutes} min."
     },
     "invalid_code": {
       "message": "Invalid code."
@@ -245,7 +287,7 @@
       "message": "Unknown sensor."
     },
     "tamper_bypass_not_allowed": {
-      "message": "Bypassing a tamper sensor needs the right to bypass tamper, or a Home Assistant administrator."
+      "message": "Bypassing or restoring a tamper sensor needs the right to bypass tamper, or a Home Assistant administrator."
     },
     "sensor_not_bypassable": {
       "message": "This sensor cannot be bypassed."
@@ -264,6 +306,24 @@
     },
     "mode_not_enabled": {
       "message": "Mode {mode} is not enabled."
+    },
+    "panel_blocked": {
+      "message": "The panel {panel} is blocked."
+    },
+    "panel_not_allowed": {
+      "message": "The panel {panel} may not do this."
+    },
+    "unknown_panel": {
+      "message": "This is not a registered panel."
+    },
+    "user_not_registered": {
+      "message": "Your Home Assistant account is not registered in Vigil, so it may not operate the alarm."
+    },
+    "no_admin_code": {
+      "message": "This panel has no installer code. Set one in the Panels tab, or unlock it there."
+    },
+    "bypass_not_allowed": {
+      "message": "Bypassing or restoring sensors needs the right to bypass, given to this user in Vigil, or a Home Assistant administrator."
     }
   },
   "services": {
@@ -400,6 +460,24 @@
           "description": "Name of the control point, for example a panel."
         }
       }
+    },
+    "unlock_panel": {
+      "name": "Unlock panel",
+      "description": "Unlock the sensor list or the information pages of a registered panel. Never disarms the alarm.",
+      "fields": {
+        "code": {
+          "name": "Code",
+          "description": "A Vigil user code or the installer code of this panel for the sensor list; the installer code for the information pages."
+        },
+        "scope": {
+          "name": "Scope",
+          "description": "sensors: the sensor list (a user code or the installer code). info: the information pages (the installer code only)."
+        },
+        "source": {
+          "name": "Source",
+          "description": "The id of the panel."
+        }
+      }
     }
   },
   "issues": {
@@ -434,6 +512,10 @@
     "heartbeat_failing": {
       "title": "Heartbeat cannot be sent",
       "description": "Vigil Alarm has not been able to reach the heartbeat address several times in a row ({reason}). A monitoring service that expects the heartbeat will report this. Check the address under Settings in the Vigil Alarm panel and your internet connection. This message disappears by itself when the heartbeat works again."
+    },
+    "panel_offline": {
+      "title": "Panel not reachable: {name}",
+      "description": "Vigil Alarm has not been able to reach the panel {name} for ten minutes. Check the power and the wifi of the panel. The alarm itself keeps working. This message disappears by itself when the panel is back."
     }
   }
 }

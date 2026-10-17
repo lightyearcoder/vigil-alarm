@@ -47,7 +47,7 @@ Zoek hieronder wat je ziet. Per verschijnsel staan de meest waarschijnlijke oorz
 ## Mijn code wordt geweigerd
 
 - **Te kort:** de minimale lengte staat bij *Instellingen* (4 tot 12 tekens).
-- **Geblokkeerd:** vijf foute codes binnen vijf minuten blokkeren alle codes vijf minuten lang, ook de goede. Wacht even; in het gebeurtenissenlogboek staat `code_locked`.
+- **Geblokkeerd:** na een aantal foute codes blokkeert Vigil die plek in stappen (standaard 5, dan 15, dan 60 minuten), ook voor de goede code. Wacht even; in het gebeurtenissenlogboek staat `code_locked`. Staat er `code_locked_permanent`, dan blijft het paneel dicht totdat een beheerder bij Panelen op *Blokkade opheffen* drukt. De getallen staan bij *Instellingen*, *Vergrendeling*.
 - **Niet toegestaan:** de gebruiker mag alleen bepaalde modi. Kijk bij *Toegestane modi*. Uitschakelen kan altijd met een geldige code.
 
 ## Valse alarmen

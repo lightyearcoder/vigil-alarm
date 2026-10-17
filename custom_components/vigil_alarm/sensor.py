@@ -12,6 +12,8 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from . import VigilConfigEntry
 from .const import EVENT_TYPES
 from .entity import VigilEntity, VigilSensorEntity
+from .items import items_of
+from .panels import profile_object_id
 
 SENSOR_STATUSES = ["closed", "open", "unavailable", "bypassed", "bypassed_at_arm", "waiting"]
 
@@ -21,6 +23,7 @@ async def async_setup_entry(
 ) -> None:
     manager = entry.runtime_data
     async_add_entities([VigilLastEvent(manager)])
+    async_add_entities([VigilPanelProfile(manager, p.subentry_id, p.title) for p in manager.panels.items()])
     for sub in manager.sensor_items():
         async_add_entities(
             [VigilSensorStatus(manager, sub.subentry_id, sub.title)],
@@ -67,3 +70,41 @@ class VigilLastEvent(VigilEntity, SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         event = self._manager.last_event or {}
         return {k: v for k, v in event.items() if k != "type"}
+
+
+class VigilPanelProfile(VigilSensorEntity, SensorEntity):
+    """What one registered panel may do and show. The panel reads this entity; the value is the profile version.
+
+    The sensor names and the unlocked flag are kept out of the recorder, so they never reach the history.
+    The profile never holds a code, a hash or a key."""
+
+    _attr_translation_key = "panel_profile"
+    _attr_has_entity_name = False
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _unrecorded_attributes = frozenset({"sensors", "unlocked", "open_now_text", "open_sensors_text", "faults_text"})
+
+    def __init__(self, manager, item_id: str, title: str) -> None:
+        super().__init__(manager, item_id, title)
+        self._attr_unique_id = f"{manager.entry.entry_id}_{item_id}_profile"
+        self._attr_name = f"{title} profile"
+        panel = items_of(manager.entry).get(item_id)
+        self._object_id = profile_object_id(panel.data["panel_id"]) if panel else None
+
+    @property
+    def suggested_object_id(self) -> str | None:
+        """The same entity id whatever the panel is called, so the firmware can find it from its device name."""
+        return self._object_id
+
+    @property
+    def _panel(self):
+        return items_of(self._manager.entry).get(self._sensor_id)
+
+    @property
+    def native_value(self) -> int | None:
+        panel = self._panel
+        return self._manager.panels.profile(panel)["profile_version"] if panel else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        panel = self._panel
+        return self._manager.panels.profile(panel) if panel else {}

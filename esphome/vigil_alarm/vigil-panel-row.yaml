@@ -2,7 +2,7 @@
 # on the page (0 to 4) and `y` the distance from the top.
 obj:
   id: srow_${n}
-  width: 456
+  width: ${content_w}
   height: 62
   align: TOP_MID
   y: ${y}

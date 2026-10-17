@@ -9,7 +9,8 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 ROOT = pathlib.Path(__file__).parents[1]
 DOCS = [ROOT / "README.md", ROOT / "docs" / "user-guide.md", ROOT / "docs" / "gebruikershandleiding.nl.md",
-        ROOT / "docs" / "installatie-en-testen.nl.md"]
+        ROOT / "docs" / "installatie-en-testen.nl.md",
+        ROOT / "docs" / "tablet.md", ROOT / "docs" / "tablet.nl.md"]
 OWNER_REPO = "lightyearcoder/vigil-alarm"
 
 
@@ -69,3 +70,10 @@ def test_the_guides_cover_the_same_sections():
     en = re.findall(r"^## ", (ROOT / "docs/user-guide.md").read_text(), re.M)
     nl = re.findall(r"^## ", (ROOT / "docs/gebruikershandleiding.nl.md").read_text(), re.M)
     assert len(en) == len(nl)
+
+
+def test_the_vigil_card_is_shipped_and_registered():
+    card = (ROOT / "custom_components" / "vigil_alarm" / "frontend" / "vigil-card.js").read_text()
+    assert 'customElements.define("vigil-card"' in card and "vigil_alarm/tablet" in card
+    panel = (ROOT / "custom_components" / "vigil_alarm" / "panel.py").read_text()
+    assert "vigil-card.js" in panel and "add_extra_js_url" in panel  # loaded for every user, not only administrators

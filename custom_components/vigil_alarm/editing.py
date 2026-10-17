@@ -7,6 +7,8 @@ title and data to store, or an EditError with a message code per field.
 
 from __future__ import annotations
 
+import re
+import unicodedata
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -15,6 +17,18 @@ from homeassistant.core import HomeAssistant
 from .items import Item, items_of
 from .const import (
     CONF_MIN_CODE_LENGTH,
+    CONF_BLOCKED,
+    CONF_HA_USER,
+    CONF_CAN_BYPASS,
+    CONF_CAN_DISARM,
+    CONF_CAN_SILENCE,
+    CONF_LANGUAGE,
+    CONF_PANEL_ID,
+    CONF_SENSOR_LIST,
+    CONF_UNLOCK_SECONDS,
+    DEFAULT_UNLOCK_SECONDS,
+    SENSOR_LIST_CHOICES,
+    UNLOCK_SECONDS_RANGE,
     MIN_CODE_LENGTH_FLOOR,
     CONF_ALLOWED_MODES,
     CONF_BATTERY_ENTITY,
@@ -29,6 +43,7 @@ from .const import (
     CONF_DELAY,
     CONF_ENTRY_DELAY,
     CONF_GAS_TYPE,
+    CONF_MAY_BYPASS,
     CONF_MAY_BYPASS_TAMPER,
     CONF_MAX_DURATION,
     CONF_ON_UNAVAILABLE,
@@ -55,6 +70,7 @@ from .const import (
     SUBENTRY_NOTIFICATION,
     SUBENTRY_SIREN,
     SUBENTRY_USER,
+    SUBENTRY_PANEL,
     SUBENTRY_SENSOR,
     SUBENTRY_SENSOR_GROUP,
 )
@@ -125,6 +141,8 @@ async def async_prepare(
         return name, _notification(hass, entry, sub, name, raw)
     if kind == SUBENTRY_SIREN:
         return name, _siren(entry, sub, name, raw)
+    if kind == SUBENTRY_PANEL:
+        return name, await _panel(hass, entry, sub, name, raw)
     raise EditError({"base": "unknown_kind"})
 
 
@@ -263,6 +281,7 @@ async def _user(
     data: dict[str, Any] = {
         CONF_TAGS: [t.strip() for t in (raw.get(CONF_TAGS) or []) if t and t.strip()],
         CONF_ALLOWED_MODES: list(raw.get(CONF_ALLOWED_MODES) or []),
+        CONF_MAY_BYPASS: bool(raw.get(CONF_MAY_BYPASS, False)),
         CONF_MAY_BYPASS_TAMPER: bool(raw.get(CONF_MAY_BYPASS_TAMPER, False)),
     }
     code = (raw.get(CONF_CODE) or "").strip()
@@ -332,4 +351,96 @@ def _siren(entry: ConfigEntry, sub: Item | None, name: str, raw: dict[str, Any])
         raise EditError({"base": "tone_without_entity"})
     if any(CONF_VOLUME in data.get(c, {}) for c in PROFILE_CAUSES) and CONF_VOLUME_ENTITY not in data:
         raise EditError({"base": "volume_without_entity"})
+    return data
+
+
+PANEL_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]{0,62}$")
+
+
+def _free_panel_id(name: str, others: list[Item]) -> str:
+    """A panel id from the name of a tablet or phone: lower case letters, digits and dashes, and not in use."""
+    base = re.sub(r"[^a-z0-9]+", "-", unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower())
+    base = base.strip("-")[:50] or "device"
+    taken = {o.data.get(CONF_PANEL_ID) for o in others}
+    candidate, n = base, 2
+    while candidate in taken:
+        candidate, n = f"{base}-{n}", n + 1
+    return candidate
+
+
+async def _panel(
+    hass: HomeAssistant, entry: ConfigEntry, sub: Item | None, name: str, raw: dict[str, Any]
+) -> dict[str, Any]:
+    """A control point in the register: what it is called and what it may do."""
+    others = _others(entry, SUBENTRY_PANEL, sub)
+    errors: dict[str, str] = {}
+    # A tablet or phone is found by its Home Assistant account; its panel id is only a label for the history and
+    # the profile sensor, so the form does not ask for it: it follows from the name, and stays as it is when edited.
+    # An ESPHome panel is found by its panel id, the name of the ESPHome device.
+    by_account = raw.get("device") == "account" or (raw.get("device") is None and bool(raw.get(CONF_HA_USER)))
+    panel_id = str(raw.get(CONF_PANEL_ID) or "").strip()
+    if by_account:
+        if sub and sub.data.get(CONF_HA_USER) and sub.data.get(CONF_PANEL_ID):
+            panel_id = sub.data[CONF_PANEL_ID]
+        elif not panel_id:
+            panel_id = _free_panel_id(name, others)
+    if not panel_id:
+        errors[CONF_PANEL_ID] = "required"
+    elif not PANEL_ID_PATTERN.match(panel_id):
+        errors[CONF_PANEL_ID] = "panel_id_invalid"
+    elif any(o.data.get(CONF_PANEL_ID) == panel_id for o in others):
+        errors[CONF_PANEL_ID] = "panel_id_in_use"
+    if any(o.title == name for o in others):
+        errors[CONF_NAME] = "name_in_use"
+    modes = list(entry.data.get(CONF_MODES, []))
+    chosen = [m for m in modes if m in (raw.get(CONF_ALLOWED_MODES) or modes)]
+    if not chosen:
+        errors[CONF_ALLOWED_MODES] = "no_modes"
+    sensor_list = raw.get(CONF_SENSOR_LIST) or "code"
+    if sensor_list not in SENSOR_LIST_CHOICES:
+        errors[CONF_SENSOR_LIST] = "unknown_choice"
+    try:
+        seconds = int(raw.get(CONF_UNLOCK_SECONDS, DEFAULT_UNLOCK_SECONDS))
+    except (TypeError, ValueError):
+        seconds = 0
+    if not UNLOCK_SECONDS_RANGE[0] <= seconds <= UNLOCK_SECONDS_RANGE[1]:
+        errors[CONF_UNLOCK_SECONDS] = "unlock_range"
+    ha_user = str(raw.get(CONF_HA_USER) or "").strip() if by_account or raw.get("device") is None else ""
+    if by_account and not ha_user:
+        errors[CONF_HA_USER] = "required"
+    if ha_user:
+        account = await hass.auth.async_get_user(ha_user)
+        if account is None or account.system_generated or not account.is_active:
+            errors[CONF_HA_USER] = "ha_user_unknown"
+        elif any(o.data.get(CONF_HA_USER) == ha_user for o in others):
+            errors[CONF_HA_USER] = "ha_user_in_use"
+    language = raw.get(CONF_LANGUAGE) or ""
+    if language not in ("", "nl", "en"):
+        errors[CONF_LANGUAGE] = "unknown_choice"
+    data: dict[str, Any] = {
+        CONF_PANEL_ID: panel_id,
+        CONF_LANGUAGE: language,
+        # all modes chosen is stored as "all", so a mode added later is allowed too
+        CONF_ALLOWED_MODES: [] if len(chosen) == len(modes) else chosen,
+        CONF_CAN_DISARM: bool(raw.get(CONF_CAN_DISARM, True)),
+        CONF_CAN_BYPASS: bool(raw.get(CONF_CAN_BYPASS, True)),
+        CONF_CAN_SILENCE: bool(raw.get(CONF_CAN_SILENCE, True)),
+        CONF_SENSOR_LIST: sensor_list,
+        CONF_UNLOCK_SECONDS: seconds,
+        CONF_BLOCKED: bool(raw.get(CONF_BLOCKED, False)),
+    }
+    if ha_user:
+        data[CONF_HA_USER] = ha_user
+    code = (raw.get(CONF_CODE) or "").strip()
+    if code:
+        minimum = max(MIN_CODE_LENGTH_FLOOR, int(entry.data.get(CONF_MIN_CODE_LENGTH, MIN_CODE_LENGTH_FLOOR)))
+        if len(code) < minimum:
+            errors[CONF_CODE] = "code_too_short"
+        else:
+            data[CONF_CODE_HASH], data[CONF_CODE_SALT] = await hass.async_add_executor_job(hash_code, code)
+    elif sub and sub.data.get(CONF_CODE_HASH) and not raw.get("remove_code"):
+        data[CONF_CODE_HASH], data[CONF_CODE_SALT] = sub.data[CONF_CODE_HASH], sub.data[CONF_CODE_SALT]
+    if errors:
+        raise EditError(errors, {"min": max(MIN_CODE_LENGTH_FLOOR, int(entry.data.get(CONF_MIN_CODE_LENGTH, MIN_CODE_LENGTH_FLOOR))),
+                                 "low": UNLOCK_SECONDS_RANGE[0], "high": UNLOCK_SECONDS_RANGE[1]})
     return data
