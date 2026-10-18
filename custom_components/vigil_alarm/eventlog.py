@@ -26,7 +26,7 @@ STORAGE_VERSION = 1
 SAVE_DELAY = 15  # seconds; Home Assistant also writes it when it stops
 MAX_ENTRIES = 50_000  # a safety limit next to the number of days
 FIELDS = ("time", "event", "source", "user", "item", "result", "detail")
-_NEVER = {"code", "code_hash", "code_salt", "tags", "tag"}  # events hold none of these; belt and braces
+_NEVER = {"code", "code_hash", "code_salt", "duress_hash", "duress_salt", "tags", "tag"}  # events hold none of these; belt and braces
 _SHOWN = {"t", "type", "source", "user", "sensor", "sensor_name", "siren", "name", "rule", "reason", "error", "cause", "mode"}
 
 

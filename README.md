@@ -167,6 +167,11 @@ actions:
 | `practice_ended` | Practice mode ended | `reason` (`manual`, `expired`) |
 | `walktest_started` | A walk test started | `total` (sensors in the test) |
 | `walktest_finished` | A walk test ended | `seen`, `total`, `reason` (`done`, `stopped`, `expired`) |
+| `alarm_cancelled` | A valid code was entered within the cancel window after the siren went off: a false alarm | `user`, `source` |
+| `duress_used` | A duress code was used. It works like the normal code. Only in the log and to the channels with the *duress* category: never on this entity, never as the last event | `user`, `source`, `action` |
+| `alarm_sensor_seen` | A sensor opened during an alarm without counting for it (not active in this mode, or bypassed): a step in the intruder's path | `sensor`, `area` |
+| `alarm_memory_cleared` | Someone cleared the alarm memory | `user`, `source` |
+| `chime` | A sensor with the chime opened while the alarm was off. Not in the log | `sensor` |
 | `notification_failed` / `state_restore_failed` | Vigil itself had a problem | `channel`, `error`, `reason` |
 
 Entities per alarm: `alarm_control_panel.<name>` (with attributes `cause`, `open_sensors`,

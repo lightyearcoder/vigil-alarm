@@ -41,6 +41,9 @@ from .const import (
     CONF_CODE,
     CONF_CODE_HASH,
     CONF_CODE_SALT,
+    CONF_DURESS_HASH,
+    CONF_DURESS_SALT,
+    CONF_CHIME,
     CONF_DELAY,
     CONF_ENTRY_DELAY,
     CONF_GAS_TYPE,
@@ -75,7 +78,7 @@ from .const import (
     SUBENTRY_SENSOR,
     SUBENTRY_SENSOR_GROUP,
 )
-from .credentials import code_matches, hash_code
+from .credentials import code_matches, duress_matches, hash_code
 from .manager import build_config
 from .vigil_core import ConfigError
 
@@ -165,6 +168,10 @@ def _sensor(entry: ConfigEntry, sub: Item | None, name: str, raw: dict[str, Any]
         data[CONF_SENSOR_GROUPS] = groups
     if data.get(CONF_CLS) != "gas":
         data.pop(CONF_GAS_TYPE, None)
+    if data.get(CONF_CLS) != "intrusion" or not data.get(CONF_CHIME):
+        data.pop(CONF_CHIME, None)  # the chime is for doors and windows (intrusion sensors)
+    else:
+        data[CONF_CHIME] = True
     if data.get(CONF_ENTRY_DELAY) in (None, ""):
         data.pop(CONF_ENTRY_DELAY, None)
     else:
@@ -293,13 +300,38 @@ async def _user(
         data[CONF_CODE_HASH], data[CONF_CODE_SALT] = await hass.async_add_executor_job(hash_code, code)
         data["code_numeric"] = code.isdigit()
         for other in others:
-            if await hass.async_add_executor_job(code_matches, code, other.data):
+            if await hass.async_add_executor_job(code_matches, code, other.data) or await hass.async_add_executor_job(duress_matches, code, other.data):
                 errors[CONF_CODE] = "code_in_use"
+        if sub and sub.data.get(CONF_DURESS_HASH) and await hass.async_add_executor_job(duress_matches, code, sub.data):
+            errors[CONF_CODE] = "code_in_use"
     elif sub and sub.data.get(CONF_CODE_HASH) and not raw.get("remove_code"):
         for key in (CONF_CODE_HASH, CONF_CODE_SALT, "code_numeric"):
             data[key] = sub.data[key]
     if not data.get(CONF_CODE_HASH) and not data[CONF_TAGS]:
         errors["base"] = "no_credential"
+    duress = (raw.get("duress_code") or "").strip()
+    if duress:
+        minimum = max(MIN_CODE_LENGTH_FLOOR, int(entry.data.get(CONF_MIN_CODE_LENGTH, MIN_CODE_LENGTH_FLOOR)))
+        if len(duress) < minimum:
+            errors["duress_code"] = "code_too_short"
+        elif not data.get(CONF_CODE_HASH):
+            errors["duress_code"] = "duress_needs_code"
+        else:
+            data[CONF_DURESS_HASH], data[CONF_DURESS_SALT] = await hass.async_add_executor_job(hash_code, duress)
+            own = await hass.async_add_executor_job(code_matches, duress, data)
+            same = own or any(
+                [await hass.async_add_executor_job(code_matches, duress, o.data) for o in others]
+                + [await hass.async_add_executor_job(duress_matches, duress, o.data) for o in others]
+            )
+            if same:
+                errors["duress_code"] = "code_in_use"
+    elif sub and sub.data.get(CONF_DURESS_HASH) and not raw.get("remove_duress") and data.get(CONF_CODE_HASH):
+        data[CONF_DURESS_HASH], data[CONF_DURESS_SALT] = sub.data[CONF_DURESS_HASH], sub.data[CONF_DURESS_SALT]
+    if CONF_DURESS_HASH in data and "duress_code" not in errors and not any(
+        s.subentry_type == SUBENTRY_NOTIFICATION and "duress" in (s.data.get(CONF_CATEGORIES) or [])
+        for s in items_of(entry).values()
+    ):
+        errors["duress_code"] = "duress_no_channel"  # a silent alarm that reaches nobody is worse than none
     for tag in data[CONF_TAGS]:
         if any(tag in o.data.get(CONF_TAGS, []) for o in others):
             errors[CONF_TAGS] = "tag_in_use"

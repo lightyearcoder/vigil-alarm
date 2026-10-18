@@ -178,6 +178,11 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         test_notification,
         schema=vol.Schema({vol.Optional("channel"): cv.string}),
     )
+    async def clear_alarm_memory(call: ServiceCall) -> None:
+        for entry in hass.config_entries.async_loaded_entries(DOMAIN):
+            await entry.runtime_data.async_clear_alarm_memory(call.data.get("source"))
+
+    hass.services.async_register(DOMAIN, "clear_alarm_memory", clear_alarm_memory, schema=vol.Schema({vol.Optional("source"): cv.string}))
     hass.services.async_register(DOMAIN, SERVICE_BYPASS, bypass, schema=SERVICE_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_UNBYPASS, unbypass, schema=SERVICE_SCHEMA)
     async_register_commands(hass)
@@ -268,3 +273,4 @@ async def async_remove_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> No
     await Store(hass, 1, f"{DOMAIN}.tablets.{entry.entry_id}").async_remove()
     await Store(hass, BACKUPS_STORAGE_VERSION, backups_store_key(entry.entry_id)).async_remove()
     await Store(hass, 1, f"{DOMAIN}.newsensors.{entry.entry_id}").async_remove()
+    await Store(hass, 1, f"{DOMAIN}.alarmmemory.{entry.entry_id}").async_remove()

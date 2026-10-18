@@ -42,6 +42,17 @@ from .const import (
     LOG_RETENTION_FLOOR,
     CONF_MIN_CODE_LENGTH,
     CONF_SCREEN_OFF_ON_ALARM,
+    CONF_ABORT_SECONDS,
+    DEFAULT_ABORT_SECONDS,
+    ABORT_SECONDS_RANGE,
+    CONF_CHIME,
+    CONF_CHIME_ENTITY,
+    CONF_CHIME_SECONDS,
+    DEFAULT_CHIME_SECONDS,
+    CHIME_SECONDS_RANGE,
+    CHIME_DOMAINS,
+    CONF_DURESS_HASH,
+    CONF_DURESS_SALT,
     CONF_SCREEN_OFF_SECONDS,
     DEFAULT_SCREEN_OFF_ON_ALARM,
     DEFAULT_SCREEN_OFF_SECONDS,
@@ -143,6 +154,7 @@ def form_schema(modes: list[str]) -> dict[str, list[dict[str, Any]]]:
             _f("on_unavailable", "select", options=["default", *ON_UNAVAILABLE], default="default"),
             _f(CONF_BATTERY_ENTITY, "entity", domains=["sensor", "binary_sensor"]),
             _f(CONF_TAMPER_ENTITY, "entity", domains=["binary_sensor"], show_if={"cls": ["intrusion", "fire", "gas", "water"]}),
+            _f("chime", "boolean", default=False, show_if=intrusion),
         ],
         "sensor_group": [
             _f("name", "text", required=True),
@@ -159,6 +171,7 @@ def form_schema(modes: list[str]) -> dict[str, list[dict[str, Any]]]:
         "user": [
             _f("name", "text", required=True),
             _f("code", "password"),
+            _f("duress_code", "password"),
             _f("tags", "tags", default=[]),
             _f("allowed_modes", "multiselect", options=modes, default=[]),
             _f("may_bypass", "boolean", default=False),
@@ -215,6 +228,9 @@ def settings_schema() -> list[dict[str, Any]]:
         *[_f(f"exit_delay_{m}", "number", unit="s", min=0, max=3600, show_if={"modes": [m]}, section="alarm") for m in MODES],
         _f("default_entry_delay", "number", unit="s", min=0, max=3600, section="alarm"),
         _f("trigger_time", "number", unit="s", min=0, max=86400, section="alarm"),
+        _f("abort_seconds", "number", unit="s", min=ABORT_SECONDS_RANGE[0], max=ABORT_SECONDS_RANGE[1], default=DEFAULT_ABORT_SECONDS, section="alarm"),
+        _f("chime_entity", "entity", domains=list(CHIME_DOMAINS), section="chime"),
+        _f("chime_seconds", "number", unit="s", min=CHIME_SECONDS_RANGE[0], max=CHIME_SECONDS_RANGE[1], default=DEFAULT_CHIME_SECONDS, section="chime"),
         _f("startup_wait_seconds", "number", unit="s", min=STARTUP_WAIT_RANGE[0], max=STARTUP_WAIT_RANGE[1], section="startup"),
         _f("code_arm_required", "boolean", section="codes"),
         _f("min_code_length", "number", min=MIN_CODE_LENGTH_FLOOR, max=MIN_CODE_LENGTH_CEILING, section="codes"),
@@ -247,13 +263,17 @@ def _public(sub: Item) -> dict[str, Any]:
     """What the panel may see of a subentry: never the hash or the salt of a code."""
     data = dict(sub.data)
     has_code = bool(data.pop(CONF_CODE_HASH, None))
+    has_duress = bool(data.pop(CONF_DURESS_HASH, None))
     data.pop(CONF_CODE_SALT, None)
+    data.pop(CONF_DURESS_SALT, None)
     data.pop("code_numeric", None)
     if sub.subentry_type == SUBENTRY_USER:
         data.setdefault("may_bypass", True)  # a user saved before the right existed keeps it, until you untick it
     out = {"id": sub.subentry_id, "title": sub.title, "data": data}
     if sub.subentry_type in (SUBENTRY_USER, SUBENTRY_PANEL):
         out["has_code"] = has_code
+        if sub.subentry_type == SUBENTRY_USER:
+            out["has_duress"] = has_duress
     return out
 
 
@@ -274,7 +294,7 @@ def _snapshot(hass: HomeAssistant, entry: ConfigEntry, users: list[Any]) -> dict
         }
     return {
         "version": _VERSION,
-        "entry": {"id": entry.entry_id, "title": entry.title, "data": {CONF_STARTUP_WAIT: DEFAULT_STARTUP_WAIT, **LOCK_DEFAULTS, CONF_MIN_CODE_LENGTH: MIN_CODE_LENGTH_FLOOR, CONF_SCREEN_OFF_SECONDS: DEFAULT_SCREEN_OFF_SECONDS, CONF_SCREEN_OFF_ON_ALARM: DEFAULT_SCREEN_OFF_ON_ALARM, CONF_LOG_RETENTION_DAYS: DEFAULT_LOG_RETENTION_DAYS, CONF_BACKUP_VERSIONS: DEFAULT_BACKUP_VERSIONS, CONF_HEARTBEAT_INTERVAL: DEFAULT_HEARTBEAT_INTERVAL, **DEFAULT_SELFTEST, **entry.data}},
+        "entry": {"id": entry.entry_id, "title": entry.title, "data": {CONF_STARTUP_WAIT: DEFAULT_STARTUP_WAIT, **LOCK_DEFAULTS, CONF_MIN_CODE_LENGTH: MIN_CODE_LENGTH_FLOOR, CONF_SCREEN_OFF_SECONDS: DEFAULT_SCREEN_OFF_SECONDS, CONF_SCREEN_OFF_ON_ALARM: DEFAULT_SCREEN_OFF_ON_ALARM, CONF_ABORT_SECONDS: DEFAULT_ABORT_SECONDS, CONF_CHIME_SECONDS: DEFAULT_CHIME_SECONDS, CONF_LOG_RETENTION_DAYS: DEFAULT_LOG_RETENTION_DAYS, CONF_BACKUP_VERSIONS: DEFAULT_BACKUP_VERSIONS, CONF_HEARTBEAT_INTERVAL: DEFAULT_HEARTBEAT_INTERVAL, **DEFAULT_SELFTEST, **entry.data}},
         "items": {
             kind: [_public(s) for s in items_of(entry).values() if s.subentry_type == TYPE_OF[kind]]
             for kind in KINDS
@@ -309,6 +329,7 @@ def _live(entry: ConfigEntry) -> dict[str, Any] | None:
         "new_sensors": manager.new_sensors.entities,
         "practice_until": manager.practice.until,
         "walktest": manager.walktest.status(),
+        "alarm_memory": manager.alarmmemory.view(),
         # Per mode what would stop arming now (only while disarmed; the panel shows it as "why can't I arm?").
         "blockers": {m: b for m in manager.config.modes if (b := manager.arm_blockers(m, sync=False))} if manager.engine.state == "disarmed" else {},
     }
@@ -357,6 +378,19 @@ def ws_discover(hass: HomeAssistant, connection: websocket_api.ActiveConnection,
         _no_entry(connection, msg)
         return
     connection.send_result(msg["id"], async_discover(hass, entry))
+
+
+@websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/alarm_memory_clear"})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_alarm_memory_clear(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    entry = _entry_for(hass)
+    if entry is None:
+        _no_entry(connection, msg)
+        return
+    user = connection.user.name if connection.user else None
+    await entry.runtime_data.async_clear_alarm_memory("admin panel", user)
+    connection.send_result(msg["id"], {"ok": True})
 
 
 @websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/new_sensors_dismiss"})
@@ -855,6 +889,26 @@ async def ws_save_settings(
             return
         data[key] = value
     data[CONF_SCREEN_OFF_ON_ALARM] = bool(data.get(CONF_SCREEN_OFF_ON_ALARM, DEFAULT_SCREEN_OFF_ON_ALARM))
+    for key, (low, high), default in (
+        (CONF_ABORT_SECONDS, ABORT_SECONDS_RANGE, DEFAULT_ABORT_SECONDS),
+        (CONF_CHIME_SECONDS, CHIME_SECONDS_RANGE, DEFAULT_CHIME_SECONDS),
+    ):
+        try:
+            value = int(data.get(key, default))
+        except (TypeError, ValueError):
+            value = low - 1
+        if not low <= value <= high:
+            connection.send_result(msg["id"], _failure(EditError({key: "seconds_range"}, {"min": low, "max": high})))
+            return
+        data[key] = value
+    chime_entity = str(data.get(CONF_CHIME_ENTITY) or "").strip()
+    if chime_entity and chime_entity.split(".")[0] not in CHIME_DOMAINS:
+        connection.send_result(msg["id"], _failure(EditError({CONF_CHIME_ENTITY: "chime_entity_domain"})))
+        return
+    if chime_entity:
+        data[CONF_CHIME_ENTITY] = chime_entity
+    else:
+        data.pop(CONF_CHIME_ENTITY, None)
     for key, (low, high) in SELFTEST_RANGES.items():
         try:
             value = int(data.get(key, entry.data.get(key, DEFAULT_SELFTEST[key])))
@@ -1006,7 +1060,7 @@ def ws_arm_check(hass: HomeAssistant, connection: websocket_api.ActiveConnection
 
 @callback
 def async_register_commands(hass: HomeAssistant) -> None:
-    for command in (ws_get, ws_about, ws_tablet, ws_discover, ws_new_sensors_dismiss, ws_practice, ws_walktest, ws_discover_report, ws_readiness, ws_log, ws_log_export, ws_selftest, ws_heartbeat, ws_panel_unlock, ws_panel_clear_lock, ws_dashboard, ws_add_phone, ws_create_default_groups, ws_subscribe, ws_save, ws_save_many, ws_delete, ws_save_settings, ws_siren_preset, ws_backups, ws_backup_restore, ws_export, ws_import, ws_arm_check):
+    for command in (ws_get, ws_about, ws_tablet, ws_discover, ws_new_sensors_dismiss, ws_alarm_memory_clear, ws_practice, ws_walktest, ws_discover_report, ws_readiness, ws_log, ws_log_export, ws_selftest, ws_heartbeat, ws_panel_unlock, ws_panel_clear_lock, ws_dashboard, ws_add_phone, ws_create_default_groups, ws_subscribe, ws_save, ws_save_many, ws_delete, ws_save_settings, ws_siren_preset, ws_backups, ws_backup_restore, ws_export, ws_import, ws_arm_check):
         websocket_api.async_register_command(hass, command)
 
 

@@ -119,6 +119,7 @@ class VigilAlarmPanel(AlarmControlPanelEntity):
             # A plain number for displays such as the ESPHome panel. The names of sensors for a panel are in
             # its profile entity, and only while it may show them.
             "problems_count": len(snap["problems"]),
+            **self._manager.alarmmemory.attributes(),  # what the last alarm was, and which sensors it passed
         }
 
     @property

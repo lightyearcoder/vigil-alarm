@@ -66,6 +66,7 @@ const TXT = {
     summary: { always: "{cls}, altijd actief", instant: "direct", delayed: "vertraagd ({s} s)", follower: "volger", and: "en", watching: "{type}, bewaakt in {modes}", nowhere: "{type}, bewaakt in geen enkele modus" },
     whatsNew: "nieuw", batteryLow: "laag", batteryOk: "ok",
     copySuffix: " (kopie)",
+    memory: { title: "Laatste alarm", running: "Het alarm loopt nog.", endedBy: "Uitgeschakeld om {time} door {who}.", cancelled: "Geannuleerd als vals alarm.", cause: "Oorzaak", first: "Eerste sensor", path: "Route door het huis", pathIntro: "Elke sensor die openging vanaf het begin van het alarm tot het uitschakelen, in volgorde. Ook sensoren die in deze modus niet meetelden of omzeild waren staan erbij: samen laten ze zien waar iemand is geweest.", time: "Tijd", sensor: "Sensor", room: "Ruimte", counted: "Telde mee", notCounted: "Telde niet mee", times: "{n}× geopend", clear: "Alarmgeheugen wissen", cleared: "Alarmgeheugen gewist", noRoom: "geen ruimte ingesteld", empty: "Geen sensor geopend (alleen de eerste melding).", steps: "{n} stappen", more: "Alleen de eerste {n} stappen worden bewaard." },
     practice: { chip: "Oefenmodus", title: "Oefenen en testen", text: "Oefenmodus: het alarm werkt als altijd (aftellen, afgaan, de panelen tonen het) maar er klinkt geen sirene en er gaat geen melding uit. Alles staat in het logboek, gemarkeerd als oefening. Het stopt na 30 minuten, of zodra je uitschakelt.", start: "Start oefenmodus", stop: "Stop oefenmodus", left: "Nog {n} min.", needsOff: "Schakel het alarm eerst uit.",
       walk: "Looptest: loop met het alarm uit langs de deuren, ramen en bewegingsmelders; elke sensor die reageert wordt afgevinkt. Alleen inbraaksensoren doen mee (brand-, gas-, water- en sabotagesensoren staan altijd aan en hebben hun eigen test).", walkStart: "Start looptest", walkTitle: "Looptest", walkRunning: "Open elke deur of raam en loop langs elke bewegingsmelder. {n} van {total} gezien.", walkStop: "Stop de test", walkDone: "Klaar: {seen} van {total} gezien.", walkAgain: "Opnieuw", walkMissing: "Niet gezien", walkReason: { no_response: "reageerde niet", unavailable: "is niet beschikbaar" }, walkSeen: "Gezien", walkNone: "Alle sensoren hebben gereageerd.", walkLast: "Laatste looptest: {seen} van {total} gezien ({time}).", close: "Sluiten" },
     wizard: {
@@ -100,6 +101,7 @@ const TXT = {
     retry: "Opnieuw proberen",
     sections: {
       alarm: ["Modi en vertragingen", "Welke modi je gebruikt en hoe lang je hebt om te vertrekken, binnen te komen en hoe lang het alarm duurt."],
+      chime: ["Deurbel", "Een kort geluid als een sensor met het vinkje Deurbel opengaat terwijl het alarm uit is."],
       codes: ["Codes", "Of een code nodig is om in te schakelen en hoe lang een code minstens moet zijn."],
       startup: ["Opstarten", "Na een herstart van Home Assistant wacht Vigil tot al je sensoren beschikbaar zijn (bijvoorbeeld MQTT of Zigbee die nog opstarten) voordat het een sensor als weggevallen meldt of er een alarm van maakt. Zijn ze na deze tijd nog weg, dan volgt de melding wel."],
       lock: ["Vergrendeling", "Wat er gebeurt na foute codes, per paneel: eerst een korte vergrendeling, dan langere, en daarna een permanente die alleen weggaat met Blokkade opheffen bij Panelen. Een goede code begint weer bij nul."],
@@ -120,7 +122,7 @@ const TXT = {
     cols: {
       name: "Naam", entity: "Entiteit", cls: "Klasse", type: "Type", groups: "Sensorgroepen", rule: "Bevestigingsregel", status: "Status", battery: "Batterij",
       modes: "Actief in modi", sensors: "Sensoren", suggest: "Voorstel voor", condition: "Voorwaarde", escalate: "Onbevestigd melden",
-      code: "Code", tags: "Tags", bypass: "Omzeilen", tamper: "Sabotage omzeilen",
+      code: "Code", duress: "Dwangcode", tags: "Tags", bypass: "Omzeilen", tamper: "Sabotage omzeilen",
       service: "Dienst", categories: "Categorieën", delay: "Vertraging",
       device: "Apparaat", causes: "Bij", maxdur: "Max. duur",
       panelId: "Paneel-id", conn: "Verbinding", allowed: "Beperkingen",
@@ -130,7 +132,7 @@ const TXT = {
     condition: "{n} binnen {s} s",
     fields: {
       name: "Naam", entity_id: "Entiteit (binary sensor)", cls: "Klasse", type: "Type", sensor_groups: "Sensorgroepen", at_arm_open: "Als open bij einde uitlooptijd",
-      entry_delay: "Inlooptijd (leeg = standaard)", gas_type: "Soort gas", on_unavailable: "Als de sensor onbereikbaar wordt", battery_entity: "Batterijsensor", tamper_entity: "Sabotage-entiteit (optioneel)",
+      entry_delay: "Inlooptijd (leeg = standaard)", gas_type: "Soort gas", on_unavailable: "Als de sensor onbereikbaar wordt", battery_entity: "Batterijsensor", tamper_entity: "Sabotage-entiteit (optioneel)", chime: "Deurbel: laat een geluid horen als deze sensor opengaat terwijl het alarm uit is", duress_code: "Dwangcode (optioneel)",
       "sensor_group.modes": "Actief in modi", suggest_for: "Voorstellen voor nieuwe sensoren",
       sensors: "Sensoren", required: "Benodigde sensoren", window: "Tijdvenster", escalate: "Melden als onbevestigd",
       code: "Code", tags: "Tags (komma-gescheiden)", allowed_modes: "Mag bedienen in modi (leeg = alle)", may_bypass: "Mag sensoren omzeilen", may_bypass_tamper: "Mag sabotage omzeilen",
@@ -140,7 +142,7 @@ const TXT = {
       tone: "Toon", volume: "Volume", preset: "Voorinstelling",
       device: "Soort apparaat", panel_id: "Naam van het ESPHome-apparaat (paneel-id)", ha_user: "Home Assistant-account (tablet of telefoon)", language: "Taal", can_disarm: "Mag uitschakelen (met code)", can_bypass: "Mag sensoren omzeilen (met code)", can_silence: "Mag dempen en bevestigen", sensor_list: "Sensorlijst tonen", unlock_seconds: "Ontgrendeld blijft (seconden)", watch: "Bewaken of dit paneel bereikbaar is (melding als het wegvalt)", blocked: "Paneel geblokkeerd", "panel.code": "Installateurscode van dit paneel (leeg = geen)", "panel.allowed_modes": "Mag inschakelen in modi (leeg = alle)",
       "s.modes": "Beschikbare modi", exit_delay_home: "Uitlooptijd thuis", exit_delay_away: "Uitlooptijd weg", exit_delay_night: "Uitlooptijd nacht",
-      default_entry_delay: "Standaard inlooptijd", trigger_time: "Alarmduur (0 = tot uitschakelen)", battery_threshold: "Batterijgrens", backup_versions: "Aantal bewaarde versies", code_arm_required: "Code nodig om in te schakelen", startup_wait_seconds: "Maximaal wachten op sensoren na een herstart (seconden)", lock_tries_1: "Foute codes voor de eerste vergrendeling", lock_wait_1: "Eerste vergrendeling duurt (minuten)", lock_tries_2: "Daarna foute codes voor de tweede vergrendeling", lock_wait_2: "Tweede vergrendeling duurt (minuten)", lock_tries_3: "Daarna foute codes voor de derde vergrendeling", lock_wait_3: "Derde vergrendeling duurt (minuten)", lock_tries_4: "Daarna foute codes voor de permanente vergrendeling", screen_off_seconds: "Scherm uit na (seconden zonder aanraking)", screen_off_on_alarm: "Scherm ook uit laten gaan tijdens een alarm", min_code_length: "Minimale codelengte (cijfers/tekens)", log_retention_days: "Logboek bewaren (dagen)", selftest_interval_days: "Herinnering sirenetest (dagen, 0 = uit)", selftest_siren_seconds: "Sirene klinkt bij test (seconden)", selftest_auto: "Sirene zelf laten klinken voor de test", selftest_window_start: "Test niet voor (uur)", selftest_window_end: "Test niet na (uur)", heartbeat_url: "Hartslag-adres (leeg = uit)", heartbeat_interval_minutes: "Minuten tussen hartslagen",
+      default_entry_delay: "Standaard inlooptijd", trigger_time: "Alarmduur (0 = tot uitschakelen)", abort_seconds: "Annuleervenster na het afgaan van de sirene (seconden, 0 = uit)", chime_entity: "Deurbel: wat laat het geluid horen", chime_seconds: "Deurbel klinkt (seconden)", battery_threshold: "Batterijgrens", backup_versions: "Aantal bewaarde versies", code_arm_required: "Code nodig om in te schakelen", startup_wait_seconds: "Maximaal wachten op sensoren na een herstart (seconden)", lock_tries_1: "Foute codes voor de eerste vergrendeling", lock_wait_1: "Eerste vergrendeling duurt (minuten)", lock_tries_2: "Daarna foute codes voor de tweede vergrendeling", lock_wait_2: "Tweede vergrendeling duurt (minuten)", lock_tries_3: "Daarna foute codes voor de derde vergrendeling", lock_wait_3: "Derde vergrendeling duurt (minuten)", lock_tries_4: "Daarna foute codes voor de permanente vergrendeling", screen_off_seconds: "Scherm uit na (seconden zonder aanraking)", screen_off_on_alarm: "Scherm ook uit laten gaan tijdens een alarm", min_code_length: "Minimale codelengte (cijfers/tekens)", log_retention_days: "Logboek bewaren (dagen)", selftest_interval_days: "Herinnering sirenetest (dagen, 0 = uit)", selftest_siren_seconds: "Sirene klinkt bij test (seconden)", selftest_auto: "Sirene zelf laten klinken voor de test", selftest_window_start: "Test niet voor (uur)", selftest_window_end: "Test niet na (uur)", heartbeat_url: "Hartslag-adres (leeg = uit)", heartbeat_interval_minutes: "Minuten tussen hartslagen",
     },
     helpMore: {
       at_arm_open: "Wat er gebeurt als deze sensor nog open staat wanneer de uitlooptijd voorbij is:\n• Omzeilen met melding (standaard): het alarm gaat aan zonder deze sensor en je krijgt een melding. Zodra de sensor dicht gaat, bewaakt hij weer.\n• Wachten tot dicht: het alarm gaat aan en deze sensor wordt genegeerd tot hij één keer dicht is geweest, zonder melding. Daarna bewaakt hij weer.\n• Inschakelen weigeren: het alarm gaat niet aan en je ziet welke sensor open staat. Sluit hem eerst.\n• Inlooptijd starten: het alarm gaat aan en de open sensor telt meteen als geactiveerd. Een directe sensor geeft alarm, bij een vertraagde sensor start de inlooptijd.",
@@ -148,6 +150,11 @@ const TXT = {
     },
     moreInfo: "Meer uitleg",
     help: {
+      duress_code: "Een tweede code voor als iemand je dwingt het alarm uit te zetten. Hij zet het alarm gewoon uit en er is niets aan te zien: de sirene blijft stil. Ondertussen gaat er een stille melding naar de kanalen met de soort melding Dwang. Moet anders zijn dan alle andere codes.",
+      chime: "Gaat de sensor open terwijl het alarm uit staat, dan klinkt er kort een geluid via wat je bij de instellingen hebt gekozen. Geen alarm, geen melding, niets in het logboek. Is het alarm aan, dan gebeurt er niets.",
+      abort_seconds: "Wie binnen zoveel seconden nadat de sirene is afgegaan een geldige code invoert, heeft een vals alarm veroorzaakt: de sirene stopt en er gaat een melding 'geannuleerd' uit. 0 zet dit uit. Geldt niet voor brand, gas en sabotage.",
+      chime_entity: "Een sirene, schakelaar, lamp, knop of script dat een geluid laat horen. Leeg laten kan ook: de gebeurtenis Deurbel staat dan nog wel op de gebeurtenis-entiteit, voor een eigen automatisering (bijvoorbeeld een bericht op een speaker).",
+      chime_seconds: "Hoe lang een sirene, schakelaar of lamp aan blijft. Bij een knop of script heeft dit geen effect.",
       may_bypass: "Zonder dit recht kan deze gebruiker een sensor niet omzeilen en ook niet terugzetten, ook niet met een goede code. Een beheerder in Home Assistant mag altijd.",
       screen_off_seconds: "Geldt voor alle ESPHome-panelen. Was er een half ingetikte code of een open lijst, dan gaat het paneel eerst na deze tijd terug naar het hoofdscherm en gaat het scherm pas na nog eens deze tijd uit.",
       screen_off_on_alarm: "Uit: het scherm blijft aan zolang er een alarm loopt, zodat het ALARM en de oorzaak zichtbaar blijven. Aan: het scherm gaat dan ook uit. Tijdens het aftellen om in te schakelen of binnen te komen gaat het scherm nooit uit.",
@@ -161,7 +168,7 @@ const TXT = {
       code: "Leeg laten = ongewijzigd.",
       device: "ESPHome-paneel: een scherm met eigen firmware, herkend aan de naam van het ESPHome-apparaat. Tablet of telefoon: een apparaat met de Home Assistant-app of -browser, herkend aan het account waarmee het is ingelogd.",
       ha_user: "Voor een tablet of telefoon: het account waarmee het apparaat is ingelogd. Vigil herkent het apparaat aan dat account, niet aan een tekst, dus dat kan niet worden nagemaakt. Een beheerder mag ook, maar let op: de instellingen van dit paneel gelden dan voor alles wat dat account doet, op elk apparaat waar het is ingelogd, en Vigil geeft het account hier geen beheerdersrechten (een code is altijd nodig). Beter is een tweede, gewoon account voor dagelijks gebruik.",
-      removeCode: "Code verwijderen",
+      removeCode: "Code verwijderen", removeDuress: "Dwangcode verwijderen",
       tags: "Tags hebben geen functie: bedien het alarm met een code.",
       categories: "Kies welke berichten dit kanaal krijgt.",
       delay: "Alleen voor alarmen: eerst wachten, bijvoorbeeld om alleen na een tijd een tweede apparaat te melden.",
@@ -177,7 +184,7 @@ const TXT = {
       at_arm_open: { bypass: "Omzeilen met melding", wait_clear: "Wachten tot dicht", refuse: "Inschakelen weigeren", pending: "Inlooptijd starten" },
       gas_type: { co: "Koolmonoxide", natural_gas: "Aardgas", lpg: "LPG", other: "Anders" },
       on_unavailable: { default: "Standaard van de klasse", block: "Inschakelen blokkeren", notify: "Alleen melden", trigger: "Alarm geven", bypass: "Toch inschakelen (omzeilen)" },
-      categories: { alarm: "Alarm", pending: "Inlooptijd", arming: "In- en uitschakelen", fault: "Storingen en meldingen", technical: "Technische alarmen (water)" },
+      categories: { alarm: "Alarm", pending: "Inlooptijd", arming: "In- en uitschakelen", fault: "Storingen en meldingen", technical: "Technische alarmen (water)", duress: "Dwang (stil alarm)" },
       causes: { intrusion: "Inbraak", fire: "Brand", gas: "Gas", tamper: "Sabotage", fault: "Sensorstoring" },
       cause: { intrusion: "Inbraak", fire: "Brand", gas: "Gas", tamper: "Sabotage" },
       mode: { home: "Thuis", away: "Weg", night: "Nacht" },
@@ -213,7 +220,7 @@ const TXT = {
       entity_in_use: "Deze entiteit is al een sensor.", tamper_same_entity: "De sabotage-entiteit moet een andere zijn dan de sensor zelf.", tamper_entity_in_use: "Deze entiteit is al een sensor.",
       no_sensor_group: "Kies minstens één sensorgroep.", unknown_sensor_group: "Onbekende sensorgroep.",
       unknown_mode: "Onbekende modus.", unknown_suggestion: "Onbekende keuze.",
-      backup_versions_range: "Kies een aantal van {min} tot {max}.", code_in_use: "Deze code is al in gebruik.", code_too_short: "De code moet minstens {min} tekens hebben (instelbaar bij Instellingen).", code_length_range: "Kies een waarde van {min} tot {max}.", screen_off_range: "Kies een aantal seconden van {min} tot {max}.", startup_wait_range: "Kies een aantal seconden van {min} tot {max}.", lock_tries_range: "Kies een aantal keren van {min} tot {max}.", lock_wait_range: "Kies een aantal minuten van {min} tot {max}.", log_retention_range: "Kies een aantal dagen van {min} tot {max}.", selftest_range: "Kies een waarde van {min} tot {max}.", selftest_window: "Het laatste uur moet na het vroegste uur liggen.", heartbeat_url_invalid: "Dit is geen webadres. Het moet beginnen met http:// of https://.", heartbeat_range: "Kies een aantal minuten van {min} tot {max}.", tag_in_use: "Deze tag is al in gebruik.", no_credential: "Geef een code of minstens één tag op.",
+      backup_versions_range: "Kies een aantal van {min} tot {max}.", code_in_use: "Deze code is al in gebruik.", code_too_short: "De code moet minstens {min} tekens hebben (instelbaar bij Instellingen).", code_length_range: "Kies een waarde van {min} tot {max}.", screen_off_range: "Kies een aantal seconden van {min} tot {max}.", startup_wait_range: "Kies een aantal seconden van {min} tot {max}.", lock_tries_range: "Kies een aantal keren van {min} tot {max}.", lock_wait_range: "Kies een aantal minuten van {min} tot {max}.", log_retention_range: "Kies een aantal dagen van {min} tot {max}.", selftest_range: "Kies een waarde van {min} tot {max}.", selftest_window: "Het laatste uur moet na het vroegste uur liggen.", heartbeat_url_invalid: "Dit is geen webadres. Het moet beginnen met http:// of https://.", heartbeat_range: "Kies een aantal minuten van {min} tot {max}.", tag_in_use: "Deze tag is al in gebruik.", no_credential: "Geef een code of minstens één tag op.", duress_needs_code: "Een dwangcode hoort bij een gewone code: geef eerst een code op.", duress_no_channel: "Er is geen meldingskanaal met de soort melding Dwang. Zonder dat komt een stil alarm bij niemand aan. Voeg dat eerst toe.", seconds_range: "Kies een aantal seconden van {min} tot {max}.", chime_entity_domain: "Kies een sirene, schakelaar, lamp, knop of script.",
       service_not_found: "Deze notify-dienst bestaat niet (meer).", no_categories: "Kies minstens één soort melding.",
       no_causes: "Kies minstens één oorzaak.", tone_without_entity: "Een toon kan alleen met een toonkeuze-entiteit.", volume_without_entity: "Een volume kan alleen met een volume-entiteit.",
       sensor_in_rule: "Deze sensor zit nog in bevestigingsregel: {rules}. Haal hem daar eerst uit.",
@@ -283,6 +290,7 @@ const TXT = {
     summary: { always: "{cls}, always on", instant: "instant", delayed: "delayed ({s} s)", follower: "follower", and: "and", watching: "{type}, watching in {modes}", nowhere: "{type}, not watching in any mode" },
     whatsNew: "new", batteryLow: "low", batteryOk: "ok",
     copySuffix: " (copy)",
+    memory: { title: "Last alarm", running: "The alarm is still going.", endedBy: "Disarmed at {time} by {who}.", cancelled: "Cancelled as a false alarm.", cause: "Cause", first: "First sensor", path: "Path through the house", pathIntro: "Every sensor that opened from the start of the alarm until it was disarmed, in order. Sensors that did not count in this mode, or were bypassed, are included: together they show where someone has been.", time: "Time", sensor: "Sensor", room: "Room", counted: "Counted", notCounted: "Did not count", times: "opened {n}×", clear: "Clear alarm memory", cleared: "Alarm memory cleared", noRoom: "no room set", empty: "No sensor opened (only the first report).", steps: "{n} steps", more: "Only the first {n} steps are kept." },
     practice: { chip: "Practice mode", title: "Practice and test", text: "Practice mode: the alarm works as always (it counts down, it triggers, the panels show it) but no siren sounds and no message goes out. Everything is in the log, marked as practice. It stops after 30 minutes, or as soon as you disarm.", start: "Start practice mode", stop: "Stop practice mode", left: "{n} min left.", needsOff: "Switch the alarm off first.",
       walk: "Walk test: with the alarm off, walk along the doors, windows and motion sensors; every sensor that reacts is ticked off. Only intrusion sensors take part (fire, gas, water and tamper sensors are always on and have their own test).", walkStart: "Start walk test", walkTitle: "Walk test", walkRunning: "Open each door or window and walk past each motion sensor. {n} of {total} seen.", walkStop: "Stop the test", walkDone: "Done: {seen} of {total} seen.", walkAgain: "Again", walkMissing: "Not seen", walkReason: { no_response: "did not react", unavailable: "is unavailable" }, walkSeen: "Seen", walkNone: "All sensors reacted.", walkLast: "Last walk test: {seen} of {total} seen ({time}).", close: "Close" },
     wizard: {
@@ -317,6 +325,7 @@ const TXT = {
     retry: "Try again",
     sections: {
       alarm: ["Modes and delays", "Which modes you use, and how long you have to leave, to come in, and how long the alarm lasts."],
+      chime: ["Chime", "A short sound when a sensor with the Chime box ticked opens while the alarm is off."],
       codes: ["Codes", "Whether a code is needed to arm and how long a code must be at least."],
       startup: ["Start-up", "After Home Assistant restarts, Vigil waits until all your sensors are available (for example MQTT or Zigbee still starting) before it reports a sensor as lost or raises an alarm for it. If they are still gone after this time, the report follows."],
       lock: ["Locking", "What happens after wrong codes, per panel: first a short lock, then longer ones, then a permanent lock that only goes away with Clear lock under Panels. A right code starts again from zero."],
@@ -337,7 +346,7 @@ const TXT = {
     cols: {
       name: "Name", entity: "Entity", cls: "Class", type: "Type", groups: "Sensor groups", rule: "Confirmation rule", status: "Status", battery: "Battery",
       modes: "Active in modes", sensors: "Sensors", suggest: "Suggested for", condition: "Condition", escalate: "Report unconfirmed",
-      code: "Code", tags: "Tags", bypass: "Bypass", tamper: "May bypass tamper",
+      code: "Code", duress: "Duress code", tags: "Tags", bypass: "Bypass", tamper: "May bypass tamper",
       service: "Service", categories: "Categories", delay: "Delay",
       device: "Device", causes: "For", maxdur: "Max. duration",
       panelId: "Panel id", conn: "Connection", allowed: "Restrictions",
@@ -347,7 +356,7 @@ const TXT = {
     condition: "{n} within {s} s",
     fields: {
       name: "Name", entity_id: "Entity (binary sensor)", cls: "Class", type: "Type", sensor_groups: "Sensor groups", at_arm_open: "If open when exit delay ends",
-      entry_delay: "Entry delay (empty = default)", gas_type: "Type of gas", on_unavailable: "When the sensor becomes unreachable", battery_entity: "Battery sensor", tamper_entity: "Tamper entity (optional)",
+      entry_delay: "Entry delay (empty = default)", gas_type: "Type of gas", on_unavailable: "When the sensor becomes unreachable", battery_entity: "Battery sensor", tamper_entity: "Tamper entity (optional)", chime: "Chime: sound when this sensor opens while the alarm is off", duress_code: "Duress code (optional)",
       "sensor_group.modes": "Active in modes", suggest_for: "Suggest for new sensors",
       sensors: "Sensors", required: "Sensors needed", window: "Time window", escalate: "Report when unconfirmed",
       code: "Code", tags: "Tags (comma separated)", allowed_modes: "May operate in modes (empty = all)", may_bypass: "May bypass sensors", may_bypass_tamper: "May bypass tamper",
@@ -357,7 +366,7 @@ const TXT = {
       tone: "Tone", volume: "Volume", preset: "Preset",
       device: "Kind of device", panel_id: "Name of the ESPHome device (panel id)", ha_user: "Home Assistant account (tablet or phone)", language: "Language", can_disarm: "May disarm (with a code)", can_bypass: "May bypass sensors (with a code)", can_silence: "May silence and acknowledge", sensor_list: "Show the sensor list", unlock_seconds: "Stays unlocked for (seconds)", watch: "Watch whether this panel is reachable (notify when it drops out)", blocked: "Panel blocked", "panel.code": "Installer code of this panel (empty = none)", "panel.allowed_modes": "May arm in modes (empty = all)",
       "s.modes": "Available modes", exit_delay_home: "Exit delay home", exit_delay_away: "Exit delay away", exit_delay_night: "Exit delay night",
-      default_entry_delay: "Default entry delay", trigger_time: "Alarm duration (0 = until disarmed)", battery_threshold: "Battery threshold", backup_versions: "Number of versions kept", code_arm_required: "Code required to arm", startup_wait_seconds: "Longest wait for sensors after a restart (seconds)", lock_tries_1: "Wrong codes before the first lock", lock_wait_1: "First lock lasts (minutes)", lock_tries_2: "Then wrong codes before the second lock", lock_wait_2: "Second lock lasts (minutes)", lock_tries_3: "Then wrong codes before the third lock", lock_wait_3: "Third lock lasts (minutes)", lock_tries_4: "Then wrong codes before the permanent lock", screen_off_seconds: "Screen off after (seconds without touch)", screen_off_on_alarm: "Also let the screen go dark during an alarm", log_retention_days: "Keep the log (days)", selftest_interval_days: "Siren test reminder (days, 0 = off)", selftest_siren_seconds: "Siren sounds in a test (seconds)", selftest_auto: "Sound the siren by itself for the test", selftest_window_start: "Not before (hour)", selftest_window_end: "Not after (hour)", heartbeat_url: "Heartbeat address (empty = off)", heartbeat_interval_minutes: "Minutes between heartbeats", min_code_length: "Minimum code length (characters)",
+      default_entry_delay: "Default entry delay", trigger_time: "Alarm duration (0 = until disarmed)", abort_seconds: "Cancel window after the siren goes off (seconds, 0 = off)", chime_entity: "Chime: what makes the sound", chime_seconds: "Chime sounds for (seconds)", battery_threshold: "Battery threshold", backup_versions: "Number of versions kept", code_arm_required: "Code required to arm", startup_wait_seconds: "Longest wait for sensors after a restart (seconds)", lock_tries_1: "Wrong codes before the first lock", lock_wait_1: "First lock lasts (minutes)", lock_tries_2: "Then wrong codes before the second lock", lock_wait_2: "Second lock lasts (minutes)", lock_tries_3: "Then wrong codes before the third lock", lock_wait_3: "Third lock lasts (minutes)", lock_tries_4: "Then wrong codes before the permanent lock", screen_off_seconds: "Screen off after (seconds without touch)", screen_off_on_alarm: "Also let the screen go dark during an alarm", log_retention_days: "Keep the log (days)", selftest_interval_days: "Siren test reminder (days, 0 = off)", selftest_siren_seconds: "Siren sounds in a test (seconds)", selftest_auto: "Sound the siren by itself for the test", selftest_window_start: "Not before (hour)", selftest_window_end: "Not after (hour)", heartbeat_url: "Heartbeat address (empty = off)", heartbeat_interval_minutes: "Minutes between heartbeats", min_code_length: "Minimum code length (characters)",
     },
     helpMore: {
       at_arm_open: "What happens if this sensor is still open when the exit delay ends:\n• Bypass with a notice (default): the alarm arms without this sensor and you get a notice. As soon as the sensor closes, it is watched again.\n• Wait until closed: the alarm arms and this sensor is ignored until it has closed once, without a notice. After that it is watched again.\n• Refuse to arm: the alarm does not arm and you see which sensor is open. Close it first.\n• Start entry delay: the alarm arms and the open sensor counts as triggered right away. A direct sensor sounds the alarm, a delayed sensor starts the entry delay.",
@@ -365,6 +374,11 @@ const TXT = {
     },
     moreInfo: "More information",
     help: {
+      duress_code: "A second code for when someone forces you to switch the alarm off. It switches the alarm off as usual and nothing shows: the siren stays quiet. Meanwhile a silent message goes to the channels with the kind of message Duress. It must differ from every other code.",
+      chime: "When the sensor opens while the alarm is off, a short sound plays through what you chose in the settings. No alarm, no message, nothing in the log. When the alarm is on, nothing happens.",
+      abort_seconds: "Whoever enters a valid code within this many seconds after the siren went off has caused a false alarm: the siren stops and a 'cancelled' message goes out. 0 switches this off. Does not apply to fire, gas and tamper.",
+      chime_entity: "A siren, switch, light, button or script that makes a sound. You can leave it empty: the Chime event is still on the event entity, for an automation of your own (for example a message on a speaker).",
+      chime_seconds: "How long a siren, switch or light stays on. No effect for a button or script.",
       may_bypass: "Without this right the user can neither bypass nor restore a sensor, even with a right code. A Home Assistant administrator always may.",
       screen_off_seconds: "Applies to all ESPHome panels. With a half typed code or an open list the panel first returns to the main page after this time, and the screen goes dark after the same time again.",
       screen_off_on_alarm: "Off: the screen stays on while an alarm is going, so the ALARM and its cause stay visible. On: the screen goes dark then too. During the countdown to arm or to enter, the screen never goes dark.",
@@ -378,7 +392,7 @@ const TXT = {
       code: "Leave empty to keep it unchanged.",
       device: "ESPHome panel: a screen with its own firmware, recognised by the name of the ESPHome device. Tablet or phone: a device running the Home Assistant app or browser, recognised by the account it is logged in as.",
       ha_user: "For a tablet or phone: the account the device is logged in as. Vigil recognises the device by that account, not by a text, so it cannot be imitated. An administrator may be chosen too, but note: the settings of this panel then apply to everything that account does, on every device it is logged in on, and Vigil gives the account no administrator rights here (a code is always needed). A second, ordinary account for daily use is better.",
-      removeCode: "Remove code",
+      removeCode: "Remove code", removeDuress: "Remove duress code",
       tags: "Tags have no function: operate the alarm with a code.",
       categories: "Choose which messages this channel receives.",
       delay: "Alarms only: wait first, for example to notify a second device only after a while.",
@@ -394,7 +408,7 @@ const TXT = {
       at_arm_open: { bypass: "Bypass with a notice", wait_clear: "Wait until closed", refuse: "Refuse to arm", pending: "Start entry delay" },
       gas_type: { co: "Carbon monoxide", natural_gas: "Natural gas", lpg: "LPG", other: "Other" },
       on_unavailable: { default: "Class default", block: "Block arming", notify: "Notify only", trigger: "Raise alarm", bypass: "Arm anyway (bypass)" },
-      categories: { alarm: "Alarm", pending: "Entry delay", arming: "Arming and disarming", fault: "Faults and notices", technical: "Technical alarms (water)" },
+      categories: { alarm: "Alarm", pending: "Entry delay", arming: "Arming and disarming", fault: "Faults and notices", technical: "Technical alarms (water)", duress: "Duress (silent alarm)" },
       causes: { intrusion: "Intrusion", fire: "Fire", gas: "Gas", tamper: "Tamper", fault: "Sensor fault" },
       cause: { intrusion: "Intrusion", fire: "Fire", gas: "Gas", tamper: "Tamper" },
       mode: { home: "Home", away: "Away", night: "Night" },
@@ -430,7 +444,7 @@ const TXT = {
       entity_in_use: "This entity is already a sensor.", tamper_same_entity: "The tamper entity must be another one than the sensor itself.", tamper_entity_in_use: "This entity is already a sensor.",
       no_sensor_group: "Choose at least one sensor group.", unknown_sensor_group: "Unknown sensor group.",
       unknown_mode: "Unknown mode.", unknown_suggestion: "Unknown choice.",
-      backup_versions_range: "Choose a number from {min} to {max}.", code_in_use: "This code is already in use.", code_too_short: "The code must have at least {min} characters (set under Settings).", code_length_range: "Choose a value from {min} to {max}.", screen_off_range: "Choose a number of seconds from {min} to {max}.", startup_wait_range: "Choose a number of seconds from {min} to {max}.", lock_tries_range: "Choose a number of times from {min} to {max}.", lock_wait_range: "Choose a number of minutes from {min} to {max}.", log_retention_range: "Choose a number of days from {min} to {max}.", selftest_range: "Choose a value from {min} to {max}.", selftest_window: "The latest hour must be after the earliest hour.", heartbeat_url_invalid: "That is not a web address. It must start with http:// or https://.", heartbeat_range: "Choose a number of minutes from {min} to {max}.", tag_in_use: "This tag is already in use.", no_credential: "Enter a code or at least one tag.",
+      backup_versions_range: "Choose a number from {min} to {max}.", code_in_use: "This code is already in use.", code_too_short: "The code must have at least {min} characters (set under Settings).", code_length_range: "Choose a value from {min} to {max}.", screen_off_range: "Choose a number of seconds from {min} to {max}.", startup_wait_range: "Choose a number of seconds from {min} to {max}.", lock_tries_range: "Choose a number of times from {min} to {max}.", lock_wait_range: "Choose a number of minutes from {min} to {max}.", log_retention_range: "Choose a number of days from {min} to {max}.", selftest_range: "Choose a value from {min} to {max}.", selftest_window: "The latest hour must be after the earliest hour.", heartbeat_url_invalid: "That is not a web address. It must start with http:// or https://.", heartbeat_range: "Choose a number of minutes from {min} to {max}.", tag_in_use: "This tag is already in use.", no_credential: "Enter a code or at least one tag.", duress_needs_code: "A duress code goes with an ordinary code: enter a code first.", duress_no_channel: "There is no notification channel with the kind of message Duress. Without one a silent alarm reaches nobody. Add one first.", seconds_range: "Choose a number of seconds from {min} to {max}.", chime_entity_domain: "Choose a siren, switch, light, button or script.",
       service_not_found: "This notify service does not exist (any more).", no_categories: "Choose at least one kind of message.",
       no_causes: "Choose at least one cause.", tone_without_entity: "A tone needs a tone selection entity.", volume_without_entity: "A volume needs a volume entity.",
       sensor_in_rule: "This sensor is still in confirmation rule: {rules}. Remove it there first.",
@@ -997,6 +1011,37 @@ class VigilPanel extends HTMLElement {
       el("ul", { class: "plain" }, list), never ? el("p", { class: "note", text: w.neverBypass }) : null, el("p", { class: "note", text: w.hint }));
   }
 
+  // ---- the last alarm and the path through the house
+  _memoryCard() {
+    const t = this.t.memory;
+    const m = this._live && this._live.alarm_memory;
+    if (!m) return null;
+    const when = (ts) => new Date(ts * 1000).toLocaleString();
+    const clock = (ts) => new Date(ts * 1000).toLocaleTimeString();
+    const status = m.recording ? t.running
+      : m.cancelled ? t.cancelled
+      : m.ended ? fill(t.endedBy, { time: clock(m.ended), who: m.ended_by || "—" }) : "";
+    const cause = (this.t.opt.cause || {})[m.cause] || m.cause || "—";
+    const rows = (m.path || []).map((p) => el("tr", {},
+      el("td", { text: clock(p.t) }),
+      el("td", { text: p.name + (p.n > 1 ? " (" + fill(t.times, { n: p.n }) + ")" : "") }),
+      el("td", { text: p.area || t.noRoom }),
+      el("td", { text: p.counted ? t.counted : t.notCounted })));
+    const clear = async () => {
+      await this._call({ type: "vigil_alarm/alarm_memory_clear" });
+      this._toast(t.cleared);
+    };
+    return el("div", { class: "card" }, el("h2", { text: t.title }),
+      el("p", { class: m.recording ? "badge warn" : "muted", text: when(m.started) + " · " + cause + " · " + (m.sensor_name || "—") }),
+      status ? el("p", { class: "muted", text: status }) : null,
+      el("p", { class: "muted", text: t.pathIntro }),
+      rows.length ? el("div", { class: "tablewrap" }, el("table", {},
+        el("thead", {}, el("tr", {}, [t.time, t.sensor, t.room, ""].map((x) => el("th", { text: x })))),
+        el("tbody", {}, rows))) : el("p", { class: "muted", text: t.empty }),
+      m.steps >= 200 ? el("p", { class: "note", text: fill(t.more, { n: 200 }) }) : null,
+      m.recording ? null : el("button", { class: "btn", style: "margin-top:12px", text: t.clear, onclick: clear }));
+  }
+
   // ---- practice mode and walk test
   _practiceCard() {
     const t = this.t.practice;
@@ -1193,6 +1238,7 @@ class VigilPanel extends HTMLElement {
           el("h2", { text: t.tabs[k] }), el("div", { class: "stat", text: String(this._shown(k).length) })))),
       this._wizardCard(),
       this._newSensorsCard(),
+      this._memoryCard(),
       this._practiceCard(),
       this._whyCard(),
       this._readyCard(),
@@ -1249,6 +1295,7 @@ class VigilPanel extends HTMLElement {
       case "user": return [
         [C.name, (i) => i.title],
         [C.code, (i) => (i.has_code ? "✓" : t.none)],
+        [C.duress, (i) => (i.has_duress ? "✓" : t.none)],
         [C.tags, (i) => (i.data.tags && i.data.tags.length ? i.data.tags.length : t.none)],
         [C.modes, (i) => (i.data.allowed_modes && i.data.allowed_modes.length ? this._optList("allowed_modes", i.data.allowed_modes) : "*")],
         [C.bypass, (i) => (i.data.may_bypass !== false ? t.yes : t.no)],
@@ -1786,7 +1833,7 @@ class VigilPanel extends HTMLElement {
     if (copy) initial.name = item.title + t.copySuffix;
     if (prefill) Object.assign(initial, prefill);
     const editing = item && !copy;
-    const form = this._makeForm(schema, initial, { ctx: kind, kind, editing: !!editing, hasCode: !!(item && item.has_code && editing) });
+    const form = this._makeForm(schema, initial, { ctx: kind, kind, editing: !!editing, hasCode: !!(item && item.has_code && editing), hasDuress: !!(item && item.has_duress && editing) });
     const base = el("div");
     this._dialog(editing ? t.edit[kind] : t.add[kind], [base, form.node], (close) => {
       const saveBtn = el("button", { class: "btn primary", text: t.save });
@@ -1923,6 +1970,7 @@ class VigilPanel extends HTMLElement {
           } else if (v !== undefined) out[f.key] = v;
         }
         if (state.__remove_code) out.remove_code = true;
+        if (state.__remove_duress) out.remove_duress = true;
         return out;
       },
       showErrors: (res, baseNode) => {
@@ -1963,6 +2011,10 @@ class VigilPanel extends HTMLElement {
         const input = el("input", { type: f.type === "password" ? "password" : "text", value: state[key] || "", autocomplete: "off",
           oninput: (e) => { state[key] = e.target.value; } });
         if (f.type === "password") {
+          if (key === "duress_code") {
+            return wrap(input, opts.hasDuress ? el("label", { class: "inline", style: "margin-top:6px" },
+              el("input", { type: "checkbox", onchange: (e) => { state.__remove_duress = e.target.checked; } }), t.help.removeDuress) : null);
+          }
           return wrap(input, opts.hasCode ? el("label", { class: "inline", style: "margin-top:6px" },
             el("input", { type: "checkbox", onchange: (e) => { state.__remove_code = e.target.checked; } }), t.help.removeCode) : null);
         }

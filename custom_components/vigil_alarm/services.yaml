@@ -135,3 +135,9 @@ unlock_panel:
       required: true
       selector:
         text:
+clear_alarm_memory:
+  fields:
+    source:
+      required: false
+      selector:
+        text:

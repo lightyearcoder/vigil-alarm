@@ -29,7 +29,13 @@ from homeassistant.util import dt as dt_util
 
 from .items import Item, items_of
 from .const import (
+    CONF_ABORT_SECONDS,
     CONF_AT_ARM_OPEN,
+    CONF_CHIME,
+    CONF_CHIME_ENTITY,
+    CONF_CHIME_SECONDS,
+    DEFAULT_ABORT_SECONDS,
+    DEFAULT_CHIME_SECONDS,
     CONF_CLS,
     CONF_CODE_ARM_REQUIRED,
     CONF_HA_USER,
@@ -64,7 +70,7 @@ from .const import (
     SUBENTRY_SENSOR,
     SUBENTRY_SENSOR_GROUP,
 )
-from .credentials import find_user_by_code
+from .credentials import find_user_and_kind
 from .eventlog import EventLog
 from .notifier import Notifier
 from .heartbeat import Heartbeat
@@ -204,6 +210,14 @@ class VigilManager:
         self.backups = ConfigBackups(hass, entry)
         from .newsensors import NewSensors  # here: it reads from discovery, which reads from items
         self.new_sensors = NewSensors(hass, entry, self)
+        from .alarmmemory import AlarmMemory
+        self.alarmmemory = AlarmMemory(hass, self)
+        self._chime_sensors = {
+            sid for sid, sub in items_of(entry).items()
+            if sub.subentry_type == SUBENTRY_SENSOR and sub.data.get(CONF_CHIME)
+        }
+        self._chime_last: dict[str, float] = {}
+        self.auth_duress = False  # the last code that was checked was a duress code
         from .testing import Practice, WalkTest
         self.practice = Practice(hass, self)
         self.walktest = WalkTest(hass, self)
@@ -246,6 +260,7 @@ class VigilManager:
         await self.lockout.async_load()
         await self.panels.async_load()
         await self._async_restore()
+        await self.alarmmemory.async_load()  # after the restore: it looks at the state the alarm is in
         self._sync()
         if self.hass.is_running:
             self._start_feeding()
@@ -340,6 +355,7 @@ class VigilManager:
             self._unsub_timer = None
         await self._store.async_save(self.engine.export_state())
         await self.eventlog.async_flush()
+        await self.alarmmemory.async_flush()
         await self.lockout.async_flush()
         await self.panels.async_flush()
 
@@ -403,6 +419,10 @@ class VigilManager:
             if eid == entity_id:
                 self.engine.set_sensor(sid, value)
                 self.walktest.note(sid, value)
+                if not self.practice.active:
+                    self.alarmmemory.note(sid, value)
+                if value == "open" and sid in self._chime_sensors and not self._settling:
+                    self._chime(sid)
         if self._settling and not self._unavailable_sensors():
             self._finish_settle()
         self._after()
@@ -419,6 +439,7 @@ class VigilManager:
         self.eventlog.add(data)
         async_dispatcher_send(self.hass, SIGNAL_EVENT.format(self.entry.entry_id), data)
         if not self.practice.active:
+            self.alarmmemory.on_event(data)
             self.sirens.handle(data)
             self.notifier.handle(data)
         elif data.get("type") in ("triggered", "trigger_cause_changed"):
@@ -427,15 +448,19 @@ class VigilManager:
             self.practice.stop("disarmed")  # one round: a forgotten practice mode must not keep a real alarm silent
 
     @callback
-    def publish(self, type_: str, **fields: Any) -> None:
-        """Publish an event of the glue layer (not sent to the notifier)."""
+    def publish(self, type_: str, *, quiet: bool = False, **fields: Any) -> None:
+        """Publish an event of the glue layer (not sent to the notifier).
+
+        `quiet`: for the log and the notifier only. It does not become "the last event" and does not reach the event
+        entity, so nothing on a dashboard or a panel shows it (the duress code)."""
         data = {"t": self._wall(), "type": type_, **fields}
         if self.practice.active:
             data["practice"] = True
-        if type_ not in ROUTINE_EVENTS:  # the daily check must not replace "the last thing the alarm reported"
+        if type_ not in ROUTINE_EVENTS and not quiet:  # the daily check must not replace "the last thing the alarm reported"
             self.last_event = data
         self.eventlog.add(data)
-        async_dispatcher_send(self.hass, SIGNAL_EVENT.format(self.entry.entry_id), data)
+        if not quiet:
+            async_dispatcher_send(self.hass, SIGNAL_EVENT.format(self.entry.entry_id), data)
         if not self.practice.active:
             self.notifier.handle(data)  # ignores everything but the events it has a text for
 
@@ -486,9 +511,12 @@ class VigilManager:
             return None
         if self.lockout.refusal(source):  # before hashing: a locked control point also costs no CPU
             raise self.lock_error(source)
-        user = await self.hass.async_add_executor_job(find_user_by_code, code, self.users)
+        user, duress = await self.hass.async_add_executor_job(find_user_and_kind, code, self.users)
+        self.auth_duress = duress and user is not None
         if user is not None:
             self.lockout.record_success(source)
+            if duress:  # works like the normal code, and tells the channels quietly
+                self.publish("duress_used", quiet=True, user=user.title, source=source, action=action)
         else:
             if locked := self.lockout.record_failure(source):
                 self.publish_lock(locked, source, action)
@@ -613,9 +641,70 @@ class VigilManager:
         source = await self._operator(source, user_id, "disarm")
         self.panels.check(source, "disarm")
         user = await self._authenticate(code, required=True, source=source, action="disarm")
+        duress = self.auth_duress
         self._sync()
-        self.engine.disarm(user=self._actor(user, source))
+        cancelled = not duress and self._within_abort_window()
+        name = self._actor(user, source)
+        self.engine.disarm(user=name)
+        if cancelled:
+            self.alarmmemory.mark_cancelled()
+            self.publish("alarm_cancelled", user=name, source=source)
         self._after()
+
+    def _within_abort_window(self) -> bool:
+        """Is this a disarm soon enough after the siren went off to call it a false alarm?"""
+        seconds = int(self.entry.data.get(CONF_ABORT_SECONDS, DEFAULT_ABORT_SECONDS))
+        engine = self.engine
+        if seconds <= 0 or engine.state != "triggered" or engine.cause != "intrusion":
+            return False
+        started = self.alarmmemory.started
+        return bool(self.alarmmemory.recording and started and self._wall() - started <= seconds)
+
+    # ----------------------------------------------------------------- chime
+
+    @callback
+    def _chime(self, sensor_id: str) -> None:
+        """A door or window with the chime opened while the alarm is off: a short sound. No alarm, no message and no
+        line in the log; the event entity gets it, so an automation can do more (play a sound on a speaker)."""
+        if self.engine.state != "disarmed" or not self.ready:
+            return
+        now = self._wall()
+        if now - self._chime_last.get(sensor_id, 0) < 3:  # a contact that flickers rings once
+            return
+        self._chime_last[sensor_id] = now
+        async_dispatcher_send(
+            self.hass, SIGNAL_EVENT.format(self.entry.entry_id),
+            {"t": now, "type": "chime", "sensor": sensor_id, "sensor_name": self._sensor_name.get(sensor_id, sensor_id)},
+        )
+        if entity_id := self.entry.data.get(CONF_CHIME_ENTITY):
+            self.hass.async_create_task(self._async_ring(entity_id))
+
+    async def _async_ring(self, entity_id: str) -> None:
+        domain = entity_id.split(".")[0]
+        try:
+            if domain in ("button", "input_button"):
+                await self.hass.services.async_call(domain, "press", {"entity_id": entity_id}, blocking=True)
+            elif domain == "script":
+                await self.hass.services.async_call("script", "turn_on", {"entity_id": entity_id}, blocking=True)
+            else:
+                await self.hass.services.async_call(domain, "turn_on", {"entity_id": entity_id}, blocking=True)
+
+                @callback
+                def off(_now: datetime) -> None:
+                    self.hass.async_create_task(
+                        self.hass.services.async_call(domain, "turn_off", {"entity_id": entity_id})
+                    )
+
+                seconds = float(self.entry.data.get(CONF_CHIME_SECONDS, DEFAULT_CHIME_SECONDS))
+                async_call_later(self.hass, seconds, off)
+        except Exception as err:  # noqa: BLE001 - a chime that fails must never matter
+            _LOGGER.warning("Chime via %s failed: %s", entity_id, err)
+
+    async def async_clear_alarm_memory(self, source: str | None = None, user: str | None = None) -> None:
+        """Forget the last alarm. No code: it only wipes a note, it changes nothing in the alarm."""
+        if self.alarmmemory.clear():
+            self.publish("alarm_memory_cleared", user=user, source=source)
+            self._after()
 
     async def async_bypass(
         self, sensor_id: str, code: str | None, *, is_admin: bool, bypass: bool, source: str | None = None,

@@ -62,6 +62,8 @@ EVENT_MESSAGES = {
     "panel_online": ("fault", "panel_online"),
     "alarm_silenced": ("arming", "silenced"),
     "alarm_acknowledged": ("arming", "acknowledged"),
+    "alarm_cancelled": ("alarm", "cancelled"),
+    "duress_used": ("duress", "duress"),
 }
 # Events that end an alarm: pending escalations are cancelled.
 ENDING = {"disarmed", "trigger_ended"}
@@ -112,6 +114,8 @@ class Notifier:
         for channel in self.channels:
             if category not in channel.categories:
                 continue
+            if category == "alarm" and key == "cancelled" and channel.delay > 0:
+                continue  # an escalation channel never heard of this alarm
             if category == "alarm" and channel.delay > 0:
                 self._schedule(channel, message, category)
             else:
@@ -163,6 +167,7 @@ class Notifier:
         by = render(lang, "by", user=event["user"]) if event.get("user") else ""
         params: dict[str, Any] = {
             "sensor": event.get("sensor_name") or "-",
+            "user": event.get("user") or "-",
             "siren": event.get("siren", "-"),
             "name": event.get("name", "-"),
             "level": f"{event['level']:g}" if "level" in event else "-",
@@ -218,7 +223,7 @@ class Notifier:
 
     async def _async_send(self, channel: Channel, message: str, category: str) -> None:
         data: dict[str, Any] = {"title": text(self._lang(), "title"), "message": message}
-        if channel.priority and category == "alarm":
+        if channel.priority and category in ("alarm", "duress"):
             # Companion app format: critical on iOS, high priority on Android.
             data["data"] = {
                 "push": {"interruption-level": "critical", "sound": {"name": "default", "critical": 1, "volume": 1.0}},

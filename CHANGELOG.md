@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.3
+
+- **Alarm memory with the path.** From the start of an entry delay until the alarm is disarmed, Vigil writes down **every sensor that opens**, with time and room (the Home Assistant area), including sensors that do not count in the armed mode and bypassed ones. The *Overview* tab has a card **Last alarm** with the steps in order and for each whether it counted; the log has `alarm_sensor_seen` for the ones that did not (those that counted are `sensor_faulted` as before). The Vigil card shows *Last alarm: 14:03 Front door → Hall → Living room* and the alarm entity has the attribute `last_alarm`. The memory survives a restart and stays until it is cleared (no code needed: the Overview card in the panel, the service `vigil_alarm.clear_alarm_memory` or an automation) or the next alarm replaces it. The touch panel does not show it yet.
+- **Cancel window for false alarms.** A valid code within 60 seconds after the siren goes off (setting *Cancel window*, 0 = off) marks the alarm as a false alarm: the siren stops, the memory says *cancelled* and a message goes to the alarm channels. New event `alarm_cancelled`. Intrusion alarms only.
+- **Duress code.** A second code per user (*Duress code*) that disarms like the normal one, with nothing to see anywhere and a quiet siren, while the channels with the new kind of message **Duress** get a silent message. Vigil refuses a duress code when no such channel exists, and when it equals another code. The event `duress_used` is only in the log and goes to those channels, never to the event entity or the last event. A duress disarm never counts as a cancelled alarm.
+- **Chime.** *Chime* on a sensor: when it opens with the alarm off, a short sound through a siren, switch, light, button or script chosen under *Settings → Chime*. No alarm, no message, no log line. The event `chime` is on the event entity for your own automations.
+- New events: `alarm_cancelled`, `duress_used`, `alarm_sensor_seen`, `alarm_memory_cleared`, `chime`. New settings: `abort_seconds`, `chime_entity`, `chime_seconds`.
+
 ## 0.5.2
 
 - **Practice mode.** On the Overview tab, *Start practice mode* (only while the alarm is off) lets the alarm run for real, but no siren sounds and no message goes out. Everything is in the log, marked `practice`; the panel shows a chip, the Vigil card a line, and the alarm entity has the attribute `practice`. It ends at the first disarm, after 30 minutes, or with *Stop practice mode*, and after a restart it is off. When it runs out while the alarm is armed, the alarm stays armed and works for real; if it is going off at that moment, siren and messages start then. New events `practice_started` and `practice_ended`.

@@ -14,7 +14,7 @@ from homeassistant.core import HomeAssistant
 from .const import SUBENTRY_USER
 from .items import items_of
 
-REDACT = {"code_hash", "code_salt", "tags", "code"}
+REDACT = {"code_hash", "code_salt", "duress_hash", "duress_salt", "tags", "code"}
 SECRET_SETTINGS = {"heartbeat_url"}
 
 

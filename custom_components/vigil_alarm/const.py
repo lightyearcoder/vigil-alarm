@@ -47,7 +47,7 @@ CONF_SERVICE = "service"
 CONF_CATEGORIES = "categories"
 CONF_DELAY = "delay"
 CONF_PRIORITY = "priority"
-NOTIFICATION_CATEGORIES = ("alarm", "pending", "arming", "fault", "technical")
+NOTIFICATION_CATEGORIES = ("alarm", "pending", "arming", "fault", "technical", "duress")
 DEFAULT_CATEGORIES = ("alarm", "pending", "fault", "technical")
 
 CONF_CONTROL = "control"
@@ -118,6 +118,20 @@ CONF_TAGS = "tags"
 CONF_ALLOWED_MODES = "allowed_modes"
 CONF_MAY_BYPASS = "may_bypass"  # a user may bypass sensors; users saved before this existed keep the right
 CONF_MAY_BYPASS_TAMPER = "may_bypass_tamper"
+CONF_DURESS_HASH = "duress_hash"  # a second code per user: disarms like the normal one, and tells the channels quietly
+CONF_DURESS_SALT = "duress_salt"
+CONF_CHIME = "chime"  # on a sensor: sound the chime when it opens while the alarm is off
+
+# The window after the siren starts in which a valid code means "false alarm" (0 = off), and the chime.
+CONF_ABORT_SECONDS = "abort_seconds"
+DEFAULT_ABORT_SECONDS = 60
+ABORT_SECONDS_RANGE = (0, 600)
+CONF_CHIME_ENTITY = "chime_entity"  # what sounds for the chime: a siren, switch, light, button or script
+CONF_CHIME_SECONDS = "chime_seconds"
+DEFAULT_CHIME_SECONDS = 2
+CHIME_SECONDS_RANGE = (1, 30)
+CHIME_DOMAINS = ("siren", "switch", "light", "button", "input_button", "script")
+ALARM_PATH_MAX = 200  # sensors kept in the path of one alarm
 
 # Event vocabulary of the event entity (the public extension contract).
 EVENT_TYPES = [
@@ -162,6 +176,11 @@ EVENT_TYPES = [
     "selftest_siren_tested",
     "practice_started",
     "practice_ended",
+    "alarm_cancelled",
+    "duress_used",
+    "alarm_sensor_seen",
+    "alarm_memory_cleared",
+    "chime",
     "walktest_started",
     "walktest_finished",
     "panel_refused",

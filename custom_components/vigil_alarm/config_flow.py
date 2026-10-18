@@ -48,6 +48,17 @@ from .const import (
     CONF_EXIT_DELAY,
     CONF_MODES,
     CONF_TRIGGER_TIME,
+    CONF_ABORT_SECONDS,
+    DEFAULT_ABORT_SECONDS,
+    ABORT_SECONDS_RANGE,
+    CONF_CHIME,
+    CONF_CHIME_ENTITY,
+    CONF_CHIME_SECONDS,
+    DEFAULT_CHIME_SECONDS,
+    CHIME_SECONDS_RANGE,
+    CHIME_DOMAINS,
+    CONF_DURESS_HASH,
+    CONF_DURESS_SALT,
     DEFAULT_BATTERY_THRESHOLD,
     DEFAULT_EXIT_DELAY,
     DOMAIN,
@@ -100,6 +111,15 @@ def _entry_schema(d: dict[str, Any]) -> vol.Schema:
         fields[vol.Required(key, default=d.get(key, DEFAULT_EXIT_DELAY[mode]))] = _seconds()
     fields[vol.Required(CONF_DEFAULT_ENTRY_DELAY, default=d.get(CONF_DEFAULT_ENTRY_DELAY, 30))] = _seconds()
     fields[vol.Required(CONF_TRIGGER_TIME, default=d.get(CONF_TRIGGER_TIME, 0))] = _seconds(86400)
+    fields[vol.Required(CONF_ABORT_SECONDS, default=d.get(CONF_ABORT_SECONDS, DEFAULT_ABORT_SECONDS))] = selector.NumberSelector(
+        selector.NumberSelectorConfig(min=ABORT_SECONDS_RANGE[0], max=ABORT_SECONDS_RANGE[1], step=1, unit_of_measurement="s", mode=selector.NumberSelectorMode.BOX)
+    )
+    fields[vol.Optional(CONF_CHIME_ENTITY, description={"suggested_value": d.get(CONF_CHIME_ENTITY)})] = selector.EntitySelector(
+        selector.EntitySelectorConfig(domain=list(CHIME_DOMAINS))
+    )
+    fields[vol.Required(CONF_CHIME_SECONDS, default=d.get(CONF_CHIME_SECONDS, DEFAULT_CHIME_SECONDS))] = selector.NumberSelector(
+        selector.NumberSelectorConfig(min=CHIME_SECONDS_RANGE[0], max=CHIME_SECONDS_RANGE[1], step=1, unit_of_measurement="s", mode=selector.NumberSelectorMode.BOX)
+    )
     fields[vol.Required(CONF_BATTERY_THRESHOLD, default=d.get(CONF_BATTERY_THRESHOLD, DEFAULT_BATTERY_THRESHOLD))] = selector.NumberSelector(
         selector.NumberSelectorConfig(min=1, max=100, step=1, unit_of_measurement="%", mode=selector.NumberSelectorMode.BOX)
     )
