@@ -55,3 +55,18 @@ def make_entry(*, users=True, extra_subentries=(), **data) -> MockConfigEntry:
     items = {d["subentry_id"]: {"type": d["subentry_type"], "title": d["title"], "data": d["data"]} for d in subs}
     return MockConfigEntry(domain=DOMAIN, title="Vigil Alarm", data=base, options={"items": items},
                            unique_id=DOMAIN, version=3)
+
+
+HASH_KEYS = {"code_hash", "code_salt", "duress_hash", "duress_salt"}
+
+
+def plain(obj):
+    """The text of a structure without the hashes and salts: those are random hex, which now and then holds a
+    run of digits that looks like a code (a test that looks for "1234" in it would fail by chance)."""
+    def strip(o):
+        if isinstance(o, dict):
+            return {k: strip(v) for k, v in o.items() if k not in HASH_KEYS}
+        if isinstance(o, (list, tuple)):
+            return [strip(v) for v in o]
+        return o
+    return str(strip(obj))

@@ -14,7 +14,7 @@ from custom_components.vigil_alarm.const import DOMAIN, PANEL_OFFLINE_SECONDS
 from custom_components.vigil_alarm.credentials import hash_code
 from custom_components.vigil_alarm.manager import VigilManager
 
-from .common import EVENTS, PANEL, make_entry, sub
+from .common import EVENTS, PANEL, make_entry, sub, plain
 from .test_control_points import _vigil
 from .test_integration import _setup
 
@@ -300,7 +300,7 @@ async def test_the_admin_panel_registers_a_panel_and_checks_the_input(hass, hass
     item = next(i for i in items_of(entry).values() if i.subentry_type == "panel")
     assert item.data["panel_id"] == "hall" and item.data["allowed_modes"] == []  # all modes = "all"
     assert item.data["sensor_list"] == "code" and item.data["unlock_seconds"] == 60 and item.data["can_disarm"] is True
-    assert "4321" not in str(item.data) and item.data["code_hash"]
+    assert "4321" not in plain(item.data) and item.data["code_hash"]
     got = (await _ws(client, type="vigil_alarm/get"))["result"]
     listed = got["items"]["panel"][0]
     assert listed["has_code"] is True and "code_hash" not in listed["data"] and "code_salt" not in listed["data"]

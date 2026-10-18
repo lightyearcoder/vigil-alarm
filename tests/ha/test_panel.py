@@ -7,7 +7,7 @@ from custom_components.vigil_alarm.const import DOMAIN
 
 from custom_components.vigil_alarm.items import items_of
 
-from .common import make_entry
+from .common import make_entry, plain
 from .test_integration import _setup
 
 
@@ -48,7 +48,7 @@ async def test_get_lists_everything_without_secrets(hass, hass_ws_client):
     assert {z["title"] for z in result["items"]["sensor"]} == {"Front door", "Living PIR", "Smoke", "Tamper"}
     anna = next(u for u in result["items"]["user"] if u["title"] == "Anna")
     assert anna["has_code"] is True
-    assert "code_hash" not in anna["data"] and "code_salt" not in anna["data"] and "1234" not in str(result)
+    assert "code_hash" not in anna["data"] and "code_salt" not in anna["data"] and "1234" not in plain(result)
     assert "code_hash" not in str(result) and "code_salt" not in str(result)
     assert result["sensor_entities"]["front"]["bypass"] == "switch.front_door_bypass"
     assert result["sensor_entities"]["front"]["status"] == "sensor.front_door_status"
@@ -119,7 +119,7 @@ async def test_user_codes_are_hashed_unique_and_kept_when_empty(hass, hass_ws_cl
     res = await _ws(client, type="vigil_alarm/save", kind="user", data={"name": "Carol", "code": "4321", "tags": [" t1 "]})
     cid = res["result"]["id"]
     carol = items_of(entry)[cid]
-    assert code_matches("4321", carol.data) and "4321" not in str(carol.data) and carol.data["tags"] == ["t1"]
+    assert code_matches("4321", carol.data) and "4321" not in plain(carol.data) and carol.data["tags"] == ["t1"]
     res = await _ws(client, type="vigil_alarm/save", kind="user", data={"name": "Dup", "code": "1234"})
     assert res["result"]["errors"] == {"code": "code_in_use"}
     res = await _ws(client, type="vigil_alarm/save", kind="user", subentry_id=cid, data={"name": "Carol B", "tags": ["t1"]})

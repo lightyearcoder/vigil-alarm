@@ -4,6 +4,7 @@ import csv
 import io
 import json
 
+from .common import plain
 from custom_components.vigil_alarm.const import DOMAIN
 
 from .test_integration import _call, _setup
@@ -28,7 +29,7 @@ async def test_every_event_lands_in_the_log_newest_first_without_codes(hass, has
     armed = result["entries"][1]
     assert armed["user"] == "Anna" and armed["result"] == "home"
     assert armed["time"].endswith("Z") and len(armed["time"]) == 20  # RFC 3339, UTC
-    assert "1234" not in json.dumps(result)
+    assert "1234" not in plain(result)
     assert result["labels"]["armed"] and result["retention_days"] == 90
 
 

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from custom_components.vigil_alarm.about import LINKS, parse_release_notes
 
-from .common import make_entry
+from .common import make_entry, plain
 from .test_panel import _client, _ws
 
 ROOT = Path(__file__).parents[2]
@@ -48,7 +48,7 @@ async def test_the_about_command(hass, hass_ws_client):
     assert info["notes"][0]["items"]
     assert info["system"]["counts"]["sensor"] > 0
     assert info["system"]["alarm_state"] == "disarmed"
-    assert "1234" not in json.dumps(info)  # nothing secret in the details people paste into a bug report
+    assert "1234" not in plain(info)  # nothing secret in the details people paste into a bug report
 
 
 def test_release_notes_have_no_markdown():

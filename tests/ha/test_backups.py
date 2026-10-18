@@ -7,7 +7,7 @@ import copy
 from custom_components.vigil_alarm.backups import KEEP, diff
 from custom_components.vigil_alarm.items import items_of
 
-from .common import make_entry
+from .common import make_entry, plain
 from .test_integration import _setup
 from .test_panel import _client, _ws
 
@@ -122,7 +122,7 @@ async def test_export_and_import_round_trip(hass, hass_ws_client):
     res = await _ws(client, type="vigil_alarm/export")
     payload = res["result"]
     assert payload["format"] == "vigil_alarm_configuration" and payload["entry_version"] == 3
-    assert "1234" not in str(payload)  # code hashes, never codes
+    assert "1234" not in plain(payload)  # code hashes, never codes
     await _save_sensor(client, "Garage", "binary_sensor.garage")
     await hass.async_block_till_done()
     res = await _ws(client, type="vigil_alarm/import", payload=payload, preview=True)
