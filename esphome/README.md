@@ -7,9 +7,10 @@ and show is set in Vigil (tab *Panels*) and the panel reads that from its **prof
 Made for ESPHome 2026.9. The hardware file is for the **Guition ESP32-S3-4848S040** (480x480).
 Other displays work with another hardware file, see below.
 
-> **Status (0.4.0):** tested on a real Guition 4848 panel together with Home Assistant. The logic
-> is also tested on a computer and the YAML is validated with `esphome config`. Please report what
-> you see on other hardware.
+> **Status (0.4.1):** the logic and the way the panel works with Home Assistant were tested on a real
+> Guition 4848 panel (0.4.0). The new look of 0.4.1 (ring, tabs, icons) is validated with `esphome config`
+> and drawn on a computer by LVGL (see `tools/panel-simulator/`), but has not yet run on a real panel:
+> please report what you see, also on other hardware.
 
 ## Folder structure
 
@@ -44,15 +45,19 @@ For a second panel copy the example file again, with another `name`.
 
 ## What it does
 
-- **Main page**: the state in a large coloured card (green disarmed, teal Home, blue Away, violet
-  Night, amber arming, orange waiting for a code, red alarm) and the buttons. The buttons are *Home*,
-  *Away* and *Night*, only for the modes this panel may arm in. When the alarm is on, there is one
-  button: *Disarm* (if the panel may disarm).
+![The states of the panel: disarmed, not ready, arming, alarm](../docs/images/touch-panel-states-en.png)
+
+- **Main page**: the state is a ring with an icon, in the colour of the state (green disarmed, amber arming or
+  something open, orange entry delay, blue Home, coral Away, violet Night, red alarm, grey no connection), with the
+  state and what is the matter under it. While the exit or entry delay runs the ring is the countdown: the seconds in
+  the middle, the ring running down from full to empty. Under it the buttons: *Home*, *Away* and *Night*, only for the
+  modes this panel may arm in. When the alarm is on, there is one big button: *Disarm* (if the panel may disarm). While
+  the alarm is going off the screen has a red frame. At the bottom are the tabs *Alarm*, *Sensors* and *Info*.
 - **Keypad**: never opens by itself. During the entry delay and an alarm the main page shows what is going on (entry delay with countdown, or ALARM with the cause), with the *Disarm* button; whoever wants to disarm presses it. Wrong code, a refused
   arming and other errors are shown with the text Home Assistant gives.
-- **Sensors**: the sensors with their state and a *Bypass* or *Restore* button (only if the panel may
+- **Sensors** (the *Sensors* tab, with the number of open sensors in a badge; not there if the list is set to *never*): the sensors with their state and a *Bypass* or *Restore* button (only if the panel may
   bypass). Fire and gas sensors have no button, they can never be bypassed.
-- **Info** (the round button at the top right): connection, IP address, Wi-Fi signal, uptime, firmware
+- **Info** (the *Info* tab, behind the installer code of the panel): connection, IP address, Wi-Fi signal, uptime, firmware
   version, panel id and profile version. Never the Wi-Fi password.
 - **Not linked / Blocked**: a panel that is not in the register shows *Not linked*; a blocked panel
   shows *Blocked* and does nothing.
@@ -117,8 +122,18 @@ must provide:
 - an `lvgl:` section with the `touchscreens:` and the display,
 - a touch screen that runs `script.execute: wake` on touch (the touch that wakes a dark screen is then not passed on to the button below it).
 
-The layout is made for 480x480; the width of cards and buttons follows `screen_width`, the heights do
-not yet. An adaptive layout is planned for 0.4.2.
+The layout follows the size of the screen: the ring, the keys and the tabs are calculated from `screen_width` and
+`screen_height`, and the main page grows with the screen (see the substitutions at the top of `vigil-panel.yaml`).
+It is designed and checked for 480x480; a wider screen, for example 800x480, is drawn correctly (the picture below
+was made with the simulator) but its proportions are not tuned yet.
+
+## Seeing the screens without a panel
+
+`tools/panel-simulator/run.sh` draws every screen of the panel on a computer, from the real YAML and `vigil_panel.h`
+(see `tools/panel-simulator/README.md`): `run.sh out --lang en --size 800x480`. The icons come from a font file that
+ESPHome downloads when you compile, so the first compile needs internet access.
+
+![The other pages: keypad, sensors, info, armed](../docs/images/touch-panel-pages-en.png)
 
 ## Another language
 
@@ -143,7 +158,8 @@ Silencing a siren, a tag reader and a speaker. Disarming silences everything any
 ## Tests
 
 `tests/test_esphome_panel.py` runs the logic of `vigil_panel.h` with a C++ compiler and validates the
-example with `esphome config`. A build and the screen itself can only be tried on the panel.
+example with `esphome config`. A build for the ESP32 and the screen on the real LCD can only be tried on the panel; the simulator
+(`tools/panel-simulator/`) draws the screens on a computer.
 
 
 ## About the warnings in the build

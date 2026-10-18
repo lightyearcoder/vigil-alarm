@@ -1,0 +1,521 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vigil Alarm",
+        "description": "Settings of the alarm. Sensors, groups and users are added afterwards.",
+        "data": {
+          "name": "Name",
+          "modes": "Enabled modes",
+          "exit_delay_home": "Exit delay: home",
+          "exit_delay_away": "Exit delay: away",
+          "exit_delay_night": "Exit delay: night",
+          "default_entry_delay": "Default entry delay",
+          "trigger_time": "Alarm duration (0 = until disarmed)",
+          "code_arm_required": "Require a code to arm",
+          "min_code_length": "Minimum code length",
+          "battery_threshold": "Battery low at or below",
+          "lock_tries_1": "Wrong codes before the first lock",
+          "lock_wait_1": "First lock lasts (minutes)",
+          "lock_tries_2": "Then wrong codes before the second lock",
+          "lock_wait_2": "Second lock lasts (minutes)",
+          "lock_tries_3": "Then wrong codes before the third lock",
+          "lock_wait_3": "Third lock lasts (minutes)",
+          "lock_tries_4": "Then wrong codes before the permanent lock",
+          "startup_wait_seconds": "Wait for sensors after a restart (seconds)",
+          "screen_off_seconds": "Screen off after (seconds)",
+          "screen_off_on_alarm": "Let the screen go dark during an alarm",
+          "log_retention_days": "Days to keep the event log",
+          "selftest_interval_days": "Days between siren test reminders (0 = off)",
+          "selftest_siren_seconds": "Seconds the siren sounds in a test",
+          "selftest_auto": "Sound the siren by itself for the test",
+          "selftest_window_start": "Earliest hour for the test",
+          "selftest_window_end": "Latest hour for the test",
+          "heartbeat_url": "Heartbeat address (optional)",
+          "heartbeat_interval_minutes": "Minutes between heartbeats"
+        }
+      },
+      "reconfigure": {
+        "title": "Vigil Alarm",
+        "description": "Settings of the alarm. Sensors, groups and users are added afterwards.\n\n{error}",
+        "data": {
+          "name": "Name",
+          "modes": "Enabled modes",
+          "exit_delay_home": "Exit delay: home",
+          "exit_delay_away": "Exit delay: away",
+          "exit_delay_night": "Exit delay: night",
+          "default_entry_delay": "Default entry delay",
+          "trigger_time": "Alarm duration (0 = until disarmed)",
+          "code_arm_required": "Require a code to arm",
+          "min_code_length": "Minimum code length",
+          "battery_threshold": "Battery low at or below",
+          "lock_tries_1": "Wrong codes before the first lock",
+          "lock_wait_1": "First lock lasts (minutes)",
+          "lock_tries_2": "Then wrong codes before the second lock",
+          "lock_wait_2": "Second lock lasts (minutes)",
+          "lock_tries_3": "Then wrong codes before the third lock",
+          "lock_wait_3": "Third lock lasts (minutes)",
+          "lock_tries_4": "Then wrong codes before the permanent lock",
+          "startup_wait_seconds": "Wait for sensors after a restart (seconds)",
+          "screen_off_seconds": "Screen off after (seconds)",
+          "screen_off_on_alarm": "Let the screen go dark during an alarm",
+          "log_retention_days": "Days to keep the event log",
+          "selftest_interval_days": "Days between siren test reminders (0 = off)",
+          "selftest_siren_seconds": "Seconds the siren sounds in a test",
+          "selftest_auto": "Sound the siren by itself for the test",
+          "selftest_window_start": "Earliest hour for the test",
+          "selftest_window_end": "Latest hour for the test",
+          "heartbeat_url": "Heartbeat address (optional)",
+          "heartbeat_interval_minutes": "Minutes between heartbeats"
+        }
+      }
+    },
+    "error": {
+      "no_modes": "Enable at least one mode.",
+      "invalid_config": "The settings are not consistent with the sensors: {error}",
+      "heartbeat_url_invalid": "That is not a web address (it must start with http:// or https://)."
+    },
+    "abort": {
+      "already_configured": "Vigil Alarm is already set up.",
+      "reconfigure_successful": "Saved."
+    }
+  },
+  "selector": {
+    "mode": {
+      "options": {
+        "home": "Home",
+        "away": "Away",
+        "night": "Night"
+      }
+    }
+  },
+  "entity": {
+    "event": {
+      "alarm_events": {
+        "name": "Alarm events",
+        "state_attributes": {
+          "event_type": {
+            "name": "Event type",
+            "state": {
+              "armed": "Armed",
+              "arming_started": "Arming started",
+              "arm_refused": "Arming refused",
+              "disarmed": "Disarmed",
+              "pending_started": "Entry delay started",
+              "triggered": "Alarm triggered",
+              "trigger_cause_changed": "Alarm cause changed",
+              "trigger_ended": "Alarm ended",
+              "sensor_faulted": "Sensor fault",
+              "sensor_unconfirmed": "Unconfirmed trigger",
+              "sensor_unconfirmed_escalated": "Unconfirmed trigger escalated",
+              "sensor_bypassed": "Sensor bypassed",
+              "sensor_bypassed_at_arm": "Sensor bypassed at arming",
+              "sensor_unbypassed": "Sensor bypass removed",
+              "bypass_refused": "Bypass refused",
+              "supervision_lost": "Sensor lost",
+              "supervision_restored": "Sensor back",
+              "technical_alarm_started": "Technical alarm started",
+              "technical_alarm_ended": "Technical alarm ended",
+              "state_restore_failed": "Saved state not restored",
+              "notification_failed": "Notification failed",
+              "siren_started": "Siren started",
+              "siren_stopped": "Siren stopped",
+              "siren_failed": "Siren failed",
+              "siren_unavailable": "Siren unavailable",
+              "siren_available": "Siren available again",
+              "siren_power_lost": "Siren lost mains power",
+              "siren_power_restored": "Siren on mains power again",
+              "battery_low": "Battery low",
+              "battery_ok": "Battery ok again",
+              "alarm_silenced": "Alarm silenced",
+              "alarm_acknowledged": "Alarm acknowledged",
+              "code_rejected": "Code rejected",
+              "code_locked": "Codes locked after too many wrong codes",
+              "code_locked_permanent": "Codes locked for good after too many wrong codes",
+              "startup_settled": "Start-up finished (waiting for sensors)",
+              "selftest_checked": "Self-check done",
+              "selftest_reminder": "Test reminder sent",
+              "selftest_siren_tested": "Siren tested",
+              "panel_refused": "Panel call refused",
+              "user_refused": "User call refused",
+              "panel_unlocked": "Panel unlocked",
+              "panel_lock_cleared": "Panel lock cleared",
+              "panel_offline": "Panel not reachable",
+              "panel_online": "Panel reachable again"
+            }
+          }
+        }
+      }
+    },
+    "sensor": {
+      "sensor_status": {
+        "name": "Status",
+        "state": {
+          "closed": "Closed",
+          "open": "Open",
+          "unavailable": "Unavailable",
+          "bypassed": "Bypassed",
+          "bypassed_at_arm": "Bypassed at arming",
+          "waiting": "Waiting until closed"
+        }
+      },
+      "last_event": {
+        "name": "Last event",
+        "state": {
+          "armed": "Armed",
+          "arming_started": "Arming started",
+          "arm_refused": "Arming refused",
+          "disarmed": "Disarmed",
+          "pending_started": "Entry delay started",
+          "triggered": "Alarm triggered",
+          "trigger_cause_changed": "Alarm cause changed",
+          "trigger_ended": "Alarm ended",
+          "sensor_faulted": "Sensor fault",
+          "sensor_unconfirmed": "Unconfirmed trigger",
+          "sensor_unconfirmed_escalated": "Unconfirmed trigger escalated",
+          "sensor_bypassed": "Sensor bypassed",
+          "sensor_bypassed_at_arm": "Sensor bypassed at arming",
+          "sensor_unbypassed": "Sensor bypass removed",
+          "bypass_refused": "Bypass refused",
+          "supervision_lost": "Sensor lost",
+          "supervision_restored": "Sensor back",
+          "technical_alarm_started": "Technical alarm started",
+          "technical_alarm_ended": "Technical alarm ended",
+          "state_restore_failed": "Saved state not restored",
+          "notification_failed": "Notification failed",
+          "siren_started": "Siren started",
+          "siren_stopped": "Siren stopped",
+          "siren_failed": "Siren failed",
+          "siren_unavailable": "Siren unavailable",
+          "siren_available": "Siren available again",
+          "siren_power_lost": "Siren lost mains power",
+          "siren_power_restored": "Siren on mains power again",
+          "battery_low": "Battery low",
+          "battery_ok": "Battery ok again",
+          "alarm_silenced": "Alarm silenced",
+          "alarm_acknowledged": "Alarm acknowledged",
+          "code_rejected": "Code rejected",
+          "code_locked": "Codes locked after too many wrong codes",
+          "code_locked_permanent": "Codes locked for good after too many wrong codes",
+          "startup_settled": "Start-up finished (waiting for sensors)",
+          "selftest_checked": "Self-check done",
+          "selftest_reminder": "Test reminder sent",
+          "selftest_siren_tested": "Siren tested",
+          "panel_refused": "Panel call refused",
+          "user_refused": "User call refused",
+          "panel_unlocked": "Panel unlocked",
+          "panel_lock_cleared": "Panel lock cleared",
+          "panel_offline": "Panel not reachable",
+          "panel_online": "Panel reachable again"
+        }
+      },
+      "panel_profile": {
+        "name": "Profile"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Bypass"
+      }
+    },
+    "binary_sensor": {
+      "active_intrusion": {
+        "name": "Intrusion alarm"
+      },
+      "active_fire": {
+        "name": "Fire alarm"
+      },
+      "active_gas": {
+        "name": "Gas alarm"
+      },
+      "active_tamper": {
+        "name": "Tamper alarm"
+      },
+      "technical_alarm": {
+        "name": "Water alarm"
+      }
+    },
+    "alarm_control_panel": {
+      "alarm": {
+        "state_attributes": {
+          "cause": {
+            "name": "Cause",
+            "state": {
+              "intrusion": "Intrusion",
+              "fire": "Fire",
+              "gas": "Gas",
+              "tamper": "Tamper",
+              "fault": "Sensor fault"
+            }
+          },
+          "refuse_reason": {
+            "name": "Refused because",
+            "state": {
+              "not_disarmed": "Not disarmed",
+              "alarm_condition": "An alarm condition is open",
+              "sensor_unavailable": "A sensor is unavailable",
+              "sensor_open": "A sensor is open"
+            }
+          }
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "code_required": {
+      "message": "A code is required."
+    },
+    "code_locked_permanent": {
+      "message": "Too many wrong codes. This is locked until an administrator unlocks it in Vigil."
+    },
+    "code_locked": {
+      "message": "Too many wrong codes. Try again in {minutes} min."
+    },
+    "invalid_code": {
+      "message": "Invalid code."
+    },
+    "not_ready": {
+      "message": "The alarm is still starting up."
+    },
+    "mode_not_allowed": {
+      "message": "{user} may not arm in mode {mode}."
+    },
+    "arm_refused": {
+      "message": "Arming refused: {reason} ({sensors})."
+    },
+    "unknown_sensor": {
+      "message": "Unknown sensor."
+    },
+    "tamper_bypass_not_allowed": {
+      "message": "Bypassing or restoring a tamper sensor needs the right to bypass tamper, or a Home Assistant administrator."
+    },
+    "sensor_not_bypassable": {
+      "message": "This sensor cannot be bypassed."
+    },
+    "invalid_config": {
+      "message": "Invalid configuration: {error}"
+    },
+    "no_channels": {
+      "message": "No notification channel is configured."
+    },
+    "no_sirens": {
+      "message": "No siren is configured."
+    },
+    "alarm_active": {
+      "message": "An alarm is active."
+    },
+    "mode_not_enabled": {
+      "message": "Mode {mode} is not enabled."
+    },
+    "panel_blocked": {
+      "message": "The panel {panel} is blocked."
+    },
+    "panel_not_allowed": {
+      "message": "The panel {panel} may not do this."
+    },
+    "unknown_panel": {
+      "message": "This is not a registered panel."
+    },
+    "user_not_registered": {
+      "message": "Your Home Assistant account is not registered in Vigil, so it may not operate the alarm."
+    },
+    "no_admin_code": {
+      "message": "This panel has no installer code. Set one in the Panels tab, or unlock it there."
+    },
+    "bypass_not_allowed": {
+      "message": "Bypassing or restoring sensors needs the right to bypass, given to this user in Vigil, or a Home Assistant administrator."
+    }
+  },
+  "services": {
+    "arm": {
+      "name": "Arm",
+      "description": "Arm the alarm in a mode, with the name of the control point.",
+      "fields": {
+        "mode": {
+          "name": "Mode",
+          "description": "Home, away or night."
+        },
+        "code": {
+          "name": "Code",
+          "description": "Code of a user. Not needed for Home Assistant administrators in the UI."
+        },
+        "source": {
+          "name": "Source",
+          "description": "Name of the control point, for example a panel. It appears in the log and in who changed the alarm."
+        }
+      }
+    },
+    "disarm": {
+      "name": "Disarm",
+      "description": "Disarm the alarm, with the name of the control point.",
+      "fields": {
+        "code": {
+          "name": "Code",
+          "description": "Code of a user. Not needed for Home Assistant administrators in the UI."
+        },
+        "source": {
+          "name": "Source",
+          "description": "Name of the control point, for example a panel. It appears in the log and in who changed the alarm."
+        }
+      }
+    },
+    "bypass": {
+      "name": "Bypass sensor",
+      "description": "Temporarily ignore a sensor until the alarm is disarmed.",
+      "fields": {
+        "sensor": {
+          "name": "Sensor",
+          "description": "The sensor entity of the sensor."
+        },
+        "code": {
+          "name": "Code",
+          "description": "Code of a user. Not needed for Home Assistant administrators in the UI."
+        },
+        "source": {
+          "name": "Source",
+          "description": "Name of the control point, for example a panel. It appears in the log and in who changed the alarm."
+        }
+      }
+    },
+    "unbypass": {
+      "name": "Stop bypassing sensor",
+      "description": "Monitor a bypassed sensor again.",
+      "fields": {
+        "sensor": {
+          "name": "Sensor",
+          "description": "The sensor entity of the sensor."
+        },
+        "code": {
+          "name": "Code",
+          "description": "Code of a user. Not needed for Home Assistant administrators in the UI."
+        },
+        "source": {
+          "name": "Source",
+          "description": "Name of the control point, for example a panel. It appears in the log and in who changed the alarm."
+        }
+      }
+    },
+    "test_notification": {
+      "name": "Test notification",
+      "description": "Send a test message to the notification channels.",
+      "fields": {
+        "channel": {
+          "name": "Channel",
+          "description": "Name of one channel; empty = all."
+        }
+      }
+    },
+    "test_siren": {
+      "name": "Test siren",
+      "description": "Sound the siren briefly to check that it responds. Not possible during an alarm.",
+      "fields": {
+        "siren": {
+          "name": "Siren",
+          "description": "Name of one siren; empty = all."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Seconds."
+        }
+      }
+    },
+    "silence": {
+      "name": "Silence siren",
+      "description": "Stop the sirens; the alarm stays active.",
+      "fields": {
+        "code": {
+          "name": "Code",
+          "description": "Code of a user. Not needed for Home Assistant administrators in the UI."
+        },
+        "source": {
+          "name": "Source",
+          "description": "Name of the control point, for example a panel. It appears in the log and in who changed the alarm."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Acknowledge alarm",
+      "description": "Confirm that you have seen the alarm; this cancels escalation messages.",
+      "fields": {
+        "code": {
+          "name": "Code",
+          "description": "Code of a user. Not needed for Home Assistant administrators in the UI."
+        },
+        "source": {
+          "name": "Source",
+          "description": "Name of the control point, for example a panel. It appears in the log and in who changed the alarm."
+        }
+      }
+    },
+    "check_code": {
+      "name": "Check code",
+      "description": "Check whether a code is valid. Changes nothing. A wrong code counts towards the lockout.",
+      "fields": {
+        "code": {
+          "name": "Code",
+          "description": "The code to check."
+        },
+        "source": {
+          "name": "Source",
+          "description": "Name of the control point, for example a panel."
+        }
+      }
+    },
+    "unlock_panel": {
+      "name": "Unlock panel",
+      "description": "Unlock the sensor list or the information pages of a registered panel. Never disarms the alarm.",
+      "fields": {
+        "code": {
+          "name": "Code",
+          "description": "A Vigil user code or the installer code of this panel for the sensor list; the installer code for the information pages."
+        },
+        "scope": {
+          "name": "Scope",
+          "description": "sensors: the sensor list (a user code or the installer code). info: the information pages (the installer code only)."
+        },
+        "source": {
+          "name": "Source",
+          "description": "The id of the panel."
+        }
+      }
+    }
+  },
+  "issues": {
+    "sensor_unreachable": {
+      "title": "Sensor not reachable: {name}",
+      "description": "Vigil Alarm cannot reach the sensor {name}. Check the device (battery, range, power). Arming may be refused until it is back. This message disappears by itself."
+    },
+    "battery_low": {
+      "title": "Battery low: {name}",
+      "description": "The battery of {name} is low. Replace it. This message disappears by itself when the battery is fine again."
+    },
+    "battery_low_level": {
+      "title": "Battery low: {name} ({level}%)",
+      "description": "The battery of {name} is at {level}%. Replace it. This message disappears by itself when the battery is fine again."
+    },
+    "siren_unavailable": {
+      "title": "Siren not available: {name}",
+      "description": "The siren {name} cannot be reached, so it will not sound during an alarm. Check the device. This message disappears by itself."
+    },
+    "siren_on_battery": {
+      "title": "Siren on battery power: {name}",
+      "description": "The siren {name} has lost mains power and runs on its battery. Check the power. This message disappears by itself."
+    },
+    "selftest_overdue": {
+      "title": "Siren not tested for {days} days",
+      "description": "The siren has not been tested for {days} days. Use \"Test siren\" in the Vigil Alarm panel, or the action vigil_alarm.test_siren. This message disappears when you have tested it."
+    },
+    "selftest_channel_missing": {
+      "title": "Notification channel not working: {name}",
+      "description": "The notify service of the channel {name} no longer exists, so it cannot send messages. Check the channel in the Vigil Alarm panel. This message disappears by itself."
+    },
+    "heartbeat_failing": {
+      "title": "Heartbeat cannot be sent",
+      "description": "Vigil Alarm has not been able to reach the heartbeat address several times in a row ({reason}). A monitoring service that expects the heartbeat will report this. Check the address under Settings in the Vigil Alarm panel and your internet connection. This message disappears by itself when the heartbeat works again."
+    },
+    "panel_offline": {
+      "title": "Panel not reachable: {name}",
+      "description": "Vigil Alarm has not been able to reach the panel {name} for ten minutes. Check the power and the wifi of the panel. The alarm itself keeps working. This message disappears by itself when the panel is back."
+    }
+  }
+}

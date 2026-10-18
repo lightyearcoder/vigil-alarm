@@ -179,6 +179,7 @@ def form_schema(modes: list[str]) -> dict[str, list[dict[str, Any]]]:
             _f("sensor_list", "select", options=list(SENSOR_LIST_CHOICES), default="code"),
             _f("unlock_seconds", "number", unit="s", min=UNLOCK_SECONDS_RANGE[0], max=UNLOCK_SECONDS_RANGE[1], default=DEFAULT_UNLOCK_SECONDS),
             _f("code", "password"),
+            _f("watch", "boolean", default=True),
             _f("blocked", "boolean", default=False),
         ],
         "siren": [

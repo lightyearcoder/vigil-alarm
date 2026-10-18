@@ -8,6 +8,7 @@
 // ASCII, the built-in LVGL fonts do not contain accented letters.
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
@@ -55,8 +56,9 @@ static const Text TEXTS[] = {
     {"all_closed", {"Alles dicht", "All closed"}},
     {"open", {"Open: ", "Open: "}},
     {"problems", {"Storingen: ", "Problems: "}},
-    {"leave_in", {"Verlaat het huis: ", "Leave within: "}},
-    {"enter_in", {"Schakel uit binnen: ", "Disarm within: "}},
+    {"leave_now", {"Verlaat nu het huis", "Leave the house now"}},
+    {"enter_now", {"Schakel uit met uw code", "Disarm with your code"}},
+    {"seconds_short", {" s", " s"}},
     {"by", {"Door ", "By "}},
     {"no_sensors", {"Geen sensoren", "No sensors"}},
     {"info", {"Paneelinfo", "Panel info"}},
@@ -105,6 +107,8 @@ static const Text TEXTS[] = {
     {"cause_tamper", {"Sabotage", "Tamper"}},
     {"cause_fault", {"Sensorstoring", "Sensor fault"}},
     // codes
+    {"nav_alarm", {"Alarm", "Alarm"}},
+    {"nav_info", {"Info", "Info"}},
     {"code_hint", {"Code", "Code"}},
 };
 
@@ -144,6 +148,8 @@ struct Context {
   bool code_arm_required = true;
   bool screen_off_on_alarm = false;  // may the screen go dark while the alarm is going off
   double delay_end = NAN;  // epoch seconds of the end of the exit or entry delay
+  int delay_total = 0;     // the length of the running delay in seconds, for the ring (see ring_percent)
+  std::string delay_for;   // the state `delay_total` is for
   double now = NAN;        // the time in epoch seconds, NAN until the clock is set
   std::string changed_by;
   std::string cause;
@@ -250,6 +256,17 @@ inline bool linked() { return ctx.profile_version == PROFILE_VERSION; }
 // May the panel work at all: connected, known to Vigil, a profile it understands, not blocked.
 inline bool usable() { return state_known() && linked() && !ctx.blocked; }
 
+// The colours of Vigil, the same on the card and on the panel. One colour per state: the ring, the icon and the
+// active tab use it; `state_tint` is the dark version for the background of the icon.
+constexpr uint32_t COL_OK = 0x4CCB8F;       // disarmed and everything closed
+constexpr uint32_t COL_WARN = 0xF2B84B;     // arming, or something open
+constexpr uint32_t COL_ENTRY = 0xFF9F43;    // entry delay
+constexpr uint32_t COL_ALARM = 0xF0605D;    // alarm
+constexpr uint32_t COL_HOME = 0x5B9BF0;
+constexpr uint32_t COL_AWAY = 0xFF8A5B;
+constexpr uint32_t COL_NIGHT = 0x9A8CF2;
+constexpr uint32_t COL_OFF = 0x8A94A6;      // no connection, not linked, blocked
+
 // ---------------------------------------------------------------------------------- sensors
 
 struct SensorRow {
@@ -300,10 +317,10 @@ inline std::string status_text(const std::string &status) {
 }
 
 inline uint32_t status_color(const std::string &status) {
-  if (status == "open" || status == "waiting") return 0xF59E0B;
-  if (status == "unavailable") return 0xEF4444;
-  if (status == "bypassed" || status == "bypassed_at_arm") return 0x8A94A3;
-  return 0x22C55E;
+  if (status == "open" || status == "waiting") return COL_WARN;
+  if (status == "unavailable") return COL_ALARM;
+  if (status == "bypassed" || status == "bypassed_at_arm") return COL_OFF;
+  return COL_OK;
 }
 
 inline bool is_bypassed(const std::string &status) { return status == "bypassed"; }
@@ -372,15 +389,76 @@ inline std::string state_title() {
 }
 
 inline uint32_t state_color() {
-  if (!usable()) return 0x475569;
-  if (ctx.state == "disarmed") return 0x16A34A;
-  if (ctx.state == "armed_home") return 0x0D9488;
-  if (ctx.state == "armed_away") return 0x2563EB;
-  if (ctx.state == "armed_night") return 0x7C3AED;
-  if (ctx.state == "arming") return 0xD97706;
-  if (ctx.state == "pending") return 0xEA580C;
-  if (ctx.state == "triggered") return 0xDC2626;
-  return 0x475569;
+  if (!usable()) return COL_OFF;
+  if (ctx.state == "disarmed") return COL_OK;
+  if (ctx.state == "armed_home") return COL_HOME;
+  if (ctx.state == "armed_away") return COL_AWAY;
+  if (ctx.state == "armed_night") return COL_NIGHT;
+  if (ctx.state == "arming") return COL_WARN;
+  if (ctx.state == "pending") return COL_ENTRY;
+  if (ctx.state == "triggered") return COL_ALARM;
+  return COL_OFF;
+}
+
+// The dark background that belongs to a colour above (for the circle behind an icon, and the alarm screen).
+inline uint32_t tint_of(uint32_t color) {
+  switch (color) {
+    case COL_OK: return 0x14281F;
+    case COL_WARN: return 0x2A2314;
+    case COL_ENTRY: return 0x2C2014;
+    case COL_ALARM: return 0x3A1519;
+    case COL_HOME: return 0x17233A;
+    case COL_AWAY: return 0x2E1E17;
+    case COL_NIGHT: return 0x211E3A;
+    default: return 0x1B232D;
+  }
+}
+inline uint32_t state_tint() { return tint_of(state_color()); }
+
+// The icons: Material Design Icons (the font `font_icons` in the YAML holds exactly these). The strings are UTF-8.
+#define VIGIL_ICON_SHIELD_CHECK "\U000F0CC8"
+#define VIGIL_ICON_SHIELD_ALERT "\U000F0ECD"
+#define VIGIL_ICON_SHIELD_LOCK "\U000F099D"
+#define VIGIL_ICON_SHIELD_HOME "\U000F0CCB"
+#define VIGIL_ICON_HOME "\U000F06A1"
+#define VIGIL_ICON_AWAY "\U000F0A48"
+#define VIGIL_ICON_NIGHT "\U000F0594"
+#define VIGIL_ICON_UNLOCK "\U000F0FC7"
+#define VIGIL_ICON_LOCK "\U000F0341"
+#define VIGIL_ICON_GRID "\U000F11D9"
+#define VIGIL_ICON_INFO "\U000F02FD"
+#define VIGIL_ICON_WIFI "\U000F05A9"
+#define VIGIL_ICON_WIFI_OFF "\U000F05AA"
+#define VIGIL_ICON_BACKSPACE "\U000F0B5C"
+#define VIGIL_ICON_CHECK "\U000F012C"
+#define VIGIL_ICON_CLOSE "\U000F0156"
+#define VIGIL_ICON_BACK "\U000F0141"
+#define VIGIL_ICON_BELL "\U000F009F"
+#define VIGIL_ICON_TIMER "\U000F051F"
+#define VIGIL_ICON_LINK_OFF "\U000F0338"
+#define VIGIL_ICON_CANCEL "\U000F073A"
+#define VIGIL_ICON_ALERT "\U000F002A"
+#define VIGIL_ICON_SHIELD_OFF "\U000F099C"
+
+// The icon in the ring: what the state is, at a glance.
+inline std::string state_icon() {
+  if (!state_known()) return VIGIL_ICON_WIFI_OFF;
+  if (!linked()) return VIGIL_ICON_LINK_OFF;
+  if (ctx.blocked) return VIGIL_ICON_CANCEL;
+  const std::string &s = ctx.state;
+  if (s == "disarmed") return open_total_count() > 0 || ctx.faults_total > 0 || ctx.problems > 0 ? VIGIL_ICON_SHIELD_ALERT : VIGIL_ICON_SHIELD_CHECK;
+  if (s == "armed_home") return VIGIL_ICON_HOME;
+  if (s == "armed_away") return VIGIL_ICON_AWAY;
+  if (s == "armed_night") return VIGIL_ICON_NIGHT;
+  if (s == "arming" || s == "pending") return VIGIL_ICON_TIMER;
+  if (s == "triggered") return VIGIL_ICON_BELL;
+  return VIGIL_ICON_SHIELD_OFF;
+}
+
+// The colour of the ring and the icon. A disarmed panel with something open is amber, not green: it is not ready.
+inline uint32_t ring_color() {
+  if (usable() && ctx.state == "disarmed" && (open_total_count() > 0 || ctx.faults_total > 0 || ctx.problems > 0)) return COL_WARN;
+  return state_color();
 }
 
 // Seconds left of the running delay, or -1 if there is none. `now` is the time in epoch seconds,
@@ -390,6 +468,33 @@ inline int seconds_left(double now) {
   double left = ctx.delay_end - now;
   if (left < 0) left = 0;
   return (int) std::ceil(left);
+}
+
+// Does the ring count down? During the exit and the entry delay, if the clock and the end of the delay are known.
+inline bool counting(double now) {
+  return (ctx.state == "arming" || ctx.state == "pending") && usable() && seconds_left(now) >= 0;
+}
+
+// The number in the ring while it counts down: the seconds left.
+inline std::string ring_text(double now) { return counting(now) ? std::to_string(seconds_left(now)) : std::string(); }
+
+// How full the ring is, 0 to 100. A delay counts down from the full ring to empty; the length of the delay is the
+// first number of seconds seen after the state changed (Vigil sends only the end of the delay). Outside a delay
+// the ring is full: it is the colour that tells what the state is.
+inline int ring_percent(double now) {
+  if (!counting(now)) {
+    ctx.delay_total = 0;
+    ctx.delay_for.clear();
+    return 100;
+  }
+  int left = seconds_left(now);
+  if (ctx.delay_for != ctx.state || left > ctx.delay_total) {
+    ctx.delay_for = ctx.state;
+    ctx.delay_total = left;
+  }
+  if (ctx.delay_total <= 0) return 0;
+  int pct = (int) std::lround(100.0 * left / ctx.delay_total);
+  return pct < 0 ? 0 : (pct > 100 ? 100 : pct);
 }
 
 inline std::string cause_text() {
@@ -407,7 +512,7 @@ inline void add_line(std::string &out, const std::string &line) {
 }
 
 // The small text under the title. An error message wins from everything else.
-inline std::string state_sub(double now) {
+inline std::string state_sub(double /*now: the ring shows the countdown*/) {
   if (!ctx.message.empty()) return ctx.message;
   if (!state_known()) return "";
   if (ctx.profile_version == 0) {
@@ -420,7 +525,6 @@ inline std::string state_sub(double now) {
   if (ctx.blocked) return tr("blocked_sub");
   std::string out;
   const std::string &s = ctx.state;
-  int left = seconds_left(now);
   if (s == "disarmed") {
     // Only how many are open: the names are on the sensor list, also after that list was unlocked.
     int open = open_total_count();
@@ -435,10 +539,10 @@ inline std::string state_sub(double now) {
     }
   } else if (s == "arming") {
     add_line(out, mode_name(ctx.mode));
-    if (left >= 0) add_line(out, tr("leave_in") + std::to_string(left) + " s");
+    add_line(out, tr("leave_now"));
     if (!ctx.open_mode.empty()) add_line(out, tr("open") + ctx.open_mode);
   } else if (s == "pending") {
-    if (left >= 0) add_line(out, tr("enter_in") + std::to_string(left) + " s");
+    add_line(out, tr("enter_now"));
     if (details_visible()) add_line(out, ctx.cause_sensor);
   } else if (s == "triggered") {
     add_line(out, cause_text());

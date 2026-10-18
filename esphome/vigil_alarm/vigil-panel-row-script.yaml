@@ -11,6 +11,8 @@ then:
   - lvgl.label.update:
       id: srow_state_${n}
       text_color: !lambda 'return lv_color_hex(vigil::status_color(vigil::row_at(id(sens_page), ${n}).status));'
+  - lambda: |-
+      lv_obj_set_style_bg_color(id(srow_dot_${n}), lv_color_hex(vigil::status_color(vigil::row_at(id(sens_page), ${n}).status)), 0);
   - lvgl.label.update:
       id: srow_btn_lbl_${n}
       text: !lambda |-

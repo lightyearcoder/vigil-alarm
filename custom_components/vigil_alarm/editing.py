@@ -18,6 +18,7 @@ from .items import Item, items_of
 from .const import (
     CONF_MIN_CODE_LENGTH,
     CONF_BLOCKED,
+    CONF_WATCH,
     CONF_HA_USER,
     CONF_CAN_BYPASS,
     CONF_CAN_DISARM,
@@ -428,6 +429,7 @@ async def _panel(
         CONF_SENSOR_LIST: sensor_list,
         CONF_UNLOCK_SECONDS: seconds,
         CONF_BLOCKED: bool(raw.get(CONF_BLOCKED, False)),
+        CONF_WATCH: bool(raw.get(CONF_WATCH, True)),
     }
     if ha_user:
         data[CONF_HA_USER] = ha_user

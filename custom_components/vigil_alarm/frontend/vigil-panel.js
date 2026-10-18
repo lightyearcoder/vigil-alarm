@@ -107,7 +107,7 @@ const TXT = {
       device: "Apparaat", causes: "Bij", maxdur: "Max. duur",
       panelId: "Paneel-id", conn: "Verbinding", allowed: "Beperkingen",
     },
-    panel: { tablet: "Account", noUser: "gebruiker niet gevonden", connected: "Verbonden", offline: "Niet bereikbaar", noConnection: "Geen verbinding", noCard: "Geen Vigil-kaart gezien", cardSeen: "Vigil-kaart actief", notFound: "Niet gevonden in ESPHome", unlocked: "Ontgrendeld", locked: "Vergrendeld voor {s} s", lockedPermanent: "Permanent vergrendeld", blocked: "Geblokkeerd", unlock: "Ontgrendelen", unlockedDone: "Ontgrendeld voor {s} seconden.", clear: "Blokkade opheffen", cleared: "Blokkade opgeheven.", nothingLocked: "Dit paneel had geen blokkade.", all: "alle modi", noDisarm: "niet uitschakelen", noBypass: "niet omzeilen", noSilence: "niet dempen", hint: "Ontgrendelen en blokkade opheffen kunnen alleen hier, niet als Home Assistant-actie.", refused: "Dit kan niet." },
+    panel: { tablet: "Account", noUser: "gebruiker niet gevonden", connected: "Verbonden", offline: "Niet bereikbaar", noConnection: "Geen verbinding", noCard: "Geen Vigil-kaart gezien", cardSeen: "Vigil-kaart actief", notFound: "Niet gevonden in ESPHome", unlocked: "Ontgrendeld", locked: "Vergrendeld voor {s} s", lockedPermanent: "Permanent vergrendeld", blocked: "Geblokkeerd", notWatched: "Niet bewaakt", unlock: "Ontgrendelen", unlockedDone: "Ontgrendeld voor {s} seconden.", clear: "Blokkade opheffen", cleared: "Blokkade opgeheven.", nothingLocked: "Dit paneel had geen blokkade.", all: "alle modi", noDisarm: "niet uitschakelen", noBypass: "niet omzeilen", noSilence: "niet dempen", hint: "Ontgrendelen en blokkade opheffen kunnen alleen hier, niet als Home Assistant-actie.", refused: "Dit kan niet." },
     yes: "ja", no: "nee", none: "—", immediately: "direct",
     condition: "{n} binnen {s} s",
     fields: {
@@ -120,7 +120,7 @@ const TXT = {
       control: "Sirene (siren, schakelaar of lamp)", causes: "Laat klinken bij", max_duration: "Maximale duur (0 = tot uitschakelen)", repeat_every: "Herhaal elke (0 = niet)",
       light: "Flitslicht", tone_entity: "Toonkeuze-entiteit", volume_entity: "Volume-entiteit", power_entity: "Voedingsmodus-entiteit", power_battery_value: "Waarde bij batterijvoeding",
       tone: "Toon", volume: "Volume", preset: "Voorinstelling",
-      device: "Soort apparaat", panel_id: "Naam van het ESPHome-apparaat (paneel-id)", ha_user: "Home Assistant-account (tablet of telefoon)", language: "Taal", can_disarm: "Mag uitschakelen (met code)", can_bypass: "Mag sensoren omzeilen (met code)", can_silence: "Mag dempen en bevestigen", sensor_list: "Sensorlijst tonen", unlock_seconds: "Ontgrendeld blijft (seconden)", blocked: "Paneel geblokkeerd", "panel.code": "Installateurscode van dit paneel (leeg = geen)", "panel.allowed_modes": "Mag inschakelen in modi (leeg = alle)",
+      device: "Soort apparaat", panel_id: "Naam van het ESPHome-apparaat (paneel-id)", ha_user: "Home Assistant-account (tablet of telefoon)", language: "Taal", can_disarm: "Mag uitschakelen (met code)", can_bypass: "Mag sensoren omzeilen (met code)", can_silence: "Mag dempen en bevestigen", sensor_list: "Sensorlijst tonen", unlock_seconds: "Ontgrendeld blijft (seconden)", watch: "Bewaken of dit paneel bereikbaar is (melding als het wegvalt)", blocked: "Paneel geblokkeerd", "panel.code": "Installateurscode van dit paneel (leeg = geen)", "panel.allowed_modes": "Mag inschakelen in modi (leeg = alle)",
       "s.modes": "Beschikbare modi", exit_delay_home: "Uitlooptijd thuis", exit_delay_away: "Uitlooptijd weg", exit_delay_night: "Uitlooptijd nacht",
       default_entry_delay: "Standaard inlooptijd", trigger_time: "Alarmduur (0 = tot uitschakelen)", battery_threshold: "Batterijgrens", code_arm_required: "Code nodig om in te schakelen", startup_wait_seconds: "Maximaal wachten op sensoren na een herstart (seconden)", lock_tries_1: "Foute codes voor de eerste vergrendeling", lock_wait_1: "Eerste vergrendeling duurt (minuten)", lock_tries_2: "Daarna foute codes voor de tweede vergrendeling", lock_wait_2: "Tweede vergrendeling duurt (minuten)", lock_tries_3: "Daarna foute codes voor de derde vergrendeling", lock_wait_3: "Derde vergrendeling duurt (minuten)", lock_tries_4: "Daarna foute codes voor de permanente vergrendeling", screen_off_seconds: "Scherm uit na (seconden zonder aanraking)", screen_off_on_alarm: "Scherm ook uit laten gaan tijdens een alarm", min_code_length: "Minimale codelengte (cijfers/tekens)", log_retention_days: "Logboek bewaren (dagen)", selftest_interval_days: "Herinnering sirenetest (dagen, 0 = uit)", selftest_siren_seconds: "Sirene klinkt bij test (seconden)", selftest_auto: "Sirene zelf laten klinken voor de test", selftest_window_start: "Test niet voor (uur)", selftest_window_end: "Test niet na (uur)", heartbeat_url: "Hartslag-adres (leeg = uit)", heartbeat_interval_minutes: "Minuten tussen hartslagen",
     },
@@ -285,7 +285,7 @@ const TXT = {
       device: "Device", causes: "For", maxdur: "Max. duration",
       panelId: "Panel id", conn: "Connection", allowed: "Restrictions",
     },
-    panel: { tablet: "Account", noUser: "user not found", connected: "Connected", offline: "Not reachable", noConnection: "No connection", noCard: "No Vigil card seen", cardSeen: "Vigil card active", notFound: "Not found in ESPHome", unlocked: "Unlocked", locked: "Locked for {s} s", lockedPermanent: "Locked for good", blocked: "Blocked", unlock: "Unlock", unlockedDone: "Unlocked for {s} seconds.", clear: "Clear lock", cleared: "Lock cleared.", nothingLocked: "This panel was not locked.", all: "all modes", noDisarm: "no disarming", noBypass: "no bypass", noSilence: "no silencing", hint: "Unlocking and clearing the lock can only be done here, not as a Home Assistant action.", refused: "This is not possible." },
+    panel: { tablet: "Account", noUser: "user not found", connected: "Connected", offline: "Not reachable", noConnection: "No connection", noCard: "No Vigil card seen", cardSeen: "Vigil card active", notFound: "Not found in ESPHome", unlocked: "Unlocked", locked: "Locked for {s} s", lockedPermanent: "Locked for good", blocked: "Blocked", notWatched: "Not monitored", unlock: "Unlock", unlockedDone: "Unlocked for {s} seconds.", clear: "Clear lock", cleared: "Lock cleared.", nothingLocked: "This panel was not locked.", all: "all modes", noDisarm: "no disarming", noBypass: "no bypass", noSilence: "no silencing", hint: "Unlocking and clearing the lock can only be done here, not as a Home Assistant action.", refused: "This is not possible." },
     yes: "yes", no: "no", none: "—", immediately: "immediately",
     condition: "{n} within {s} s",
     fields: {
@@ -298,7 +298,7 @@ const TXT = {
       control: "Siren (siren, switch or light)", causes: "Sound for", max_duration: "Maximum duration (0 = until disarmed)", repeat_every: "Repeat every (0 = no)",
       light: "Flash light", tone_entity: "Tone selection entity", volume_entity: "Volume entity", power_entity: "Power mode entity", power_battery_value: "Value when on battery",
       tone: "Tone", volume: "Volume", preset: "Preset",
-      device: "Kind of device", panel_id: "Name of the ESPHome device (panel id)", ha_user: "Home Assistant account (tablet or phone)", language: "Language", can_disarm: "May disarm (with a code)", can_bypass: "May bypass sensors (with a code)", can_silence: "May silence and acknowledge", sensor_list: "Show the sensor list", unlock_seconds: "Stays unlocked for (seconds)", blocked: "Panel blocked", "panel.code": "Installer code of this panel (empty = none)", "panel.allowed_modes": "May arm in modes (empty = all)",
+      device: "Kind of device", panel_id: "Name of the ESPHome device (panel id)", ha_user: "Home Assistant account (tablet or phone)", language: "Language", can_disarm: "May disarm (with a code)", can_bypass: "May bypass sensors (with a code)", can_silence: "May silence and acknowledge", sensor_list: "Show the sensor list", unlock_seconds: "Stays unlocked for (seconds)", watch: "Watch whether this panel is reachable (notify when it drops out)", blocked: "Panel blocked", "panel.code": "Installer code of this panel (empty = none)", "panel.allowed_modes": "May arm in modes (empty = all)",
       "s.modes": "Available modes", exit_delay_home: "Exit delay home", exit_delay_away: "Exit delay away", exit_delay_night: "Exit delay night",
       default_entry_delay: "Default entry delay", trigger_time: "Alarm duration (0 = until disarmed)", battery_threshold: "Battery threshold", code_arm_required: "Code required to arm", startup_wait_seconds: "Longest wait for sensors after a restart (seconds)", lock_tries_1: "Wrong codes before the first lock", lock_wait_1: "First lock lasts (minutes)", lock_tries_2: "Then wrong codes before the second lock", lock_wait_2: "Second lock lasts (minutes)", lock_tries_3: "Then wrong codes before the third lock", lock_wait_3: "Third lock lasts (minutes)", lock_tries_4: "Then wrong codes before the permanent lock", screen_off_seconds: "Screen off after (seconds without touch)", screen_off_on_alarm: "Also let the screen go dark during an alarm", log_retention_days: "Keep the log (days)", selftest_interval_days: "Siren test reminder (days, 0 = off)", selftest_siren_seconds: "Siren sounds in a test (seconds)", selftest_auto: "Sound the siren by itself for the test", selftest_window_start: "Not before (hour)", selftest_window_end: "Not after (hour)", heartbeat_url: "Heartbeat address (empty = off)", heartbeat_interval_minutes: "Minutes between heartbeats", min_code_length: "Minimum code length (characters)",
     },
@@ -990,6 +990,15 @@ class VigilPanel extends HTMLElement {
     const badge = (cls, text) => el("span", { class: "badge " + cls, text });
     const out = [];
     if (item.data.blocked) out.push(badge("bad", P.blocked));
+    else if (item.data.watch === false) {
+      // Not watched on purpose (a phone): no "not reachable" and no Repair, so say that it is not monitored.
+      out.push(badge("", P.notWatched));
+      if (item.data.ha_user) {
+        const who = ((this._data.ha_users || []).find((u) => u.id === item.data.ha_user) || {}).name;
+        out.push(badge(who ? "ok" : "warn", who ? `${P.tablet}: ${who}` : `${P.tablet}: ${P.noUser}`));
+        if (live && live.card) out.push(badge("ok", P.cardSeen));
+      } else if (live) out.push(badge(live.connected ? "ok" : "", live.connected ? P.connected : P.noConnection));
+    }
     else if (item.data.ha_user) {
       const who = ((this._data.ha_users || []).find((u) => u.id === item.data.ha_user) || {}).name;
       out.push(badge(who ? "ok" : "warn", who ? `${P.tablet}: ${who}` : `${P.tablet}: ${P.noUser}`));
@@ -1421,7 +1430,17 @@ class VigilPanel extends HTMLElement {
     const label = (f) => t.fields[`${opts.ctx}.${f.key}`] || t.fields[f.key] || f.key;
     const profileGroups = {};
 
+    // A tablet or phone is not always there, so it is not watched unless you say so; an ESPHome panel is. The
+    // choice follows the kind of device as long as you have not touched it yourself.
+    let autoWatch = null;
     const renderAll = () => {
+      if (opts.ctx === "panel" && !opts.editing) {
+        const want = state.device !== "account";
+        if (autoWatch === null) {
+          if (initial.watch === undefined) state.watch = want;
+        } else if (want !== autoWatch && state.watch === autoWatch) state.watch = want;
+        autoWatch = want;
+      }
       rows.length = 0;
       const nodes = [];
       for (const f of schema) {

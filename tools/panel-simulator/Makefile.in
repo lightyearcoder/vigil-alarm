@@ -1,0 +1,15 @@
+# Builds the simulator: the code ESPHome generated for sim.yaml, plus LVGL, with a normal C++ compiler.
+B := $(CURDIR)/.esphome/build/vigil-panel-hallway
+LVGL ?= $(CURDIR)/lvgl-src
+SRC := $(shell find $(B)/src -name '*.cpp')
+LVSRC := $(shell find $(LVGL)/src -name '*.c')
+FLAGS := -DESPHOME_LOG_LEVEL=ESPHOME_LOG_LEVEL_INFO -DLV_CONF_H=1 -DLV_CONF_PATH=\"$(B)/src/lv_conf.h\" -DLV_KCONFIG_IGNORE -DUSE_HOST -I$(B)/src -I$(LVGL) -I$(LVGL)/src -fno-exceptions -O1 -w
+OBJ := $(patsubst $(B)/src/%.cpp,obj/%.o,$(SRC)) $(patsubst $(LVGL)/src/%.c,obj/lv/%.o,$(LVSRC))
+sim: $(OBJ)
+	g++ -o $@ $(OBJ) -lpthread
+obj/%.o: $(B)/src/%.cpp
+	@mkdir -p $(dir $@)
+	g++ -std=gnu++20 $(FLAGS) -c $< -o $@
+obj/lv/%.o: $(LVGL)/src/%.c
+	@mkdir -p $(dir $@)
+	gcc $(FLAGS) -c $< -o $@

@@ -77,3 +77,16 @@ def test_the_vigil_card_is_shipped_and_registered():
     assert 'customElements.define("vigil-card"' in card and "vigil_alarm/tablet" in card
     panel = (ROOT / "custom_components" / "vigil_alarm" / "panel.py").read_text()
     assert "vigil-card.js" in panel and "add_extra_js_url" in panel  # loaded for every user, not only administrators
+
+
+def test_the_card_keypad_can_be_used_with_a_real_keyboard():
+    """Digits, Backspace, Enter and Escape work while the keypad is open, and a field elsewhere is left alone.
+    (`_key` is already the name of the snapshot key in the card: the handler must not use it.)"""
+    from pathlib import Path
+
+    js = (Path(__file__).parent.parent / "custom_components" / "vigil_alarm" / "frontend" / "vigil-card.js").read_text()
+    assert 'window.addEventListener("keydown", this._onKey)' in js and 'window.removeEventListener("keydown", this._onKey)' in js
+    handler = js[js.index("_keyPressed(ev) {"):js.index("    _digit(d) {")]
+    for needle in ("this._ui.keypad", "INPUT|TEXTAREA|SELECT", "Backspace", '"Enter"', '"Escape"', "ev.ctrlKey"):
+        assert needle in handler, needle
+    assert js.count("    _key(") == 0

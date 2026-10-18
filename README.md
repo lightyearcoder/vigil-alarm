@@ -1,197 +1,171 @@
-<p align="center">
-  <img src="custom_components/vigil_alarm/brand/icon@2x.png" alt="Vigil Alarm" width="128">
-</p>
+# Vigil touch panel (ESPHome)
 
-<h1 align="center">Vigil Alarm</h1>
+A touch panel for Vigil Alarm: arm, disarm, see what is open and bypass a sensor, without a phone.
+It runs on an ESP32 with an LVGL display. It is a *dumb terminal*: it decides nothing. What it may do
+and show is set in Vigil (tab *Panels*) and the panel reads that from its **profile**.
 
-<p align="center">
-  A modular alarm system for Home Assistant: modes, entry and exit delays, confirmation rules,
-  notifications, sirens, self-monitoring, and an admin panel to set it all up.
-</p>
+Made for ESPHome 2026.9. The hardware file is for the **Guition ESP32-S3-4848S040** (480x480).
+Other displays work with another hardware file, see below.
 
-<p align="center">
-  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=lightyearcoder&repository=vigil-alarm&category=integration"><img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open in HACS"></a>
-  <a href="https://github.com/lightyearcoder/vigil-alarm/releases"><img src="https://img.shields.io/github/v/release/lightyearcoder/vigil-alarm?include_prereleases" alt="Release"></a>
-  <a href="https://github.com/lightyearcoder/vigil-alarm/actions/workflows/tests.yml"><img src="https://img.shields.io/github/actions/workflow/status/lightyearcoder/vigil-alarm/tests.yml?branch=main&label=tests" alt="Tests"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue" alt="License"></a>
-  <img src="https://img.shields.io/badge/Home%20Assistant-2026.2.3%2B-41BDF5" alt="Home Assistant 2026.2.3 or newer">
-</p>
+> **Status (0.4.1):** the logic and the way the panel works with Home Assistant were tested on a real
+> Guition 4848 panel (0.4.0). The new look of 0.4.1 (ring, tabs, icons) is validated with `esphome config`
+> and drawn on a computer by LVGL (see `tools/panel-simulator/`), but has not yet run on a real panel:
+> please report what you see, also on other hardware.
 
-> **Not a certified alarm system.** Vigil Alarm is a home automation project. It does not meet
-> any alarm, fire-detection or insurance standard. Do not rely on it as your only protection for
-> life or property, and test it regularly.
+## Folder structure
+
+```
+esphome/
+  example-garage.yaml      a device: name, Wi-Fi, keys  (copy this, one per panel)
+  vigil_alarm/             the firmware and the hardware; the same for every panel, do not edit
+    guition-4848.yaml      the hardware: display, touch, backlight  (one per kind of panel)
+    vigil-panel.yaml
+    vigil-panel-row.yaml
+    vigil-panel-row-script.yaml
+    vigil_panel.h
+```
+
+An update of Vigil can bring a new `vigil_alarm/` folder; your own device files stay as they are.
+
+## Installing
+
+1. Copy `example-garage.yaml` and the whole folder `vigil_alarm` into your ESPHome folder (rename
+   the example).
+2. In the new file change `name` (lower case letters, digits and dashes; this is the **panel id**) and
+   `friendly_name`. Add the encryption key to your `secrets.yaml`. Keep it: the key protects the link with
+   Home Assistant (the codes pass through it) and is also what allows an update over Wi-Fi, so others
+   on your network cannot flash the panel. (The example uses `encryption` under `ota`, as ESPHome advises, instead of an OTA password.)
+3. Install it on the panel (the first time through USB).
+4. In Home Assistant: **Settings → Devices & services → ESPHome → the device → Configure** and
+   switch on **Allow the device to perform Home Assistant actions**. Without it the buttons do nothing.
+5. In Vigil open the tab **Panels → Add panel**. Use the device name as *panel id* and set what the
+   panel may do. Until you do, the panel says **Not linked** and shows the panel id it expects.
+
+For a second panel copy the example file again, with another `name`.
 
 ## What it does
 
-- **One alarm entity** (`alarm_control_panel`) with the modes *Home*, *Away* and *Night*, exit
-  and entry delays per mode, and codes per user. It works with the standard alarm panel card,
-  the tile card and the Companion app.
-- **Sensors with a class:** intrusion (instant, delayed or follower), fire, gas, water and
-  tamper. Fire and gas always watch; intrusion sensors watch in the modes of their
-  **sensor groups**, for example *Perimeter* (doors and windows) in every mode and *Interior*
-  (motion) in Away only.
-- **Confirmation rules:** an alarm only follows when, say, two different motion sensors trigger
-  within a minute. Handy against a false alarm from one PIR.
-- **Notifications** through any `notify` service, per kind of message, with optional
-  escalation to a second channel when nobody reacts.
-- **Sirens** (optional) with tone and volume per cause, a maximum duration, and a preset for
-  the Sonoff SNZB-09P (Zigbee2MQTT).
-- **Self-monitoring:** unreachable sensors, low batteries, siren availability and mains power.
-- **Survives restarts:** the alarm state and running timers are saved. An alarm that went off
-  during a restart is still raised.
-- **Admin panel** in the sidebar (administrators only) to set up sensors, groups, users,
-  notifications and sirens in clear tables, with live status.
-- **Built for automations:** every decision is published as an event, so lights, speech,
-  cameras and anything else are *your* automations. Ready-made [blueprints](#blueprints) and an
-  [example dashboard](#example-dashboard) are included.
+![The states of the panel: disarmed, not ready, arming, alarm](../docs/images/touch-panel-states-en.png)
 
-The core decides and publishes events; it never calls a device itself. Only the safety minimum
-(notifications and sirens) is built in.
+- **Main page**: the state is a ring with an icon, in the colour of the state (green disarmed, amber arming or
+  something open, orange entry delay, blue Home, coral Away, violet Night, red alarm, grey no connection), with the
+  state and what is the matter under it. While the exit or entry delay runs the ring is the countdown: the seconds in
+  the middle, the ring running down from full to empty. Under it the buttons: *Home*, *Away* and *Night*, only for the
+  modes this panel may arm in. When the alarm is on, there is one big button: *Disarm* (if the panel may disarm). While
+  the alarm is going off the screen has a red frame. At the bottom are the tabs *Alarm*, *Sensors* and *Info*.
+- **Keypad**: never opens by itself. During the entry delay and an alarm the main page shows what is going on (entry delay with countdown, or ALARM with the cause), with the *Disarm* button; whoever wants to disarm presses it. Wrong code, a refused
+  arming and other errors are shown with the text Home Assistant gives.
+- **Sensors** (the *Sensors* tab, with the number of open sensors in a badge; not there if the list is set to *never*): the sensors with their state and a *Bypass* or *Restore* button (only if the panel may
+  bypass). Fire and gas sensors have no button, they can never be bypassed.
+- **Info** (the *Info* tab, behind the installer code of the panel): connection, IP address, Wi-Fi signal, uptime, firmware
+  version, panel id and profile version. Never the Wi-Fi password.
+- **Not linked / Blocked**: a panel that is not in the register shows *Not linked*; a blocked panel
+  shows *Blocked* and does nothing.
+- The language is the one set for the panel in Vigil.
+- The screen goes dark after the time set in Vigil (*Settings*, *Panel screen*, default 30 seconds) and lights up on touch and when the alarm changes. It only goes dark in a steady state: alarm off or fully armed. While the alarm counts down (arming, entry delay) it never goes dark. During an alarm it stays on, unless you let it go dark in the same settings. Was a half typed code, the list or the info still open, then the panel first returns to the main page after that time (you see it), and the screen goes dark after the same time again.
 
-<p align="center">
-  <img src="docs/images/panel-overview.png" alt="The Vigil admin panel: overview" width="760">
-</p>
+### Codes
 
-## Installation
+- **Disarming and bypassing** always ask for a user code.
+- **Arming** asks for a code only if *a code is required to arm* is on in Vigil (Settings tab).
+- The **list of sensors** opens with the code of **any Vigil user** (or the installer code of the panel). The
+  **info page** opens with the **installer code of the panel** only, which you set in Vigil. The panel sends the
+  code to `vigil_alarm.unlock_panel` (with `scope: sensors` or `scope: info`); Vigil checks it, counts a wrong
+  code towards the lockout (the user code timer of the panel for the list, the installer code timer for the info)
+  and unlocks for the time set in the profile. Unlocking never disarms. Without an installer code the panel
+  says so when you open the info page, and it does not open.
+- **Bypassing and restoring** a sensor need a user code of a user who has the right to bypass (set per user in
+  Vigil); a tamper sensor needs the extra right to bypass tamper. Whoever may bypass may also restore.
+- The keypad has digits only: give users a numeric code.
 
-### With HACS (recommended)
+### What a passer-by can see
 
-1. In Home Assistant open **HACS**, three dots top right, **Custom repositories**.
-2. Add `https://github.com/lightyearcoder/vigil-alarm` with category **Integration**, or use
-   the button:
+Someone standing at the panel should not learn what your house watches. Vigil sends the **names** of
+sensors to the panel only while it may show them: always (`sensor_list: always`), or after the
+installer code (`code`, the default), or never. While locked, the panel only shows *how many*
+sensors are open ("Open: 3"). While the alarm is on, the main page shows no sensor names and no
+names of people unless the panel is unlocked. The names are not in the history of Home Assistant.
 
-   [![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=lightyearcoder&repository=vigil-alarm&category=integration)
-3. Download **Vigil Alarm**, then **restart Home Assistant**.
-4. **Settings → Devices & services → Add integration → Vigil Alarm.**
+### Who did it
 
-### Manually
+The device name is the `source` of every call, so the history shows *Anna (vigil-panel-garage)*, or
+just *vigil-panel-garage* when no code was needed. A wrong code is published as the event
+`code_rejected` with that source, never with the code itself.
 
-Copy the folder `custom_components/vigil_alarm` to `config/custom_components/vigil_alarm` in your Home
-Assistant, restart, and add the integration as above.
+## Options
 
-Requires Home Assistant **2026.2.3** or newer. The integration icon is shown from Home
-Assistant 2026.3.
+Set these as `substitutions:` in your device file, above the packages:
 
-## First steps
-
-1. Add the integration. Give the alarm a name and check the basic settings (exit delays,
-   entry delay, whether a code is needed to arm). Two **sensor groups** are created for you:
-   *Perimeter* and *Interior*.
-2. Open **Vigil Alarm** in the sidebar. Add your **sensors** (a door contact goes in *Perimeter*, a
-   motion sensor in *Interior*; the panel suggests this), a **user** with a code, and a
-   **notification** channel.
-3. Arm the alarm from the alarm panel card and open a door to see what happens.
-
-The full manual is in the **[user guide](docs/user-guide.md)**
-(Dutch: **[gebruikershandleiding](docs/gebruikershandleiding.nl.md)**). If the alarm does not do what you expect, see
-**[tablet guide](docs/tablet.md)** (Dutch: [tabletgids](docs/tablet.nl.md)), **[troubleshooting](docs/troubleshooting.md)** (Dutch: [problemen oplossen](docs/problemen-oplossen.nl.md)).
-
-## Blueprints
-
-Import a blueprint with the button, then **Settings → Automations → Create automation → Use
-blueprint**. HACS does not install blueprints, so the buttons are the easy way.
-
-| Blueprint | What it does | |
+| Substitution | Default | Meaning |
 |---|---|---|
-| **Flash lights during an alarm** | Flashes lights while the alarm is triggered and puts them back as they were. Choose which causes flash; gas is off by default for safety. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil_alarm%2Fflash_lights_on_alarm.yaml) |
-| **Announce alarm events with speech** | Speaks a message on your speakers when the alarm arms, disarms, starts the entry delay or goes off. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil_alarm%2Fannounce_with_speech.yaml) |
-| **Arm when everyone has left** | Arms the alarm when everyone has been away for a while, and tells you if arming was refused. Never disarms. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil_alarm%2Farm_when_everyone_leaves.yaml) |
-| **Arm at a set time** | Arms (for example Night) at a set time on chosen days. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil_alarm%2Farm_on_schedule.yaml) |
-| **Remind when arriving at an armed home** | Sends a message when someone arrives while the alarm is still armed. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil_alarm%2Farrival_reminder.yaml) |
-| **Run your own actions on alarm events** | The general building block: pick events, add any actions. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil_alarm%2Frun_actions_on_events.yaml) |
+| `name` | (required) | The device name and the panel id in Vigil. |
+| `alarm_entity` | `alarm_control_panel.vigil_alarm` | The Vigil alarm, if you renamed it. |
+| `profile_entity` | `sensor.<name with underscores>_profile` | The profile sensor Vigil makes for this panel. Only change this if you changed its entity id. |
+| `backlight_timeout_seconds` | `"30"` | Only the start value, until Vigil has told the panel. The real time is a setting in Vigil (*Settings*, *Panel screen*), the same for all panels. |
 
-Arming from an automation needs a code unless *Code required to arm* is switched off in the
-panel. See the note in the [user guide](docs/user-guide.md#automatic-arming) before putting a
-code in an automation.
+Everything else (modes, disarm, bypass, language, sensor list, unlock time) is in Vigil.
 
-## Presets
+## What the panel tells Vigil
 
-Presets fill in the settings of a known device. Today there is one: **Sonoff SNZB-09P
-(Zigbee2MQTT)** for sirens. In the panel, add a siren, pick its on/off entity, then choose the
-preset: tone, volume and duration are filled in, and Vigil looks for the other entities of the
-same device (tone, volume, flash light, battery, power mode). Everything stays editable.
-Zigbee2MQTT exposes these entities; other setups (such as ZHA) can use any `siren`, `switch`
-or `light` entity as the on/off control and fill in the rest by hand.
+The firmware adds four diagnostic sensors to the device: *Hardware ID*, *Capabilities*, *Firmware
+version* and *Profile version*. Vigil reads them in the Panels tab, and gives advice (never an
+alarm) when the firmware does not understand the profile or when the hardware is not what you
+registered.
 
-## Example dashboard
+## Another display
 
-[`examples/dashboard.yaml`](examples/dashboard.yaml) is a complete dashboard with the standard
-cards: the alarm panel, a status card, a card that only shows when something needs attention,
-alarms, sensors with their bypass switches, a history and a *Silence the siren* button. Paste it
-in the raw configuration editor of a new dashboard and change the example sensor names.
+`vigil_alarm/` is for the screen only. For other hardware make a file like `vigil_alarm/guition-4848.yaml` (or send it to us to add). It
+must provide:
 
-## For automations
+- the substitutions `hardware_id`, `screen_width` and `screen_height` (reported to Vigil),
+- a light with the id `display_backlight`,
+- an `lvgl:` section with the `touchscreens:` and the display,
+- a touch screen that runs `script.execute: wake` on touch (the touch that wakes a dark screen is then not passed on to the button below it).
 
-Vigil publishes everything as an **event entity** (`event.<name>_alarm_events`). Trigger on a
-change of that entity and look at `event_type` and the data in its attributes:
+The layout follows the size of the screen: the ring, the keys and the tabs are calculated from `screen_width` and
+`screen_height`, and the main page grows with the screen (see the substitutions at the top of `vigil-panel.yaml`).
+It is designed and checked for 480x480; a wider screen, for example 800x480, is drawn correctly (the picture below
+was made with the simulator) but its proportions are not tuned yet.
 
-```yaml
-triggers:
-  - trigger: state
-    entity_id: event.vigil_alarm_alarm_events
-conditions:
-  - condition: template
-    value_template: "{{ trigger.to_state.attributes.event_type == 'triggered' }}"
-actions:
-  - action: notify.mobile_app_phone
-    data:
-      message: "Alarm: {{ trigger.to_state.attributes.cause }} ({{ trigger.to_state.attributes.sensor_name }})"
-```
+## Seeing the screens without a panel
 
-| Event | When | Data |
-|---|---|---|
-| `arming_started` / `armed` / `disarmed` | Exit delay starts, alarm armed, alarm off | `mode`, `user` |
-| `arm_refused` | Arming was refused | `reason`, `sensors`, `mode` |
-| `pending_started` | Entry delay started | `sensor`, `sensor_name`, `end` |
-| `triggered` / `trigger_cause_changed` / `trigger_ended` | The alarm goes off, gets a worse cause, ends | `cause`, `sensor`, `confirmed_by` |
-| `sensor_faulted` | A sensor fired | `sensor`, `sensor_name` |
-| `sensor_unconfirmed` / `sensor_unconfirmed_escalated` | A confirmation rule saw one trigger, or reported it | `rule`, `sensor(s)` |
-| `sensor_bypassed` / `sensor_bypassed_at_arm` / `sensor_unbypassed` / `bypass_refused` | Bypass changes | `sensor`, `reason`, `user` |
-| `supervision_lost` / `supervision_restored` | A sensor became unreachable or came back | `sensor` |
-| `technical_alarm_started` / `technical_alarm_ended` | Water | `sensor`, `cause`, `reason` |
-| `siren_started` / `siren_stopped` / `siren_failed` / `siren_unavailable` / `siren_available` | Siren activity | `siren`, `cause`, `verified`, `reason`, `error` |
-| `siren_power_lost` / `siren_power_restored` / `battery_low` / `battery_ok` | Self-monitoring | `siren` or `name`, `level` |
-| `alarm_silenced` / `alarm_acknowledged` | A person silenced the sirens or confirmed the alarm | `user` |
-| `code_rejected` | Someone entered a wrong code | `source` (for example a panel), `action` |
-| `code_locked` | wrong codes lock that control point in steps (default: 3 wrong codes = 5 minutes, then 2 more = 15 minutes, then 2 more = 60 minutes), also over a restart; every registered panel has its own timer and everything else shares one (`timer` is `other`); also sent to the fault channels | `source`, `action`, `timer`, `minutes` |
-| `startup_settled` | Home Assistant had just started and Vigil waited for slow sensors (MQTT, Zigbee): all sensors are there, or the wait (setting *Wait for sensors after a restart*, default 120 s) is over. Only now are sensors that are still gone reported as lost. Not a notification | `waited`, `unavailable`, `sensors` |
-| `code_locked_permanent` | the last step: after the final wrong codes (default 1) the panel stays locked until an administrator uses *Clear lock*; also sent to the fault channels. The shared timer `other` never locks for good | `source`, `action`, `timer` |
-| `panel_refused` | A registered panel tried something its profile does not allow (or is blocked) | `source`, `panel`, `action`, `reason` |
-| `user_refused` | A Home Assistant account that is not registered tried to operate the alarm, with *only registered users* on | `user`, `source`, `action` |
-| `panel_unlocked` / `panel_lock_cleared` | A panel was unlocked (installer code, or an administrator in the panel) / its stored lockout was lifted | `source`, `panel`, `by` |
-| `panel_offline` / `panel_online` | A panel has been out of reach for 10 minutes (also a Repair and a message to the fault channels) / is back | `source`, `panel`, `minutes` |
-| `selftest_checked` | The quiet daily check ran (it never changes `last_event`) | `result` (`ok` or `problems`), `problems` |
-| `selftest_reminder` | A reminder to test the siren was sent | `number` (1 or 2) |
-| `selftest_siren_tested` | The siren was tested | `how` (`manual`, `notification` or `auto`) |
-| `notification_failed` / `state_restore_failed` | Vigil itself had a problem | `channel`, `error`, `reason` |
+`tools/panel-simulator/run.sh` draws every screen of the panel on a computer, from the real YAML and `vigil_panel.h`
+(see `tools/panel-simulator/README.md`): `run.sh out --lang en --size 800x480`. The icons come from a font file that
+ESPHome downloads when you compile, so the first compile needs internet access.
 
-Entities per alarm: `alarm_control_panel.<name>` (with attributes `cause`, `open_sensors`,
-`faults`, `bypassed_sensors`, `problems`, `delay_end`, `refuse_reason`, `mode`, and text versions
-for displays),
-`binary_sensor.<name>_<class>_alarm` (the ids always end on the English name, also on a Dutch Home Assistant; always there for intrusion, fire, gas, tamper and water), `sensor.<name>_last_event`, and per sensor
-`sensor.<sensor>_status` and `switch.<sensor>_bypass`.
+![The other pages: keypad, sensors, info, armed](../docs/images/touch-panel-pages-en.png)
 
-Actions: `vigil_alarm.arm`, `vigil_alarm.disarm`, `vigil_alarm.silence`, `vigil_alarm.acknowledge`, `vigil_alarm.bypass`, `vigil_alarm.unbypass`, `vigil_alarm.check_code` (only checks a code, changes nothing)
-(all take an optional `source`, the name of a control point such as a panel),
-`vigil_alarm.test_siren`, `vigil_alarm.test_notification`, plus the standard `alarm_control_panel` actions.
+## Another language
 
-## Development
+All texts are in `vigil_alarm/vigil_panel.h`, one line per text with a column per language. Add a
+column to `TEXTS` and make `parse_language` return it. Use plain ASCII: the built-in fonts have no
+accented letters.
 
-```bash
-pip install pytest pyyaml                       # core only
-pytest tests/test_core.py tests/test_scenarios.py
+## What the panel reads from Vigil
 
-pip install pytest-homeassistant-custom-component home-assistant-frontend   # everything
-pytest
-```
+From the **profile sensor** of the panel: `language`, `blocked`, `modes_mask`, `can_disarm`,
+`can_bypass`, `sensor_list`, `unlock_seconds`, `code_arm_required`, `has_admin_code`, `unlocked`,
+`open_count`, `faults_count`, `problems_count`, and (only while allowed) `open_now_text`,
+`open_sensors_text`, `faults_text` and `sensors`. From the **alarm entity**: the state, `mode`,
+`delay_left` (seconds left; the panel counts down on its own clock), `changed_by`, `cause` and `cause_sensor`. They are plain text on purpose, because
+ESPHome cannot read lists. The panel calls `vigil_alarm.arm`, `disarm`, `bypass`, `unbypass` and
+`unlock_panel` with the device name as `source`.
 
-The core (`custom_components/vigil_alarm/vigil_core`) has no Home Assistant imports and is specified
-by scenarios as data in `tests/scenarios/`. The integration, panel, blueprints and example
-dashboard are tested against a real Home Assistant test instance in `tests/ha/`.
+## Not on the panel
 
-Bug reports and ideas: [GitHub issues](https://github.com/lightyearcoder/vigil-alarm/issues).
-Please include the log lines that mention `vigil`.
+Silencing a siren, a tag reader and a speaker. Disarming silences everything anyway.
 
-## License
+## Tests
 
-GPL-3.0-or-later, see [LICENSE](LICENSE).
+`tests/test_esphome_panel.py` runs the logic of `vigil_panel.h` with a C++ compiler and validates the
+example with `esphome config`. A build for the ESP32 and the screen on the real LCD can only be tried on the panel; the simulator
+(`tools/panel-simulator/`) draws the screens on a computer.
+
+
+## About the warnings in the build
+
+`GPIO19 is used by the USB-Serial-JTAG interface` and `GPIO20 ...` (twice) are expected for the
+Guition 4848: the board itself connects the touch controller (GPIO19) and a data line of the display
+(GPIO20) to those pins, so they cannot be moved. The warning only matters if you want to use the
+chip's own USB port for logging or flashing while the panel runs; the panel then uses the USB-serial
+adapter of the board, or Wi-Fi updates. Nothing to fix.

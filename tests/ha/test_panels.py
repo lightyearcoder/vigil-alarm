@@ -229,6 +229,47 @@ async def test_a_blocked_panel_gives_no_repair_when_it_is_out_of_reach(hass, fre
     assert not [i for i in ir.async_get(hass).issues if "panel_offline" in i[1]]
 
 
+async def test_a_panel_that_is_not_watched_gives_no_repair_and_no_message(hass, freezer):
+    calls = async_mock_service(hass, "notify", "mobile_app_anna")
+    _esphome(hass, available=False)
+    from .test_notifications import channel
+
+    entry = await _house(hass, panel_item(watch=False), channel(categories=("fault",)))
+    freezer.tick(timedelta(seconds=PANEL_OFFLINE_SECONDS + 600))
+    async_fire_time_changed(hass, dt_util.utcnow())
+    await hass.async_block_till_done()
+    assert not [i for i in ir.async_get(hass).issues if "panel_offline" in i[1]]
+    assert calls == []
+    status = entry.runtime_data.panels.status()[0]
+    assert status["watched"] is False and status["offline"] is False
+
+
+async def test_a_register_entry_from_before_the_setting_is_still_watched(hass, freezer):
+    # panel_item() has no `watch` at all, like an entry saved by an older version
+    _esphome(hass, available=False)
+    entry = await _house(hass, panel_item())
+    assert "watch" not in next(iter(entry.runtime_data.panels.items())).data
+    freezer.tick(timedelta(seconds=PANEL_OFFLINE_SECONDS + 60))
+    async_fire_time_changed(hass, dt_util.utcnow())
+    await hass.async_block_till_done()
+    assert [i for i in ir.async_get(hass).issues if "panel_offline" in i[1]]
+    assert entry.runtime_data.panels.status()[0]["watched"] is True
+
+
+async def test_the_watch_choice_is_saved_and_offered_in_the_form(hass, hass_ws_client):
+    from custom_components.vigil_alarm.items import items_of
+
+    entry, client = await _client(hass, hass_ws_client)
+    await _ws(client, type="vigil_alarm/save", kind="panel", data={"name": "Hall", "panel_id": "hall", "watch": False})
+    await _ws(client, type="vigil_alarm/save", kind="panel", data={"name": "Gar", "panel_id": "gar"})
+    await hass.async_block_till_done()
+    panels = {i.data["panel_id"]: i for i in items_of(entry).values() if i.subentry_type == "panel"}
+    assert panels["hall"].data["watch"] is False and panels["gar"].data["watch"] is True
+    form = (await _ws(client, type="vigil_alarm/get"))["result"]["forms"]["panel"]
+    field = next(f for f in form if f["key"] == "watch")
+    assert field["type"] == "boolean" and field["default"] is True
+
+
 async def _client(hass, hass_ws_client, *panels):
     entry = await _house(hass, *panels)
     return entry, await hass_ws_client(hass)

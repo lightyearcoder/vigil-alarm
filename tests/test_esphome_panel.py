@@ -165,8 +165,10 @@ def test_the_list_and_the_info_open_with_the_admin_code_and_are_forgotten():
     wake = yaml[yaml.index("  - id: wake\n"):yaml.index("  - id: reset_ui")]
     # the backlight fades out (1 s): reset only after the delay, or the screen jumps while it is still visible
     assert wake.index("light.turn_off") < wake.index("delay: 1500ms") < wake.rindex("script.execute: reset_ui")
-    assert "script.execute: lock_sensors" in yaml[yaml.index("id: btn_sens_back"):]  # and when leaving the list
-    assert "script.execute: lock_sensors" in yaml[yaml.index("id: btn_info_back"):]  # or the info
+    # leaving the list or the info is the Alarm tab: it forgets the unlock
+    assert "script.execute: lock_sensors" in yaml[yaml.index("id: nav_alarm\n"):yaml.index("id: nav_sens\n")]
+    assert "script.execute: open_sensors" in yaml[yaml.index("id: nav_sens\n"):yaml.index("id: nav_info\n")]
+    assert "script.execute: open_info" in yaml[yaml.index("id: nav_info\n"):yaml.index("id: alarm_frame")]
     assert "ha_profile_unlocked" in yaml  # and when Vigil locks the panel again
 
 
@@ -197,3 +199,41 @@ def test_the_error_phrases_of_the_panel_and_the_card_match_vigils_own_texts():
         assert english in en, english
         assert dutch in nl, dutch
         assert f'"{key}"' in header and f"{key}:" in card
+
+
+def test_every_icon_the_panel_draws_is_in_the_icon_font():
+    """The icons are glyphs of one font that holds only the codes listed in the YAML; a code that is missing there
+    shows as an empty square on the panel."""
+    import re
+
+    yaml = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    header = (FIRMWARE_DIR / "vigil_panel.h").read_text()
+    font = yaml[yaml.index("glyphs: &icon_glyphs"):yaml.index("time:\n  - platform: homeassistant")]
+    listed = set(re.findall(r'"\\U(000F[0-9A-F]{4})"', font))
+    used = set(re.findall(r'"\\U(000F[0-9A-F]{4})"', header))
+    used |= set(re.findall(r'text: "\\U(000F[0-9A-F]{4})"', yaml[yaml.index("lvgl:\n"):]))
+    assert used, "no icons found"
+    assert used <= listed, f"not in the icon font: {sorted(used - listed)}"
+    assert yaml.count("glyphs: *icon_glyphs") == 2  # three sizes, one list
+
+
+def test_the_look_and_the_layout_follow_the_size_of_the_screen():
+    yaml = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    # the sizes come from the substitutions, which come from screen_width and screen_height of the hardware file
+    for name in ("ring_d", "key_w", "key_h", "keypad_h", "content_w", "nav_h"):
+        assert f"  {name}:" in yaml.split("esphome:")[0]
+    assert "screen_width" in yaml.split("esphome:")[0] and "480" not in yaml.split("lvgl:")[1].replace("0x", "")
+    # the main page is a column that grows with the screen; the tabs are on top of every page
+    assert "flex_grow: 1" in yaml and "id: nav\n" in yaml
+    assert "hide(id(nav), id(keypad_open))" in yaml  # no tabs on the keypad
+
+
+def test_the_colours_of_the_panel_are_the_colours_of_the_card():
+    """One look for card and panel: the state colours must be the same in both."""
+    import re
+
+    header = (FIRMWARE_DIR / "vigil_panel.h").read_text()
+    card = (ROOT / "custom_components" / "vigil_alarm" / "frontend" / "vigil-card.js").read_text().lower()
+    for name in ("COL_OK", "COL_WARN", "COL_ENTRY", "COL_ALARM", "COL_HOME", "COL_AWAY", "COL_NIGHT"):
+        value = re.search(rf"{name} = 0x([0-9A-F]{{6}});", header).group(1).lower()
+        assert f"#{value}" in card, f"{name} (#{value}) is not a colour of the card"

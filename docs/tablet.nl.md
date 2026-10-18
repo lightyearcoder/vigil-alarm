@@ -17,6 +17,14 @@ Je kunt Vigil bedienen met een tablet met een Home Assistant-dashboard, in plaat
 
 ## Wat de kaart doet
 
+![De kaart op een telefoon: niet gereed, toetsenpaneel, inschakelen met aftellen, alarm](images/card-phone-states-nl.png)
+
+![De kaart op een tablet: twee kolommen, ring en aftellen links, knoppen en toetsenpaneel rechts](images/card-tablet-states-nl.png)
+
+Met een toetsenbord (een tablet met toetsenbord, of een computer) kun je de code typen: cijfers, Backspace om te wissen, Enter om te bevestigen en Escape om het toetsenpaneel te sluiten.
+
+De kaart toont de toestand als een ring met een icoon, in de kleur van de toestand; tijdens de uitloop- en aankomstvertraging is de ring het aftellen. De kaart volgt de breedte waarin hij staat: één kolom op een telefoon, twee kolommen op een tablet. Hij heeft dezelfde stijl als het aanraakpaneel.
+
 - Volgt het profiel van het paneel van de tablet: alleen de modi waarin dat paneel mag inschakelen, *Uitschakelen* alleen als het mag, omzeilknoppen alleen als het mag omzeilen, de taal die je voor het paneel koos en helemaal geen sensorlijst als die op *nooit* staat.
 - **Uitschakelen en omzeilen vragen altijd een gebruikerscode**; inschakelen alleen als *code nodig om in te schakelen* aan staat. Het toetsenpaneel opent nooit vanzelf: tijdens de aankomstvertraging en bij een alarm laat het scherm eerst zien wat er aan de hand is, en wie wil uitschakelen drukt op *Uitschakelen*.
 - **De sensorlijst** opent met de code van een willekeurige Vigil-gebruiker, of de installateurscode van het paneel (via `vigil_alarm.unlock_panel`), zolang je hebt ingesteld. Omzeilen en terugzetten vragen een gebruiker die het recht heeft om te omzeilen (sabotagesensoren: ook het sabotagerecht). Tot die tijd toont de kaart alleen *hoeveel* sensoren open staan, nooit hun namen. De lijst verlaten, of 30 seconden niet aanraken, laat de kaart de ontgrendeling vergeten.
@@ -27,6 +35,7 @@ Je kunt Vigil bedienen met een tablet met een Home Assistant-dashboard, in plaat
 - Vigil herkent de tablet aan de **Home Assistant-gebruiker** achter elke oproep. Home Assistant zet die gebruiker er zelf bij, dus het is niet na te maken met een andere `source`-tekst. Dat is sterker dan bij een ESPHome-paneel, waarvan de oproepen geen gebruiker meedragen.
 - Wat de kaart ook toont, de server beslist: een oproep die het profiel niet toestaat, wordt geweigerd en vastgelegd (`panel_refused`). De kaart is alleen een mooier gezicht erop.
 - De tablet heeft een eigen blokkade-timer voor foute codes en Vigil behandelt de tablet nooit als beheerder. *Geblokkeerd* weigert alles van die tablet; *Blokkade opheffen* en *Ontgrendelen* werken zoals bij elk paneel.
+- Een telefoon die uit staat is geen storing: bij een tablet of telefoon staat *Bewaken of dit paneel bereikbaar is* standaard uit, dus geen reparatie en geen melding. Zet het aan voor een tablet die de hele dag aan de muur hangt.
 - In de geschiedenis staat wie het deed, bijvoorbeeld *Anna (hal-tablet)*.
 
 ## Offline

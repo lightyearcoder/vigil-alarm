@@ -22,9 +22,17 @@ substitutions:
   # How long the screen stays on without touch, until Vigil has told the panel (setting "Screen off after" in Vigil).
   backlight_timeout_seconds: "30"
   # The version of this firmware, reported to Vigil.
-  firmware_version: "0.4.0"
+  firmware_version: "0.4.1"
   # The width of the cards and buttons: the screen minus a margin on both sides.
   content_w: ${ screen_width | int - 24 }
+  # The sizes follow the screen: the ring is a bit over a quarter of the shortest side, the keys fill the keypad.
+  ring_d: ${ ([screen_width | int, screen_height | int] | min * 27 / 100) | int }
+  ring_disc: ${ ([screen_width | int, screen_height | int] | min * 27 / 100) | int - 36 }
+  nav_h: "60"
+  mode_h: "88"
+  keypad_h: ${ screen_height | int - 170 }
+  key_w: ${ ((screen_width | int - 44) / 3) | int }
+  key_h: ${ ((screen_height | int - 170 - 30) / 4) | int }
 
 esphome:
   includes:
@@ -37,6 +45,55 @@ esphome:
       - script.execute: refresh_texts
       - script.execute: refresh_ui
       - script.execute: wake
+
+font:
+  # The icons: Material Design Icons, only the glyphs the panel uses (see VIGIL_ICON_* in vigil_panel.h). ESPHome
+  # downloads the font file when you compile. The text is the built-in Montserrat of LVGL.
+  - file:
+      type: web
+      url: https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf
+    id: font_icons_30
+    size: 30
+    bpp: 4
+    glyphs: &icon_glyphs
+      - "\U000F0CC8"
+      - "\U000F0ECD"
+      - "\U000F099D"
+      - "\U000F0CCB"
+      - "\U000F06A1"
+      - "\U000F0A48"
+      - "\U000F0594"
+      - "\U000F0FC7"
+      - "\U000F0341"
+      - "\U000F11D9"
+      - "\U000F02FD"
+      - "\U000F05A9"
+      - "\U000F05AA"
+      - "\U000F0B5C"
+      - "\U000F012C"
+      - "\U000F0156"
+      - "\U000F0141"
+      - "\U000F0142"
+      - "\U000F009F"
+      - "\U000F051F"
+      - "\U000F0338"
+      - "\U000F073A"
+      - "\U000F002A"
+      - "\U000F099C"
+  - file:
+      type: web
+      url: https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf
+    id: font_icons_22
+    size: 22
+    bpp: 4
+    glyphs: *icon_glyphs
+  - file:
+      type: web
+      url: https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf
+    id: font_icons_60
+    size: 60
+    bpp: 4
+    glyphs: *icon_glyphs
 
 time:
   - platform: homeassistant
@@ -442,6 +499,7 @@ script:
           text: ""
       - lvgl.page.show: page_main
       - script.execute: route
+      - script.execute: nav_update
 
   - id: wake_touch
     then:
@@ -465,60 +523,78 @@ script:
             - script.execute: refresh_ui
             - script.execute: refresh_texts
 
-  # The main page.
+  # The main page: the ring, the texts, the buttons. One lambda, so the screen changes in one go.
   - id: refresh_ui
     mode: restart
     then:
-      - lvgl.label.update:
-          id: lbl_state
-          text: !lambda 'return vigil::state_title();'
-      - lvgl.label.update:
-          id: lbl_sub
-          text: !lambda 'return vigil::state_sub(vigil::ctx.now);'
-      - lvgl.obj.update:
-          id: card_state
-          bg_color: !lambda 'return lv_color_hex(vigil::state_color());'
-      - lvgl.label.update:
-          id: lbl_conn
-          text: !lambda 'return std::string(vigil::ctx.ha_connected ? "HA" : "HA ?");'
-      - lvgl.label.update:
-          id: lbl_sensors_btn
-          text: !lambda 'return vigil::sensors_button_text();'
-      - if:
-          condition:
-            lambda: return vigil::show_sensors_button();
-          then:
-            - lvgl.widget.show: btn_sensors
-          else:
-            - lvgl.widget.hide: btn_sensors
-      - if:
-          condition:
-            lambda: return vigil::show_home();
-          then:
-            - lvgl.widget.show: btn_home
-          else:
-            - lvgl.widget.hide: btn_home
-      - if:
-          condition:
-            lambda: return vigil::show_away();
-          then:
-            - lvgl.widget.show: btn_away
-          else:
-            - lvgl.widget.hide: btn_away
-      - if:
-          condition:
-            lambda: return vigil::show_night();
-          then:
-            - lvgl.widget.show: btn_night
-          else:
-            - lvgl.widget.hide: btn_night
-      - if:
-          condition:
-            lambda: return vigil::show_disarm();
-          then:
-            - lvgl.widget.show: btn_disarm
-          else:
-            - lvgl.widget.hide: btn_disarm
+      - lambda: |-
+          using namespace vigil;
+          auto hide = [](lv_obj_t *o, bool h) {
+            if (h) lv_obj_add_flag(o, LV_OBJ_FLAG_HIDDEN); else lv_obj_remove_flag(o, LV_OBJ_FLAG_HIDDEN);
+          };
+          const uint32_t col = ring_color();
+          const bool alarm = usable() && ctx.state == "triggered";
+          lv_label_set_text(id(lbl_state), state_title().c_str());
+          const std::string sub = state_sub(ctx.now);
+          lv_label_set_text(id(lbl_sub), sub.c_str());
+          // A short text is big, a long one (a few lines) is small, so it always fits in the card.
+          const bool short_text = sub.size() <= 40 && std::count(sub.begin(), sub.end(), '\n') <= 1;
+          lv_obj_set_style_text_font(id(lbl_sub), short_text ? &lv_font_montserrat_20 : &lv_font_montserrat_14, 0);
+          // The ring: full in the colour of the state, or counting down during the exit and the entry delay.
+          lv_arc_set_value(id(ring), ring_percent(ctx.now));
+          lv_obj_set_style_arc_color(id(ring), lv_color_hex(col), LV_PART_INDICATOR);
+          lv_obj_set_style_bg_color(id(ring_disc), lv_color_hex(tint_of(col)), 0);
+          std::string number = ring_text(ctx.now);
+          lv_label_set_text(id(lbl_ring_icon), state_icon().c_str());
+          lv_obj_set_style_text_color(id(lbl_ring_icon), lv_color_hex(col), 0);
+          lv_label_set_text(id(lbl_ring_num), number.c_str());
+          lv_obj_set_style_text_color(id(lbl_ring_num), lv_color_hex(col), 0);
+          hide(id(lbl_ring_icon), !number.empty());
+          hide(id(lbl_ring_num), number.empty());
+          // Home Assistant there? The icon at the top right says so.
+          lv_label_set_text(id(lbl_wifi), ctx.ha_connected ? VIGIL_ICON_WIFI : VIGIL_ICON_WIFI_OFF);
+          lv_obj_set_style_text_color(id(lbl_wifi), lv_color_hex(ctx.ha_connected ? COL_OFF : COL_ALARM), 0);
+          // The buttons: only what is allowed now. A row without buttons takes no room.
+          hide(id(btn_home), !show_home());
+          hide(id(btn_away), !show_away());
+          hide(id(btn_night), !show_night());
+          hide(id(btn_disarm), !show_disarm());
+          hide(id(row_modes), !(show_home() || show_away() || show_night()));
+          // The alarm: a red frame, and everything a little red
+          hide(id(alarm_frame), !alarm);
+          const uint32_t ground = alarm ? 0x1A0F12 : 0x0E1116;
+          lv_obj_set_style_bg_color(id(page_main)->obj, lv_color_hex(ground), 0);
+          lv_obj_set_style_bg_color(id(page_sensors)->obj, lv_color_hex(ground), 0);
+          lv_obj_set_style_bg_color(id(page_info)->obj, lv_color_hex(ground), 0);
+          lv_obj_set_style_bg_color(id(page_keypad)->obj, lv_color_hex(ground), 0);
+          lv_obj_set_style_bg_color(id(nav), lv_color_hex(ground), 0);
+          lv_obj_set_style_bg_color(id(card_ring), lv_color_hex(alarm ? 0x231216 : 0x151A22), 0);
+          lv_obj_set_style_border_color(id(card_ring), lv_color_hex(alarm ? 0x5A2A30 : 0x232A35), 0);
+      - script.execute: nav_update
+
+  # The tabs at the bottom: the active one has the colour of the state, the keypad has none, the sensors tab has the
+  # number of open sensors, or is not there at all if the list is for nobody.
+  - id: nav_update
+    then:
+      - lambda: |-
+          using namespace vigil;
+          auto hide = [](lv_obj_t *o, bool h) {
+            if (h) lv_obj_add_flag(o, LV_OBJ_FLAG_HIDDEN); else lv_obj_remove_flag(o, LV_OBJ_FLAG_HIDDEN);
+          };
+          hide(id(nav), id(keypad_open));
+          const int tab = id(on_info_page) ? 2 : (id(on_sensors_page) ? 1 : 0);
+          const lv_color_t on = lv_color_hex(ring_color());
+          const lv_color_t off = lv_color_hex(COL_OFF);
+          lv_obj_set_style_text_color(id(nav_alarm_icon), tab == 0 ? on : off, 0);
+          lv_obj_set_style_text_color(id(nav_alarm_lbl), tab == 0 ? on : off, 0);
+          lv_obj_set_style_text_color(id(nav_sens_icon), tab == 1 ? on : off, 0);
+          lv_obj_set_style_text_color(id(nav_sens_lbl), tab == 1 ? on : off, 0);
+          lv_obj_set_style_text_color(id(nav_info_icon), tab == 2 ? on : off, 0);
+          lv_obj_set_style_text_color(id(nav_info_lbl), tab == 2 ? on : off, 0);
+          hide(id(nav_sens), !show_sensors_button());
+          const int open = open_total_count();
+          lv_label_set_text(id(nav_badge_lbl), std::to_string(open).c_str());
+          hide(id(nav_badge), open <= 0);
 
   # The texts that do not change with the alarm: they change with the language.
   - id: refresh_texts
@@ -538,6 +614,15 @@ script:
       - lvgl.label.update:
           id: lbl_sens_title
           text: !lambda 'return vigil::tr("sensors");'
+      - lvgl.label.update:
+          id: nav_alarm_lbl
+          text: !lambda 'return vigil::tr("nav_alarm");'
+      - lvgl.label.update:
+          id: nav_sens_lbl
+          text: !lambda 'return vigil::tr("sensors");'
+      - lvgl.label.update:
+          id: nav_info_lbl
+          text: !lambda 'return vigil::tr("nav_info");'
       - lvgl.label.update:
           id: lbl_info_title
           text: !lambda 'return vigil::tr("info");'
@@ -575,6 +660,11 @@ script:
       - lambda: |-
           int last = vigil::page_count() - 1;
           if (id(sens_page) > last) id(sens_page) = last;
+      - lvgl.label.update:
+          id: lbl_sens_sub
+          text: !lambda |-
+            int open = vigil::open_total_count();
+            return open > 0 ? vigil::tr("open") + std::to_string(open) : vigil::tr("all_closed");
       - lvgl.label.update:
           id: lbl_pager
           text: !lambda |-
@@ -649,12 +739,14 @@ script:
       - lambda: id(on_info_page) = true;
       - script.execute: refresh_texts
       - lvgl.page.show: page_info
+      - script.execute: nav_update
 
   - id: show_sensors
     then:
       - lambda: id(on_sensors_page) = true;
       - script.execute: refresh_sensors
       - lvgl.page.show: page_sensors
+      - script.execute: nav_update
 
   # Forget the unlock and close the list or the info, now or when the time is up.
   - id: lock_sensors
@@ -722,7 +814,7 @@ script:
           id: lbl_kp_title
           text: !lambda 'return vigil::keypad_title(id(pending_action), id(pending_name));'
       # Under the code: which code is expected, in grey; an error replaces it, in red.
-      - lambda: lv_obj_set_style_text_color(id(lbl_kp_err), lv_color_hex(0x94A3B8), 0);
+      - lambda: lv_obj_set_style_text_color(id(lbl_kp_err), lv_color_hex(0x8A94A6), 0);
       - lvgl.label.update:
           id: lbl_kp_err
           text: !lambda 'return vigil::keypad_hint(id(pending_action));'
@@ -730,6 +822,7 @@ script:
           id: pin_text
           text: ""
       - lvgl.page.show: page_keypad
+      - script.execute: nav_update
 
   - id: close_keypad
     then:
@@ -742,6 +835,7 @@ script:
           id: pin_text
           text: ""
       - lvgl.page.show: page_main
+      - script.execute: nav_update
 
   # The keypad closes when what it was for is over. It never opens by itself.
   - id: route
@@ -907,7 +1001,7 @@ script:
           condition:
             lambda: return id(keypad_open);
           then:
-            - lambda: lv_obj_set_style_text_color(id(lbl_kp_err), lv_color_hex(0xF87171), 0);
+            - lambda: lv_obj_set_style_text_color(id(lbl_kp_err), lv_color_hex(0xF0605D), 0);
             - lvgl.label.update:
                 id: lbl_kp_err
                 text: !lambda 'return vigil::ctx.message;'
@@ -922,20 +1016,160 @@ script:
       - delay: 8s
       - lambda: |-
           vigil::ctx.message = "";
-          lv_obj_set_style_text_color(id(lbl_kp_err), lv_color_hex(0x94A3B8), 0);
+          lv_obj_set_style_text_color(id(lbl_kp_err), lv_color_hex(0x8A94A6), 0);
       - lvgl.label.update:
           id: lbl_kp_err
           text: !lambda 'return id(keypad_open) ? vigil::keypad_hint(id(pending_action)) : std::string("");'
       - script.execute: refresh_ui
 
 # --------------------------------------------------------------------------------------- screen
+# The look of Vigil: dark ground, calm cards, one colour per state (see vigil_panel.h). The sizes follow the size of
+# the screen (the substitutions at the top), the main page is a column that grows with the screen, so a wider panel
+# is a matter of a hardware file, not of this one.
 lvgl:
   default_font: montserrat_20
-  text_color: 0xE6EAF0
-  bg_color: 0x0B0F14
-  # A see-through layer over everything, there while the screen is dark: it takes the touch that wakes the panel.
+  text_color: 0xE8ECF2
+  bg_color: 0x0E1116
   top_layer:
     widgets:
+      # The tabs at the bottom, on every page except the keypad (see `nav_update`).
+      - obj:
+          id: nav
+          width: 100%
+          height: ${nav_h}
+          align: BOTTOM_MID
+          bg_color: 0x0E1116
+          bg_opa: COVER
+          border_width: 1
+          border_side: TOP
+          border_color: 0x232A35
+          radius: 0
+          shadow_width: 0
+          pad_all: 0
+          scrollable: false
+          layout:
+            type: flex
+            flex_flow: ROW
+          widgets:
+            - button:
+                id: nav_alarm
+                height: 100%
+                flex_grow: 1
+                bg_opa: TRANSP
+                shadow_width: 0
+                radius: 0
+                layout:
+                  type: flex
+                  flex_flow: COLUMN
+                  flex_align_main: CENTER
+                  flex_align_cross: CENTER
+                  flex_align_track: CENTER
+                on_click:
+                  then:
+                    - script.execute: lock_sensors
+                widgets:
+                  - label:
+                      id: nav_alarm_icon
+                      text: "\U000F0CCB"
+                      text_font: font_icons_30
+                      text_color: 0x8A94A6
+                  - label:
+                      id: nav_alarm_lbl
+                      text: "Alarm"
+                      text_font: montserrat_14
+                      text_color: 0x8A94A6
+            - button:
+                id: nav_sens
+                height: 100%
+                flex_grow: 1
+                bg_opa: TRANSP
+                shadow_width: 0
+                radius: 0
+                layout:
+                  type: flex
+                  flex_flow: COLUMN
+                  flex_align_main: CENTER
+                  flex_align_cross: CENTER
+                  flex_align_track: CENTER
+                on_click:
+                  then:
+                    - script.execute: open_sensors
+                widgets:
+                  - label:
+                      id: nav_sens_icon
+                      text: "\U000F11D9"
+                      text_font: font_icons_30
+                      text_color: 0x8A94A6
+                  - label:
+                      id: nav_sens_lbl
+                      text: "Sensors"
+                      text_font: montserrat_14
+                      text_color: 0x8A94A6
+                  - obj:
+                      id: nav_badge
+                      width: 22
+                      height: 22
+                      radius: 11
+                      bg_color: 0xF2B84B
+                      border_width: 0
+                      shadow_width: 0
+                      pad_all: 0
+                      scrollable: false
+                      clickable: false
+                      floating: true
+                      align: TOP_MID
+                      x: 20
+                      y: 2
+                      hidden: true
+                      widgets:
+                        - label:
+                            id: nav_badge_lbl
+                            text: "0"
+                            text_font: montserrat_14
+                            text_color: 0x2A1D00
+                            align: CENTER
+            - button:
+                id: nav_info
+                height: 100%
+                flex_grow: 1
+                bg_opa: TRANSP
+                shadow_width: 0
+                radius: 0
+                layout:
+                  type: flex
+                  flex_flow: COLUMN
+                  flex_align_main: CENTER
+                  flex_align_cross: CENTER
+                  flex_align_track: CENTER
+                on_click:
+                  then:
+                    - script.execute: open_info
+                widgets:
+                  - label:
+                      id: nav_info_icon
+                      text: "\U000F02FD"
+                      text_font: font_icons_30
+                      text_color: 0x8A94A6
+                  - label:
+                      id: nav_info_lbl
+                      text: "Info"
+                      text_font: montserrat_14
+                      text_color: 0x8A94A6
+      # A red frame around the screen while the alarm is going off.
+      - obj:
+          id: alarm_frame
+          width: 100%
+          height: 100%
+          align: CENTER
+          bg_opa: TRANSP
+          border_width: 3
+          border_color: 0xF0605D
+          radius: 0
+          shadow_width: 0
+          scrollable: false
+          clickable: false
+          hidden: true
+      # A see-through layer over everything, there while the screen is dark: it takes the touch that wakes the panel.
       - obj:
           id: wake_shield
           width: 100%
@@ -953,80 +1187,133 @@ lvgl:
   pages:
     # ================================================================== MAIN
     - id: page_main
-      bg_color: 0x0B0F14
+      bg_color: 0x0E1116
       scrollable: false
+      pad_all: 12
+      pad_bottom: 0
+      layout:
+        type: flex
+        flex_flow: COLUMN
+        pad_row: 10
       widgets:
-        - label:
-            id: lbl_time
-            text: "--:--"
-            text_font: montserrat_28
-            text_color: 0xAAB4C3
-            align: TOP_LEFT
-            x: 20
-            y: 16
-        - label:
-            id: lbl_conn
-            text: "HA ?"
-            text_font: montserrat_14
-            text_color: 0x64748B
-            align: TOP_LEFT
-            x: 120
-            y: 24
-        - button:
-            id: btn_settings
-            width: 52
-            height: 52
-            align: TOP_RIGHT
-            x: -14
-            y: 8
-            radius: 26
-            bg_color: 0x1C2430
-            shadow_width: 0
-            on_click:
-              then:
-                - script.execute: open_info
-            widgets:
-              - label:
-                  text: ""
-                  text_color: 0xAAB4C3
-                  align: CENTER
-        # The state
+        # The top bar: the time, and whether Home Assistant is there
         - obj:
-            id: card_state
-            width: ${content_w}
-            height: 210
-            align: TOP_MID
-            y: 70
-            radius: 28
-            bg_color: 0x475569
+            width: 100%
+            height: 40
+            bg_opa: TRANSP
             border_width: 0
             pad_all: 0
             scrollable: false
             widgets:
               - label:
+                  id: lbl_time
+                  text: "--:--"
+                  text_font: montserrat_28
+                  text_color: 0x8A94A6
+                  align: LEFT_MID
+                  x: 8
+              - label:
+                  id: lbl_wifi
+                  text: "\U000F05AA"
+                  text_font: font_icons_22
+                  text_color: 0x8A94A6
+                  align: RIGHT_MID
+                  x: -8
+        # The state: the ring, what it is, what is the matter
+        - obj:
+            id: card_ring
+            width: 100%
+            flex_grow: 1
+            radius: 28
+            bg_color: 0x151A22
+            border_width: 1
+            border_color: 0x232A35
+            shadow_width: 0
+            pad_all: 8
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: COLUMN
+              pad_row: 2
+              flex_align_main: CENTER
+              flex_align_cross: CENTER
+              flex_align_track: CENTER
+            widgets:
+              - obj:
+                  width: ${ring_d}
+                  height: ${ring_d}
+                  bg_opa: TRANSP
+                  border_width: 0
+                  pad_all: 0
+                  scrollable: false
+                  widgets:
+                    - arc:
+                        id: ring
+                        width: ${ring_d}
+                        height: ${ring_d}
+                        align: CENTER
+                        start_angle: 0
+                        end_angle: 360
+                        rotation: 270
+                        min_value: 0
+                        max_value: 100
+                        value: 100
+                        adjustable: false
+                        arc_width: 9
+                        arc_color: 0x1C2530
+                        indicator:
+                          arc_width: 9
+                          arc_color: 0x8A94A6
+                        knob:
+                          bg_opa: TRANSP
+                          pad_all: 0
+                    - obj:
+                        id: ring_disc
+                        width: ${ring_disc}
+                        height: ${ring_disc}
+                        radius: 100%
+                        align: CENTER
+                        bg_color: 0x1B232D
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        scrollable: false
+                        clickable: false
+                    - label:
+                        id: lbl_ring_icon
+                        text: ""
+                        text_font: font_icons_60
+                        text_color: 0x8A94A6
+                        align: CENTER
+                    - label:
+                        id: lbl_ring_num
+                        text: ""
+                        text_font: montserrat_40
+                        text_color: 0xF2B84B
+                        align: CENTER
+                        hidden: true
+              - label:
                   id: lbl_state
                   text: ""
-                  text_font: montserrat_40
-                  text_color: 0xFFFFFF
-                  align: TOP_MID
-                  y: 36
+                  text_font: montserrat_28
+                  text_color: 0xE8ECF2
+                  pad_top: 10
+                  text_align: CENTER
+                  long_mode: DOT
+                  width: 100%
               - label:
                   id: lbl_sub
                   text: ""
-                  text_font: montserrat_20
-                  text_color: 0xF1F5F9
+                  text_font: montserrat_14
+                  text_color: 0xC5CCD8
                   text_align: CENTER
                   long_mode: WRAP
-                  width: 420
-                  align: BOTTOM_MID
-                  y: -22
+                  width: 100%
         # The buttons: only the modes that are on, or Disarm
         - obj:
             id: row_modes
-            width: ${content_w}
-            height: 96
-            align: TOP_MID
-            y: 296
+            width: 100%
+            height: ${mode_h}
             bg_opa: TRANSP
             border_width: 0
             pad_all: 0
@@ -1034,256 +1321,464 @@ lvgl:
             layout:
               type: flex
               flex_flow: ROW
-              pad_column: 12
+              pad_column: 10
             widgets:
               - button:
                   id: btn_home
-                  height: 96
+                  height: 100%
                   flex_grow: 1
                   radius: 22
-                  bg_color: 0x0D9488
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
                   shadow_width: 0
+                  pressed:
+                    bg_color: 0x1E2631
                   on_click:
                     then:
                       - lambda: |-
                           id(pending_action) = vigil::ARM_HOME;
                           id(pending_entity) = "";
                       - script.execute: start_action
+                  layout:
+                    type: flex
+                    flex_flow: COLUMN
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_row: 6
                   widgets:
+                    - obj:
+                        width: 44
+                        height: 44
+                        radius: 22
+                        bg_color: 0x17233A
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                        widgets:
+                          - label:
+                              text: "\U000F06A1"
+                              text_font: font_icons_30
+                              text_color: 0x5B9BF0
+                              align: CENTER
                     - label:
                         id: lbl_btn_home
                         text: "Home"
-                        text_font: montserrat_28
-                        text_color: 0xFFFFFF
-                        align: CENTER
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
               - button:
                   id: btn_away
-                  height: 96
+                  height: 100%
                   flex_grow: 1
                   radius: 22
-                  bg_color: 0x2563EB
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
                   shadow_width: 0
+                  pressed:
+                    bg_color: 0x1E2631
                   on_click:
                     then:
                       - lambda: |-
                           id(pending_action) = vigil::ARM_AWAY;
                           id(pending_entity) = "";
                       - script.execute: start_action
+                  layout:
+                    type: flex
+                    flex_flow: COLUMN
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_row: 6
                   widgets:
+                    - obj:
+                        width: 44
+                        height: 44
+                        radius: 22
+                        bg_color: 0x2E1E17
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                        widgets:
+                          - label:
+                              text: "\U000F0A48"
+                              text_font: font_icons_30
+                              text_color: 0xFF8A5B
+                              align: CENTER
                     - label:
                         id: lbl_btn_away
                         text: "Away"
-                        text_font: montserrat_28
-                        text_color: 0xFFFFFF
-                        align: CENTER
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
               - button:
                   id: btn_night
-                  height: 96
+                  height: 100%
                   flex_grow: 1
                   radius: 22
-                  bg_color: 0x7C3AED
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
                   shadow_width: 0
+                  pressed:
+                    bg_color: 0x1E2631
                   on_click:
                     then:
                       - lambda: |-
                           id(pending_action) = vigil::ARM_NIGHT;
                           id(pending_entity) = "";
                       - script.execute: start_action
+                  layout:
+                    type: flex
+                    flex_flow: COLUMN
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_row: 6
                   widgets:
+                    - obj:
+                        width: 44
+                        height: 44
+                        radius: 22
+                        bg_color: 0x211E3A
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                        widgets:
+                          - label:
+                              text: "\U000F0594"
+                              text_font: font_icons_30
+                              text_color: 0x9A8CF2
+                              align: CENTER
                     - label:
                         id: lbl_btn_night
                         text: "Night"
-                        text_font: montserrat_28
-                        text_color: 0xFFFFFF
-                        align: CENTER
-              - button:
-                  id: btn_disarm
-                  height: 96
-                  flex_grow: 1
-                  radius: 22
-                  bg_color: 0x1C2430
-                  border_width: 2
-                  border_color: 0x475569
-                  shadow_width: 0
-                  on_click:
-                    then:
-                      - lambda: |-
-                          id(pending_action) = vigil::DISARM;
-                          id(pending_entity) = "";
-                      - script.execute: start_action
-                  widgets:
-                    - label:
-                        id: lbl_btn_disarm
-                        text: "Disarm"
-                        text_font: montserrat_28
-                        text_color: 0xFFFFFF
-                        align: CENTER
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+        # Disarm: one wide button of its own, as wide as the card above it
         - button:
-            id: btn_sensors
-            width: ${content_w}
-            height: 64
-            align: TOP_MID
-            y: 404
+            id: btn_disarm
+            width: 100%
+            height: ${mode_h}
             radius: 22
-            bg_color: 0x141A22
+            bg_color: 0x000000
+            border_width: 2
+            border_color: 0x4CCB8F
             shadow_width: 0
+            pressed:
+              bg_color: 0x14281F
             on_click:
               then:
-                - script.execute: open_sensors
+                - lambda: |-
+                    id(pending_action) = vigil::DISARM;
+                    id(pending_entity) = "";
+                - script.execute: start_action
+            layout:
+              type: flex
+              flex_flow: ROW
+              flex_align_main: CENTER
+              flex_align_cross: CENTER
+              flex_align_track: CENTER
+              pad_column: 10
             widgets:
               - label:
-                  id: lbl_sensors_btn
-                  text: "Sensors"
-                  text_color: 0xE6EAF0
-                  align: CENTER
+                  text: "\U000F0FC7"
+                  text_font: font_icons_30
+                  text_color: 0x4CCB8F
+              - label:
+                  id: lbl_btn_disarm
+                  text: "Disarm"
+                  text_font: montserrat_28
+                  text_color: 0x4CCB8F
+        # The space of the tabs: they are in the top layer, so they stay put on every page
+        - obj:
+            width: 100%
+            height: ${nav_h}
+            bg_opa: TRANSP
+            border_width: 0
+            pad_all: 0
+            scrollable: false
+            clickable: false
 
     # ================================================================ KEYPAD
     - id: page_keypad
-      bg_color: 0x0B0F14
+      bg_color: 0x0E1116
       scrollable: false
       widgets:
         - button:
             id: btn_kp_cancel
-            width: 52
-            height: 52
+            width: 48
+            height: 48
             align: TOP_LEFT
-            x: 14
+            x: 12
             y: 8
-            radius: 26
-            bg_color: 0x1C2430
+            radius: 24
+            bg_color: 0x151A22
+            border_width: 1
+            border_color: 0x232A35
             shadow_width: 0
             on_click:
               then:
                 - script.execute: close_keypad
             widgets:
               - label:
-                  text: ""
+                  text: "\U000F0141"
+                  text_font: font_icons_30
+                  text_color: 0xC5CCD8
                   align: CENTER
         - label:
             id: lbl_kp_title
             text: ""
             text_font: montserrat_28
+            text_color: 0xE8ECF2
             long_mode: DOT
-            width: 360
+            width: ${ screen_width | int - 140 }
             text_align: CENTER
             align: TOP_MID
-            y: 16
+            y: 14
         - textarea:
             id: pin_text
-            width: 300
-            height: 64
+            width: ${ screen_width | int - 120 }
+            height: 60
             align: TOP_MID
-            y: 72
+            y: 62
             one_line: true
             password_mode: true
             max_length: 12
             text_font: montserrat_40
             text_color: 0xFFFFFF  # without this the stars are dark grey on a dark background
             text_align: CENTER
-            bg_color: 0x141A22
-            border_width: 0
+            bg_color: 0x151A22
+            border_width: 1
+            border_color: 0x232A35
             radius: 18
             placeholder_text: ""
         - label:
             id: lbl_kp_err
             text: ""
             text_font: montserrat_14
-            text_color: 0xF87171
+            text_color: 0x8A94A6
             text_align: CENTER
             long_mode: WRAP
-            width: 440
+            width: ${ screen_width | int - 40 }
             align: TOP_MID
-            y: 146
-        - buttonmatrix:
+            y: 130
+        - obj:
             id: keypad
             width: ${content_w}
-            height: 276
-            align: TOP_MID
-            y: 196
-            pad_all: 0
-            pad_row: 10
-            pad_column: 10
+            height: ${keypad_h}
+            align: BOTTOM_MID
+            y: -10
             bg_opa: TRANSP
             border_width: 0
-            text_font: montserrat_40
-            items:
-              bg_color: 0x1C2430
-              radius: 18
-              shadow_width: 0
-              text_color: 0xFFFFFF
-            rows:
-              - buttons:
-                  - text: "1"
-                    on_press: {then: [{script.execute: {id: add_digit, d: "1"}}]}
-                  - text: "2"
-                    on_press: {then: [{script.execute: {id: add_digit, d: "2"}}]}
-                  - text: "3"
-                    on_press: {then: [{script.execute: {id: add_digit, d: "3"}}]}
-              - buttons:
-                  - text: "4"
-                    on_press: {then: [{script.execute: {id: add_digit, d: "4"}}]}
-                  - text: "5"
-                    on_press: {then: [{script.execute: {id: add_digit, d: "5"}}]}
-                  - text: "6"
-                    on_press: {then: [{script.execute: {id: add_digit, d: "6"}}]}
-              - buttons:
-                  - text: "7"
-                    on_press: {then: [{script.execute: {id: add_digit, d: "7"}}]}
-                  - text: "8"
-                    on_press: {then: [{script.execute: {id: add_digit, d: "8"}}]}
-                  - text: "9"
-                    on_press: {then: [{script.execute: {id: add_digit, d: "9"}}]}
-              - buttons:
-                  - text: ""
-                    on_press: {then: [{script.execute: delete_digit}]}
-                  - text: "0"
-                    on_press: {then: [{script.execute: {id: add_digit, d: "0"}}]}
-                  - text: ""
-                    on_press: {then: [{script.execute: run_action}]}
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: ROW_WRAP
+              pad_row: 10
+              pad_column: 10
+            widgets:
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "1"}}]}
+                  widgets:
+                    - label: {text: "1", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "2"}}]}
+                  widgets:
+                    - label: {text: "2", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "3"}}]}
+                  widgets:
+                    - label: {text: "3", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "4"}}]}
+                  widgets:
+                    - label: {text: "4", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "5"}}]}
+                  widgets:
+                    - label: {text: "5", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "6"}}]}
+                  widgets:
+                    - label: {text: "6", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "7"}}]}
+                  widgets:
+                    - label: {text: "7", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "8"}}]}
+                  widgets:
+                    - label: {text: "8", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "9"}}]}
+                  widgets:
+                    - label: {text: "9", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: delete_digit}]}
+                  widgets:
+                    - label: {text: "\U000F0B5C", text_font: font_icons_30, text_color: 0xC5CCD8, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "0"}}]}
+                  widgets:
+                    - label: {text: "0", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  id: key_ok
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x4CCB8F
+                  border_width: 0
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x3DB57C
+                  on_press: {then: [{script.execute: run_action}]}
+                  widgets:
+                    - label: {text: "\U000F012C", text_font: font_icons_30, text_color: 0x07251A, align: CENTER}
 
     # =============================================================== SENSORS
     - id: page_sensors
-      bg_color: 0x0B0F14
+      bg_color: 0x0E1116
       scrollable: false
       widgets:
-        - button:
-            id: btn_sens_back
-            width: 52
-            height: 52
-            align: TOP_LEFT
-            x: 14
-            y: 8
-            radius: 26
-            bg_color: 0x1C2430
-            shadow_width: 0
-            on_click:
-              then:
-                - script.execute: lock_sensors  # forget the unlock when leaving the list
-                - lvgl.page.show: page_main
-            widgets:
-              - label:
-                  text: ""
-                  align: CENTER
         - label:
             id: lbl_sens_title
             text: "Sensors"
             text_font: montserrat_28
-            align: TOP_MID
-            y: 16
-        - !include {file: vigil-panel-row.yaml, vars: {n: 0, y: 70}}
-        - !include {file: vigil-panel-row.yaml, vars: {n: 1, y: 138}}
-        - !include {file: vigil-panel-row.yaml, vars: {n: 2, y: 206}}
-        - !include {file: vigil-panel-row.yaml, vars: {n: 3, y: 274}}
-        - !include {file: vigil-panel-row.yaml, vars: {n: 4, y: 342}}
+            text_color: 0xE8ECF2
+            align: TOP_LEFT
+            x: 20
+            y: 14
+        - label:
+            id: lbl_sens_sub
+            text: ""
+            text_font: montserrat_14
+            text_color: 0x8A94A6
+            align: TOP_RIGHT
+            x: -20
+            y: 24
+        - !include {file: vigil-panel-row.yaml, vars: {n: 0, y: 58}}
+        - !include {file: vigil-panel-row.yaml, vars: {n: 1, y: 120}}
+        - !include {file: vigil-panel-row.yaml, vars: {n: 2, y: 182}}
+        - !include {file: vigil-panel-row.yaml, vars: {n: 3, y: 244}}
+        - !include {file: vigil-panel-row.yaml, vars: {n: 4, y: 306}}
         - button:
             id: btn_prev
-            width: 110
-            height: 48
+            width: 96
+            height: 40
             align: BOTTOM_LEFT
             x: 12
-            y: -10
-            radius: 16
-            bg_color: 0x1C2430
+            y: ${ -1 * (nav_h | int + 8) }
+            radius: 20
+            bg_color: 0x151A22
+            border_width: 1
+            border_color: 0x232A35
             shadow_width: 0
             on_click:
               then:
@@ -1292,23 +1787,27 @@ lvgl:
                     step: -1
             widgets:
               - label:
-                  text: ""
+                  text: "\U000F0141"
+                  text_font: font_icons_30
+                  text_color: 0xC5CCD8
                   align: CENTER
         - label:
             id: lbl_pager
             text: ""
-            text_color: 0x8A94A3
+            text_color: 0x8A94A6
             align: BOTTOM_MID
-            y: -22
+            y: ${ -1 * (nav_h | int + 16) }
         - button:
             id: btn_next
-            width: 110
-            height: 48
+            width: 96
+            height: 40
             align: BOTTOM_RIGHT
             x: -12
-            y: -10
-            radius: 16
-            bg_color: 0x1C2430
+            y: ${ -1 * (nav_h | int + 8) }
+            radius: 20
+            bg_color: 0x151A22
+            border_width: 1
+            border_color: 0x232A35
             shadow_width: 0
             on_click:
               then:
@@ -1317,96 +1816,84 @@ lvgl:
                     step: 1
             widgets:
               - label:
-                  text: ""
+                  text: "\U000F0142"
+                  text_font: font_icons_30
+                  text_color: 0xC5CCD8
                   align: CENTER
 
     # ================================================================== INFO
     - id: page_info
-      bg_color: 0x0B0F14
+      bg_color: 0x0E1116
       scrollable: false
       widgets:
-        - button:
-            id: btn_info_back
-            width: 52
-            height: 52
-            align: TOP_LEFT
-            x: 14
-            y: 8
-            radius: 26
-            bg_color: 0x1C2430
-            shadow_width: 0
-            on_click:
-              then:
-                - script.execute: lock_sensors  # forget the unlock when leaving the info
-            widgets:
-              - label:
-                  text: ""
-                  align: CENTER
         - label:
             id: lbl_info_title
             text: "Info"
             text_font: montserrat_28
-            align: TOP_MID
-            y: 16
+            text_color: 0xE8ECF2
+            align: TOP_LEFT
+            x: 20
+            y: 14
         - obj:
             width: ${content_w}
-            height: 320
+            height: 300
             align: TOP_MID
-            y: 84
+            y: 62
             radius: 22
-            bg_color: 0x141A22
-            border_width: 0
+            bg_color: 0x151A22
+            border_width: 1
+            border_color: 0x232A35
             pad_all: 0
             scrollable: false
             widgets:
               - label:
                   id: lbl_info_conn
                   text: ""
-                  text_color: 0xE6EAF0
+                  text_color: 0xE8ECF2
                   align: TOP_LEFT
                   x: 18
-                  y: 16
+                  y: 14
               - label:
                   id: lbl_info_ip
                   text: ""
-                  text_color: 0x8A94A3
+                  text_color: 0x8A94A6
                   align: TOP_LEFT
                   x: 18
-                  y: 60
+                  y: 56
               - label:
                   id: lbl_info_wifi
                   text: ""
-                  text_color: 0x8A94A3
+                  text_color: 0x8A94A6
                   align: TOP_LEFT
                   x: 18
-                  y: 100
+                  y: 94
               - label:
                   id: lbl_info_up
                   text: ""
-                  text_color: 0x8A94A3
+                  text_color: 0x8A94A6
                   align: TOP_LEFT
                   x: 18
-                  y: 140
+                  y: 132
               - label:
                   id: lbl_info_fw
                   text: ""
-                  text_color: 0x8A94A3
+                  text_color: 0x8A94A6
                   align: TOP_LEFT
                   x: 18
-                  y: 180
+                  y: 170
               - label:
                   id: lbl_info_id
                   text: ""
-                  text_color: 0x8A94A3
+                  text_color: 0x8A94A6
                   long_mode: DOT
-                  width: 420
+                  width: ${ content_w | int - 36 }
                   align: TOP_LEFT
                   x: 18
-                  y: 220
+                  y: 208
               - label:
                   id: lbl_info_profile
                   text: ""
-                  text_color: 0x8A94A3
+                  text_color: 0x8A94A6
                   align: TOP_LEFT
                   x: 18
-                  y: 260
+                  y: 246

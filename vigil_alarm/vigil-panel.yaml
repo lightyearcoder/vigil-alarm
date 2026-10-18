@@ -1,0 +1,1899 @@
+# Vigil Alarm touch panel: the screen, for any ESPHome device with an LVGL display and a touch screen.
+#
+# This file is the part that is the same for every panel. The hardware (display, touch, backlight)
+# is in a second file, for example guition-4848.yaml, and the device itself (name, Wi-Fi, keys) in
+# a third, see ../example-garage.yaml. What the hardware file must provide:
+#   - the substitutions `hardware_id`, `screen_width` and `screen_height`
+#   - a light with the id `display_backlight`
+#   - an `lvgl:` with the `touchscreens:` (and the display) of the panel
+#   - the touch screen calls `script.execute: wake` when touched (the touch that wakes a dark
+#     screen is then not passed on to the button under the finger)
+#
+# Nothing about what the panel may do is set here. The panel is added in Vigil (Panels), with the
+# ESPHome device name as panel id, and reads its profile from the sensor Vigil makes for it: which
+# modes there are, whether it may disarm or bypass, whether it may show the sensors, the language.
+# The device name is also the source shown in the history: "Anna (vigil-panel-garage)".
+
+substitutions:
+  # The Vigil alarm entity. Only change this if you renamed it.
+  alarm_entity: alarm_control_panel.vigil_alarm
+  # The profile sensor Vigil makes for this panel: the panel id (the device name) with underscores.
+  profile_entity: sensor.${ name | replace("-", "_") }_profile
+  # How long the screen stays on without touch, until Vigil has told the panel (setting "Screen off after" in Vigil).
+  backlight_timeout_seconds: "30"
+  # The version of this firmware, reported to Vigil.
+  firmware_version: "0.4.1"
+  # The width of the cards and buttons: the screen minus a margin on both sides.
+  content_w: ${ screen_width | int - 24 }
+  # The sizes follow the screen: the ring is a bit over a quarter of the shortest side, the keys fill the keypad.
+  ring_d: ${ ([screen_width | int, screen_height | int] | min * 27 / 100) | int }
+  ring_disc: ${ ([screen_width | int, screen_height | int] | min * 27 / 100) | int - 36 }
+  nav_h: "60"
+  mode_h: "88"
+  keypad_h: ${ screen_height | int - 170 }
+  key_w: ${ ((screen_width | int - 44) / 3) | int }
+  key_h: ${ ((screen_height | int - 170 - 30) / 4) | int }
+
+esphome:
+  includes:
+    - vigil_panel.h
+  on_boot:
+    priority: -100
+    then:
+      - lambda: |-
+          vigil::ctx.device_name = "${name}";
+      - script.execute: refresh_texts
+      - script.execute: refresh_ui
+      - script.execute: wake
+
+font:
+  # The icons: Material Design Icons, only the glyphs the panel uses (see VIGIL_ICON_* in vigil_panel.h). ESPHome
+  # downloads the font file when you compile. The text is the built-in Montserrat of LVGL.
+  - file:
+      type: web
+      url: https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf
+    id: font_icons_30
+    size: 30
+    bpp: 4
+    glyphs: &icon_glyphs
+      - "\U000F0CC8"
+      - "\U000F0ECD"
+      - "\U000F099D"
+      - "\U000F0CCB"
+      - "\U000F06A1"
+      - "\U000F0A48"
+      - "\U000F0594"
+      - "\U000F0FC7"
+      - "\U000F0341"
+      - "\U000F11D9"
+      - "\U000F02FD"
+      - "\U000F05A9"
+      - "\U000F05AA"
+      - "\U000F0B5C"
+      - "\U000F012C"
+      - "\U000F0156"
+      - "\U000F0141"
+      - "\U000F0142"
+      - "\U000F009F"
+      - "\U000F051F"
+      - "\U000F0338"
+      - "\U000F073A"
+      - "\U000F002A"
+      - "\U000F099C"
+  - file:
+      type: web
+      url: https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf
+    id: font_icons_22
+    size: 22
+    bpp: 4
+    glyphs: *icon_glyphs
+  - file:
+      type: web
+      url: https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf
+    id: font_icons_60
+    size: 60
+    bpp: 4
+    glyphs: *icon_glyphs
+
+time:
+  - platform: homeassistant
+    id: ha_time
+
+globals:
+  - id: pending_action  # what the keypad is for, see Action in vigil_panel.h
+    type: int
+    initial_value: "0"
+  - id: pending_entity  # the sensor for a bypass
+    type: std::string
+  - id: pending_name
+    type: std::string
+  - id: keypad_open
+    type: bool
+    initial_value: "false"
+  - id: on_sensors_page  # is the list of sensors on the screen?
+    type: bool
+    initial_value: "false"
+  - id: on_info_page  # is the info page on the screen?
+    type: bool
+    initial_value: "false"
+  - id: screen_off_ms  # how long the screen stays on without touch, from Vigil
+    type: int
+    initial_value: "${backlight_timeout_seconds} * 1000"
+  - id: unlock_ms  # how long the list and the info stay open after the installer code, from the profile
+    type: int
+    initial_value: "60000"
+  - id: sens_page  # the page of the sensors list, from 0
+    type: int
+    initial_value: "0"
+
+# ----------------------------------------------------------------- what Home Assistant tells us
+text_sensor:
+  # ---- the profile of this panel (a sensor Vigil makes; its state is the version of the profile)
+  - platform: homeassistant
+    id: ha_profile
+    entity_id: ${profile_entity}
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.profile_version = vigil::to_int(x, 0);
+        - script.execute: refresh_texts
+  - platform: homeassistant
+    id: ha_profile_language
+    entity_id: ${profile_entity}
+    attribute: language
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.lang = vigil::parse_language(x);
+        - script.execute: refresh_texts
+  - platform: homeassistant
+    id: ha_profile_blocked
+    entity_id: ${profile_entity}
+    attribute: blocked
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.blocked = vigil::truthy(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_modes
+    entity_id: ${profile_entity}
+    attribute: modes_mask
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.modes_mask = vigil::to_int(x, 0);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_can_disarm
+    entity_id: ${profile_entity}
+    attribute: can_disarm
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.can_disarm = vigil::truthy(x);
+        - script.execute: refresh_ui
+        - script.execute: route
+  - platform: homeassistant
+    id: ha_profile_can_bypass
+    entity_id: ${profile_entity}
+    attribute: can_bypass
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.can_bypass = vigil::truthy(x);
+        - script.execute: refresh_sensors
+  - platform: homeassistant
+    id: ha_profile_sensor_list
+    entity_id: ${profile_entity}
+    attribute: sensor_list
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.sensor_list = vigil::parse_sensor_list(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_unlock_seconds
+    entity_id: ${profile_entity}
+    attribute: unlock_seconds
+    internal: true
+    on_value:
+      then:
+        - lambda: id(unlock_ms) = vigil::to_int(x, 60) * 1000;
+  - platform: homeassistant
+    id: ha_profile_screen_off_seconds
+    entity_id: ${profile_entity}
+    attribute: screen_off_seconds
+    internal: true
+    on_value:
+      then:
+        - lambda: |-
+            int seconds = vigil::to_int(x, 30);
+            id(screen_off_ms) = (seconds < 5 ? 5 : seconds) * 1000;
+  - platform: homeassistant
+    id: ha_profile_screen_off_on_alarm
+    entity_id: ${profile_entity}
+    attribute: screen_off_on_alarm
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.screen_off_on_alarm = vigil::truthy(x);
+  - platform: homeassistant
+    id: ha_profile_code_arm_required
+    entity_id: ${profile_entity}
+    attribute: code_arm_required
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.code_arm_required = vigil::truthy(x);
+  - platform: homeassistant
+    id: ha_profile_has_admin_code
+    entity_id: ${profile_entity}
+    attribute: has_admin_code
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.has_admin_code = vigil::truthy(x);
+  - platform: homeassistant
+    id: ha_profile_unlocked
+    entity_id: ${profile_entity}
+    attribute: unlocked
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.profile_unlocked = vigil::truthy(x);
+        - if:
+            condition:
+              lambda: return !vigil::ctx.profile_unlocked;
+            then:
+              - script.execute: lock_sensors
+            else:
+              - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_open_total
+    entity_id: ${profile_entity}
+    attribute: open_count
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.open_total = vigil::to_int(x, 0);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_faults_total
+    entity_id: ${profile_entity}
+    attribute: faults_count
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.faults_total = vigil::to_int(x, 0);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_problems
+    entity_id: ${profile_entity}
+    attribute: problems_count
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.problems = vigil::to_int(x, 0);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_open_now
+    entity_id: ${profile_entity}
+    attribute: open_now_text
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.open_now = vigil::clean(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_open_mode
+    entity_id: ${profile_entity}
+    attribute: open_sensors_text
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.open_mode = vigil::clean(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_faults
+    entity_id: ${profile_entity}
+    attribute: faults_text
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.faults = vigil::clean(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_sensors
+    entity_id: ${profile_entity}
+    attribute: sensors
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.sensors = vigil::clean(x);
+        - script.execute: refresh_ui
+        - script.execute: refresh_sensors
+  # ---- the alarm itself
+  - platform: homeassistant
+    id: ha_state
+    entity_id: ${alarm_entity}
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.state = x;
+        - script.execute: wake_event
+        - script.execute: refresh_ui
+        - script.execute: route
+  - platform: homeassistant
+    id: ha_mode
+    entity_id: ${alarm_entity}
+    attribute: mode
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.mode = vigil::clean(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_delay_left
+    entity_id: ${alarm_entity}
+    attribute: delay_left
+    internal: true
+    on_value:
+      then:
+        # Seconds left, counted from the clock of this panel: a clock that is off does not matter.
+        - lambda: |-
+            auto t = id(ha_time).now();
+            double left = vigil::parse_number(x);
+            vigil::ctx.delay_end = (std::isnan(left) || !t.is_valid()) ? NAN : (double) t.timestamp + left;
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_changed_by
+    entity_id: ${alarm_entity}
+    attribute: changed_by
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.changed_by = vigil::clean(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_cause
+    entity_id: ${alarm_entity}
+    attribute: cause
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.cause = vigil::clean(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_cause_sensor
+    entity_id: ${alarm_entity}
+    attribute: cause_sensor
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.cause_sensor = vigil::clean(x);
+        - script.execute: refresh_ui
+  # ---- what this panel tells Vigil about itself (Vigil reads these by name, see PanelRegistry)
+  - platform: template
+    name: Hardware ID
+    entity_category: diagnostic
+    update_interval: 1h
+    lambda: 'return std::string("${hardware_id}");'
+  - platform: template
+    name: Capabilities
+    entity_category: diagnostic
+    update_interval: 1h
+    lambda: 'return std::string("lvgl,touch,${screen_width}x${screen_height}");'
+  - platform: template
+    name: Firmware version
+    entity_category: diagnostic
+    update_interval: 1h
+    lambda: 'return std::string("${firmware_version}");'
+  - platform: template
+    name: Profile version
+    entity_category: diagnostic
+    update_interval: 1h
+    lambda: 'return std::to_string(vigil::PROFILE_VERSION);'
+  - platform: wifi_info
+    ip_address:
+      id: wifi_ip
+      internal: true
+      on_value:
+        - script.execute: refresh_texts
+
+sensor:
+  - platform: wifi_signal
+    id: wifi_rssi
+    internal: true
+    update_interval: 10s
+    on_value:
+      - script.execute: refresh_texts
+  - platform: uptime
+    id: uptime_s
+    internal: true
+    update_interval: 30s
+    on_value:
+      - script.execute: refresh_texts
+
+interval:
+  # The clock, and the countdown of the exit or entry delay.
+  - interval: 1s
+    then:
+      - lambda: |-
+          auto t = id(ha_time).now();
+          vigil::ctx.now = t.is_valid() ? (double) t.timestamp : NAN;
+      - lvgl.label.update:
+          id: lbl_time
+          text: !lambda |-
+            auto t = id(ha_time).now();
+            return t.is_valid() ? t.strftime("%H:%M") : std::string("--:--");
+      - if:
+          condition:
+            lambda: return vigil::ctx.state == "arming" || vigil::ctx.state == "pending";
+          then:
+            - script.execute: refresh_ui
+  # Is Home Assistant there? Only "connected" for Home Assistant itself, not for a log viewer.
+  - interval: 5s
+    then:
+      - if:
+          condition:
+            api.connected:
+              state_subscription_only: true
+          then:
+            - script.execute:
+                id: set_connected
+                up: true
+          else:
+            - script.execute:
+                id: set_connected
+                up: false
+
+# ------------------------------------------------------------------------------------- scripts
+script:
+  # The screen on, and off again after a while without touch. As long as the screen is dark a see-through shield
+  # lies over everything (see `top_layer` below), so the touch that wakes the panel does not also press the button
+  # under the finger. The shield goes when that finger is lifted. `wake` and `wake_touch` are the same thing, so a
+  # hardware file that still calls `wake` on touch works too.
+  # The screen is on after a touch, or because the alarm changed. After the screen-off time without touch:
+  #  1. a half typed code, the list or the info is still open? Back to the main page (visible), and wait once more;
+  #  2. the alarm is counting down, or going off and Vigil says the screen must stay on? Then stay on. The state
+  #     changing again starts this script again;
+  #  3. otherwise the screen goes dark.
+  - id: wake
+    mode: restart
+    then:
+      - light.turn_on:
+          id: display_backlight
+          brightness: 100%
+      - delay: !lambda 'return id(screen_off_ms);'
+      - if:
+          condition:
+            lambda: return id(keypad_open) || id(on_sensors_page) || id(on_info_page);
+          then:
+            - script.execute: reset_ui
+            - delay: !lambda 'return id(screen_off_ms);'
+      - if:
+          condition:
+            lambda: return !vigil::screen_may_sleep();
+          then:
+            - script.stop: wake
+      - light.turn_off: display_backlight
+      - lvgl.widget.show: wake_shield
+      # The backlight fades out (transition of the light, 1 s). Wait until it is really dark before touching the
+      # screen again, so nobody sees it change.
+      - delay: 1500ms
+      - script.execute: reset_ui
+
+  - id: reset_ui
+    then:
+      - lambda: |-
+          id(keypad_open) = false;
+          id(pending_action) = 0;
+          id(sens_page) = 0;
+          id(on_sensors_page) = false;
+          id(on_info_page) = false;
+          vigil::ctx.sensors_unlocked = false;  // the panel forgets the unlock
+          vigil::ctx.installer_unlocked = false;
+      - lvgl.textarea.update:
+          id: pin_text
+          text: ""
+      - lvgl.page.show: page_main
+      - script.execute: route
+      - script.execute: nav_update
+
+  - id: wake_touch
+    then:
+      - script.execute: wake
+
+  # The screen on for another reason than a touch (the alarm changed, start-up): no shield, a touch counts at once.
+  - id: wake_event
+    then:
+      - lvgl.widget.hide: wake_shield
+      - script.execute: wake
+
+  - id: set_connected
+    parameters:
+      up: bool
+    then:
+      - if:
+          condition:
+            lambda: return vigil::ctx.ha_connected != up;
+          then:
+            - lambda: vigil::ctx.ha_connected = up;
+            - script.execute: refresh_ui
+            - script.execute: refresh_texts
+
+  # The main page: the ring, the texts, the buttons. One lambda, so the screen changes in one go.
+  - id: refresh_ui
+    mode: restart
+    then:
+      - lambda: |-
+          using namespace vigil;
+          auto hide = [](lv_obj_t *o, bool h) {
+            if (h) lv_obj_add_flag(o, LV_OBJ_FLAG_HIDDEN); else lv_obj_remove_flag(o, LV_OBJ_FLAG_HIDDEN);
+          };
+          const uint32_t col = ring_color();
+          const bool alarm = usable() && ctx.state == "triggered";
+          lv_label_set_text(id(lbl_state), state_title().c_str());
+          const std::string sub = state_sub(ctx.now);
+          lv_label_set_text(id(lbl_sub), sub.c_str());
+          // A short text is big, a long one (a few lines) is small, so it always fits in the card.
+          const bool short_text = sub.size() <= 40 && std::count(sub.begin(), sub.end(), '\n') <= 1;
+          lv_obj_set_style_text_font(id(lbl_sub), short_text ? &lv_font_montserrat_20 : &lv_font_montserrat_14, 0);
+          // The ring: full in the colour of the state, or counting down during the exit and the entry delay.
+          lv_arc_set_value(id(ring), ring_percent(ctx.now));
+          lv_obj_set_style_arc_color(id(ring), lv_color_hex(col), LV_PART_INDICATOR);
+          lv_obj_set_style_bg_color(id(ring_disc), lv_color_hex(tint_of(col)), 0);
+          std::string number = ring_text(ctx.now);
+          lv_label_set_text(id(lbl_ring_icon), state_icon().c_str());
+          lv_obj_set_style_text_color(id(lbl_ring_icon), lv_color_hex(col), 0);
+          lv_label_set_text(id(lbl_ring_num), number.c_str());
+          lv_obj_set_style_text_color(id(lbl_ring_num), lv_color_hex(col), 0);
+          hide(id(lbl_ring_icon), !number.empty());
+          hide(id(lbl_ring_num), number.empty());
+          // Home Assistant there? The icon at the top right says so.
+          lv_label_set_text(id(lbl_wifi), ctx.ha_connected ? VIGIL_ICON_WIFI : VIGIL_ICON_WIFI_OFF);
+          lv_obj_set_style_text_color(id(lbl_wifi), lv_color_hex(ctx.ha_connected ? COL_OFF : COL_ALARM), 0);
+          // The buttons: only what is allowed now. A row without buttons takes no room.
+          hide(id(btn_home), !show_home());
+          hide(id(btn_away), !show_away());
+          hide(id(btn_night), !show_night());
+          hide(id(btn_disarm), !show_disarm());
+          hide(id(row_modes), !(show_home() || show_away() || show_night()));
+          // The alarm: a red frame, and everything a little red
+          hide(id(alarm_frame), !alarm);
+          const uint32_t ground = alarm ? 0x1A0F12 : 0x0E1116;
+          lv_obj_set_style_bg_color(id(page_main)->obj, lv_color_hex(ground), 0);
+          lv_obj_set_style_bg_color(id(page_sensors)->obj, lv_color_hex(ground), 0);
+          lv_obj_set_style_bg_color(id(page_info)->obj, lv_color_hex(ground), 0);
+          lv_obj_set_style_bg_color(id(page_keypad)->obj, lv_color_hex(ground), 0);
+          lv_obj_set_style_bg_color(id(nav), lv_color_hex(ground), 0);
+          lv_obj_set_style_bg_color(id(card_ring), lv_color_hex(alarm ? 0x231216 : 0x151A22), 0);
+          lv_obj_set_style_border_color(id(card_ring), lv_color_hex(alarm ? 0x5A2A30 : 0x232A35), 0);
+      - script.execute: nav_update
+
+  # The tabs at the bottom: the active one has the colour of the state, the keypad has none, the sensors tab has the
+  # number of open sensors, or is not there at all if the list is for nobody.
+  - id: nav_update
+    then:
+      - lambda: |-
+          using namespace vigil;
+          auto hide = [](lv_obj_t *o, bool h) {
+            if (h) lv_obj_add_flag(o, LV_OBJ_FLAG_HIDDEN); else lv_obj_remove_flag(o, LV_OBJ_FLAG_HIDDEN);
+          };
+          hide(id(nav), id(keypad_open));
+          const int tab = id(on_info_page) ? 2 : (id(on_sensors_page) ? 1 : 0);
+          const lv_color_t on = lv_color_hex(ring_color());
+          const lv_color_t off = lv_color_hex(COL_OFF);
+          lv_obj_set_style_text_color(id(nav_alarm_icon), tab == 0 ? on : off, 0);
+          lv_obj_set_style_text_color(id(nav_alarm_lbl), tab == 0 ? on : off, 0);
+          lv_obj_set_style_text_color(id(nav_sens_icon), tab == 1 ? on : off, 0);
+          lv_obj_set_style_text_color(id(nav_sens_lbl), tab == 1 ? on : off, 0);
+          lv_obj_set_style_text_color(id(nav_info_icon), tab == 2 ? on : off, 0);
+          lv_obj_set_style_text_color(id(nav_info_lbl), tab == 2 ? on : off, 0);
+          hide(id(nav_sens), !show_sensors_button());
+          const int open = open_total_count();
+          lv_label_set_text(id(nav_badge_lbl), std::to_string(open).c_str());
+          hide(id(nav_badge), open <= 0);
+
+  # The texts that do not change with the alarm: they change with the language.
+  - id: refresh_texts
+    then:
+      - lvgl.label.update:
+          id: lbl_btn_home
+          text: !lambda 'return vigil::tr("home");'
+      - lvgl.label.update:
+          id: lbl_btn_away
+          text: !lambda 'return vigil::tr("away");'
+      - lvgl.label.update:
+          id: lbl_btn_night
+          text: !lambda 'return vigil::tr("night");'
+      - lvgl.label.update:
+          id: lbl_btn_disarm
+          text: !lambda 'return vigil::tr("disarm");'
+      - lvgl.label.update:
+          id: lbl_sens_title
+          text: !lambda 'return vigil::tr("sensors");'
+      - lvgl.label.update:
+          id: nav_alarm_lbl
+          text: !lambda 'return vigil::tr("nav_alarm");'
+      - lvgl.label.update:
+          id: nav_sens_lbl
+          text: !lambda 'return vigil::tr("sensors");'
+      - lvgl.label.update:
+          id: nav_info_lbl
+          text: !lambda 'return vigil::tr("nav_info");'
+      - lvgl.label.update:
+          id: lbl_info_title
+          text: !lambda 'return vigil::tr("info");'
+      - lvgl.label.update:
+          id: lbl_info_conn
+          text: !lambda 'return vigil::ctx.ha_connected ? vigil::tr("connected") : vigil::tr("not_connected");'
+      - lvgl.label.update:
+          id: lbl_info_ip
+          text: !lambda 'return std::string("IP: ") + id(wifi_ip).state;'
+      - lvgl.label.update:
+          id: lbl_info_wifi
+          text: !lambda |-
+            char buf[16];
+            snprintf(buf, sizeof(buf), "%.0f dBm", id(wifi_rssi).state);
+            return vigil::tr("signal") + buf;
+      - lvgl.label.update:
+          id: lbl_info_up
+          text: !lambda |-
+            return vigil::tr("uptime") + std::to_string((int) (id(uptime_s).state / 60)) + vigil::tr("minutes");
+      - lvgl.label.update:
+          id: lbl_info_fw
+          text: !lambda 'return vigil::tr("firmware") + "${firmware_version}";'
+      - lvgl.label.update:
+          id: lbl_info_id
+          text: !lambda 'return vigil::tr("panel_id") + "${name}";'
+      - lvgl.label.update:
+          id: lbl_info_profile
+          text: !lambda 'return vigil::tr("profile") + std::to_string(vigil::ctx.profile_version);'
+      - script.execute: refresh_ui
+      - script.execute: refresh_sensors
+
+  # The sensors page.
+  - id: refresh_sensors
+    then:
+      - lambda: |-
+          int last = vigil::page_count() - 1;
+          if (id(sens_page) > last) id(sens_page) = last;
+      - lvgl.label.update:
+          id: lbl_sens_sub
+          text: !lambda |-
+            int open = vigil::open_total_count();
+            return open > 0 ? vigil::tr("open") + std::to_string(open) : vigil::tr("all_closed");
+      - lvgl.label.update:
+          id: lbl_pager
+          text: !lambda |-
+            if (vigil::sensor_count() == 0) return vigil::tr("no_sensors");
+            return std::to_string(id(sens_page) + 1) + " / " + std::to_string(vigil::page_count());
+      - script.execute: row_update_0
+      - script.execute: row_update_1
+      - script.execute: row_update_2
+      - script.execute: row_update_3
+      - script.execute: row_update_4
+  - !include {file: vigil-panel-row-script.yaml, vars: {n: 0}}
+  - !include {file: vigil-panel-row-script.yaml, vars: {n: 1}}
+  - !include {file: vigil-panel-row-script.yaml, vars: {n: 2}}
+  - !include {file: vigil-panel-row-script.yaml, vars: {n: 3}}
+  - !include {file: vigil-panel-row-script.yaml, vars: {n: 4}}
+
+  - id: sensors_page_step
+    parameters:
+      step: int
+    then:
+      - lambda: |-
+          int page = id(sens_page) + step;
+          int last = vigil::page_count() - 1;
+          id(sens_page) = page < 0 ? 0 : (page > last ? last : page);
+      - script.execute: refresh_sensors
+
+  # A tap on the button of a sensor: bypass it, or restore it if it was bypassed.
+  - id: tap_row
+    parameters:
+      slot: int
+    then:
+      - lambda: |-
+          auto row = vigil::row_at(id(sens_page), slot);
+          id(pending_entity) = row.entity;
+          id(pending_name) = row.name;
+          id(pending_action) = vigil::is_bypassed(row.status) ? vigil::UNBYPASS : vigil::BYPASS;
+      - script.execute: start_action
+
+  # The Sensors button: straight to the list, or first the installer code, depending on the
+  # profile (`sensor_list`).
+  - id: open_sensors
+    then:
+      - if:
+          condition:
+            lambda: return vigil::sensors_visible();
+          then:
+            - script.execute: show_sensors
+          else:
+            - lambda: |-
+                id(pending_entity) = "";
+                id(pending_name) = "";
+                id(pending_action) = vigil::UNLOCK;
+            - script.execute: start_action
+
+  # The gear: the info page, always behind the installer code.
+  - id: open_info
+    then:
+      - if:
+          condition:
+            lambda: return vigil::ctx.installer_unlocked && vigil::unlocked_now();
+          then:
+            - script.execute: show_info
+          else:
+            - lambda: |-
+                id(pending_entity) = "";
+                id(pending_name) = "";
+                id(pending_action) = vigil::INFO;
+            - script.execute: start_action
+
+  - id: show_info
+    then:
+      - lambda: id(on_info_page) = true;
+      - script.execute: refresh_texts
+      - lvgl.page.show: page_info
+      - script.execute: nav_update
+
+  - id: show_sensors
+    then:
+      - lambda: id(on_sensors_page) = true;
+      - script.execute: refresh_sensors
+      - lvgl.page.show: page_sensors
+      - script.execute: nav_update
+
+  # Forget the unlock and close the list or the info, now or when the time is up.
+  - id: lock_sensors
+    then:
+      - lambda: |-
+          vigil::ctx.sensors_unlocked = false;
+          vigil::ctx.installer_unlocked = false;
+      - if:
+          condition:
+            lambda: return id(on_sensors_page) || id(on_info_page);
+          then:
+            - lambda: |-
+                id(on_sensors_page) = false;
+                id(on_info_page) = false;
+            - lvgl.page.show: page_main
+      - script.execute: refresh_ui
+
+  - id: unlock_timer
+    mode: restart
+    then:
+      - delay: !lambda 'return id(unlock_ms);'
+      - script.execute: lock_sensors
+
+  # Shows a message on the main page for a moment, for example that no installer code is set.
+  - id: show_message
+    parameters:
+      message: string
+    then:
+      - lambda: vigil::ctx.message = message;
+      - script.execute: refresh_ui
+      - script.execute: clear_message
+
+  # An action was chosen: ask for the code if that is needed, otherwise do it straight away.
+  - id: start_action
+    then:
+      # The info opens with the installer code of this panel; without one set in Vigil there is nothing to ask for,
+      # and it does not open. The list of sensors opens with the code of any user.
+      - if:
+          condition:
+            lambda: return vigil::is_admin_action(id(pending_action)) && !vigil::ctx.has_admin_code;
+          then:
+            - lambda: id(pending_action) = 0;
+            - script.execute:
+                id: show_message
+                message: !lambda 'return vigil::tr("no_admin_code");'
+            - script.stop: start_action
+      - if:
+          condition:
+            lambda: return vigil::needs_code(id(pending_action));
+          then:
+            - script.execute: open_keypad
+          else:
+            - script.execute: run_action
+
+  - id: open_keypad
+    then:
+      - lambda: |-
+          id(keypad_open) = true;
+          id(on_sensors_page) = false;
+          id(on_info_page) = false;
+          // Stars only, and never the digit itself, not even for a moment.
+          lv_textarea_set_password_show_time(id(pin_text), 0);
+          lv_textarea_set_password_bullet(id(pin_text), "*");
+      - lvgl.label.update:
+          id: lbl_kp_title
+          text: !lambda 'return vigil::keypad_title(id(pending_action), id(pending_name));'
+      # Under the code: which code is expected, in grey; an error replaces it, in red.
+      - lambda: lv_obj_set_style_text_color(id(lbl_kp_err), lv_color_hex(0x8A94A6), 0);
+      - lvgl.label.update:
+          id: lbl_kp_err
+          text: !lambda 'return vigil::keypad_hint(id(pending_action));'
+      - lvgl.textarea.update:
+          id: pin_text
+          text: ""
+      - lvgl.page.show: page_keypad
+      - script.execute: nav_update
+
+  - id: close_keypad
+    then:
+      - lambda: |-
+          id(keypad_open) = false;
+          id(pending_action) = 0;
+          id(on_sensors_page) = false;
+          id(on_info_page) = false;
+      - lvgl.textarea.update:
+          id: pin_text
+          text: ""
+      - lvgl.page.show: page_main
+      - script.execute: nav_update
+
+  # The keypad closes when what it was for is over. It never opens by itself.
+  - id: route
+    then:
+      - if:
+          condition:
+            lambda: return vigil::keypad_route(id(keypad_open), id(pending_action)) == 2;
+          then:
+            - script.execute: close_keypad
+
+  - id: add_digit
+    mode: parallel
+    parameters:
+      d: string
+    then:
+      - lambda: lv_textarea_add_text(id(pin_text), d.c_str());
+
+  - id: delete_digit
+    then:
+      - lambda: lv_textarea_delete_char(id(pin_text));
+
+  # Do the action. The result decides what the screen does next.
+  - id: run_action
+    then:
+      - if:
+          condition:
+            lambda: return id(pending_action) >= vigil::ARM_HOME && id(pending_action) <= vigil::ARM_NIGHT;
+          then:
+            - homeassistant.action:
+                action: vigil_alarm.arm
+                data:
+                  mode: !lambda |-
+                    return id(pending_action) == vigil::ARM_HOME ? "home" : (id(pending_action) == vigil::ARM_AWAY ? "away" : "night");
+                  source: ${name}
+                  code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
+                on_success:
+                  - script.execute: action_done
+                on_error:
+                  - script.execute:
+                      id: action_failed
+                      message: !lambda 'return error;'
+      - if:
+          condition:
+            lambda: return id(pending_action) == vigil::DISARM;
+          then:
+            - homeassistant.action:
+                action: vigil_alarm.disarm
+                data:
+                  source: ${name}
+                  code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
+                on_success:
+                  - script.execute: action_done
+                on_error:
+                  - script.execute:
+                      id: action_failed
+                      message: !lambda 'return error;'
+      - if:
+          condition:
+            lambda: return vigil::is_unlock_action(id(pending_action));
+          then:
+            - homeassistant.action:
+                action: vigil_alarm.unlock_panel
+                data:
+                  source: ${name}
+                  scope: !lambda 'return id(pending_action) == vigil::INFO ? "info" : "sensors";'
+                  code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
+                on_success:
+                  - script.execute: action_done
+                on_error:
+                  - script.execute:
+                      id: action_failed
+                      message: !lambda 'return error;'
+      - if:
+          condition:
+            lambda: return id(pending_action) == vigil::BYPASS;
+          then:
+            - homeassistant.action:
+                action: vigil_alarm.bypass
+                data:
+                  sensor: !lambda 'return id(pending_entity);'
+                  source: ${name}
+                  code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
+                on_success:
+                  - script.execute: action_done
+                on_error:
+                  - script.execute:
+                      id: action_failed
+                      message: !lambda 'return error;'
+      - if:
+          condition:
+            lambda: return id(pending_action) == vigil::UNBYPASS;
+          then:
+            - homeassistant.action:
+                action: vigil_alarm.unbypass
+                data:
+                  sensor: !lambda 'return id(pending_entity);'
+                  source: ${name}
+                  code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
+                on_success:
+                  - script.execute: action_done
+                on_error:
+                  - script.execute:
+                      id: action_failed
+                      message: !lambda 'return error;'
+
+  - id: action_done
+    then:
+      - lambda: vigil::ctx.message = "";
+      # The installer code was right: Vigil has unlocked this panel. Show the list or the info until the time is up.
+      - if:
+          condition:
+            lambda: return vigil::is_unlock_action(id(pending_action));
+          then:
+            - lambda: |-
+                bool info = id(pending_action) == vigil::INFO;
+                vigil::ctx.sensors_unlocked = true;
+                vigil::ctx.installer_unlocked = info;
+                id(keypad_open) = false;
+                id(pending_action) = 0;
+                id(on_info_page) = info;
+                id(on_sensors_page) = !info;
+            - lvgl.textarea.update:
+                id: pin_text
+                text: ""
+            - script.execute: unlock_timer
+            - if:
+                condition:
+                  lambda: return id(on_info_page);
+                then:
+                  - script.execute: show_info
+                else:
+                  - script.execute: show_sensors
+      - if:
+          condition:
+            lambda: return id(pending_action) == vigil::BYPASS || id(pending_action) == vigil::UNBYPASS;
+          then:
+            - lambda: |-
+                id(keypad_open) = false;
+                id(pending_action) = 0;
+                id(on_sensors_page) = true;
+            - lvgl.textarea.update:
+                id: pin_text
+                text: ""
+            - lvgl.page.show: page_sensors
+          else:
+            - if:
+                condition:
+                  lambda: return id(pending_action) != 0;
+                then:
+                  - script.execute: close_keypad
+      - script.execute: refresh_ui
+
+  # The error is shown on the keypad, or on the main page if there was no keypad.
+  - id: action_failed
+    parameters:
+      message: string
+    then:
+      - lambda: vigil::ctx.message = vigil::localize_error(message);
+      - lvgl.textarea.update:
+          id: pin_text
+          text: ""
+      - if:
+          condition:
+            lambda: return id(keypad_open);
+          then:
+            - lambda: lv_obj_set_style_text_color(id(lbl_kp_err), lv_color_hex(0xF0605D), 0);
+            - lvgl.label.update:
+                id: lbl_kp_err
+                text: !lambda 'return vigil::ctx.message;'
+          else:
+            - lvgl.page.show: page_main
+      - script.execute: refresh_ui
+      - script.execute: clear_message
+
+  - id: clear_message
+    mode: restart
+    then:
+      - delay: 8s
+      - lambda: |-
+          vigil::ctx.message = "";
+          lv_obj_set_style_text_color(id(lbl_kp_err), lv_color_hex(0x8A94A6), 0);
+      - lvgl.label.update:
+          id: lbl_kp_err
+          text: !lambda 'return id(keypad_open) ? vigil::keypad_hint(id(pending_action)) : std::string("");'
+      - script.execute: refresh_ui
+
+# --------------------------------------------------------------------------------------- screen
+# The look of Vigil: dark ground, calm cards, one colour per state (see vigil_panel.h). The sizes follow the size of
+# the screen (the substitutions at the top), the main page is a column that grows with the screen, so a wider panel
+# is a matter of a hardware file, not of this one.
+lvgl:
+  default_font: montserrat_20
+  text_color: 0xE8ECF2
+  bg_color: 0x0E1116
+  top_layer:
+    widgets:
+      # The tabs at the bottom, on every page except the keypad (see `nav_update`).
+      - obj:
+          id: nav
+          width: 100%
+          height: ${nav_h}
+          align: BOTTOM_MID
+          bg_color: 0x0E1116
+          bg_opa: COVER
+          border_width: 1
+          border_side: TOP
+          border_color: 0x232A35
+          radius: 0
+          shadow_width: 0
+          pad_all: 0
+          scrollable: false
+          layout:
+            type: flex
+            flex_flow: ROW
+          widgets:
+            - button:
+                id: nav_alarm
+                height: 100%
+                flex_grow: 1
+                bg_opa: TRANSP
+                shadow_width: 0
+                radius: 0
+                layout:
+                  type: flex
+                  flex_flow: COLUMN
+                  flex_align_main: CENTER
+                  flex_align_cross: CENTER
+                  flex_align_track: CENTER
+                on_click:
+                  then:
+                    - script.execute: lock_sensors
+                widgets:
+                  - label:
+                      id: nav_alarm_icon
+                      text: "\U000F0CCB"
+                      text_font: font_icons_30
+                      text_color: 0x8A94A6
+                  - label:
+                      id: nav_alarm_lbl
+                      text: "Alarm"
+                      text_font: montserrat_14
+                      text_color: 0x8A94A6
+            - button:
+                id: nav_sens
+                height: 100%
+                flex_grow: 1
+                bg_opa: TRANSP
+                shadow_width: 0
+                radius: 0
+                layout:
+                  type: flex
+                  flex_flow: COLUMN
+                  flex_align_main: CENTER
+                  flex_align_cross: CENTER
+                  flex_align_track: CENTER
+                on_click:
+                  then:
+                    - script.execute: open_sensors
+                widgets:
+                  - label:
+                      id: nav_sens_icon
+                      text: "\U000F11D9"
+                      text_font: font_icons_30
+                      text_color: 0x8A94A6
+                  - label:
+                      id: nav_sens_lbl
+                      text: "Sensors"
+                      text_font: montserrat_14
+                      text_color: 0x8A94A6
+                  - obj:
+                      id: nav_badge
+                      width: 22
+                      height: 22
+                      radius: 11
+                      bg_color: 0xF2B84B
+                      border_width: 0
+                      shadow_width: 0
+                      pad_all: 0
+                      scrollable: false
+                      clickable: false
+                      floating: true
+                      align: TOP_MID
+                      x: 20
+                      y: 2
+                      hidden: true
+                      widgets:
+                        - label:
+                            id: nav_badge_lbl
+                            text: "0"
+                            text_font: montserrat_14
+                            text_color: 0x2A1D00
+                            align: CENTER
+            - button:
+                id: nav_info
+                height: 100%
+                flex_grow: 1
+                bg_opa: TRANSP
+                shadow_width: 0
+                radius: 0
+                layout:
+                  type: flex
+                  flex_flow: COLUMN
+                  flex_align_main: CENTER
+                  flex_align_cross: CENTER
+                  flex_align_track: CENTER
+                on_click:
+                  then:
+                    - script.execute: open_info
+                widgets:
+                  - label:
+                      id: nav_info_icon
+                      text: "\U000F02FD"
+                      text_font: font_icons_30
+                      text_color: 0x8A94A6
+                  - label:
+                      id: nav_info_lbl
+                      text: "Info"
+                      text_font: montserrat_14
+                      text_color: 0x8A94A6
+      # A red frame around the screen while the alarm is going off.
+      - obj:
+          id: alarm_frame
+          width: 100%
+          height: 100%
+          align: CENTER
+          bg_opa: TRANSP
+          border_width: 3
+          border_color: 0xF0605D
+          radius: 0
+          shadow_width: 0
+          scrollable: false
+          clickable: false
+          hidden: true
+      # A see-through layer over everything, there while the screen is dark: it takes the touch that wakes the panel.
+      - obj:
+          id: wake_shield
+          width: 100%
+          height: 100%
+          align: CENTER
+          bg_opa: TRANSP
+          border_width: 0
+          radius: 0
+          shadow_width: 0
+          scrollable: false
+          hidden: true
+          clickable: true
+          on_release:
+            - lvgl.widget.hide: wake_shield
+  pages:
+    # ================================================================== MAIN
+    - id: page_main
+      bg_color: 0x0E1116
+      scrollable: false
+      pad_all: 12
+      pad_bottom: 0
+      layout:
+        type: flex
+        flex_flow: COLUMN
+        pad_row: 10
+      widgets:
+        # The top bar: the time, and whether Home Assistant is there
+        - obj:
+            width: 100%
+            height: 40
+            bg_opa: TRANSP
+            border_width: 0
+            pad_all: 0
+            scrollable: false
+            widgets:
+              - label:
+                  id: lbl_time
+                  text: "--:--"
+                  text_font: montserrat_28
+                  text_color: 0x8A94A6
+                  align: LEFT_MID
+                  x: 8
+              - label:
+                  id: lbl_wifi
+                  text: "\U000F05AA"
+                  text_font: font_icons_22
+                  text_color: 0x8A94A6
+                  align: RIGHT_MID
+                  x: -8
+        # The state: the ring, what it is, what is the matter
+        - obj:
+            id: card_ring
+            width: 100%
+            flex_grow: 1
+            radius: 28
+            bg_color: 0x151A22
+            border_width: 1
+            border_color: 0x232A35
+            shadow_width: 0
+            pad_all: 8
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: COLUMN
+              pad_row: 2
+              flex_align_main: CENTER
+              flex_align_cross: CENTER
+              flex_align_track: CENTER
+            widgets:
+              - obj:
+                  width: ${ring_d}
+                  height: ${ring_d}
+                  bg_opa: TRANSP
+                  border_width: 0
+                  pad_all: 0
+                  scrollable: false
+                  widgets:
+                    - arc:
+                        id: ring
+                        width: ${ring_d}
+                        height: ${ring_d}
+                        align: CENTER
+                        start_angle: 0
+                        end_angle: 360
+                        rotation: 270
+                        min_value: 0
+                        max_value: 100
+                        value: 100
+                        adjustable: false
+                        arc_width: 9
+                        arc_color: 0x1C2530
+                        indicator:
+                          arc_width: 9
+                          arc_color: 0x8A94A6
+                        knob:
+                          bg_opa: TRANSP
+                          pad_all: 0
+                    - obj:
+                        id: ring_disc
+                        width: ${ring_disc}
+                        height: ${ring_disc}
+                        radius: 100%
+                        align: CENTER
+                        bg_color: 0x1B232D
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        scrollable: false
+                        clickable: false
+                    - label:
+                        id: lbl_ring_icon
+                        text: ""
+                        text_font: font_icons_60
+                        text_color: 0x8A94A6
+                        align: CENTER
+                    - label:
+                        id: lbl_ring_num
+                        text: ""
+                        text_font: montserrat_40
+                        text_color: 0xF2B84B
+                        align: CENTER
+                        hidden: true
+              - label:
+                  id: lbl_state
+                  text: ""
+                  text_font: montserrat_28
+                  text_color: 0xE8ECF2
+                  pad_top: 10
+                  text_align: CENTER
+                  long_mode: DOT
+                  width: 100%
+              - label:
+                  id: lbl_sub
+                  text: ""
+                  text_font: montserrat_14
+                  text_color: 0xC5CCD8
+                  text_align: CENTER
+                  long_mode: WRAP
+                  width: 100%
+        # The buttons: only the modes that are on, or Disarm
+        - obj:
+            id: row_modes
+            width: 100%
+            height: ${mode_h}
+            bg_opa: TRANSP
+            border_width: 0
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: ROW
+              pad_column: 10
+            widgets:
+              - button:
+                  id: btn_home
+                  height: 100%
+                  flex_grow: 1
+                  radius: 22
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - lambda: |-
+                          id(pending_action) = vigil::ARM_HOME;
+                          id(pending_entity) = "";
+                      - script.execute: start_action
+                  layout:
+                    type: flex
+                    flex_flow: COLUMN
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_row: 6
+                  widgets:
+                    - obj:
+                        width: 44
+                        height: 44
+                        radius: 22
+                        bg_color: 0x17233A
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                        widgets:
+                          - label:
+                              text: "\U000F06A1"
+                              text_font: font_icons_30
+                              text_color: 0x5B9BF0
+                              align: CENTER
+                    - label:
+                        id: lbl_btn_home
+                        text: "Home"
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+              - button:
+                  id: btn_away
+                  height: 100%
+                  flex_grow: 1
+                  radius: 22
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - lambda: |-
+                          id(pending_action) = vigil::ARM_AWAY;
+                          id(pending_entity) = "";
+                      - script.execute: start_action
+                  layout:
+                    type: flex
+                    flex_flow: COLUMN
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_row: 6
+                  widgets:
+                    - obj:
+                        width: 44
+                        height: 44
+                        radius: 22
+                        bg_color: 0x2E1E17
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                        widgets:
+                          - label:
+                              text: "\U000F0A48"
+                              text_font: font_icons_30
+                              text_color: 0xFF8A5B
+                              align: CENTER
+                    - label:
+                        id: lbl_btn_away
+                        text: "Away"
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+              - button:
+                  id: btn_night
+                  height: 100%
+                  flex_grow: 1
+                  radius: 22
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - lambda: |-
+                          id(pending_action) = vigil::ARM_NIGHT;
+                          id(pending_entity) = "";
+                      - script.execute: start_action
+                  layout:
+                    type: flex
+                    flex_flow: COLUMN
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_row: 6
+                  widgets:
+                    - obj:
+                        width: 44
+                        height: 44
+                        radius: 22
+                        bg_color: 0x211E3A
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                        widgets:
+                          - label:
+                              text: "\U000F0594"
+                              text_font: font_icons_30
+                              text_color: 0x9A8CF2
+                              align: CENTER
+                    - label:
+                        id: lbl_btn_night
+                        text: "Night"
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+        # Disarm: one wide button of its own, as wide as the card above it
+        - button:
+            id: btn_disarm
+            width: 100%
+            height: ${mode_h}
+            radius: 22
+            bg_color: 0x000000
+            border_width: 2
+            border_color: 0x4CCB8F
+            shadow_width: 0
+            pressed:
+              bg_color: 0x14281F
+            on_click:
+              then:
+                - lambda: |-
+                    id(pending_action) = vigil::DISARM;
+                    id(pending_entity) = "";
+                - script.execute: start_action
+            layout:
+              type: flex
+              flex_flow: ROW
+              flex_align_main: CENTER
+              flex_align_cross: CENTER
+              flex_align_track: CENTER
+              pad_column: 10
+            widgets:
+              - label:
+                  text: "\U000F0FC7"
+                  text_font: font_icons_30
+                  text_color: 0x4CCB8F
+              - label:
+                  id: lbl_btn_disarm
+                  text: "Disarm"
+                  text_font: montserrat_28
+                  text_color: 0x4CCB8F
+        # The space of the tabs: they are in the top layer, so they stay put on every page
+        - obj:
+            width: 100%
+            height: ${nav_h}
+            bg_opa: TRANSP
+            border_width: 0
+            pad_all: 0
+            scrollable: false
+            clickable: false
+
+    # ================================================================ KEYPAD
+    - id: page_keypad
+      bg_color: 0x0E1116
+      scrollable: false
+      widgets:
+        - button:
+            id: btn_kp_cancel
+            width: 48
+            height: 48
+            align: TOP_LEFT
+            x: 12
+            y: 8
+            radius: 24
+            bg_color: 0x151A22
+            border_width: 1
+            border_color: 0x232A35
+            shadow_width: 0
+            on_click:
+              then:
+                - script.execute: close_keypad
+            widgets:
+              - label:
+                  text: "\U000F0141"
+                  text_font: font_icons_30
+                  text_color: 0xC5CCD8
+                  align: CENTER
+        - label:
+            id: lbl_kp_title
+            text: ""
+            text_font: montserrat_28
+            text_color: 0xE8ECF2
+            long_mode: DOT
+            width: ${ screen_width | int - 140 }
+            text_align: CENTER
+            align: TOP_MID
+            y: 14
+        - textarea:
+            id: pin_text
+            width: ${ screen_width | int - 120 }
+            height: 60
+            align: TOP_MID
+            y: 62
+            one_line: true
+            password_mode: true
+            max_length: 12
+            text_font: montserrat_40
+            text_color: 0xFFFFFF  # without this the stars are dark grey on a dark background
+            text_align: CENTER
+            bg_color: 0x151A22
+            border_width: 1
+            border_color: 0x232A35
+            radius: 18
+            placeholder_text: ""
+        - label:
+            id: lbl_kp_err
+            text: ""
+            text_font: montserrat_14
+            text_color: 0x8A94A6
+            text_align: CENTER
+            long_mode: WRAP
+            width: ${ screen_width | int - 40 }
+            align: TOP_MID
+            y: 130
+        - obj:
+            id: keypad
+            width: ${content_w}
+            height: ${keypad_h}
+            align: BOTTOM_MID
+            y: -10
+            bg_opa: TRANSP
+            border_width: 0
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: ROW_WRAP
+              pad_row: 10
+              pad_column: 10
+            widgets:
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "1"}}]}
+                  widgets:
+                    - label: {text: "1", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "2"}}]}
+                  widgets:
+                    - label: {text: "2", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "3"}}]}
+                  widgets:
+                    - label: {text: "3", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "4"}}]}
+                  widgets:
+                    - label: {text: "4", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "5"}}]}
+                  widgets:
+                    - label: {text: "5", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "6"}}]}
+                  widgets:
+                    - label: {text: "6", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "7"}}]}
+                  widgets:
+                    - label: {text: "7", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "8"}}]}
+                  widgets:
+                    - label: {text: "8", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "9"}}]}
+                  widgets:
+                    - label: {text: "9", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: delete_digit}]}
+                  widgets:
+                    - label: {text: "\U000F0B5C", text_font: font_icons_30, text_color: 0xC5CCD8, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "0"}}]}
+                  widgets:
+                    - label: {text: "0", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  id: key_ok
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x4CCB8F
+                  border_width: 0
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x3DB57C
+                  on_press: {then: [{script.execute: run_action}]}
+                  widgets:
+                    - label: {text: "\U000F012C", text_font: font_icons_30, text_color: 0x07251A, align: CENTER}
+
+    # =============================================================== SENSORS
+    - id: page_sensors
+      bg_color: 0x0E1116
+      scrollable: false
+      widgets:
+        - label:
+            id: lbl_sens_title
+            text: "Sensors"
+            text_font: montserrat_28
+            text_color: 0xE8ECF2
+            align: TOP_LEFT
+            x: 20
+            y: 14
+        - label:
+            id: lbl_sens_sub
+            text: ""
+            text_font: montserrat_14
+            text_color: 0x8A94A6
+            align: TOP_RIGHT
+            x: -20
+            y: 24
+        - !include {file: vigil-panel-row.yaml, vars: {n: 0, y: 58}}
+        - !include {file: vigil-panel-row.yaml, vars: {n: 1, y: 120}}
+        - !include {file: vigil-panel-row.yaml, vars: {n: 2, y: 182}}
+        - !include {file: vigil-panel-row.yaml, vars: {n: 3, y: 244}}
+        - !include {file: vigil-panel-row.yaml, vars: {n: 4, y: 306}}
+        - button:
+            id: btn_prev
+            width: 96
+            height: 40
+            align: BOTTOM_LEFT
+            x: 12
+            y: ${ -1 * (nav_h | int + 8) }
+            radius: 20
+            bg_color: 0x151A22
+            border_width: 1
+            border_color: 0x232A35
+            shadow_width: 0
+            on_click:
+              then:
+                - script.execute:
+                    id: sensors_page_step
+                    step: -1
+            widgets:
+              - label:
+                  text: "\U000F0141"
+                  text_font: font_icons_30
+                  text_color: 0xC5CCD8
+                  align: CENTER
+        - label:
+            id: lbl_pager
+            text: ""
+            text_color: 0x8A94A6
+            align: BOTTOM_MID
+            y: ${ -1 * (nav_h | int + 16) }
+        - button:
+            id: btn_next
+            width: 96
+            height: 40
+            align: BOTTOM_RIGHT
+            x: -12
+            y: ${ -1 * (nav_h | int + 8) }
+            radius: 20
+            bg_color: 0x151A22
+            border_width: 1
+            border_color: 0x232A35
+            shadow_width: 0
+            on_click:
+              then:
+                - script.execute:
+                    id: sensors_page_step
+                    step: 1
+            widgets:
+              - label:
+                  text: "\U000F0142"
+                  text_font: font_icons_30
+                  text_color: 0xC5CCD8
+                  align: CENTER
+
+    # ================================================================== INFO
+    - id: page_info
+      bg_color: 0x0E1116
+      scrollable: false
+      widgets:
+        - label:
+            id: lbl_info_title
+            text: "Info"
+            text_font: montserrat_28
+            text_color: 0xE8ECF2
+            align: TOP_LEFT
+            x: 20
+            y: 14
+        - obj:
+            width: ${content_w}
+            height: 300
+            align: TOP_MID
+            y: 62
+            radius: 22
+            bg_color: 0x151A22
+            border_width: 1
+            border_color: 0x232A35
+            pad_all: 0
+            scrollable: false
+            widgets:
+              - label:
+                  id: lbl_info_conn
+                  text: ""
+                  text_color: 0xE8ECF2
+                  align: TOP_LEFT
+                  x: 18
+                  y: 14
+              - label:
+                  id: lbl_info_ip
+                  text: ""
+                  text_color: 0x8A94A6
+                  align: TOP_LEFT
+                  x: 18
+                  y: 56
+              - label:
+                  id: lbl_info_wifi
+                  text: ""
+                  text_color: 0x8A94A6
+                  align: TOP_LEFT
+                  x: 18
+                  y: 94
+              - label:
+                  id: lbl_info_up
+                  text: ""
+                  text_color: 0x8A94A6
+                  align: TOP_LEFT
+                  x: 18
+                  y: 132
+              - label:
+                  id: lbl_info_fw
+                  text: ""
+                  text_color: 0x8A94A6
+                  align: TOP_LEFT
+                  x: 18
+                  y: 170
+              - label:
+                  id: lbl_info_id
+                  text: ""
+                  text_color: 0x8A94A6
+                  long_mode: DOT
+                  width: ${ content_w | int - 36 }
+                  align: TOP_LEFT
+                  x: 18
+                  y: 208
+              - label:
+                  id: lbl_info_profile
+                  text: ""
+                  text_color: 0x8A94A6
+                  align: TOP_LEFT
+                  x: 18
+                  y: 246

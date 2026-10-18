@@ -20,7 +20,7 @@ int main(){
   ctx.modes_mask=2; assert(!show_home()&&show_away()&&!show_night()); ctx.modes_mask=7;
   ctx.blocked=true; assert(state_title()=="Blocked" && state_sub(NAN)=="This panel is blocked in Vigil" && !show_away() && !show_sensors_button() && !bypass_allowed() && !show_disarm());
   ctx.blocked=false;
-  ctx.state="arming"; ctx.mode="away"; ctx.delay_end=110; assert(state_sub(100)=="Away\nLeave within: 10 s");
+  ctx.state="arming"; ctx.mode="away"; ctx.delay_end=110; assert(state_sub(100)=="Away\nLeave the house now");
   assert(!show_home()&&show_disarm());
   ctx.can_disarm=false; assert(!show_disarm()); ctx.can_disarm=true;
   ctx.can_bypass=false; assert(!bypass_allowed()); ctx.can_bypass=true; assert(bypass_allowed());
@@ -65,7 +65,7 @@ int main(){
   ctx.open_total=0; assert(state_sub(NAN)=="All closed" && sensors_button_text()=="Sensors");
   ctx.faults_total=2; assert(state_sub(NAN)=="All closed\nProblems: 2"); ctx.faults_total=0;
   ctx.state="armed_away"; assert(!sensors_visible() && show_sensors_button() && state_sub(NAN)=="");
-  ctx.state="pending"; ctx.delay_end=110; assert(state_sub(100)=="Disarm within: 10 s");
+  ctx.state="pending"; ctx.delay_end=110; assert(state_sub(100)=="Disarm with your code");
   ctx.state="triggered"; ctx.cause="intrusion"; assert(state_sub(NAN).find("Front door")==std::string::npos);
   // Unlocked: the panel entered the code, and Vigil agrees. Either one alone is not enough.
   ctx.state="armed_away"; ctx.sensors_unlocked=true; assert(!sensors_visible() && !details_visible());
@@ -76,5 +76,21 @@ int main(){
   ctx.sensor_list=LIST_NEVER; ctx.sensors_unlocked=false; assert(!sensors_visible() && !show_sensors_button() && !details_visible());
   assert(keypad_hint(DISARM)=="Enter your user code" && keypad_hint(UNLOCK)=="Enter your user code" && keypad_hint(INFO)=="Enter the installer code");
   assert(keypad_title(UNLOCK,"")=="View sensors" && keypad_title(INFO,"")=="View panel info");
+  // The ring: colours, icon, countdown. The ring runs from full to empty over the length of the delay.
+  ctx=Context(); ctx.lang=EN; ctx.ha_connected=true; ctx.profile_version=PROFILE_VERSION; ctx.modes_mask=7; ctx.state="disarmed";
+  assert(state_color()==COL_OK && ring_color()==COL_OK && state_icon()==VIGIL_ICON_SHIELD_CHECK && ring_percent(NAN)==100 && ring_text(NAN)=="");
+  ctx.open_total=1; assert(state_color()==COL_OK && ring_color()==COL_WARN && state_icon()==VIGIL_ICON_SHIELD_ALERT);  // not ready: amber
+  ctx.open_total=0; ctx.faults_total=1; assert(ring_color()==COL_WARN); ctx.faults_total=0;
+  ctx.state="arming"; ctx.mode="away"; ctx.delay_end=160; assert(counting(100) && ring_text(100)=="60" && ring_percent(100)==100);
+  assert(ring_text(130)=="30" && ring_percent(130)==50 && ring_percent(160)==0 && ring_text(170)=="0");  // 60 s: halfway at 30 s
+  ctx.state="armed_away"; assert(!counting(130) && ring_percent(130)==100 && ctx.delay_total==0 && state_color()==COL_AWAY && state_icon()==VIGIL_ICON_AWAY);
+  ctx.state="pending"; ctx.delay_end=130; assert(ring_percent(120)==100 && ring_percent(125)==50);  // a new delay starts a new total
+  ctx.state="arming"; ctx.delay_end=NAN; assert(!counting(100) && ring_text(100)=="" && ring_percent(100)==100);  // clock or end unknown: no number
+  ctx.state="triggered"; assert(state_color()==COL_ALARM && state_icon()==VIGIL_ICON_BELL && tint_of(state_color())==0x3A1519);
+  ctx.state="armed_home"; assert(state_color()==COL_HOME && tint_of(COL_HOME)==0x17233A);
+  ctx.state="armed_night"; assert(state_color()==COL_NIGHT);
+  ctx.ha_connected=false; assert(state_color()==COL_OFF && state_icon()==VIGIL_ICON_WIFI_OFF);
+  ctx.ha_connected=true; ctx.blocked=true; assert(state_color()==COL_OFF && state_icon()==VIGIL_ICON_CANCEL);
+  ctx.blocked=false; ctx.profile_version=0; assert(state_icon()==VIGIL_ICON_LINK_OFF);
   std::cout << "ok\n";
 }

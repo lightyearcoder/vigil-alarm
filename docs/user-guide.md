@@ -145,6 +145,13 @@ Bypass leaves one sensor out until the alarm is switched off (or until you un-by
 
 ### A touch panel
 
+![The states of the touch panel: disarmed, not ready, arming, alarm](images/touch-panel-states-en.png)
+
+The panel and the Vigil card share one look. The state is a **ring with an icon** in the colour of the state: green when disarmed and everything is closed, amber when something is open or while arming, orange during the entry delay, blue, coral and violet for home, away and night, red for an alarm (with a red frame around the screen), grey without a connection. During the exit and entry delay the ring is the **countdown**: the seconds in the middle, the ring running down to empty; when it reaches zero the alarm is on. Under the ring you see the buttons for the modes this panel may use, or one big *Disarm* button when the alarm is on. At the bottom are the tabs *Alarm*, *Sensors* (with the number of open sensors) and *Info*; the keypad has no tabs.
+
+![The other pages: keypad, sensors, info, armed away](images/touch-panel-pages-en.png)
+
+
 With the ESPHome panel (Guition 4848) you arm, disarm and bypass sensors without a phone. It reads
 its profile from Vigil: it shows only the modes the panel may arm in, asks for a code the way Vigil does and uses the language you set for it.
 Installation and options are in [esphome/README.md](../esphome/README.md). The device name is the panel id and the `source` of every call, which shows in the history as *Anna (vigil-panel-garage)*. A wrong
@@ -165,6 +172,7 @@ When you add a panel you first choose the **kind of device**. *ESPHome panel* as
 - whether it may show the list of sensors: *always*, *only after unlocking* (default) or *never*, and how long it stays unlocked (default 60 seconds);
 - an optional **installer code** for this panel, kept as a hash, with its own wrong-code timer. The panel sends it with `vigil_alarm.unlock_panel`; Vigil checks it and unlocks the panel for the set time. It opens the information pages and (like the code of any Vigil user) the sensor list, and never disarms the alarm: disarming always needs a valid user code;
 - what the firmware **reports** about itself (its hardware, firmware version and profile version) is shown on the panel card, and *Ready for use?* gives advice when the firmware does not understand the profile;
+- **watch whether it is reachable** (*Watch whether this panel is reachable*): on by default for an ESPHome panel, off by default for a tablet or phone, because a phone that is switched off is no fault. With it off you get no Repair and no message when the panel drops out, and the list says *Not monitored*. Entries made before this setting existed stay on;
 - **blocked**: Vigil refuses every call with that panel id and logs it.
 
 What is enforced, on the server side: a call from a registered panel that its profile does not allow is refused and logged (event `panel_refused`, with the reason). Bypassing a sensor from a registered panel always needs a user code. A blocked panel is refused before any code is looked at. Calls whose source is not registered are not restricted by any of this.
@@ -173,7 +181,7 @@ Every registered panel gets an entity `sensor.<panel_id>_profile` (dashes in the
 
 Two buttons per panel, **Unlock** and **Clear lock**, exist only in the Vigil panel (administrators only) and not as Home Assistant actions: an action can be called by any user, automation or panel, so a stolen panel could unlock itself. *Unlock* shows the sensor list for the set time; *Clear lock* lifts the stored lock after wrong codes (it survives a restart, so this is how you lift it). Both are logged with the administrator who did it (`panel_unlocked`, `panel_lock_cleared`).
 
-**Out of reach.** If Vigil cannot reach the ESPHome device of a panel for 10 minutes, you get a Repair *Panel not reachable* and a message on your fault channels (events `panel_offline` and `panel_online`). A panel that is out of reach never changes the alarm state. A blocked panel gives no Repair. After a restart of Home Assistant the ten minutes start again.
+**Out of reach.** If Vigil cannot reach the ESPHome device of a panel for 10 minutes, you get a Repair *Panel not reachable* and a message on your fault channels (events `panel_offline` and `panel_online`). A panel that is out of reach never changes the alarm state. A blocked panel, and a panel for which *watch* is switched off, give no Repair. After a restart of Home Assistant the ten minutes start again.
 
 A tablet can be registered too, bound to a Home Assistant user, and shows the Vigil card (`type: custom:vigil-card`); see the [tablet guide](tablet.md).
 

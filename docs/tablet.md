@@ -17,6 +17,14 @@ You can operate Vigil with a tablet that shows a Home Assistant dashboard, inste
 
 ## What the card does
 
+![The card on a phone: not ready, keypad, arming with countdown, alarm](images/card-phone-states-en.png)
+
+![The card on a tablet: two columns, ring and countdown on the left, buttons and keypad on the right](images/card-tablet-states-en.png)
+
+With a keyboard (a tablet with one, or a computer) you can type the code: digits, Backspace to delete, Enter to confirm, Escape to close the keypad.
+
+The card shows the state as a ring with an icon, in the colour of the state; during the exit and entry delay the ring is the countdown. It follows the width it is in: one column on a phone, two columns on a tablet. It uses the same look as the touch panel.
+
 - Follows the profile of the tablet's panel: only the modes that panel may arm in, *Disarm* only if it may, bypass buttons only if it may bypass, the language you chose for the panel, and no sensor list at all when that is set to *never*.
 - **Disarming and bypassing always ask a user code**; arming asks one only if *a code is required to arm* is on. The keypad never opens by itself: during the entry delay and an alarm the screen first shows what is going on, and whoever wants to disarm presses *Disarm*.
 - **The sensor list** opens with the code of any Vigil user, or the installer code of the panel (through `vigil_alarm.unlock_panel`), for the time you set. Bypassing and restoring need a user who has the right to bypass (tamper sensors: the extra tamper right). Until then the card only shows *how many* sensors are open, never their names. Leaving the list, or 30 seconds without touch, forgets the unlock on the card.
@@ -27,6 +35,7 @@ You can operate Vigil with a tablet that shows a Home Assistant dashboard, inste
 - Vigil recognises the tablet by the **Home Assistant user** behind each call. Home Assistant puts that user there itself, so it cannot be imitated by sending another `source` text. This is stronger than for an ESPHome panel, whose calls carry no user.
 - Whatever the card shows, the server decides: a call the profile does not allow is refused and logged (`panel_refused`). The card is only a nicer face on it.
 - The tablet has its own lockout timer for wrong codes, and is never treated as an administrator by Vigil. *Blocked* refuses everything from that tablet; *Clear lock* and *Unlock* work as for any panel.
+- A phone that is switched off is no fault: for a tablet or phone *Watch whether this panel is reachable* is off by default, so no Repair and no message. Switch it on for a tablet that hangs on the wall all day.
 - The history shows who did it as, for example, *Anna (hall-tablet)*.
 
 ## Offline

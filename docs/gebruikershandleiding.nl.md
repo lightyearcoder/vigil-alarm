@@ -147,6 +147,13 @@ omzeilen opheft).
 
 ### Een aanraakpaneel
 
+![De toestanden van het aanraakpaneel: uitgeschakeld, niet gereed, inschakelen, alarm](images/touch-panel-states-nl.png)
+
+Het paneel en de Vigil-kaart hebben één stijl. De toestand is een **ring met een icoon** in de kleur van de toestand: groen als alles uit en dicht is, amber als er iets open staat of tijdens het inschakelen, oranje tijdens de aankomstvertraging, blauw, koraal en violet voor thuis, weg en nacht, rood bij alarm (met een rood kader om het scherm), grijs zonder verbinding. Tijdens de uitloop- en aankomstvertraging is de ring het **aftellen**: de seconden in het midden, de ring loopt leeg; bij nul is het alarm ingeschakeld. Onder de ring staan de knoppen voor de modi die dit paneel mag gebruiken, of één grote knop *Uitschakelen* als het alarm aan staat. Onderaan staan de tabs *Alarm*, *Sensoren* (met het aantal open sensoren) en *Info*; het toetsenpaneel heeft geen tabs.
+
+![De andere pagina's: toetsenpaneel, sensoren, info, ingeschakeld weg](images/touch-panel-pages-nl.png)
+
+
 Met het ESPHome-paneel (Guition 4848) schakel je in en uit en omzeil je sensoren zonder telefoon.
 Het paneel leest zijn profiel uit Vigil: het toont alleen de modi waarin het mag inschakelen, vraagt een code zoals Vigil dat doet en gebruikt de taal die je ervoor instelt. Installatie en opties staan in [esphome/README.md](../esphome/README.md). De apparaatnaam is het paneel-id en de `source` van elke oproep, en staat in de geschiedenis als
 *Anna (vigil-panel-garage)*. Een foute code geeft de gebeurtenis `code_rejected`, nooit met de code zelf. De vergrendeling gaat in stappen en de getallen stel je in bij *Instellingen*, *Vergrendeling*. Standaard: na 3 foute codes is dat paneel 5 minuten vergrendeld, daarna na nog 2 foute codes 15 minuten, daarna na nog 2 foute codes 60 minuten, en na nog 1 foute code permanent (gebeurtenissen `code_locked` en `code_locked_permanent`, ook gemeld op je storingskanalen). Een permanente vergrendeling gaat alleen weg met *Blokkade opheffen* bij het paneel, en dan begint alles weer bij de eerste stap. Een goede code zet de teller en de stap ook terug naar nul. De vergrendeling blijft staan als Home Assistant herstart; de gedeelde timer voor alles wat geen geregistreerd paneel is (*other*) wordt nooit permanent, omdat niemand die zou kunnen opheffen, maar herhaalt de laatste wachttijd; een beheerder in het paneel kan dan nog gewoon bedienen. Elk geregistreerd paneel (zie hieronder) heeft een eigen timer; al het andere (een telefoon, een automatisering, elke andere naam) deelt één timer.
@@ -166,6 +173,7 @@ Bij het toevoegen van een paneel kies je eerst het **soort apparaat**. *ESPHome-
 - of het de sensorlijst mag tonen: *altijd*, *pas na ontgrendelen* (standaard) of *nooit*, en hoe lang het ontgrendeld blijft (standaard 60 seconden);
 - een optionele **installateurscode** voor dit paneel, bewaard als hash, met een eigen timer voor foute codes. Het paneel stuurt die mee met `vigil_alarm.unlock_panel`; Vigil controleert hem en ontgrendelt het paneel voor de ingestelde tijd. Dat opent de infopagina's en (net als de code van een Vigil-gebruiker) de sensorlijst, en schakelt het alarm nooit uit: uitschakelen vraagt altijd een geldige gebruikerscode;
 - wat de firmware **zelf meldt** (hardware, firmwareversie en profielversie) staat op de paneelkaart, en *Klaar voor gebruik?* geeft advies als de firmware het profiel niet begrijpt;
+- **bewaken of het bereikbaar is** (*Bewaken of dit paneel bereikbaar is*): standaard aan voor een ESPHome-paneel en standaard uit voor een tablet of telefoon, want een telefoon die uit staat is geen storing. Staat het uit, dan krijg je geen reparatie en geen melding als het paneel wegvalt en staat in de lijst *Niet bewaakt*. Regels van vóór deze instelling blijven aan;
 - **geblokkeerd**: Vigil weigert elke oproep met dat paneel-id en legt het vast.
 
 Wat wordt afgedwongen, aan de serverkant: een oproep van een geregistreerd paneel die zijn profiel niet toestaat, wordt geweigerd en vastgelegd (gebeurtenis `panel_refused`, met de reden). Een sensor omzeilen vanaf een geregistreerd paneel vraagt altijd een gebruikerscode. Een geblokkeerd paneel wordt geweigerd voordat er naar een code wordt gekeken. Oproepen met een bron die niet is geregistreerd, worden hier niet door beperkt.
@@ -174,7 +182,7 @@ Elk geregistreerd paneel krijgt een entiteit `sensor.<paneel-id>_profile` (stree
 
 Twee knoppen per paneel, **Ontgrendelen** en **Blokkade opheffen**, bestaan alleen in het Vigil-paneel (alleen beheerders) en niet als Home Assistant-actie: een actie kan elke gebruiker, automatisering en elk paneel aanroepen, waarmee een gestolen paneel zichzelf kon ontgrendelen. *Ontgrendelen* toont de sensorlijst voor de ingestelde tijd; *Blokkade opheffen* haalt de bewaarde blokkade na foute codes weg (die overleeft een herstart, dus zo hef je hem op). Beide worden vastgelegd met de beheerder die het deed (`panel_unlocked`, `panel_lock_cleared`).
 
-**Niet bereikbaar.** Kan Vigil het ESPHome-apparaat van een paneel 10 minuten niet bereiken, dan krijg je een reparatie *Paneel niet bereikbaar* en een melding op je storingskanalen (gebeurtenissen `panel_offline` en `panel_online`). Een paneel dat niet bereikbaar is, verandert de alarmstatus nooit. Een geblokkeerd paneel geeft geen reparatie. Na een herstart van Home Assistant beginnen de tien minuten opnieuw.
+**Niet bereikbaar.** Kan Vigil het ESPHome-apparaat van een paneel 10 minuten niet bereiken, dan krijg je een reparatie *Paneel niet bereikbaar* en een melding op je storingskanalen (gebeurtenissen `panel_offline` en `panel_online`). Een paneel dat niet bereikbaar is, verandert de alarmstatus nooit. Een geblokkeerd paneel, en een paneel waarvoor *bewaken* uit staat, geven geen reparatie. Na een herstart van Home Assistant beginnen de tien minuten opnieuw.
 
 Ook een tablet kan worden geregistreerd, gekoppeld aan een Home Assistant-gebruiker, en toont de Vigil-kaart (`type: custom:vigil-card`); zie de [tabletgids](tablet.nl.md).
 

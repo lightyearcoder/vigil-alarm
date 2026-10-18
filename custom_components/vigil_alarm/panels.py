@@ -34,6 +34,7 @@ from .const import (
     CONF_LANGUAGE,
     CONF_PANEL_ID,
     CONF_SENSOR_LIST,
+    CONF_WATCH,
     CONF_UNLOCK_SECONDS,
     DEFAULT_UNLOCK_SECONDS,
     DOMAIN,
@@ -382,6 +383,8 @@ class PanelRegistry:
             pid = panel.data[CONF_PANEL_ID]
             if panel.data.get(CONF_BLOCKED):
                 continue  # blocked: taken out of service on purpose
+            if not panel.data.get(CONF_WATCH, True):
+                continue  # the administrator does not want to hear when this one is away (a phone, say)
             if panel.data.get(CONF_HA_USER) and pid not in self._cards:
                 continue  # a tablet that never said hello has no Vigil card: nothing to watch
             watched.add(pid)
@@ -423,6 +426,7 @@ class PanelRegistry:
                 "connected": self._connected(pid) if (pid in self._cards or not panel.data.get(CONF_HA_USER)) else None,
                 "card": pid in self._cards,
                 "offline": pid in self._offline,
+                "watched": bool(panel.data.get(CONF_WATCH, True)),
                 "unlocked": self.unlocked(pid),
                 "locked_for": max(lockout.get(pid, 0), lockout.get(admin_bucket(pid), 0)),
                 "locked_permanent": pid in permanent or admin_bucket(pid) in permanent,

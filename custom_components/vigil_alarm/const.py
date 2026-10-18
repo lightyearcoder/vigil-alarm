@@ -174,6 +174,7 @@ CONF_CAN_SILENCE = "can_silence"
 CONF_SENSOR_LIST = "sensor_list"
 CONF_UNLOCK_SECONDS = "unlock_seconds"
 CONF_BLOCKED = "blocked"
+CONF_WATCH = "watch"  # tell the administrators when this panel drops out; a register entry without it is watched
 CONF_HA_USER = "ha_user"  # a tablet: the Home Assistant user it is logged in as
 SENSOR_LIST_CHOICES = ("always", "code", "never")
 DEFAULT_UNLOCK_SECONDS = 60
