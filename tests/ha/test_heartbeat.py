@@ -80,7 +80,9 @@ async def test_failures_are_named_without_the_address_and_a_repair_follows_after
     assert await beat.ping() is True
     await hass.async_block_till_done()
     assert issues(hass) == set() and beat.status()["failures"] == 0
-    assert "secret-key" not in caplog.text and "hc-ping" not in caplog.text
+    # (the test harness itself writes every storage write to the debug log; Home Assistant does not)
+    logged = "\n".join(r.getMessage() for r in caplog.records if not r.name.startswith("pytest_homeassistant"))
+    assert "secret-key" not in logged and "hc-ping" not in logged
 
 
 async def test_the_address_is_a_secret(hass, hass_ws_client, aioclient_mock):

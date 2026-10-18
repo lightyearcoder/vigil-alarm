@@ -237,3 +237,13 @@ def test_the_colours_of_the_panel_are_the_colours_of_the_card():
     for name in ("COL_OK", "COL_WARN", "COL_ENTRY", "COL_ALARM", "COL_HOME", "COL_AWAY", "COL_NIGHT"):
         value = re.search(rf"{name} = 0x([0-9A-F]{{6}});", header).group(1).lower()
         assert f"#{value}" in card, f"{name} (#{value}) is not a colour of the card"
+
+
+def test_the_panel_and_the_card_can_bypass_and_arm_after_a_refusal():
+    """Arming refused because something stops it: both show what, and one button bypasses and arms (`bypass_open`)."""
+    yaml = (ROOT / "esphome/vigil_alarm/vigil-panel.yaml").read_text()
+    card = (ROOT / "custom_components/vigil_alarm/frontend/vigil-card.js").read_text()
+    services = (ROOT / "custom_components/vigil_alarm/services.yaml").read_text()
+    assert "bypass_open:" in yaml and "id: btn_force" in yaml and "parse_refusal(message)" in yaml
+    assert "bypass_open: true" in card and 'data-act="force"' in card
+    assert "bypass_open:" in services

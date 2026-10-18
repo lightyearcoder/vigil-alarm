@@ -32,6 +32,31 @@ async def test_every_event_lands_in_the_log_newest_first_without_codes(hass, has
     assert result["labels"]["armed"] and result["retention_days"] == 90
 
 
+async def test_the_log_keeps_the_user_and_the_panel_apart(hass, hass_ws_client):
+    entry, client = await _client(hass, hass_ws_client)
+    await entry.runtime_data.async_arm("home", "1234", "vigil-panel-garage")
+    await hass.async_block_till_done()
+    await entry.runtime_data.async_disarm("1234", "vigil-panel-garage")
+    await hass.async_block_till_done()
+    result = await _log(client)
+    for e in (x for x in result["entries"] if x["event"] in ("armed", "disarmed")):
+        assert e["user"] == "Anna" and e["source"] == "vigil-panel-garage"
+
+
+async def test_an_unbypass_by_the_disarm_names_the_user_and_the_panel(hass, hass_ws_client):
+    entry, client = await _client(hass, hass_ws_client)
+    manager = entry.runtime_data
+    await manager.async_arm("home", "1234", "vigil-panel-garage")
+    await hass.async_block_till_done()
+    sid = next(iter(manager.config.sensors))
+    manager.engine.bypass(sid)
+    await manager.async_disarm("1234", "vigil-panel-garage")
+    await hass.async_block_till_done()
+    result = await _log(client)
+    lifted = next(e for e in result["entries"] if e["event"] == "sensor_unbypassed")
+    assert lifted["user"] == "Anna" and lifted["source"] == "vigil-panel-garage"
+
+
 async def test_the_log_names_the_sensor_that_started_the_entry_delay(hass, hass_ws_client):
     entry, client = await _client(hass, hass_ws_client)
     await _call(hass, "alarm_arm_home", code="1234")

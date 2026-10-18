@@ -21,7 +21,8 @@ async def test_the_source_is_logged_with_the_user(hass):
     await _setup(hass, make_entry(default_entry_delay=30, exit_delay_home=0))
     await _vigil(hass, "arm", mode="home", code="1234", source="panel garage")
     state = hass.states.get(PANEL)
-    assert state.state == "armed_home" and state.attributes["changed_by"] == "Anna (panel garage)"
+    assert state.state == "armed_home" and state.attributes["changed_by"] == "Anna"
+    assert state.attributes["changed_via"] == "panel garage"
     await _vigil(hass, "disarm", code="5678", source="panel garage")
     assert hass.states.get(PANEL).state == "disarmed"
 
@@ -29,7 +30,8 @@ async def test_the_source_is_logged_with_the_user(hass):
 async def test_without_a_code_the_source_is_the_one_who_armed(hass):
     await _setup(hass, make_entry(code_arm_required=False, exit_delay_home=0))
     await _vigil(hass, "arm", mode="home", source="panel garage")
-    assert hass.states.get(PANEL).attributes["changed_by"] == "panel garage"
+    assert hass.states.get(PANEL).attributes["changed_by"] is None  # no code, no name
+    assert hass.states.get(PANEL).attributes["changed_via"] == "panel garage"
     with pytest.raises(ServiceValidationError, match="code is required"):  # disarming always needs one
         await _vigil(hass, "disarm", source="panel garage")
 

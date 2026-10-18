@@ -58,6 +58,15 @@ async def test_the_profile_attributes_with_names_are_kept_out_of_the_recorder(ha
     assert not {"panel_sensors", "open_now_text", "open_sensors_text", "faults_text"} & set(VigilAlarmPanel._unrecorded_attributes)
 
 
+async def test_unlocking_with_a_user_code_puts_the_user_in_the_event_and_the_log(hass):
+    entry = await _house(hass, panel_item(unlock_seconds=30))
+    manager = entry.runtime_data
+    await manager.panels.async_unlock_with_code("1234", "garage", "sensors")  # Anna's code
+    await hass.async_block_till_done()
+    logged = [e for e in manager.eventlog.entries if e["event"] == "panel_unlocked"]
+    assert logged and logged[-1]["user"] == "Anna" and logged[-1]["source"] == "garage"
+
+
 async def test_unlocking_shows_the_sensors_for_a_while_and_then_hides_them_again(hass, freezer):
     entry = await _house(hass, panel_item(unlock_seconds=30))
     hass.states.async_set("binary_sensor.front_door", "on")

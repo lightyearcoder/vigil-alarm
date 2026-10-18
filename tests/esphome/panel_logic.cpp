@@ -92,5 +92,17 @@ int main(){
   ctx.ha_connected=false; assert(state_color()==COL_OFF && state_icon()==VIGIL_ICON_WIFI_OFF);
   ctx.ha_connected=true; ctx.blocked=true; assert(state_color()==COL_OFF && state_icon()==VIGIL_ICON_CANCEL);
   ctx.blocked=false; ctx.profile_version=0; assert(state_icon()==VIGIL_ICON_LINK_OFF);
+  // Arming refused because something stops it: the text in the panel's language, and a button to bypass and arm
+  ctx=Context(); ctx.lang=NL; ctx.ha_connected=true; ctx.profile_version=PROFILE_VERSION; ctx.modes_mask=7; ctx.state="disarmed";
+  { Refusal r = parse_refusal("Arming refused: alarm_condition (Sabotage voordeur).");
+    assert(r.text=="Inschakelen kan niet: Sabotage voordeur staat open" && r.forceable); }
+  { Refusal r = parse_refusal("Inschakelen geweigerd: sensor_unavailable (Beweging gang, Keuken)."); assert(r.text=="Inschakelen kan niet: Beweging gang, Keuken reageert niet" && r.forceable); }
+  { Refusal r = parse_refusal("Arming refused: not_disarmed ()."); assert(r.text=="Het alarm staat al aan" && !r.forceable); }
+  assert(parse_refusal("Invalid code.").text.empty() && parse_refusal("Arming refused: something_new (X).").text.empty());
+  ctx.lang=EN; assert(parse_refusal("Arming refused: sensor_open (Door).").text=="Cannot arm: Door is open");
+  assert(!show_force()); ctx.refused_action=ARM_AWAY; assert(show_force());
+  ctx.can_bypass=false; assert(!show_force()); ctx.can_bypass=true; ctx.state="armed_away"; assert(!show_force()); ctx.state="disarmed";
+  ctx.code_arm_required=false; assert(!needs_code(ARM_AWAY)); ctx.force=true; assert(needs_code(ARM_AWAY));  // bypassing always asks a code
+  assert(keypad_title(ARM_AWAY,"")=="Bypass and arm: Away"); ctx.force=false; assert(keypad_title(ARM_AWAY,"")=="Arm away");
   std::cout << "ok\n";
 }

@@ -37,7 +37,8 @@ async def test_the_profile_is_enforced_on_the_user_whatever_source_the_call_clai
         assert attrs["event_type"] == "panel_refused" and attrs["source"] == "hall-tablet"
     await _as(hass, user, "arm", mode="home", code="1234", source="made up")
     assert hass.states.get(PANEL).state == "armed_home"
-    assert hass.states.get(PANEL).attributes["changed_by"] == "Anna (hall-tablet)"
+    assert hass.states.get(PANEL).attributes["changed_by"] == "Anna"
+    assert hass.states.get(PANEL).attributes["changed_via"] == "hall-tablet"
     with pytest.raises(ServiceValidationError, match="may not do this"):
         await _as(hass, user, "disarm", code="1234")
     await hass.services.async_call(DOMAIN, "disarm", {"code": "1234", "source": "phone"}, blocking=True)  # another caller
@@ -50,7 +51,8 @@ async def test_the_standard_alarm_card_is_enforced_too(hass):
     ctx = Context(user_id=user.id)
     await hass.services.async_call("alarm_control_panel", "alarm_arm_home", {"entity_id": PANEL, "code": "1234"},
                                    blocking=True, context=ctx)
-    assert hass.states.get(PANEL).attributes["changed_by"] == "Anna (hall-tablet)"
+    assert hass.states.get(PANEL).attributes["changed_by"] == "Anna"
+    assert hass.states.get(PANEL).attributes["changed_via"] == "hall-tablet"
     await hass.services.async_call("alarm_control_panel", "alarm_disarm", {"entity_id": PANEL, "code": "1234"},
                                    blocking=True, context=ctx)
     with pytest.raises(ServiceValidationError, match="may not do this"):
@@ -245,7 +247,8 @@ async def test_a_phone_is_registered_like_a_tablet_and_any_valid_code_works_on_i
     phone = await _ordinary(hass, "Cleo's phone")
     await _house(hass, panel_item(pid="cleo-phone", name="Cleo's phone", sid="p_ph", admin_code=None, ha_user=phone.id))
     await _as(hass, phone, "arm", mode="home", code="5678")  # Bob's code, on Cleo's phone
-    assert hass.states.get(PANEL).attributes["changed_by"] == "Bob (cleo-phone)"
+    assert hass.states.get(PANEL).attributes["changed_by"] == "Bob"
+    assert hass.states.get(PANEL).attributes["changed_via"] == "cleo-phone"
     with pytest.raises(ServiceValidationError, match="code is required"):
         await _as(hass, phone, "disarm")  # no code, no operation
     await _as(hass, phone, "disarm", code="1234")

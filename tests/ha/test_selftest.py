@@ -166,7 +166,7 @@ async def test_settings_form_is_in_sections_and_hidden_hours_are_kept(hass, hass
     entry, client = await _client(hass, hass_ws_client)
     form = (await _ws(client, type="vigil_alarm/get"))["result"]["settings_form"]
     assert all(f.get("section") for f in form)
-    assert {f["section"] for f in form} == {"alarm", "startup", "codes", "lock", "screen", "battery", "log", "selftest", "heartbeat"}
+    assert {f["section"] for f in form} == {"alarm", "startup", "codes", "lock", "screen", "battery", "log", "backup", "selftest", "heartbeat"}
     snap = (await _ws(client, type="vigil_alarm/get"))["result"]["entry"]["data"]
     await _ws(client, type="vigil_alarm/save_settings", data={**snap, "selftest_window_start": 7, "selftest_window_end": 18})
     await hass.async_block_till_done()
