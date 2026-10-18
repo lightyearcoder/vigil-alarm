@@ -242,7 +242,9 @@ class PanelRegistry:
             self._changed()
 
         self._unlocked[pid] = async_call_later(self.hass, seconds, expire)
-        self.manager.publish("panel_unlocked", source=pid, panel=panel.title, by=by or "code")
+        # `user` is the person whose code it was; the installer code of the panel belongs to no one in particular
+        person = by if by not in (None, "code", "installer") else None
+        self.manager.publish("panel_unlocked", source=pid, panel=panel.title, by=by or "code", **({"user": person} if person else {}))
         self._changed()
 
     @callback

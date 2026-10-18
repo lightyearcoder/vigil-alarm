@@ -140,6 +140,33 @@ class Engine:
             self._finish_arming()
         return True
 
+    def arm_check(self, mode: str) -> list[dict[str, Any]]:
+        """Why arming `mode` would be refused right now; an empty list means it would start.
+
+        Same conditions as `arm` and the end of the exit delay, without changing anything. Each entry says the
+        reason, the sensor (None when it is not about one) and whether bypassing that sensor would remove it:
+        an open fire or gas sensor never can be bypassed.
+        """
+        if mode not in self.config.modes:
+            raise ValueError(f"unknown mode {mode!r}")
+        if self.state != "disarmed":
+            return [{"reason": "not_disarmed", "sensor": None, "bypassable": False}]
+        found: list[dict[str, Any]] = []
+        for z in self.config.sensors.values():
+            rt = self._rt[z.id]
+            if rt.manual_bypass:
+                continue
+            if z.blocks_arming_when_open and rt.value == "open":
+                found.append({"reason": "alarm_condition", "sensor": z.id, "bypassable": z.cls not in ("fire", "gas")})
+        for sid in self._blocking_unavailable(mode):
+            found.append({"reason": "sensor_unavailable", "sensor": sid, "bypassable": True})
+        for z in self.config.sensors.values():
+            rt = self._rt[z.id]
+            if (z.cls == "intrusion" and mode in z.modes and rt.value == "open"
+                    and not rt.manual_bypass and z.at_arm_open == "refuse"):
+                found.append({"reason": "sensor_open", "sensor": z.id, "bypassable": True})
+        return found
+
     def disarm(self, user: str | None = None) -> None:
         if self.state == "disarmed":
             return
@@ -150,7 +177,7 @@ class Engine:
         for zid, rt in self._rt.items():
             if rt.manual_bypass:
                 rt.manual_bypass = False
-                self._emit("sensor_unbypassed", sensor=zid, reason="disarm")
+                self._emit("sensor_unbypassed", sensor=zid, reason="disarm", user=user)
                 resume.append(self.config.sensors[zid])
             rt.auto_bypass = False
             rt.waiting = False

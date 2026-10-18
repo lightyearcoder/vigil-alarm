@@ -178,7 +178,9 @@ class VigilManager:
         self.panels = PanelRegistry(hass, self)
         self.lockout = CodeLockout(hass, entry, lambda: self._clock(), self.panels.ids)
         self.last_event: dict[str, Any] | None = None
-        self.changed_by: str | None = None
+        self.changed_by: str | None = None  # the user who armed or disarmed last (None: no code, or automatic)
+        self.changed_via: str | None = None  # the panel or device it was done on
+        self._actor_parts: dict[str, tuple[str | None, str | None]] = {}
         self._store: Store[dict[str, Any]] = Store(
             hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}"
         )
@@ -198,6 +200,8 @@ class VigilManager:
         self.sirens = SirenController(hass, self)
         self.selftest = SelfTest(hass, entry, self)
         self.heartbeat = Heartbeat(hass, entry)
+        from .backups import ConfigBackups  # here: backups.py reads build_config from this module
+        self.backups = ConfigBackups(hass, entry)
         self.supervisor = Supervisor(hass, self)
         self.users: list[Item] = [
             sub for sub in items_of(entry).values() if sub.subentry_type == SUBENTRY_USER
@@ -231,6 +235,7 @@ class VigilManager:
         return any(p.data.get(CONF_HA_USER) for p in self.panels.items())
 
     async def async_setup(self) -> None:
+        await self.backups.async_start()
         await self.eventlog.async_load()
         await self.lockout.async_load()
         await self.panels.async_load()
@@ -392,7 +397,7 @@ class VigilManager:
         if sensor := data.get("sensor"):
             data["sensor_name"] = self._sensor_name.get(sensor, sensor)
         if data.get("type") in ("armed", "disarmed"):
-            self.changed_by = data.get("user")
+            self.changed_by, self.changed_via = self._actor_parts.get(data.get("user"), (data.get("user"), None))
         self.last_event = data
         self.eventlog.add(data)
         async_dispatcher_send(self.hass, SIGNAL_EVENT.format(self.entry.entry_id), data)
@@ -488,18 +493,35 @@ class VigilManager:
         else:
             self.publish("code_locked", source=source, action=action, timer=locked.bucket, minutes=locked.minutes)
 
-    @staticmethod
-    def _actor(user: Item | None, source: str | None) -> str | None:
-        """Who or what did it: the user, the control point (a panel), or both."""
+    def _actor(self, user: Item | None, source: str | None) -> str | None:
+        """Who or what did it: the user, the control point (a panel), or both. The two parts are remembered, so
+        `changed_by` (the user) and `changed_via` (the panel or device) can be told apart."""
         name = user.title if user else None
-        if source:
-            return f"{name} ({source})" if name else source
-        return name
+        combined = (f"{name} ({source})" if name else source) if source else name
+        if combined:
+            self._actor_parts[combined] = (name, source)
+        return combined
 
     def _sensor_names(self, ids: list[str]) -> str:
         return ", ".join(self._sensor_name.get(z, z) for z in ids) or "-"
 
-    async def async_arm(self, mode: str, code: str | None, source: str | None = None, user_id: str | None = None) -> None:
+    def arm_blockers(self, mode: str, *, sync: bool = True) -> list[dict[str, Any]]:
+        """What stops arming `mode` now, with the name of the sensor: the answer to "why can't I arm?".
+        `sync=False` takes the engine as it is (the live view must not trigger a sync of its own)."""
+        if sync:
+            self._sync()
+        return [
+            {**b, "name": self._sensor_names([b["sensor"]]) if b["sensor"] else "",
+             "entity_id": self._sensor_entity.get(b["sensor"]) if b["sensor"] else None}
+            for b in self.engine.arm_check(mode)
+        ]
+
+    async def async_arm(
+        self, mode: str, code: str | None, source: str | None = None, user_id: str | None = None,
+        *, bypass_open: bool = False,
+    ) -> None:
+        """Arm. With `bypass_open` what stops it (an open tamper contact, a sensor that does not answer) is bypassed
+        first: for someone who may bypass, with the same rules as bypassing by hand, and never a fire or gas sensor."""
         source = await self._operator(source, user_id, "arm")
         if not self.ready:
             raise ServiceValidationError(translation_domain=DOMAIN, translation_key="not_ready")
@@ -510,7 +532,11 @@ class VigilManager:
                 translation_placeholders={"mode": mode},
             )
         self.panels.check(source, "arm", mode)
-        user = await self._authenticate(code, required=self.code_arm_required, source=source, action="arm")
+        panel = self.panels.check(source, "bypass") if bypass_open else None
+        # From a registered panel a bypass always needs a code, like bypassing by hand.
+        user = await self._authenticate(
+            code, required=self.code_arm_required or panel is not None, source=source, action="arm"
+        )
         if user is not None:
             allowed = user.data.get(CONF_ALLOWED_MODES) or list(self.config.modes)
             if mode not in allowed:
@@ -521,7 +547,24 @@ class VigilManager:
                 )
         name = self._actor(user, source)
         self._sync()
+        bypassed: list[str] = []
+        if bypass_open:
+            blockers = self.engine.arm_check(mode)
+            is_admin = user_id is not None and await self.async_is_admin_id(user_id)
+            if blockers and not is_admin and user is not None and not user.data.get(CONF_MAY_BYPASS, True):
+                raise ServiceValidationError(translation_domain=DOMAIN, translation_key="bypass_not_allowed")
+            for b in blockers:
+                if b["sensor"] and self.config.sensors[b["sensor"]].cls == "tamper" and not is_admin \
+                        and (user is None or not user.data.get(CONF_MAY_BYPASS_TAMPER, False)):
+                    raise ServiceValidationError(translation_domain=DOMAIN, translation_key="tamper_bypass_not_allowed")
+            if all(b["bypassable"] for b in blockers):  # one that cannot be bypassed: it is refused as usual
+                for b in blockers:
+                    if self.engine.bypass(b["sensor"], user=name):
+                        bypassed.append(b["sensor"])
         ok = self.engine.arm(mode, user=name)
+        if not ok:
+            for sid in bypassed:  # it did not start after all: put them back
+                self.engine.unbypass(sid, user=name)
         self._after()
         if not ok:
             event = next(e for e in reversed(self.engine.events) if e["type"] == "arm_refused")
@@ -617,6 +660,12 @@ class VigilManager:
         name = self._actor(user, source)
         self.notifier.cancel_escalations()
         self.publish("alarm_acknowledged", user=name)
+
+    async def async_is_admin_id(self, user_id: str) -> bool:
+        if self.panels.for_user(user_id):  # a tablet is never an administrator for Vigil
+            return False
+        user = await self.hass.auth.async_get_user(user_id)
+        return bool(user and user.is_admin)
 
     async def async_is_admin(self, context: Context | None) -> bool:
         """Calls from the UI carry a user; automations and scripts do not."""

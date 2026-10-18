@@ -20,7 +20,7 @@ const TXT = {
       disclaimer: "Vigil Alarm is geen gecertificeerd alarmsysteem. Test het regelmatig en vertrouw er niet als enige bescherming op.",
       unreleased: "Nog niet uitgebracht", firstRelease: "eerste versie",
     },
-    tabs: { overview: "Overzicht", sensor: "Sensoren", sensor_group: "Sensorgroepen", rule: "Bevestigingsregels", user: "Gebruikers", notification: "Meldingen", siren: "Sirenes", log: "Logboek", settings: "Instellingen", about: "Over", panel: "Panelen" },
+    tabs: { overview: "Overzicht", sensor: "Sensoren", sensor_group: "Sensorgroepen", rule: "Bevestigingsregels", user: "Gebruikers", notification: "Meldingen", siren: "Sirenes", log: "Logboek", settings: "Instellingen", backup: "Back-up", about: "Over", panel: "Panelen" },
     add: { sensor: "Sensor toevoegen", sensor_group: "Sensorgroep toevoegen", rule: "Bevestigingsregel toevoegen", user: "Gebruiker toevoegen", notification: "Melding toevoegen", siren: "Sirene toevoegen", panel: "Paneel toevoegen" },
     edit: { sensor: "Sensor bewerken", sensor_group: "Sensorgroep bewerken", rule: "Bevestigingsregel bewerken", user: "Gebruiker bewerken", notification: "Melding bewerken", siren: "Sirene bewerken", panel: "Paneel bewerken" },
     intro: {
@@ -62,7 +62,7 @@ const TXT = {
     selftest: { title: "Zelftest", last: "Laatste stille controle", lastSiren: "Laatste sirenetest", next: "Volgende sirenetest", never: "nog niet", off: "Herinnering staat uit (Instellingen)", noSiren: "Er is geen sirene ingesteld.", overdue: "Achterstallig: de test had {days} dagen geleden moeten gebeuren.", test: "Sirene nu testen", started: "De sirene klinkt {seconds} seconden.", auto: "Vigil laat de sirene zelf klinken binnen de ingestelde uren.", problems: "Ontbrekend meldkanaal: {name}" },
     dash: { title: "Dashboard", text: "Een dashboard met de eigen entiteiten van dit alarm. Kopieer het en plak het in een nieuw dashboard (Instellingen > Dashboards > nieuw dashboard > ruwe configuratie-editor).", copy: "Kopieer dashboard" },
     log: { intro: "Alles wat Vigil als gebeurtenis meldt. Het logboek bewaart {days} dagen (zie Instellingen) en bevat geen codes. Tijden zijn in jouw tijdzone; in de downloads staan ze in UTC volgens RFC 3339.", empty: "Nog niets in het logboek.",
-      cols: { time: "Tijd", event: "Gebeurtenis", item: "Onderdeel", who: "Door", result: "Resultaat" }, showing: "De nieuwste {n} van {total}", jsonl: "Download (JSON Lines)", csv: "Download (CSV)", refresh: "Vernieuwen" },
+      cols: { time: "Tijd", event: "Gebeurtenis", item: "Onderdeel", who: "Gebruiker", via: "Via", result: "Resultaat", noCode: "onbekend (geen code)", installer: "installateurcode", auto: "automatisch" }, showing: "De nieuwste {n} van {total}", jsonl: "Download (JSON Lines)", csv: "Download (CSV)", refresh: "Vernieuwen" },
     summary: { always: "{cls}, altijd actief", instant: "direct", delayed: "vertraagd ({s} s)", follower: "volger", and: "en", watching: "{type}, bewaakt in {modes}", nowhere: "{type}, bewaakt in geen enkele modus" },
     whatsNew: "nieuw", batteryLow: "laag", batteryOk: "ok",
     copySuffix: " (kopie)",
@@ -89,6 +89,7 @@ const TXT = {
       screen: ["Scherm van de panelen", "Wanneer het scherm van een ESPHome-paneel uitgaat. Het scherm gaat alleen uit als het alarm uit of volledig ingeschakeld is, nooit tijdens het aftellen om in of uit te schakelen."],
       battery: ["Batterijen", "Vanaf welk niveau een batterij als bijna leeg geldt."],
       log: ["Logboek", "Hoe lang Vigil de gebeurtenissen bewaart."],
+      backup: ["Back-up", "Hoeveel versies van je configuratie Vigil bewaart (tabblad Back-up). Een lagere waarde gooit de oudste versies weg."],
       selftest: ["Zelftest", "Vigil herinnert je eraan de sirene te testen. Zet het interval op 0 om de herinnering uit te zetten."],
       heartbeat: ["Hartslag", "Vigil roept dit adres regelmatig aan, zodat een dienst buiten je huis meldt als Home Assistant of je internet uitvalt."],
     },
@@ -122,7 +123,7 @@ const TXT = {
       tone: "Toon", volume: "Volume", preset: "Voorinstelling",
       device: "Soort apparaat", panel_id: "Naam van het ESPHome-apparaat (paneel-id)", ha_user: "Home Assistant-account (tablet of telefoon)", language: "Taal", can_disarm: "Mag uitschakelen (met code)", can_bypass: "Mag sensoren omzeilen (met code)", can_silence: "Mag dempen en bevestigen", sensor_list: "Sensorlijst tonen", unlock_seconds: "Ontgrendeld blijft (seconden)", watch: "Bewaken of dit paneel bereikbaar is (melding als het wegvalt)", blocked: "Paneel geblokkeerd", "panel.code": "Installateurscode van dit paneel (leeg = geen)", "panel.allowed_modes": "Mag inschakelen in modi (leeg = alle)",
       "s.modes": "Beschikbare modi", exit_delay_home: "Uitlooptijd thuis", exit_delay_away: "Uitlooptijd weg", exit_delay_night: "Uitlooptijd nacht",
-      default_entry_delay: "Standaard inlooptijd", trigger_time: "Alarmduur (0 = tot uitschakelen)", battery_threshold: "Batterijgrens", code_arm_required: "Code nodig om in te schakelen", startup_wait_seconds: "Maximaal wachten op sensoren na een herstart (seconden)", lock_tries_1: "Foute codes voor de eerste vergrendeling", lock_wait_1: "Eerste vergrendeling duurt (minuten)", lock_tries_2: "Daarna foute codes voor de tweede vergrendeling", lock_wait_2: "Tweede vergrendeling duurt (minuten)", lock_tries_3: "Daarna foute codes voor de derde vergrendeling", lock_wait_3: "Derde vergrendeling duurt (minuten)", lock_tries_4: "Daarna foute codes voor de permanente vergrendeling", screen_off_seconds: "Scherm uit na (seconden zonder aanraking)", screen_off_on_alarm: "Scherm ook uit laten gaan tijdens een alarm", min_code_length: "Minimale codelengte (cijfers/tekens)", log_retention_days: "Logboek bewaren (dagen)", selftest_interval_days: "Herinnering sirenetest (dagen, 0 = uit)", selftest_siren_seconds: "Sirene klinkt bij test (seconden)", selftest_auto: "Sirene zelf laten klinken voor de test", selftest_window_start: "Test niet voor (uur)", selftest_window_end: "Test niet na (uur)", heartbeat_url: "Hartslag-adres (leeg = uit)", heartbeat_interval_minutes: "Minuten tussen hartslagen",
+      default_entry_delay: "Standaard inlooptijd", trigger_time: "Alarmduur (0 = tot uitschakelen)", battery_threshold: "Batterijgrens", backup_versions: "Aantal bewaarde versies", code_arm_required: "Code nodig om in te schakelen", startup_wait_seconds: "Maximaal wachten op sensoren na een herstart (seconden)", lock_tries_1: "Foute codes voor de eerste vergrendeling", lock_wait_1: "Eerste vergrendeling duurt (minuten)", lock_tries_2: "Daarna foute codes voor de tweede vergrendeling", lock_wait_2: "Tweede vergrendeling duurt (minuten)", lock_tries_3: "Daarna foute codes voor de derde vergrendeling", lock_wait_3: "Derde vergrendeling duurt (minuten)", lock_tries_4: "Daarna foute codes voor de permanente vergrendeling", screen_off_seconds: "Scherm uit na (seconden zonder aanraking)", screen_off_on_alarm: "Scherm ook uit laten gaan tijdens een alarm", min_code_length: "Minimale codelengte (cijfers/tekens)", log_retention_days: "Logboek bewaren (dagen)", selftest_interval_days: "Herinnering sirenetest (dagen, 0 = uit)", selftest_siren_seconds: "Sirene klinkt bij test (seconden)", selftest_auto: "Sirene zelf laten klinken voor de test", selftest_window_start: "Test niet voor (uur)", selftest_window_end: "Test niet na (uur)", heartbeat_url: "Hartslag-adres (leeg = uit)", heartbeat_interval_minutes: "Minuten tussen hartslagen",
     },
     helpMore: {
       at_arm_open: "Wat er gebeurt als deze sensor nog open staat wanneer de uitlooptijd voorbij is:\n• Omzeilen met melding (standaard): het alarm gaat aan zonder deze sensor en je krijgt een melding. Zodra de sensor dicht gaat, bewaakt hij weer.\n• Wachten tot dicht: het alarm gaat aan en deze sensor wordt genegeerd tot hij één keer dicht is geweest, zonder melding. Daarna bewaakt hij weer.\n• Inschakelen weigeren: het alarm gaat niet aan en je ziet welke sensor open staat. Sluit hem eerst.\n• Inlooptijd starten: het alarm gaat aan en de open sensor telt meteen als geactiveerd. Een directe sensor geeft alarm, bij een vertraagde sensor start de inlooptijd.",
@@ -168,13 +169,34 @@ const TXT = {
       device: { esphome: "ESPHome-paneel (zelfbouwscherm)", account: "Tablet of telefoon met Home Assistant" },
       sensor_list: { always: "Altijd tonen", code: "Pas na ontgrendelen", never: "Nooit tonen" },
     },
+    why: {
+      title: "Waarom kan ik niet inschakelen?", intro: "Dit houdt het inschakelen nu tegen:", modes: "bij {modes}", show: "Toon", bypass: "Omzeilen", bypassed: "Omzeild",
+      neverBypass: "Brand- en gassensoren kun je niet omzeilen: eerst de oorzaak weghalen.",
+      reason: { alarm_condition: "staat open (een alarmsituatie)", sensor_unavailable: "reageert niet (en is ingesteld om het inschakelen tegen te houden)", sensor_open: "staat open en moet dicht zijn om in te schakelen", not_disarmed: "het alarm staat al aan" },
+      hint: "Op het paneel en in de Vigil-kaart kun je met de knop Omzeilen en inschakelen in één keer omzeilen en inschakelen, als je daar het recht voor hebt.",
+    },
+    backup: {
+      intro: "Bij elke wijziging bewaart Vigil de configuratie van vóór die wijziging (de laatste 10 versies). Je kunt zo'n versie terugzetten; het terugzetten is zelf ook een wijziging en dus weer ongedaan te maken. Alleen de instellingen worden bewaard, niet de toestand van het alarm (ingeschakeld, omzeild).",
+      list: "Bewaarde versies", none: "Nog geen versies. Ze komen zodra je iets wijzigt.", restore: "Terugzetten",
+      reason: { edit: "Wijziging", restore: "Teruggezet", import: "Import", external: "Gewijzigd buiten het paneel", upgrade: "Update van Vigil" },
+      colTime: "Tijdstip", colReason: "Reden", colVigil: "Vigil-versie", colChange: "Wijziging",
+      view: "Bekijk", viewTitle: "Wijziging van {time}", viewText: "Deze versie bewaart de configuratie van vóór deze wijziging. De wijziging zelf was:", format: "opslagversie {v}",
+      notRestorable: "Niet terug te zetten: gemaakt door een andere opslagversie ({v}, nu {now}). Wel te bekijken.", settingsList: "Instellingen: {names}",
+      restoreTitle: "Deze versie terugzetten?", restoreText: "Terugzetten verandert dit ten opzichte van nu:", nothing: "Geen verschil met nu.", restored: "Teruggezet",
+      fileTitle: "Exporteren en importeren", export: "Configuratie exporteren", import: "Configuratie importeren…",
+      exportNote: "Het bestand bevat geen codes, wel de versleutelde codes (hashes), het heartbeat-adres en de namen van je meldingsdiensten. Bewaar het veilig.",
+      importNote: "Importeren vervangt de hele configuratie. De huidige blijft als versie bewaard, dus een import is terug te zetten.",
+      importTitle: "Dit bestand importeren?", importText: "Importeren verandert dit ten opzichte van nu:", imported: "Geïmporteerd", readFailed: "Dit bestand kan niet gelezen worden.",
+      added: "toegevoegd", removed: "verwijderd", changed: "gewijzigd", settings: "Instellingen gewijzigd: {n}", undo: "Ongedaan maken", apply: "Doorvoeren",
+    },
     errors: {
+      backup_invalid: "Dit bestand of deze versie bevat geen bruikbare configuratie.", backup_unknown: "Deze versie bestaat niet meer.", import_not_vigil: "Dit is geen exportbestand van Vigil Alarm.", import_format_version: "Dit bestand heeft een onbekend formaat.", import_entry_version: "Dit bestand hoort bij een andere opslagversie ({found}, nodig: {expected}). Importeer het in dezelfde versie van Vigil als waarin het is gemaakt.",
       name_required: "Geef een naam op.", name_in_use: "Deze naam bestaat al.", required: "Verplicht.",
       invalid_config: "Ongeldig: {error}", sensor_not_instant: "Alleen directe sensoren kunnen in een bevestigingsregel. Aanpassen: {sensors}",
       entity_in_use: "Deze entiteit is al een sensor.", tamper_same_entity: "De sabotage-entiteit moet een andere zijn dan de sensor zelf.", tamper_entity_in_use: "Deze entiteit is al een sensor.",
       no_sensor_group: "Kies minstens één sensorgroep.", unknown_sensor_group: "Onbekende sensorgroep.",
       unknown_mode: "Onbekende modus.", unknown_suggestion: "Onbekende keuze.",
-      code_in_use: "Deze code is al in gebruik.", code_too_short: "De code moet minstens {min} tekens hebben (instelbaar bij Instellingen).", code_length_range: "Kies een waarde van {min} tot {max}.", screen_off_range: "Kies een aantal seconden van {min} tot {max}.", startup_wait_range: "Kies een aantal seconden van {min} tot {max}.", lock_tries_range: "Kies een aantal keren van {min} tot {max}.", lock_wait_range: "Kies een aantal minuten van {min} tot {max}.", log_retention_range: "Kies een aantal dagen van {min} tot {max}.", selftest_range: "Kies een waarde van {min} tot {max}.", selftest_window: "Het laatste uur moet na het vroegste uur liggen.", heartbeat_url_invalid: "Dit is geen webadres. Het moet beginnen met http:// of https://.", heartbeat_range: "Kies een aantal minuten van {min} tot {max}.", tag_in_use: "Deze tag is al in gebruik.", no_credential: "Geef een code of minstens één tag op.",
+      backup_versions_range: "Kies een aantal van {min} tot {max}.", code_in_use: "Deze code is al in gebruik.", code_too_short: "De code moet minstens {min} tekens hebben (instelbaar bij Instellingen).", code_length_range: "Kies een waarde van {min} tot {max}.", screen_off_range: "Kies een aantal seconden van {min} tot {max}.", startup_wait_range: "Kies een aantal seconden van {min} tot {max}.", lock_tries_range: "Kies een aantal keren van {min} tot {max}.", lock_wait_range: "Kies een aantal minuten van {min} tot {max}.", log_retention_range: "Kies een aantal dagen van {min} tot {max}.", selftest_range: "Kies een waarde van {min} tot {max}.", selftest_window: "Het laatste uur moet na het vroegste uur liggen.", heartbeat_url_invalid: "Dit is geen webadres. Het moet beginnen met http:// of https://.", heartbeat_range: "Kies een aantal minuten van {min} tot {max}.", tag_in_use: "Deze tag is al in gebruik.", no_credential: "Geef een code of minstens één tag op.",
       service_not_found: "Deze notify-dienst bestaat niet (meer).", no_categories: "Kies minstens één soort melding.",
       no_causes: "Kies minstens één oorzaak.", tone_without_entity: "Een toon kan alleen met een toonkeuze-entiteit.", volume_without_entity: "Een volume kan alleen met een volume-entiteit.",
       sensor_in_rule: "Deze sensor zit nog in bevestigingsregel: {rules}. Haal hem daar eerst uit.",
@@ -198,7 +220,7 @@ const TXT = {
       disclaimer: "Vigil Alarm is not a certified alarm system. Test it regularly and do not rely on it as your only protection.",
       unreleased: "Not released yet", firstRelease: "first release",
     },
-    tabs: { overview: "Overview", sensor: "Sensors", sensor_group: "Sensor groups", rule: "Confirmation rules", user: "Users", notification: "Notifications", siren: "Sirens", log: "Log", settings: "Settings", about: "About", panel: "Panels" },
+    tabs: { overview: "Overview", sensor: "Sensors", sensor_group: "Sensor groups", rule: "Confirmation rules", user: "Users", notification: "Notifications", siren: "Sirens", log: "Log", settings: "Settings", backup: "Backup", about: "About", panel: "Panels" },
     add: { sensor: "Add sensor", sensor_group: "Add sensor group", rule: "Add confirmation rule", user: "Add user", notification: "Add notification", siren: "Add siren", panel: "Add panel" },
     edit: { sensor: "Edit sensor", sensor_group: "Edit sensor group", rule: "Edit confirmation rule", user: "Edit user", notification: "Edit notification", siren: "Edit siren", panel: "Edit panel" },
     intro: {
@@ -240,7 +262,7 @@ const TXT = {
     selftest: { title: "Self-test", last: "Last quiet check", lastSiren: "Last siren test", next: "Next siren test", never: "not yet", off: "Reminder is off (Settings)", noSiren: "No siren is set up.", overdue: "Overdue: the test was due {days} days ago.", test: "Test siren now", started: "The siren sounds for {seconds} seconds.", auto: "Vigil sounds the siren by itself within the set hours.", problems: "Missing notification channel: {name}" },
     dash: { title: "Dashboard", text: "A dashboard with this alarm's own entities. Copy it and paste it into a new dashboard (Settings > Dashboards > new dashboard > raw configuration editor).", copy: "Copy dashboard" },
     log: { intro: "Everything Vigil reports as an event. The log keeps {days} days (see Settings) and holds no codes. Times are in your time zone; in the downloads they are in UTC as RFC 3339.", empty: "Nothing in the log yet.",
-      cols: { time: "Time", event: "Event", item: "Item", who: "By", result: "Result" }, showing: "The newest {n} of {total}", jsonl: "Download (JSON Lines)", csv: "Download (CSV)", refresh: "Refresh" },
+      cols: { time: "Time", event: "Event", item: "Item", who: "User", via: "Via", result: "Result", noCode: "unknown (no code)", installer: "installer code", auto: "automatic" }, showing: "The newest {n} of {total}", jsonl: "Download (JSON Lines)", csv: "Download (CSV)", refresh: "Refresh" },
     summary: { always: "{cls}, always on", instant: "instant", delayed: "delayed ({s} s)", follower: "follower", and: "and", watching: "{type}, watching in {modes}", nowhere: "{type}, not watching in any mode" },
     whatsNew: "new", batteryLow: "low", batteryOk: "ok",
     copySuffix: " (copy)",
@@ -267,6 +289,7 @@ const TXT = {
       screen: ["Panel screen", "When the screen of an ESPHome panel goes dark. It only goes dark while the alarm is off or fully armed, never during the countdown to arm or to disarm."],
       battery: ["Batteries", "From which level a battery counts as low."],
       log: ["Event log", "How long Vigil keeps the events."],
+      backup: ["Backup", "How many versions of your configuration Vigil keeps (Backup tab). A lower value discards the oldest versions."],
       selftest: ["Self-test", "Vigil reminds you to test the siren. Set the interval to 0 to turn the reminder off."],
       heartbeat: ["Heartbeat", "Vigil calls this address regularly, so a service outside your house reports when Home Assistant or your internet stops."],
     },
@@ -300,7 +323,7 @@ const TXT = {
       tone: "Tone", volume: "Volume", preset: "Preset",
       device: "Kind of device", panel_id: "Name of the ESPHome device (panel id)", ha_user: "Home Assistant account (tablet or phone)", language: "Language", can_disarm: "May disarm (with a code)", can_bypass: "May bypass sensors (with a code)", can_silence: "May silence and acknowledge", sensor_list: "Show the sensor list", unlock_seconds: "Stays unlocked for (seconds)", watch: "Watch whether this panel is reachable (notify when it drops out)", blocked: "Panel blocked", "panel.code": "Installer code of this panel (empty = none)", "panel.allowed_modes": "May arm in modes (empty = all)",
       "s.modes": "Available modes", exit_delay_home: "Exit delay home", exit_delay_away: "Exit delay away", exit_delay_night: "Exit delay night",
-      default_entry_delay: "Default entry delay", trigger_time: "Alarm duration (0 = until disarmed)", battery_threshold: "Battery threshold", code_arm_required: "Code required to arm", startup_wait_seconds: "Longest wait for sensors after a restart (seconds)", lock_tries_1: "Wrong codes before the first lock", lock_wait_1: "First lock lasts (minutes)", lock_tries_2: "Then wrong codes before the second lock", lock_wait_2: "Second lock lasts (minutes)", lock_tries_3: "Then wrong codes before the third lock", lock_wait_3: "Third lock lasts (minutes)", lock_tries_4: "Then wrong codes before the permanent lock", screen_off_seconds: "Screen off after (seconds without touch)", screen_off_on_alarm: "Also let the screen go dark during an alarm", log_retention_days: "Keep the log (days)", selftest_interval_days: "Siren test reminder (days, 0 = off)", selftest_siren_seconds: "Siren sounds in a test (seconds)", selftest_auto: "Sound the siren by itself for the test", selftest_window_start: "Not before (hour)", selftest_window_end: "Not after (hour)", heartbeat_url: "Heartbeat address (empty = off)", heartbeat_interval_minutes: "Minutes between heartbeats", min_code_length: "Minimum code length (characters)",
+      default_entry_delay: "Default entry delay", trigger_time: "Alarm duration (0 = until disarmed)", battery_threshold: "Battery threshold", backup_versions: "Number of versions kept", code_arm_required: "Code required to arm", startup_wait_seconds: "Longest wait for sensors after a restart (seconds)", lock_tries_1: "Wrong codes before the first lock", lock_wait_1: "First lock lasts (minutes)", lock_tries_2: "Then wrong codes before the second lock", lock_wait_2: "Second lock lasts (minutes)", lock_tries_3: "Then wrong codes before the third lock", lock_wait_3: "Third lock lasts (minutes)", lock_tries_4: "Then wrong codes before the permanent lock", screen_off_seconds: "Screen off after (seconds without touch)", screen_off_on_alarm: "Also let the screen go dark during an alarm", log_retention_days: "Keep the log (days)", selftest_interval_days: "Siren test reminder (days, 0 = off)", selftest_siren_seconds: "Siren sounds in a test (seconds)", selftest_auto: "Sound the siren by itself for the test", selftest_window_start: "Not before (hour)", selftest_window_end: "Not after (hour)", heartbeat_url: "Heartbeat address (empty = off)", heartbeat_interval_minutes: "Minutes between heartbeats", min_code_length: "Minimum code length (characters)",
     },
     helpMore: {
       at_arm_open: "What happens if this sensor is still open when the exit delay ends:\n• Bypass with a notice (default): the alarm arms without this sensor and you get a notice. As soon as the sensor closes, it is watched again.\n• Wait until closed: the alarm arms and this sensor is ignored until it has closed once, without a notice. After that it is watched again.\n• Refuse to arm: the alarm does not arm and you see which sensor is open. Close it first.\n• Start entry delay: the alarm arms and the open sensor counts as triggered right away. A direct sensor sounds the alarm, a delayed sensor starts the entry delay.",
@@ -346,13 +369,34 @@ const TXT = {
       device: { esphome: "ESPHome panel (DIY screen)", account: "Tablet or phone running Home Assistant" },
       sensor_list: { always: "Always show", code: "Only after unlocking", never: "Never show" },
     },
+    why: {
+      title: "Why can't I arm?", intro: "This stops arming right now:", modes: "in {modes}", show: "Show", bypass: "Bypass", bypassed: "Bypassed",
+      neverBypass: "Fire and gas sensors cannot be bypassed: remove the cause first.",
+      reason: { alarm_condition: "is open (an alarm condition)", sensor_unavailable: "does not respond (and is set to stop arming)", sensor_open: "is open and must be closed to arm", not_disarmed: "the alarm is already on" },
+      hint: "On the panel and in the Vigil card the Bypass and arm button bypasses and arms in one go, if you have the right to.",
+    },
+    backup: {
+      intro: "On every change Vigil keeps the configuration as it was before that change (the last 10 versions). You can put such a version back; restoring is a change too, so it can be undone the same way. Only the settings are kept, not the state of the alarm (armed, bypassed).",
+      list: "Kept versions", none: "No versions yet. They appear as soon as you change something.", restore: "Restore",
+      reason: { edit: "Change", restore: "Restored", import: "Import", external: "Changed outside the panel", upgrade: "Vigil update" },
+      colTime: "Time", colReason: "Reason", colVigil: "Vigil version", colChange: "Change",
+      view: "View", viewTitle: "Change of {time}", viewText: "This version keeps the configuration as it was before this change. The change itself was:", format: "storage version {v}",
+      notRestorable: "Cannot be restored: made by another storage version ({v}, now {now}). It can still be viewed.", settingsList: "Settings: {names}",
+      restoreTitle: "Restore this version?", restoreText: "Restoring changes this compared with now:", nothing: "No difference with now.", restored: "Restored",
+      fileTitle: "Export and import", export: "Export configuration", import: "Import configuration…",
+      exportNote: "The file holds no codes, but it does hold the hashed codes, the heartbeat address and the names of your notification services. Keep it safe.",
+      importNote: "Importing replaces the whole configuration. The present one is kept as a version, so an import can be restored.",
+      importTitle: "Import this file?", importText: "Importing changes this compared with now:", imported: "Imported", readFailed: "This file cannot be read.",
+      added: "added", removed: "removed", changed: "changed", settings: "Settings changed: {n}", undo: "Undo", apply: "Apply",
+    },
     errors: {
+      backup_invalid: "This file or version holds no usable configuration.", backup_unknown: "This version no longer exists.", import_not_vigil: "This is not a Vigil Alarm export file.", import_format_version: "This file has an unknown format.", import_entry_version: "This file belongs to another storage version ({found}, needed: {expected}). Import it in the same version of Vigil it was made in.",
       name_required: "Enter a name.", name_in_use: "This name already exists.", required: "Required.",
       invalid_config: "Invalid: {error}", sensor_not_instant: "Only instant sensors can be in a confirmation rule. Change: {sensors}",
       entity_in_use: "This entity is already a sensor.", tamper_same_entity: "The tamper entity must be another one than the sensor itself.", tamper_entity_in_use: "This entity is already a sensor.",
       no_sensor_group: "Choose at least one sensor group.", unknown_sensor_group: "Unknown sensor group.",
       unknown_mode: "Unknown mode.", unknown_suggestion: "Unknown choice.",
-      code_in_use: "This code is already in use.", code_too_short: "The code must have at least {min} characters (set under Settings).", code_length_range: "Choose a value from {min} to {max}.", screen_off_range: "Choose a number of seconds from {min} to {max}.", startup_wait_range: "Choose a number of seconds from {min} to {max}.", lock_tries_range: "Choose a number of times from {min} to {max}.", lock_wait_range: "Choose a number of minutes from {min} to {max}.", log_retention_range: "Choose a number of days from {min} to {max}.", selftest_range: "Choose a value from {min} to {max}.", selftest_window: "The latest hour must be after the earliest hour.", heartbeat_url_invalid: "That is not a web address. It must start with http:// or https://.", heartbeat_range: "Choose a number of minutes from {min} to {max}.", tag_in_use: "This tag is already in use.", no_credential: "Enter a code or at least one tag.",
+      backup_versions_range: "Choose a number from {min} to {max}.", code_in_use: "This code is already in use.", code_too_short: "The code must have at least {min} characters (set under Settings).", code_length_range: "Choose a value from {min} to {max}.", screen_off_range: "Choose a number of seconds from {min} to {max}.", startup_wait_range: "Choose a number of seconds from {min} to {max}.", lock_tries_range: "Choose a number of times from {min} to {max}.", lock_wait_range: "Choose a number of minutes from {min} to {max}.", log_retention_range: "Choose a number of days from {min} to {max}.", selftest_range: "Choose a value from {min} to {max}.", selftest_window: "The latest hour must be after the earliest hour.", heartbeat_url_invalid: "That is not a web address. It must start with http:// or https://.", heartbeat_range: "Choose a number of minutes from {min} to {max}.", tag_in_use: "This tag is already in use.", no_credential: "Enter a code or at least one tag.",
       service_not_found: "This notify service does not exist (any more).", no_categories: "Choose at least one kind of message.",
       no_causes: "Choose at least one cause.", tone_without_entity: "A tone needs a tone selection entity.", volume_without_entity: "A volume needs a volume entity.",
       sensor_in_rule: "This sensor is still in confirmation rule: {rules}. Remove it there first.",
@@ -377,6 +421,7 @@ const ICONS = {
   tag: ["M12 2H2v10l9.29 9.29a1 1 0 0 0 1.42 0l6.58-6.58a1 1 0 0 0 0-1.42Z", "M7 7h.01"],
   alert: ["M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Z", "M12 8v4", "M12 16h.01"],
   unlock: ["M7 11V7a5 5 0 0 1 9.9-1", "M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"],
+  eye: ["M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z", "M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"],
   reset: ["M3 12a9 9 0 1 0 3-6.7", "M3 4v5h5"],
   tablet: ["M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z", "M12 18h.01"],
   file: ["M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2Z", "M14 2v6h6"],
@@ -405,7 +450,7 @@ const OPTION_GROUP = { modes: "mode", allowed_modes: "mode" };
 const CONTACT_CLASSES = ["door", "window", "opening", "garage_door"];
 const MOTION_CLASSES = ["motion", "occupancy", "presence", "moving"];
 const KINDS = ["sensor", "sensor_group", "rule", "user", "notification", "siren", "panel"];
-const TABS = ["overview", ...KINDS, "log", "settings", "about"];
+const TABS = ["overview", ...KINDS, "log", "settings", "backup", "about"];
 
 const CSS = `
 :host { display: block; height: 100%; background: var(--primary-background-color, #fafafa); color: var(--primary-text-color, #212121);
@@ -499,6 +544,7 @@ details { margin: 8px 0 14px; border: 1px solid var(--divider-color, #ddd); bord
 details summary { cursor: pointer; font-size: 14px; }
 details h3 { font-size: 13px; margin: 12px 0 6px; font-weight: 500; }
 .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.toastbtn { margin-left: 10px; background: none; border: 0; color: #8ab4f8; font: inherit; font-weight: 600; cursor: pointer; padding: 0; }
 .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #323232; color: #fff; padding: 10px 20px; border-radius: 8px; z-index: 20; font-size: 14px; }
 @media (max-width: 700px) {
   main { padding: 8px; } .pair { grid-template-columns: 1fr; }
@@ -694,6 +740,7 @@ class VigilPanel extends HTMLElement {
     if (this._tab === "overview") content = this._overview();
     else if (this._tab === "log") content = this._logNode || (this._logNode = this._logTab());  // not rebuilt on every live update
     else if (this._tab === "settings") content = this._settings();
+    else if (this._tab === "backup") content = this._backupTab();
     else if (this._tab === "about") content = this._aboutTab();
     else content = this._list(this._tab);
     body.replaceChildren(el("main", { class: KINDS.includes(this._tab) || this._tab === "log" ? "wide" : "" }, content));
@@ -883,6 +930,32 @@ class VigilPanel extends HTMLElement {
       } }));
   }
 
+  // Why arming is refused now, per sensor, with what can be done about it (the live view says what stops each mode).
+  _whyCard() {
+    const t = this.t, w = t.why;
+    const blockers = this._live && this._live.blockers ? this._live.blockers : {};
+    const rows = new Map();
+    for (const [mode, list] of Object.entries(blockers)) {
+      for (const b of list) {
+        const key = `${b.sensor || ""}|${b.reason}`;
+        if (!rows.has(key)) rows.set(key, { ...b, modes: [] });
+        rows.get(key).modes.push(t.mode[mode] || mode);
+      }
+    }
+    if (!rows.size) return null;
+    const list = [...rows.values()].map((r) => {
+      const call = (service) => this._hass.callService("vigil_alarm", service, { sensor: r.entity_id });
+      return el("li", {},
+        el("strong", { text: r.name || "" }), r.name ? " " : "", w.reason[r.reason] || r.reason, " ",
+        el("span", { class: "muted", text: fill(w.modes, { modes: r.modes.join(", ") }) }), " ",
+        r.entity_id ? el("button", { class: "btn", text: w.show, onclick: () => this.dispatchEvent(new CustomEvent("hass-more-info", { bubbles: true, composed: true, detail: { entityId: r.entity_id } })) }) : null,
+        r.bypassable && r.entity_id ? el("button", { class: "btn", text: w.bypass, onclick: async () => { try { await call("bypass"); this._toast(w.bypassed); } catch (err) { this._toast(String((err && err.message) || err)); } } }) : null);
+    });
+    const never = [...rows.values()].some((r) => r.sensor && !r.bypassable);
+    return el("div", { class: "card" }, el("h2", { text: w.title }), el("p", { class: "muted", text: w.intro }),
+      el("ul", { class: "plain" }, list), never ? el("p", { class: "note", text: w.neverBypass }) : null, el("p", { class: "note", text: w.hint }));
+  }
+
   _overview() {
     const t = this.t;
     const live = this._live;
@@ -895,6 +968,7 @@ class VigilPanel extends HTMLElement {
           el("div", { class: "muted", text: live && live.mode ? (t.mode[live.mode] || live.mode) : "" })),
         ...KINDS.map((k) => el("div", { class: "card", style: "cursor:pointer", onclick: () => { this._tab = k; this._renderBody(); } },
           el("h2", { text: t.tabs[k] }), el("div", { class: "stat", text: String(this._shown(k).length) })))),
+      this._whyCard(),
       this._readyCard(),
       this._selftestCard(),
       this._heartbeatCard(),
@@ -1068,15 +1142,22 @@ class VigilPanel extends HTMLElement {
       const res = await this._call({ type: "vigil_alarm/log", limit: 200 });
       if (!res || !res.entries) { host.replaceChildren(el("div", { class: "empty", text: t.errors.generic })); return; }
       const when = (iso) => { const d = new Date(iso); return isNaN(d) ? iso : d.toLocaleString(); };
-      const who = (e) => [e.user, e.source].filter(Boolean).join(" · ") || t.none;
+      // Done on a panel or device without a code: there is no name to show.
+      const byPerson = ["armed", "disarmed", "sensor_bypassed", "sensor_unbypassed", "alarm_silenced", "alarm_acknowledged"];
+      const installerCode = (e) => e.event === "panel_unlocked" && !e.user && e.detail && ["installer", "code"].includes(e.detail.by);
+      const who = (e) => (e.user ? el("span", { text: e.user })
+        : e.event === "sensor_unbypassed" && e.result === "closed" ? el("span", { class: "muted", text: l.cols.auto })
+        : installerCode(e) ? el("span", { class: "muted", text: l.cols.installer })
+        : e.source && byPerson.includes(e.event) ? el("span", { class: "muted", text: l.cols.noCode }) : el("span", { text: t.none }));
       const table = res.entries.length
         ? el("div", { class: "tablewrap" }, el("table", {},
-            el("thead", {}, el("tr", {}, ["time", "event", "item", "who", "result"].map((k) => el("th", { text: l.cols[k] })))),
+            el("thead", {}, el("tr", {}, ["time", "event", "item", "who", "via", "result"].map((k) => el("th", { text: l.cols[k] })))),
             el("tbody", {}, res.entries.map((e) => el("tr", { class: "row", title: e.detail ? JSON.stringify(e.detail) : "" },
               el("td", { "data-label": l.cols.time, text: when(e.time) }),
               el("td", { "data-label": l.cols.event, text: res.labels[e.event] || e.event }),
               el("td", { "data-label": l.cols.item, text: e.item || t.none }),
-              el("td", { "data-label": l.cols.who, text: who(e) }),
+              el("td", { "data-label": l.cols.who }, who(e)),
+              el("td", { "data-label": l.cols.via, text: e.source || t.none }),
               el("td", { "data-label": l.cols.result, text: e.result || t.none }))))))
         : el("div", { class: "empty", text: l.empty });
       host.replaceChildren(
@@ -1112,11 +1193,102 @@ class VigilPanel extends HTMLElement {
       saveBtn.disabled = true;
       const res = await this._call({ type: "vigil_alarm/save_settings", data: form.values() });
       saveBtn.disabled = false;
-      if (res.ok) { this._toast(t.saved); await this._load(); } else form.showErrors(res, base);
+      if (res.ok) { this._savedToast(t.saved); await this._load(); } else form.showErrors(res, base);
     });
     return el("div", {}, base, form.node,
       el("div", { class: "card" }, el("div", { class: "bar" }, saveBtn), el("p", { class: "note", text: t.reloadNote })),
       this._coverageCard());
+  }
+
+  // ---- backup tab: kept versions, export and import
+  _changeNode(change) {
+    const b = this.t.backup;
+    const kindOf = { zone: "sensor", group: "rule", sensor_group: "sensor_group", user: "user", notification: "notification", siren: "siren", panel: "panel" };
+    const lines = [];
+    for (const [type, counts] of Object.entries(change.counts || {})) {
+      const parts = ["added", "changed", "removed"].filter((a) => counts[a]).map((a) => `${counts[a]} ${b[a]}`);
+      const names = change.items.filter((i) => i.type === type).slice(0, 12).map((i) => i.name).join(", ");
+      lines.push(el("li", {}, el("strong", { text: `${this.t.tabs[kindOf[type]] || type}: ` }), parts.join(", "), names ? el("div", { class: "note", text: names }) : null));
+    }
+    if ((change.settings || []).length) {
+      const names = change.settings.map((k) => (this.t.fields && this.t.fields[k]) || k).join(", ");
+      lines.push(el("li", {}, fill(b.settings, { n: change.settings.length }), el("div", { class: "note", text: names })));
+    }
+    return lines.length ? el("ul", { class: "morelist" }, lines) : el("p", { text: b.nothing });
+  }
+
+  _summaryText(change) {
+    const b = this.t.backup;
+    const kindOf = { zone: "sensor", group: "rule", sensor_group: "sensor_group", user: "user", notification: "notification", siren: "siren", panel: "panel" };
+    const parts = [];
+    for (const [type, counts] of Object.entries(change.counts || {})) {
+      parts.push(`${this.t.tabs[kindOf[type]] || type}: ` + ["added", "changed", "removed"].filter((a) => counts[a]).map((a) => `${counts[a]} ${b[a]}`).join(", "));
+    }
+    if ((change.settings || []).length) parts.push(fill(b.settings, { n: change.settings.length }));
+    return parts.join(" · ") || b.nothing;
+  }
+
+  _backupTab() {
+    const t = this.t, b = t.backup;
+    const host = el("div", {});
+    const when = (iso) => { const d = new Date(iso); return isNaN(d) ? iso : d.toLocaleString(); };
+    const confirm = (title, text, change, applyMsg, doneText) => this._dialog(title, [el("p", { text }), this._changeNode(change), el("div", {})], (close) => [
+      el("button", { class: "btn", text: t.cancel, onclick: close }),
+      el("button", { class: "btn primary", text: b.apply, onclick: async () => {
+        const res = await this._call(applyMsg);
+        if (res.ok) { close(); this._toast(doneText); await this._load(); load(); } else { close(); this._toast(this._errorText("base", res)); }
+      } }),
+    ]);
+    const load = async () => {
+      const res = await this._call({ type: "vigil_alarm/backups" });
+      const versions = res.versions || [];
+      host.replaceChildren(versions.length ? el("div", { class: "tablewrap" }, el("table", {},
+        el("thead", {}, el("tr", {}, ["colTime", "colReason", "colVigil", "colChange"].map((k) => el("th", { text: b[k] })), el("th", {}))),
+        el("tbody", {}, versions.map((v) => {
+          const restoreBtn = iconButton("reset", v.restorable ? b.restore : fill(b.notRestorable, { v: v.entry_version, now: res.entry_version }), "", async () => {
+            const pre = await this._call({ type: "vigil_alarm/backup_restore", version_id: v.id, preview: true });
+            if (!pre.ok) { this._toast(this._errorText("base", pre)); return; }
+            confirm(b.restoreTitle, b.restoreText, pre.change, { type: "vigil_alarm/backup_restore", version_id: v.id }, b.restored);
+          });
+          restoreBtn.disabled = !v.restorable;
+          return el("tr", { class: "row" },
+            el("td", { text: when(v.time) }), el("td", { text: b.reason[v.reason] || v.reason }),
+            el("td", {}, v.integration_version || t.none, v.restorable ? null : el("div", { class: "note", text: fill(b.format, { v: v.entry_version }) })),
+            el("td", {}, this._summaryText(v.summary), v.restorable ? null : el("div", { class: "note", text: fill(b.notRestorable, { v: v.entry_version, now: res.entry_version }) })),
+            el("td", { class: "actions" },
+              iconButton("eye", b.view, "", () => this._dialog(fill(b.viewTitle, { time: when(v.time) }), [el("p", { text: b.viewText }), this._changeNode(v.summary)], (close) => [el("button", { class: "btn primary", text: t.close, onclick: close })])),
+              restoreBtn));
+        })))) : el("div", { class: "empty", text: b.none }));
+    };
+    const picker = el("input", { type: "file", accept: "application/json,.json", style: "display:none" });
+    picker.addEventListener("change", async () => {
+      const file = picker.files && picker.files[0];
+      picker.value = "";
+      if (!file) return;
+      let payload;
+      try { payload = JSON.parse(await file.text()); } catch (err) { this._toast(b.readFailed); return; }
+      if (!payload || typeof payload !== "object" || Array.isArray(payload)) { this._toast(b.readFailed); return; }
+      const pre = await this._call({ type: "vigil_alarm/import", payload, preview: true });
+      if (!pre.ok) { this._toast(this._errorText("base", pre)); return; }
+      confirm(b.importTitle, b.importText, pre.change, { type: "vigil_alarm/import", payload }, b.imported);
+    });
+    const exportFile = async () => {
+      const payload = await this._call({ type: "vigil_alarm/export" });
+      if (!payload || payload.format === undefined) { this._toast(t.errors.generic); return; }
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = el("a", { href: url, download: `vigil-alarm-${new Date().toISOString().slice(0, 10)}.json` });
+      this._root.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    };
+    load();
+    return el("div", {},
+      el("p", { class: "intro", text: b.intro }),
+      el("div", { class: "card" }, el("h2", { text: b.list }), host),
+      el("div", { class: "card" }, el("h2", { text: b.fileTitle }),
+        el("div", { class: "bar" }, el("button", { class: "btn", text: b.export, onclick: exportFile }),
+          el("button", { class: "btn", text: b.import, onclick: () => picker.click() }), picker),
+        el("p", { class: "note", text: b.exportNote }), el("p", { class: "note", text: b.importNote })));
   }
 
   // ---- about tab
@@ -1202,10 +1374,22 @@ class VigilPanel extends HTMLElement {
     }
   }
 
-  _toast(text) {
+  _toast(text, action = null) {
     const node = el("div", { class: "toast", text });
-    this._root.append(node);
-    setTimeout(() => node.remove(), 2500);
+    if (action) node.append(" ", el("button", { class: "toastbtn", text: action.label, onclick: () => { node.remove(); action.run(); } }));
+    this.shadowRoot.append(node);  // not in the root: a reload of the data redraws that and would wipe it
+    setTimeout(() => node.remove(), action ? 8000 : 2500);
+  }
+
+  // After a change: say so, and offer to undo it (the version before it is the newest one kept).
+  _savedToast(text) {
+    this._toast(text, { label: this.t.backup.undo, run: async () => {
+      const list = await this._call({ type: "vigil_alarm/backups" });
+      const latest = list.versions && list.versions[0];
+      if (!latest) return;
+      const res = await this._call({ type: "vigil_alarm/backup_restore", version_id: latest.id });
+      if (res.ok) { this._toast(this.t.backup.restored); await this._load(); } else this._toast(this._errorText("base", res));
+    } });
   }
 
   async _test(kind, item) {
@@ -1249,7 +1433,7 @@ class VigilPanel extends HTMLElement {
       el("button", { class: "btn", text: t.cancel, onclick: close }),
       el("button", { class: "btn danger", text: t.del, onclick: async () => {
         const res = await this._call({ type: "vigil_alarm/delete", subentry_id: item.id });
-        if (res.ok) { close(); this._toast(t.deleted); await this._load(); }
+        if (res.ok) { close(); this._savedToast(t.deleted); await this._load(); }
         else base.replaceChildren(el("div", { class: "baseerror", text: this._errorText("base", res) }));
       } }),
     ]);
@@ -1340,7 +1524,7 @@ class VigilPanel extends HTMLElement {
         });
         addBtn.disabled = true;
         const result = await this._call({ type: "vigil_alarm/save_many", items });
-        if (result.ok) { close(); this._toast(fill(f.added, { n: items.length })); await this._load(); return; }
+        if (result.ok) { close(); this._savedToast(fill(f.added, { n: items.length })); await this._load(); return; }
         refresh();
         const field = Object.keys(result.errors || {})[0] || "base";
         const who = result.index !== undefined && items[result.index] ? items[result.index].name : "";
@@ -1367,7 +1551,7 @@ class VigilPanel extends HTMLElement {
         if (editing) msg.subentry_id = item.id;
         const res = await this._call(msg);
         saveBtn.disabled = false;
-        if (res.ok) { close(); this._toast(t.saved); await this._load(); } else form.showErrors(res, base);
+        if (res.ok) { close(); this._savedToast(t.saved); await this._load(); } else form.showErrors(res, base);
       });
       return [el("button", { class: "btn", text: t.cancel, onclick: close }), saveBtn];
     });

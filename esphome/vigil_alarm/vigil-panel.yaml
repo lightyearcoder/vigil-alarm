@@ -22,7 +22,7 @@ substitutions:
   # How long the screen stays on without touch, until Vigil has told the panel (setting "Screen off after" in Vigil).
   backlight_timeout_seconds: "30"
   # The version of this firmware, reported to Vigil.
-  firmware_version: "0.4.1"
+  firmware_version: "0.5.0"
   # The width of the cards and buttons: the screen minus a margin on both sides.
   content_w: ${ screen_width | int - 24 }
   # The sizes follow the screen: the ring is a bit over a quarter of the shortest side, the keys fill the keypad.
@@ -356,6 +356,15 @@ text_sensor:
         - lambda: vigil::ctx.changed_by = vigil::clean(x);
         - script.execute: refresh_ui
   - platform: homeassistant
+    id: ha_changed_via
+    entity_id: ${alarm_entity}
+    attribute: changed_via
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.changed_via = vigil::clean(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
     id: ha_cause
     entity_id: ${alarm_entity}
     attribute: cause
@@ -487,6 +496,7 @@ script:
   - id: reset_ui
     then:
       - lambda: |-
+          vigil::ctx.force = false;
           id(keypad_open) = false;
           id(pending_action) = 0;
           id(sens_page) = 0;
@@ -559,7 +569,8 @@ script:
           hide(id(btn_away), !show_away());
           hide(id(btn_night), !show_night());
           hide(id(btn_disarm), !show_disarm());
-          hide(id(row_modes), !(show_home() || show_away() || show_night()));
+          hide(id(btn_force), !show_force());
+          hide(id(row_modes), show_force() || !(show_home() || show_away() || show_night()));
           // The alarm: a red frame, and everything a little red
           hide(id(alarm_frame), !alarm);
           const uint32_t ground = alarm ? 0x1A0F12 : 0x0E1116;
@@ -611,6 +622,9 @@ script:
       - lvgl.label.update:
           id: lbl_btn_disarm
           text: !lambda 'return vigil::tr("disarm");'
+      - lvgl.label.update:
+          id: lbl_btn_force
+          text: !lambda 'return vigil::tr("force");'
       - lvgl.label.update:
           id: lbl_sens_title
           text: !lambda 'return vigil::tr("sensors");'
@@ -827,6 +841,7 @@ script:
   - id: close_keypad
     then:
       - lambda: |-
+          vigil::ctx.force = false;
           id(keypad_open) = false;
           id(pending_action) = 0;
           id(on_sensors_page) = false;
@@ -871,6 +886,7 @@ script:
                     return id(pending_action) == vigil::ARM_HOME ? "home" : (id(pending_action) == vigil::ARM_AWAY ? "away" : "night");
                   source: ${name}
                   code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
+                  bypass_open: !lambda 'return std::string(vigil::ctx.force ? "true" : "false");'
                 on_success:
                   - script.execute: action_done
                 on_error:
@@ -943,7 +959,10 @@ script:
 
   - id: action_done
     then:
-      - lambda: vigil::ctx.message = "";
+      - lambda: |-
+          vigil::ctx.message = "";
+          vigil::ctx.force = false;
+          vigil::ctx.refused_action = 0;
       # The installer code was right: Vigil has unlocked this panel. Show the list or the info until the time is up.
       - if:
           condition:
@@ -993,7 +1012,20 @@ script:
     parameters:
       message: string
     then:
-      - lambda: vigil::ctx.message = vigil::localize_error(message);
+      # Arming refused because something stops it (not a wrong code): say what, close the keypad, and offer
+      # "Bypass and arm" in place of the tiles (not when that was just tried).
+      - lambda: |-
+          vigil::Refusal refusal = vigil::parse_refusal(message);
+          const bool arm = id(pending_action) >= vigil::ARM_HOME && id(pending_action) <= vigil::ARM_NIGHT;
+          if (arm && !refusal.text.empty()) {
+            vigil::ctx.message = refusal.text;
+            vigil::ctx.refused_action = (refusal.forceable && !vigil::ctx.force) ? id(pending_action) : 0;
+            vigil::ctx.force = false;
+            id(keypad_open) = false;
+            id(pending_action) = 0;
+          } else {
+            vigil::ctx.message = vigil::localize_error(message);
+          }
       - lvgl.textarea.update:
           id: pin_text
           text: ""
@@ -1016,6 +1048,7 @@ script:
       - delay: 8s
       - lambda: |-
           vigil::ctx.message = "";
+          vigil::ctx.refused_action = 0;
           lv_obj_set_style_text_color(id(lbl_kp_err), lv_color_hex(0x8A94A6), 0);
       - lvgl.label.update:
           id: lbl_kp_err
@@ -1496,6 +1529,39 @@ lvgl:
                   text: "Disarm"
                   text_font: montserrat_28
                   text_color: 0x4CCB8F
+        # Bypass and arm: after a refusal that bypassing can solve, in the place of the tiles
+        - button:
+            id: btn_force
+            width: 100%
+            height: ${mode_h}
+            radius: 22
+            bg_color: 0x000000
+            border_width: 2
+            border_color: 0xF2B84B
+            shadow_width: 0
+            hidden: true
+            pressed:
+              bg_color: 0x2A2210
+            on_click:
+              then:
+                - lambda: |-
+                    vigil::ctx.force = true;
+                    id(pending_action) = vigil::ctx.refused_action;
+                    id(pending_entity) = "";
+                - script.execute: start_action
+            layout:
+              type: flex
+              flex_flow: ROW
+              flex_align_main: CENTER
+              flex_align_cross: CENTER
+              flex_align_track: CENTER
+              pad_column: 10
+            widgets:
+              - label:
+                  id: lbl_btn_force
+                  text: "Bypass and arm"
+                  text_font: montserrat_20
+                  text_color: 0xF2B84B
         # The space of the tabs: they are in the top layer, so they stay put on every page
         - obj:
             width: 100%

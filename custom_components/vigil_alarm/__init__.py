@@ -20,6 +20,7 @@ from .manager import SIGNAL_UPDATE, VigilManager
 from .migration import async_migrate_entry  # noqa: F401  (Home Assistant looks it up here)
 from homeassistant.helpers.storage import Store
 
+from .backups import STORAGE_VERSION as BACKUPS_STORAGE_VERSION, backups_store_key
 from .eventlog import STORAGE_VERSION as EVENTLOG_STORAGE_VERSION
 from .repairs import VigilRepairs
 from .lockout import STORAGE_VERSION as LOCKOUT_STORAGE_VERSION
@@ -95,7 +96,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     async def arm(call: ServiceCall) -> None:
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
             await entry.runtime_data.async_arm(
-                call.data["mode"], call.data.get("code"), call.data.get("source"), call.context.user_id
+                call.data["mode"], call.data.get("code"), call.data.get("source"), call.context.user_id,
+                bypass_open=call.data.get("bypass_open", False),
             )
 
     async def disarm(call: ServiceCall) -> None:
@@ -109,6 +111,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             vol.Required("mode"): vol.In(["home", "away", "night"]),
             vol.Optional("code"): cv.string,
             vol.Optional("source"): cv.string,
+            vol.Optional("bypass_open", default=False): cv.boolean,
         }),
     )
     hass.services.async_register(DOMAIN, SERVICE_DISARM, disarm, schema=code_schema)
@@ -245,6 +248,7 @@ def _align_profile_ids(hass: HomeAssistant, entry: VigilConfigEntry, manager) ->
 
 
 async def _reload(hass: HomeAssistant, entry: VigilConfigEntry) -> None:
+    await entry.runtime_data.backups.async_changed()  # keep the configuration as it was
     await hass.config_entries.async_reload(entry.entry_id)
 
 
@@ -262,3 +266,4 @@ async def async_remove_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> No
     await Store(hass, SELFTEST_STORAGE_VERSION, f"{DOMAIN}.selftest.{entry.entry_id}").async_remove()
     await Store(hass, LOCKOUT_STORAGE_VERSION, f"{DOMAIN}.lockout.{entry.entry_id}").async_remove()
     await Store(hass, 1, f"{DOMAIN}.tablets.{entry.entry_id}").async_remove()
+    await Store(hass, BACKUPS_STORAGE_VERSION, backups_store_key(entry.entry_id)).async_remove()

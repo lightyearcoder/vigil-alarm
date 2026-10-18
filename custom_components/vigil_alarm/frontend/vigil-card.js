@@ -25,8 +25,9 @@
       bypass: "Omzeilen", unbypass: "Herstellen", bypass_title: "Omzeilen: ", unbypass_title: "Herstellen: ",
       unlock_title: "Sensoren bekijken", admin_code: "Installateurscode", hint_user: "Voer uw gebruikerscode in", hint_admin: "Voer de installateurscode in", sensors: "Sensoren", sensors_open: "open",
       all_closed: "Alles dicht", open: "Open: ", problems: "Storingen: ", leave_in: "Verlaat het huis: ",
-      enter_in: "Schakel uit binnen: ", by: "Door ", no_sensors: "Geen sensoren", back: "Terug", cancel: "Annuleren",
+      enter_in: "Schakel uit binnen: ", by: "Door ", by_unknown: "Door: onbekend", via: "Via ", no_sensors: "Geen sensoren", back: "Terug", cancel: "Annuleren",
       blocked: "Geblokkeerd", blocked_sub: "Dit paneel is geblokkeerd in Vigil",
+      refuse_alarm_condition: "Inschakelen kan niet: {s} staat open", refuse_sensor_unavailable: "Inschakelen kan niet: {s} reageert niet", refuse_sensor_open: "Inschakelen kan niet: {s} staat open", refuse_not_disarmed: "Het alarm staat al aan", force: "Omzeilen en inschakelen",
       not_linked: "Niet gekoppeld",
       not_linked_sub: "Voeg dit Home Assistant-account toe in Vigil onder Panelen. Account: ",
       err_invalid_code: "Ongeldige code", err_code_required: "Voer een code in", err_locked_pre: "Te veel foute codes. Probeer het over ", err_locked_post: " min opnieuw", err_locked: "Te veel foute codes. Even wachten", err_locked_permanent: "Te veel foute codes. Vergrendeld totdat een beheerder dit in Vigil opheft", err_bypass_tamper: "U mag sabotage niet omzeilen of terugzetten", err_bypass: "U mag sensoren niet omzeilen of terugzetten", err_blocked: "Dit paneel is geblokkeerd", err_not_allowed: "Dit paneel mag dit niet", err_no_installer_code: "Stel eerst een installateurscode in Vigil in", err_not_bypassable: "Deze sensor kan niet worden omzeild",
@@ -45,8 +46,9 @@
       bypass: "Bypass", unbypass: "Restore", bypass_title: "Bypass: ", unbypass_title: "Restore: ",
       unlock_title: "View sensors", admin_code: "Installer code", hint_user: "Enter your user code", hint_admin: "Enter the installer code", sensors: "Sensors", sensors_open: "open",
       all_closed: "All closed", open: "Open: ", problems: "Problems: ", leave_in: "Leave within: ",
-      enter_in: "Disarm within: ", by: "By ", no_sensors: "No sensors", back: "Back", cancel: "Cancel",
+      enter_in: "Disarm within: ", by: "By ", by_unknown: "By: unknown", via: "Via ", no_sensors: "No sensors", back: "Back", cancel: "Cancel",
       blocked: "Blocked", blocked_sub: "This panel is blocked in Vigil",
+      refuse_alarm_condition: "Cannot arm: {s} is open", refuse_sensor_unavailable: "Cannot arm: {s} does not respond", refuse_sensor_open: "Cannot arm: {s} is open", refuse_not_disarmed: "The alarm is already on", force: "Bypass and arm",
       not_linked: "Not linked",
       not_linked_sub: "Add this Home Assistant account in Vigil under Panels. Account: ",
       err_invalid_code: "Invalid code", err_code_required: "A code is required", err_locked_pre: "Too many wrong codes. Try again in ", err_locked_post: " min", err_locked: "Too many wrong codes. Wait a moment", err_locked_permanent: "Too many wrong codes. Locked until an administrator unlocks it in Vigil", err_bypass_tamper: "You may not bypass or restore tamper", err_bypass: "You may not bypass or restore sensors", err_blocked: "This panel is blocked", err_not_allowed: "This panel may not do this", err_no_installer_code: "Set an installer code in Vigil first", err_not_bypassable: "This sensor cannot be bypassed",
@@ -305,6 +307,8 @@
       } else if (armed) {
         if (this._detailsVisible()) {
           if (clean(at.changed_by)) add(this.tr("by") + clean(at.changed_by));
+          else if (clean(at.changed_via)) add(this.tr("by_unknown"));
+          if (clean(at.changed_via)) add(this.tr("via") + clean(at.changed_via));
           if (clean(p.open_sensors_text)) add(this.tr("open") + clean(p.open_sensors_text));
         }
       } else if (s === "arming") {
@@ -371,7 +375,7 @@
         this._flash(this.tr("no_admin_code"));
         return;
       }
-      if (this._needsCode(action)) this._openKeypad(action, extra);
+      if (this._needsCode(action) || extra.force) this._openKeypad(action, extra);
       else this._run(action, "", extra);
     }
     _flash(text) {
@@ -379,6 +383,7 @@
       clearTimeout(this._msgTimer);
       this._msgTimer = setTimeout(() => {
         this._ui.message = "";
+        this._ui.force = null;
         this._render();
       }, 8000);
       this._render();
@@ -389,7 +394,7 @@
       const withCode = (data) => (code ? { ...data, code } : data);
       this._ui.busy = true;
       try {
-        if (action.startsWith("arm_")) await call("arm", withCode({ mode: action.slice(4), source }));
+        if (action.startsWith("arm_")) await call("arm", withCode({ mode: action.slice(4), source, ...(extra.force ? { bypass_open: true } : {}) }));
         else if (action === "disarm") await call("disarm", { code, source });
         else if (action === "bypass") await call("bypass", { sensor: extra.entity, code, source });
         else if (action === "unbypass") await call("unbypass", { sensor: extra.entity, code, source });
@@ -398,13 +403,28 @@
         this._done(action);
       } catch (err) {
         this._ui.busy = false;
-        const text = this._localError((err && (err.message || err.error)) || String(err));
+        const raw = (err && (err.message || err.error)) || String(err);
+        const refused = action.startsWith("arm_") ? this._refusal(raw) : null;
+        if (refused) {
+          // Not a wrong code: something stops arming. Say what, and offer to bypass it and arm if that is allowed.
+          this._ui.keypad = null;
+          this._ui.force = !extra.force && refused.reason !== "not_disarmed" && this._bypassAllowed() ? { action } : null;
+          this._flash(refused.text);
+          return;
+        }
+        const text = this._localError(raw);
         if (this._ui.keypad) {
           this._ui.keypad.code = "";
           this._ui.keypad.error = text;
           this._render();
         } else this._flash(text);
       }
+    }
+    // "Arming refused: alarm_condition (Front door)." in the language of the panel.
+    _refusal(raw) {
+      const m = raw.match(/(?:Arming refused|Inschakelen geweigerd): (\w+) \(([^)]*)\)/);
+      if (!m || !this.tr("refuse_" + m[1])) return null;
+      return { reason: m[1], text: this.tr("refuse_" + m[1]).replace("{s}", m[2] || "?") };
     }
     // Home Assistant answers in its own language; Vigil's known refusals are shown in the language of the panel.
     // The phrases must keep matching translations/en.json and nl.json (a test checks that).
@@ -419,6 +439,7 @@
     }
     _done(action) {
       this._ui.message = "";
+      this._ui.force = null;
       this._ui.keypad = null;
       if (action === "unlock") {
         this._ui.unlocked = true;
@@ -455,9 +476,9 @@
     _submit() {
       const k = this._ui.keypad;
       if (!k || !k.code || this._ui.busy) return;
-      const { action, code, entity } = k;
+      const { action, code, entity, force } = k;
       k.error = "";
-      this._run(action, code, { entity });
+      this._run(action, code, { entity, force });
     }
 
     _keypadTitle(k) {
@@ -544,9 +565,11 @@
           ${icon("chevron", 22, 'class="chev"')}</button>`).join("");
       const disarm = this._showDisarm()
         ? `<button class="disarm" data-act="disarm">${icon("unlock", 28)}<span>${esc(this.tr("disarm"))}</span></button>` : "";
+      const force = this._ui.force && this._bypassAllowed()
+        ? `<button class="force" data-act="force">${icon("exit", 24)}<span>${esc(this.tr("force"))}</span></button>` : "";
       const sensors = this._showSensorsButton()
         ? `<button class="sensors" data-act="sensors"><span class="dot s">${icon("grid", 22)}</span><span class="mn">${esc(this.tr("sensors"))}</span>${this._openTotal() > 0 ? `<span class="badge">${this._openTotal()}</span>` : ""}${icon("chevron", 20, 'class="chev"')}</button>` : "";
-      return `<div class="modes">${modes}${disarm}</div>${sensors}`;
+      return `<div class="modes">${modes}${disarm}${force}</div>${sensors}`;
     }
 
     _dotsHtml(k) {
@@ -597,6 +620,7 @@
       const act = el.dataset.act;
       if (act === "arm") this._start("arm_" + el.dataset.mode);
       else if (act === "disarm") this._start("disarm");
+      else if (act === "force") this._ui.force && this._start(this._ui.force.action, { force: true });
       else if (act === "sensors") {
         if (this._sensorsVisible()) {
           this._ui.view = "sensors";
@@ -661,6 +685,8 @@
       font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
     .disarm { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 76px; border-radius: 22px;
       background: #4CCB8F; color: #07251A; font-size: 22px; font-weight: 800; }
+    .force { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 60px; border-radius: 20px;
+      border: 2px solid #F2B84B; color: #F2B84B; background: transparent; font-size: 19px; font-weight: 800; }
     .kp-head { display: flex; align-items: center; gap: 14px; }
     .kp-head .dot { color: #4CCB8F; background: color-mix(in srgb, #4CCB8F 18%, var(--surface)); --m: #4CCB8F; }
     .err.bad { color: #F0605D; }

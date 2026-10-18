@@ -98,6 +98,7 @@ class VigilAlarmPanel(AlarmControlPanelEntity):
         snap = self._manager.snapshot()
         return {
             "mode": snap["mode"],  # home/away/night: the armed mode, or the target while arming
+            "changed_via": self._manager.changed_via,  # the panel or device (`changed_by` is the user)
             "cause": snap["cause"],
             "cause_sensor": snap["cause_sensor"],
             "open_sensors": snap["open_sensors"],

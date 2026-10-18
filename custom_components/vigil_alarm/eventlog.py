@@ -89,11 +89,13 @@ class EventLog:
         extra = {k: _plain(v) for k, v in event.items() if k not in _SHOWN and k not in _NEVER}
         if event.get("sensors"):
             extra["sensors"] = [names.get(s, s) for s in event["sensors"]]
+        # "Edwin (vigil-panel-garage)" is kept as two facts: the user and where it was done
+        user, via = self.manager._actor_parts.get(event.get("user") or "", (event.get("user"), None))
         return {
             "time": rfc3339(event.get("t") or datetime.now(UTC).timestamp()),
             "event": event.get("type"),
-            "source": event.get("source"),
-            "user": event.get("user"),
+            "source": event.get("source") or via,
+            "user": user,
             "item": item,
             "result": event.get("reason") or event.get("error") or event.get("cause") or event.get("mode"),
             "detail": extra or None,

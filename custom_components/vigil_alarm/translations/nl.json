@@ -26,6 +26,7 @@
           "screen_off_seconds": "Scherm uit na (seconden)",
           "screen_off_on_alarm": "Scherm uit laten gaan tijdens een alarm",
           "log_retention_days": "Dagen dat het gebeurtenissenlogboek bewaard blijft",
+          "backup_versions": "Aantal bewaarde versies van de configuratie (back-ups)",
           "selftest_interval_days": "Dagen tussen herinneringen voor de siretest (0 = uit)",
           "selftest_siren_seconds": "Seconden dat de sirene klinkt bij een test",
           "selftest_auto": "Sirene zelf laten klinken voor de test",
@@ -60,6 +61,7 @@
           "screen_off_seconds": "Scherm uit na (seconden)",
           "screen_off_on_alarm": "Scherm uit laten gaan tijdens een alarm",
           "log_retention_days": "Dagen dat het gebeurtenissenlogboek bewaard blijft",
+          "backup_versions": "Aantal bewaarde versies van de configuratie (back-ups)",
           "selftest_interval_days": "Dagen tussen herinneringen voor de siretest (0 = uit)",
           "selftest_siren_seconds": "Seconden dat de sirene klinkt bij een test",
           "selftest_auto": "Sirene zelf laten klinken voor de test",
@@ -342,6 +344,10 @@
         "source": {
           "name": "Bron",
           "description": "Naam van het bedienpunt, bijvoorbeeld een paneel. Komt in het logboek en bij wie het alarm wijzigde."
+        },
+        "bypass_open": {
+          "name": "Omzeil wat het tegenhoudt",
+          "description": "Omzeil de sensoren die het inschakelen tegenhouden (bijvoorbeeld een open sabotagecontact) en schakel dan in. Vraagt het recht om te omzeilen; geldt nooit voor brand- of gassensoren."
         }
       }
     },

@@ -15,6 +15,11 @@ arm:
       required: false
       selector:
         text:
+    bypass_open:
+      required: false
+      default: false
+      selector:
+        boolean:
 disarm:
   fields:
     code:

@@ -44,6 +44,12 @@ static const Text TEXTS[] = {
     {"arm_away", {"Weg inschakelen", "Arm away"}},
     {"arm_night", {"Nacht inschakelen", "Arm night"}},
     {"bypass", {"Omzeilen", "Bypass"}},
+    {"force", {"Omzeilen en inschakelen", "Bypass and arm"}},
+    {"force_title", {"Omzeilen en inschakelen: ", "Bypass and arm: "}},
+    {"refuse_alarm_condition", {"Inschakelen kan niet: %s staat open", "Cannot arm: %s is open"}},
+    {"refuse_sensor_unavailable", {"Inschakelen kan niet: %s reageert niet", "Cannot arm: %s does not respond"}},
+    {"refuse_sensor_open", {"Inschakelen kan niet: %s staat open", "Cannot arm: %s is open"}},
+    {"refuse_not_disarmed", {"Het alarm staat al aan", "The alarm is already on"}},
     {"unbypass", {"Herstellen", "Restore"}},
     {"bypass_title", {"Omzeilen: ", "Bypass: "}},
     {"unbypass_title", {"Herstellen: ", "Restore: "}},
@@ -60,6 +66,8 @@ static const Text TEXTS[] = {
     {"enter_now", {"Schakel uit met uw code", "Disarm with your code"}},
     {"seconds_short", {" s", " s"}},
     {"by", {"Door ", "By "}},
+    {"by_unknown", {"Door: onbekend", "By: unknown"}},
+    {"via", {"Via ", "Via "}},
     {"no_sensors", {"Geen sensoren", "No sensors"}},
     {"info", {"Paneelinfo", "Panel info"}},
     {"info_title", {"Paneelinfo bekijken", "View panel info"}},
@@ -151,7 +159,8 @@ struct Context {
   int delay_total = 0;     // the length of the running delay in seconds, for the ring (see ring_percent)
   std::string delay_for;   // the state `delay_total` is for
   double now = NAN;        // the time in epoch seconds, NAN until the clock is set
-  std::string changed_by;
+  std::string changed_by;   // the user
+  std::string changed_via;  // the panel or device it was done on
   std::string cause;
   std::string cause_sensor;
   std::string open_now;   // names of the sensors that are open at all
@@ -160,6 +169,8 @@ struct Context {
   int problems = 0;       // number of problems (alarm entity or profile)
   std::string sensors;    // one "name|entity|status|bypassable" line per sensor
   std::string message;    // an error to show for a while
+  int refused_action = 0; // an arm action that Vigil refused because something stops it: the button "bypass and arm" repeats it
+  bool force = false;     // the keypad is open for "bypass and arm"
   int sensor_list = LIST_CODE;     // see SensorList
   bool sensors_unlocked = false;   // a code (user or installer) was entered a moment ago, on this panel
   bool installer_unlocked = false; // the installer code was entered a moment ago: the info page may open
@@ -219,6 +230,38 @@ inline std::string localize_error(const std::string &raw) {
     return tr("err_locked_pre") + raw.substr(start, end == std::string::npos ? std::string::npos : end - start) + tr("err_locked_post");
   }
   return raw;
+}
+
+// "Arming refused: alarm_condition (Front door)." (or the Dutch text): the same in the panel's language, and
+// whether bypassing the sensor could help. An empty text means: this is not a refusal of that kind.
+struct Refusal {
+  std::string text;
+  bool forceable = false;
+};
+
+inline Refusal parse_refusal(const std::string &raw) {
+  Refusal out;
+  size_t at = raw.find("Arming refused: ");
+  size_t skip = 16;
+  if (at == std::string::npos) {
+    at = raw.find("Inschakelen geweigerd: ");
+    skip = 23;
+  }
+  if (at == std::string::npos) return out;
+  size_t from = at + skip;
+  size_t space = raw.find(' ', from);
+  std::string reason = raw.substr(from, space == std::string::npos ? std::string::npos : space - from);
+  std::string names;
+  size_t open = raw.find('(', from), close = raw.find(')', from);
+  if (open != std::string::npos && close != std::string::npos && close > open) names = raw.substr(open + 1, close - open - 1);
+  std::string key = "refuse_" + reason;
+  std::string text = tr(key.c_str());
+  if (text == key) return out;  // a reason this firmware does not know: shown as it came
+  size_t pct = text.find("%s");
+  if (pct != std::string::npos) text.replace(pct, 2, names.empty() ? "?" : names);
+  out.text = text;
+  out.forceable = reason != "not_disarmed";
+  return out;
 }
 
 // Home Assistant sends "None", "unknown" and so on for an attribute that has no value.
@@ -535,6 +578,8 @@ inline std::string state_sub(double /*now: the ring shows the countdown*/) {
   } else if (is_armed_state(s)) {
     if (details_visible()) {
       if (!ctx.changed_by.empty()) add_line(out, tr("by") + ctx.changed_by);
+      else if (!ctx.changed_via.empty()) add_line(out, tr("by_unknown"));  // done on a panel or device, without a code
+      if (!ctx.changed_via.empty()) add_line(out, tr("via") + ctx.changed_via);
       if (!ctx.open_mode.empty()) add_line(out, tr("open") + ctx.open_mode);
     }
   } else if (s == "arming") {
@@ -556,6 +601,8 @@ inline std::string state_sub(double /*now: the ring shows the countdown*/) {
 inline bool show_home() { return usable() && ctx.state == "disarmed" && (ctx.modes_mask & 1); }
 inline bool show_away() { return usable() && ctx.state == "disarmed" && (ctx.modes_mask & 2); }
 inline bool show_night() { return usable() && ctx.state == "disarmed" && (ctx.modes_mask & 4); }
+// After a refused arm that bypassing could solve: one button instead of the tiles, until the message is gone.
+inline bool show_force() { return usable() && ctx.state == "disarmed" && ctx.refused_action != 0 && ctx.can_bypass; }
 inline bool show_disarm() { return usable() && ctx.state != "disarmed" && ctx.can_disarm; }
 
 // May sensors be bypassed from this panel? Only a panel that is allowed to, and only while it works.
@@ -569,6 +616,7 @@ enum Action {
 };
 
 inline bool needs_code(int action) {
+  if (ctx.force) return true;  // bypassing always needs a code, like bypassing a sensor by hand
   if (action == DISARM || action == UNLOCK || action == INFO || action == BYPASS || action == UNBYPASS) return true;
   return ctx.code_arm_required;
 }
@@ -583,9 +631,9 @@ inline std::string keypad_hint(int action) { return tr(is_admin_action(action) ?
 
 inline std::string keypad_title(int action, const std::string &sensor_name) {
   switch (action) {
-    case ARM_HOME: return tr("arm_home");
-    case ARM_AWAY: return tr("arm_away");
-    case ARM_NIGHT: return tr("arm_night");
+    case ARM_HOME: return ctx.force ? tr("force_title") + tr("home") : tr("arm_home");
+    case ARM_AWAY: return ctx.force ? tr("force_title") + tr("away") : tr("arm_away");
+    case ARM_NIGHT: return ctx.force ? tr("force_title") + tr("night") : tr("arm_night");
     case DISARM: return tr("disarm");
     case BYPASS: return tr("bypass_title") + sensor_name;
     case UNBYPASS: return tr("unbypass_title") + sensor_name;

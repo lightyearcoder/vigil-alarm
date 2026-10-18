@@ -15,6 +15,9 @@ from .const import (
     CONF_DEFAULT_ENTRY_DELAY,
     CONF_HEARTBEAT_INTERVAL,
     CONF_HEARTBEAT_URL,
+    BACKUP_VERSIONS_RANGE,
+    CONF_BACKUP_VERSIONS,
+    DEFAULT_BACKUP_VERSIONS,
     CONF_LOG_RETENTION_DAYS,
     DEFAULT_HEARTBEAT_INTERVAL,
     HEARTBEAT_INTERVAL_RANGE,
@@ -125,6 +128,11 @@ def _entry_schema(d: dict[str, Any]) -> vol.Schema:
     fields[vol.Required(CONF_LOG_RETENTION_DAYS, default=d.get(CONF_LOG_RETENTION_DAYS, DEFAULT_LOG_RETENTION_DAYS))] = selector.NumberSelector(
         selector.NumberSelectorConfig(
             min=LOG_RETENTION_FLOOR, max=LOG_RETENTION_CEILING, step=1, unit_of_measurement="d", mode=selector.NumberSelectorMode.BOX
+        )
+    )
+    fields[vol.Required(CONF_BACKUP_VERSIONS, default=d.get(CONF_BACKUP_VERSIONS, DEFAULT_BACKUP_VERSIONS))] = selector.NumberSelector(
+        selector.NumberSelectorConfig(
+            min=BACKUP_VERSIONS_RANGE[0], max=BACKUP_VERSIONS_RANGE[1], step=1, mode=selector.NumberSelectorMode.BOX
         )
     )
     for key in (CONF_SELFTEST_INTERVAL, CONF_SELFTEST_SECONDS):

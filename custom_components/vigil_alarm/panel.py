@@ -21,6 +21,8 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
+from .backups import BackupError, capture as capture_config, diff as diff_config, export_payload, mark_reason as mark_backup_reason, read_payload as read_backup_payload
+from .migration import ENTRY_VERSION
 from .items import Item, items_of, new_id as new_item_id, save_stored, stored, stored_items
 from .const import (
     CONF_HEARTBEAT_INTERVAL,
@@ -32,6 +34,9 @@ from .const import (
     DEFAULT_SELFTEST,
     SELFTEST_RANGES,
     DEFAULT_LOG_RETENTION_DAYS,
+    BACKUP_VERSIONS_RANGE,
+    CONF_BACKUP_VERSIONS,
+    DEFAULT_BACKUP_VERSIONS,
     LOG_RETENTION_CEILING,
     LOG_RETENTION_FLOOR,
     CONF_MIN_CODE_LENGTH,
@@ -223,6 +228,7 @@ def settings_schema() -> list[dict[str, Any]]:
         _f("screen_off_on_alarm", "boolean", default=DEFAULT_SCREEN_OFF_ON_ALARM, section="screen"),
         _f("battery_threshold", "number", unit="%", min=1, max=100, section="battery"),
         _f("log_retention_days", "number", unit="d", min=LOG_RETENTION_FLOOR, max=LOG_RETENTION_CEILING, section="log"),
+        _f("backup_versions", "number", min=BACKUP_VERSIONS_RANGE[0], max=BACKUP_VERSIONS_RANGE[1], section="backup"),
         _f("selftest_interval_days", "number", unit="d", min=st["selftest_interval_days"][0], max=st["selftest_interval_days"][1], section="selftest"),
         _f("selftest_siren_seconds", "number", unit="s", min=st["selftest_siren_seconds"][0], max=st["selftest_siren_seconds"][1], section="selftest"),
         _f("selftest_auto", "boolean", default=False, section="selftest"),
@@ -267,7 +273,7 @@ def _snapshot(hass: HomeAssistant, entry: ConfigEntry, users: list[Any]) -> dict
         }
     return {
         "version": _VERSION,
-        "entry": {"id": entry.entry_id, "title": entry.title, "data": {CONF_STARTUP_WAIT: DEFAULT_STARTUP_WAIT, **LOCK_DEFAULTS, CONF_MIN_CODE_LENGTH: MIN_CODE_LENGTH_FLOOR, CONF_SCREEN_OFF_SECONDS: DEFAULT_SCREEN_OFF_SECONDS, CONF_SCREEN_OFF_ON_ALARM: DEFAULT_SCREEN_OFF_ON_ALARM, CONF_LOG_RETENTION_DAYS: DEFAULT_LOG_RETENTION_DAYS, CONF_HEARTBEAT_INTERVAL: DEFAULT_HEARTBEAT_INTERVAL, **DEFAULT_SELFTEST, **entry.data}},
+        "entry": {"id": entry.entry_id, "title": entry.title, "data": {CONF_STARTUP_WAIT: DEFAULT_STARTUP_WAIT, **LOCK_DEFAULTS, CONF_MIN_CODE_LENGTH: MIN_CODE_LENGTH_FLOOR, CONF_SCREEN_OFF_SECONDS: DEFAULT_SCREEN_OFF_SECONDS, CONF_SCREEN_OFF_ON_ALARM: DEFAULT_SCREEN_OFF_ON_ALARM, CONF_LOG_RETENTION_DAYS: DEFAULT_LOG_RETENTION_DAYS, CONF_BACKUP_VERSIONS: DEFAULT_BACKUP_VERSIONS, CONF_HEARTBEAT_INTERVAL: DEFAULT_HEARTBEAT_INTERVAL, **DEFAULT_SELFTEST, **entry.data}},
         "items": {
             kind: [_public(s) for s in items_of(entry).values() if s.subentry_type == TYPE_OF[kind]]
             for kind in KINDS
@@ -299,6 +305,8 @@ def _live(entry: ConfigEntry) -> dict[str, Any] | None:
         "sensors": {z: manager.engine.sensor_status(z) for z in manager.config.sensors},
         "problems": manager.supervisor.problems(),
         "panels": manager.panels.status(),
+        # Per mode what would stop arming now (only while disarmed; the panel shows it as "why can't I arm?").
+        "blockers": {m: b for m in manager.config.modes if (b := manager.arm_blockers(m, sync=False))} if manager.engine.state == "disarmed" else {},
     }
 
 
@@ -633,7 +641,7 @@ async def ws_save(hass: HomeAssistant, connection: websocket_api.ActiveConnectio
 
 
 @websocket_api.websocket_command(
-    {vol.Required("type"): "vigil_alarm/save_many", vol.Required("items"): [dict]}
+    {vol.Required("type"): "vigil_alarm/save_many", vol.Required("items"): [dict], vol.Optional("preview", default=False): bool}
 )
 @websocket_api.require_admin
 @websocket_api.async_response
@@ -664,9 +672,11 @@ async def ws_save_many(hass: HomeAssistant, connection: websocket_api.ActiveConn
         if companion is not None:
             working[new_item_id()] = stored(SUBENTRY_SENSOR, *companion)
         ids.append(new_id)
-    if ids:
+    before = capture_config(entry)
+    change = diff_config(before, {"data": before["data"], "options": {**before["options"], "items": json.loads(json.dumps(working))}})
+    if ids and not msg["preview"]:
         save_stored(hass, entry, working)
-    connection.send_result(msg["id"], {"ok": True, "ids": ids})
+    connection.send_result(msg["id"], {"ok": True, "ids": ids, "change": change})
 
 
 @websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/delete", vol.Required("subentry_id"): str})
@@ -744,6 +754,17 @@ async def ws_save_settings(
         )
         return
     data[CONF_LOG_RETENTION_DAYS] = days
+    try:
+        versions = int(data.get(CONF_BACKUP_VERSIONS, DEFAULT_BACKUP_VERSIONS))
+    except (TypeError, ValueError):
+        versions = 0
+    if not BACKUP_VERSIONS_RANGE[0] <= versions <= BACKUP_VERSIONS_RANGE[1]:
+        connection.send_result(
+            msg["id"],
+            _failure(EditError({CONF_BACKUP_VERSIONS: "backup_versions_range"}, {"min": BACKUP_VERSIONS_RANGE[0], "max": BACKUP_VERSIONS_RANGE[1]})),
+        )
+        return
+    data[CONF_BACKUP_VERSIONS] = versions
     try:
         screen = int(data.get(CONF_SCREEN_OFF_SECONDS, DEFAULT_SCREEN_OFF_SECONDS))
     except (TypeError, ValueError):
@@ -823,9 +844,114 @@ async def ws_save_settings(
     connection.send_result(msg["id"], {"ok": True})
 
 
+# ------------------------------------------------- back-ups, export and import
+
+
+def _backups(entry: ConfigEntry):
+    manager = getattr(entry, "runtime_data", None)
+    return None if manager is None else manager.backups
+
+
+def _backup_failure(err: BackupError) -> dict[str, Any]:
+    return {"ok": False, "errors": {"base": err.code}, "placeholders": err.placeholders}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/backups"})
+@websocket_api.require_admin
+@callback
+def ws_backups(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    entry = _entry_for(hass)
+    backups = _backups(entry) if entry else None
+    if backups is None:
+        _no_entry(connection, msg)
+        return
+    connection.send_result(msg["id"], {"versions": backups.listing(), "entry_version": ENTRY_VERSION})
+
+
+@websocket_api.websocket_command(
+    {vol.Required("type"): "vigil_alarm/backup_restore", vol.Required("version_id"): str, vol.Optional("preview", default=False): bool}
+)
+@websocket_api.require_admin
+@callback
+def ws_backup_restore(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Put a version back. With `preview` only say what would change."""
+    entry = _entry_for(hass)
+    backups = _backups(entry) if entry else None
+    if entry is None or backups is None:
+        _no_entry(connection, msg)
+        return
+    try:
+        state = backups.state_of(msg["version_id"])
+    except BackupError as err:
+        connection.send_result(msg["id"], _backup_failure(err))
+        return
+    change = backups.change_for(state)
+    if msg["preview"]:
+        connection.send_result(msg["id"], {"ok": True, "change": change})
+        return
+    if not change["empty"]:
+        mark_backup_reason(hass, entry, "restore")
+        hass.config_entries.async_update_entry(entry, data=state["data"], options=state["options"])
+    connection.send_result(msg["id"], {"ok": True, "change": change})
+
+
+@websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/export"})
+@websocket_api.require_admin
+@callback
+def ws_export(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    entry = _entry_for(hass)
+    if entry is None:
+        _no_entry(connection, msg)
+        return
+    connection.send_result(msg["id"], export_payload(entry, _VERSION))
+
+
+@websocket_api.websocket_command(
+    {vol.Required("type"): "vigil_alarm/import", vol.Required("payload"): dict, vol.Optional("preview", default=False): bool}
+)
+@websocket_api.require_admin
+@callback
+def ws_import(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Replace the configuration by an export file. With `preview` only say what would change.
+
+    Applying it first keeps the present configuration as a version, so an import can be undone.
+    """
+    entry = _entry_for(hass)
+    backups = _backups(entry) if entry else None
+    if entry is None or backups is None:
+        _no_entry(connection, msg)
+        return
+    try:
+        state = read_backup_payload(msg["payload"])
+    except BackupError as err:
+        connection.send_result(msg["id"], _backup_failure(err))
+        return
+    change = backups.change_for(state)
+    if not msg["preview"] and not change["empty"]:
+        mark_backup_reason(hass, entry, "import")
+        hass.config_entries.async_update_entry(entry, data=state["data"], options=state["options"])
+    connection.send_result(msg["id"], {"ok": True, "change": change})
+
+
+@websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/arm_check", vol.Required("mode"): str})
+@websocket_api.require_admin
+@callback
+def ws_arm_check(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Why can't I arm in this mode? What stops it, per sensor; nothing changes."""
+    entry = _entry_for(hass)
+    manager = getattr(entry, "runtime_data", None) if entry else None
+    if manager is None:
+        _no_entry(connection, msg)
+        return
+    if msg["mode"] not in manager.config.modes:
+        connection.send_error(msg["id"], "unknown_mode", "Unknown mode")
+        return
+    connection.send_result(msg["id"], {"blockers": manager.arm_blockers(msg["mode"])})
+
+
 @callback
 def async_register_commands(hass: HomeAssistant) -> None:
-    for command in (ws_get, ws_about, ws_tablet, ws_discover, ws_discover_report, ws_readiness, ws_log, ws_log_export, ws_selftest, ws_heartbeat, ws_panel_unlock, ws_panel_clear_lock, ws_dashboard, ws_add_phone, ws_create_default_groups, ws_subscribe, ws_save, ws_save_many, ws_delete, ws_save_settings, ws_siren_preset):
+    for command in (ws_get, ws_about, ws_tablet, ws_discover, ws_discover_report, ws_readiness, ws_log, ws_log_export, ws_selftest, ws_heartbeat, ws_panel_unlock, ws_panel_clear_lock, ws_dashboard, ws_add_phone, ws_create_default_groups, ws_subscribe, ws_save, ws_save_many, ws_delete, ws_save_settings, ws_siren_preset, ws_backups, ws_backup_restore, ws_export, ws_import, ws_arm_check):
         websocket_api.async_register_command(hass, command)
 
 

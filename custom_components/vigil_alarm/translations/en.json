@@ -26,6 +26,7 @@
           "screen_off_seconds": "Screen off after (seconds)",
           "screen_off_on_alarm": "Let the screen go dark during an alarm",
           "log_retention_days": "Days to keep the event log",
+          "backup_versions": "Versions of the configuration to keep (backups)",
           "selftest_interval_days": "Days between siren test reminders (0 = off)",
           "selftest_siren_seconds": "Seconds the siren sounds in a test",
           "selftest_auto": "Sound the siren by itself for the test",
@@ -60,6 +61,7 @@
           "screen_off_seconds": "Screen off after (seconds)",
           "screen_off_on_alarm": "Let the screen go dark during an alarm",
           "log_retention_days": "Days to keep the event log",
+          "backup_versions": "Versions of the configuration to keep (backups)",
           "selftest_interval_days": "Days between siren test reminders (0 = off)",
           "selftest_siren_seconds": "Seconds the siren sounds in a test",
           "selftest_auto": "Sound the siren by itself for the test",
@@ -342,6 +344,10 @@
         "source": {
           "name": "Source",
           "description": "Name of the control point, for example a panel. It appears in the log and in who changed the alarm."
+        },
+        "bypass_open": {
+          "name": "Bypass what stops it",
+          "description": "Bypass the sensors that stop arming (for example an open tamper contact) and then arm. Needs the right to bypass; never applies to fire or gas sensors."
         }
       }
     },
