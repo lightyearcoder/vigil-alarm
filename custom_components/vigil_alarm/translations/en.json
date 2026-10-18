@@ -138,6 +138,10 @@
               "selftest_checked": "Self-check done",
               "selftest_reminder": "Test reminder sent",
               "selftest_siren_tested": "Siren tested",
+              "practice_started": "Practice mode on",
+              "practice_ended": "Practice mode off",
+              "walktest_started": "Walk test started",
+              "walktest_finished": "Walk test finished",
               "panel_refused": "Panel call refused",
               "user_refused": "User call refused",
               "panel_unlocked": "Panel unlocked",
@@ -203,6 +207,10 @@
           "selftest_checked": "Self-check done",
           "selftest_reminder": "Test reminder sent",
           "selftest_siren_tested": "Siren tested",
+          "practice_started": "Practice mode on",
+          "practice_ended": "Practice mode off",
+          "walktest_started": "Walk test started",
+          "walktest_finished": "Walk test finished",
           "panel_refused": "Panel call refused",
           "user_refused": "User call refused",
           "panel_unlocked": "Panel unlocked",
@@ -326,6 +334,15 @@
     },
     "bypass_not_allowed": {
       "message": "Bypassing or restoring sensors needs the right to bypass, given to this user in Vigil, or a Home Assistant administrator."
+    },
+    "practice_needs_disarmed": {
+      "message": "Practice mode can only start while the alarm is off."
+    },
+    "walktest_needs_disarmed": {
+      "message": "The walk test can only start while the alarm is off."
+    },
+    "walktest_no_sensors": {
+      "message": "There are no intrusion sensors to walk along."
     }
   },
   "services": {

@@ -18,6 +18,7 @@ from homeassistant.components import frontend, panel_custom, websocket_api
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
@@ -306,6 +307,8 @@ def _live(entry: ConfigEntry) -> dict[str, Any] | None:
         "problems": manager.supervisor.problems(),
         "panels": manager.panels.status(),
         "new_sensors": manager.new_sensors.entities,
+        "practice_until": manager.practice.until,
+        "walktest": manager.walktest.status(),
         # Per mode what would stop arming now (only while disarmed; the panel shows it as "why can't I arm?").
         "blockers": {m: b for m in manager.config.modes if (b := manager.arm_blockers(m, sync=False))} if manager.engine.state == "disarmed" else {},
     }
@@ -368,6 +371,42 @@ async def ws_new_sensors_dismiss(hass: HomeAssistant, connection: websocket_api.
         return
     await manager.new_sensors.async_dismiss()
     connection.send_result(msg["id"], {"ok": True})
+
+
+@websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/practice", vol.Required("enable"): bool})
+@websocket_api.require_admin
+@callback
+def ws_practice(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Practice mode on or off: the alarm works as usual, but no siren and no messages."""
+    entry = _entry_for(hass)
+    manager = getattr(entry, "runtime_data", None) if entry else None
+    if manager is None:
+        _no_entry(connection, msg)
+        return
+    try:
+        manager.practice.start() if msg["enable"] else manager.practice.stop()
+    except ServiceValidationError as err:
+        connection.send_error(msg["id"], "refused", str(err))
+        return
+    connection.send_result(msg["id"], {"ok": True, "until": manager.practice.until})
+
+
+@websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/walktest", vol.Required("action"): vol.In(["start", "stop"])})
+@websocket_api.require_admin
+@callback
+def ws_walktest(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Start or stop the walk test (walk along the sensors with the alarm off)."""
+    entry = _entry_for(hass)
+    manager = getattr(entry, "runtime_data", None) if entry else None
+    if manager is None:
+        _no_entry(connection, msg)
+        return
+    try:
+        manager.walktest.start() if msg["action"] == "start" else manager.walktest.stop("stopped")
+    except ServiceValidationError as err:
+        connection.send_error(msg["id"], "refused", str(err))
+        return
+    connection.send_result(msg["id"], {"ok": True, **manager.walktest.status()})
 
 
 @websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/discover_report"})
@@ -967,7 +1006,7 @@ def ws_arm_check(hass: HomeAssistant, connection: websocket_api.ActiveConnection
 
 @callback
 def async_register_commands(hass: HomeAssistant) -> None:
-    for command in (ws_get, ws_about, ws_tablet, ws_discover, ws_new_sensors_dismiss, ws_discover_report, ws_readiness, ws_log, ws_log_export, ws_selftest, ws_heartbeat, ws_panel_unlock, ws_panel_clear_lock, ws_dashboard, ws_add_phone, ws_create_default_groups, ws_subscribe, ws_save, ws_save_many, ws_delete, ws_save_settings, ws_siren_preset, ws_backups, ws_backup_restore, ws_export, ws_import, ws_arm_check):
+    for command in (ws_get, ws_about, ws_tablet, ws_discover, ws_new_sensors_dismiss, ws_practice, ws_walktest, ws_discover_report, ws_readiness, ws_log, ws_log_export, ws_selftest, ws_heartbeat, ws_panel_unlock, ws_panel_clear_lock, ws_dashboard, ws_add_phone, ws_create_default_groups, ws_subscribe, ws_save, ws_save_many, ws_delete, ws_save_settings, ws_siren_preset, ws_backups, ws_backup_restore, ws_export, ws_import, ws_arm_check):
         websocket_api.async_register_command(hass, command)
 
 

@@ -163,6 +163,10 @@ actions:
 | `selftest_checked` | The quiet daily check ran (it never changes `last_event`) | `result` (`ok` or `problems`), `problems` |
 | `selftest_reminder` | A reminder to test the siren was sent | `number` (1 or 2) |
 | `selftest_siren_tested` | The siren was tested | `how` (`manual`, `notification` or `auto`) |
+| `practice_started` | Practice mode was switched on (no siren, no messages) | `minutes` |
+| `practice_ended` | Practice mode ended | `reason` (`manual`, `expired`) |
+| `walktest_started` | A walk test started | `total` (sensors in the test) |
+| `walktest_finished` | A walk test ended | `seen`, `total`, `reason` (`done`, `stopped`, `expired`) |
 | `notification_failed` / `state_restore_failed` | Vigil itself had a problem | `channel`, `error`, `reason` |
 
 Entities per alarm: `alarm_control_panel.<name>` (with attributes `cause`, `open_sensors`,

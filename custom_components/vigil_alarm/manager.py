@@ -204,6 +204,9 @@ class VigilManager:
         self.backups = ConfigBackups(hass, entry)
         from .newsensors import NewSensors  # here: it reads from discovery, which reads from items
         self.new_sensors = NewSensors(hass, entry, self)
+        from .testing import Practice, WalkTest
+        self.practice = Practice(hass, self)
+        self.walktest = WalkTest(hass, self)
         self.supervisor = Supervisor(hass, self)
         self.users: list[Item] = [
             sub for sub in items_of(entry).values() if sub.subentry_type == SUBENTRY_USER
@@ -329,6 +332,8 @@ class VigilManager:
         self.sirens.async_stop()
         self.supervisor.stop()
         self.new_sensors.stop()
+        self.practice.shutdown()
+        self.walktest.shutdown()
         self.panels.stop()
         if self._unsub_timer:
             self._unsub_timer()
@@ -397,6 +402,7 @@ class VigilManager:
         for sid, eid in self._sensor_entity.items():
             if eid == entity_id:
                 self.engine.set_sensor(sid, value)
+                self.walktest.note(sid, value)
         if self._settling and not self._unavailable_sensors():
             self._finish_settle()
         self._after()
@@ -407,21 +413,31 @@ class VigilManager:
             data["sensor_name"] = self._sensor_name.get(sensor, sensor)
         if data.get("type") in ("armed", "disarmed"):
             self.changed_by, self.changed_via = self._actor_parts.get(data.get("user"), (data.get("user"), None))
+        if self.practice.active:
+            data["practice"] = True  # in the log as practice; no siren, no message
         self.last_event = data
         self.eventlog.add(data)
         async_dispatcher_send(self.hass, SIGNAL_EVENT.format(self.entry.entry_id), data)
-        self.sirens.handle(data)
-        self.notifier.handle(data)
+        if not self.practice.active:
+            self.sirens.handle(data)
+            self.notifier.handle(data)
+        elif data.get("type") in ("triggered", "trigger_cause_changed"):
+            self.practice.muted_trigger = data  # if practice ends while this alarm is still on, it is let through
+        elif data.get("type") == "disarmed":
+            self.practice.stop("disarmed")  # one round: a forgotten practice mode must not keep a real alarm silent
 
     @callback
     def publish(self, type_: str, **fields: Any) -> None:
         """Publish an event of the glue layer (not sent to the notifier)."""
         data = {"t": self._wall(), "type": type_, **fields}
+        if self.practice.active:
+            data["practice"] = True
         if type_ not in ROUTINE_EVENTS:  # the daily check must not replace "the last thing the alarm reported"
             self.last_event = data
         self.eventlog.add(data)
         async_dispatcher_send(self.hass, SIGNAL_EVENT.format(self.entry.entry_id), data)
-        self.notifier.handle(data)  # ignores everything but the events it has a text for
+        if not self.practice.active:
+            self.notifier.handle(data)  # ignores everything but the events it has a text for
 
     @property
     def siren_configured(self) -> bool:
@@ -531,6 +547,7 @@ class VigilManager:
     ) -> None:
         """Arm. With `bypass_open` what stops it (an open tamper contact, a sensor that does not answer) is bypassed
         first: for someone who may bypass, with the same rules as bypassing by hand, and never a fire or gas sensor."""
+        self.walktest.stop("stopped")  # arming ends a walk test
         source = await self._operator(source, user_id, "arm")
         if not self.ready:
             raise ServiceValidationError(translation_domain=DOMAIN, translation_key="not_ready")

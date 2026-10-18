@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.2
+
+- **Practice mode.** On the Overview tab, *Start practice mode* (only while the alarm is off) lets the alarm run for real, but no siren sounds and no message goes out. Everything is in the log, marked `practice`; the panel shows a chip, the Vigil card a line, and the alarm entity has the attribute `practice`. It ends at the first disarm, after 30 minutes, or with *Stop practice mode*, and after a restart it is off. When it runs out while the alarm is armed, the alarm stays armed and works for real; if it is going off at that moment, siren and messages start then. New events `practice_started` and `practice_ended`.
+- **Walk test.** *Start walk test* (Overview, or under *Sensors*): walk along the doors, windows and motion sensors with the alarm off and watch them being ticked off live. Only intrusion sensors take part (fire, gas, water and tamper sensors are always on and keep their own test). A sensor that does not react does not stop the test; the list at the end names what was missed. It ends when all sensors were seen, when you stop it, after 15 minutes, or when you arm. New events `walktest_started` and `walktest_finished`.
+
 ## 0.5.1
 
 - **Installation wizard.** A wizard in the Vigil panel goes step by step through the modes, the sensors (Find sensors), the user (also made from a Home Assistant person), the notification channel (a phone with the app in one click), the siren and the panel, and ends with *Ready for use?*. It starts from the card *Set up Vigil* on the *Overview* tab while something is still missing, and can be opened again from *Ready for use?*. Every step can be skipped and the wizard comes back after a form is saved or cancelled. It uses the same forms as the tabs and saves nothing by itself.

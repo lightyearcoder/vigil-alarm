@@ -138,6 +138,10 @@
               "selftest_checked": "Zelfcontrole gedaan",
               "selftest_reminder": "Testherinnering verstuurd",
               "selftest_siren_tested": "Sirene getest",
+              "practice_started": "Oefenmodus aan",
+              "practice_ended": "Oefenmodus uit",
+              "walktest_started": "Looptest gestart",
+              "walktest_finished": "Looptest klaar",
               "panel_refused": "Paneeloproep geweigerd",
               "user_refused": "Gebruikersoproep geweigerd",
               "panel_unlocked": "Paneel ontgrendeld",
@@ -203,6 +207,10 @@
           "selftest_checked": "Zelfcontrole gedaan",
           "selftest_reminder": "Testherinnering verstuurd",
           "selftest_siren_tested": "Sirene getest",
+          "practice_started": "Oefenmodus aan",
+          "practice_ended": "Oefenmodus uit",
+          "walktest_started": "Looptest gestart",
+          "walktest_finished": "Looptest klaar",
           "panel_refused": "Paneeloproep geweigerd",
           "user_refused": "Gebruikersoproep geweigerd",
           "panel_unlocked": "Paneel ontgrendeld",
@@ -326,6 +334,15 @@
     },
     "bypass_not_allowed": {
       "message": "Sensoren omzeilen of terugzetten vereist het recht om te omzeilen, dat deze gebruiker in Vigil heeft gekregen, of een Home Assistant-beheerder."
+    },
+    "practice_needs_disarmed": {
+      "message": "De oefenmodus kan alleen starten als het alarm uit staat."
+    },
+    "walktest_needs_disarmed": {
+      "message": "De looptest kan alleen starten als het alarm uit staat."
+    },
+    "walktest_no_sensors": {
+      "message": "Er zijn geen inbraaksensoren om langs te lopen."
     }
   },
   "services": {

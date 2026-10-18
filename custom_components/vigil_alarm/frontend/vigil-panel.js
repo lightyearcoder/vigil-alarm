@@ -66,6 +66,8 @@ const TXT = {
     summary: { always: "{cls}, altijd actief", instant: "direct", delayed: "vertraagd ({s} s)", follower: "volger", and: "en", watching: "{type}, bewaakt in {modes}", nowhere: "{type}, bewaakt in geen enkele modus" },
     whatsNew: "nieuw", batteryLow: "laag", batteryOk: "ok",
     copySuffix: " (kopie)",
+    practice: { chip: "Oefenmodus", title: "Oefenen en testen", text: "Oefenmodus: het alarm werkt als altijd (aftellen, afgaan, de panelen tonen het) maar er klinkt geen sirene en er gaat geen melding uit. Alles staat in het logboek, gemarkeerd als oefening. Het stopt na 30 minuten, of zodra je uitschakelt.", start: "Start oefenmodus", stop: "Stop oefenmodus", left: "Nog {n} min.", needsOff: "Schakel het alarm eerst uit.",
+      walk: "Looptest: loop met het alarm uit langs de deuren, ramen en bewegingsmelders; elke sensor die reageert wordt afgevinkt. Alleen inbraaksensoren doen mee (brand-, gas-, water- en sabotagesensoren staan altijd aan en hebben hun eigen test).", walkStart: "Start looptest", walkTitle: "Looptest", walkRunning: "Open elke deur of raam en loop langs elke bewegingsmelder. {n} van {total} gezien.", walkStop: "Stop de test", walkDone: "Klaar: {seen} van {total} gezien.", walkAgain: "Opnieuw", walkMissing: "Niet gezien", walkReason: { no_response: "reageerde niet", unavailable: "is niet beschikbaar" }, walkSeen: "Gezien", walkNone: "Alle sensoren hebben gereageerd.", walkLast: "Laatste looptest: {seen} van {total} gezien ({time}).", close: "Sluiten" },
     wizard: {
       title: "Vigil instellen", button: "Installatiewizard", step: "Stap {n} van {total}", back: "Terug", next: "Volgende", skip: "Overslaan", finish: "Klaar", stop: "Later verder", resume: "Ga verder met de wizard",
       cardTitle: "Vigil instellen", cardText: "Nog niet alles is ingesteld. De wizard loopt er stap voor stap doorheen; je kunt elke stap overslaan en later terugkomen.", start: "Start de wizard",
@@ -281,6 +283,8 @@ const TXT = {
     summary: { always: "{cls}, always on", instant: "instant", delayed: "delayed ({s} s)", follower: "follower", and: "and", watching: "{type}, watching in {modes}", nowhere: "{type}, not watching in any mode" },
     whatsNew: "new", batteryLow: "low", batteryOk: "ok",
     copySuffix: " (copy)",
+    practice: { chip: "Practice mode", title: "Practice and test", text: "Practice mode: the alarm works as always (it counts down, it triggers, the panels show it) but no siren sounds and no message goes out. Everything is in the log, marked as practice. It stops after 30 minutes, or as soon as you disarm.", start: "Start practice mode", stop: "Stop practice mode", left: "{n} min left.", needsOff: "Switch the alarm off first.",
+      walk: "Walk test: with the alarm off, walk along the doors, windows and motion sensors; every sensor that reacts is ticked off. Only intrusion sensors take part (fire, gas, water and tamper sensors are always on and have their own test).", walkStart: "Start walk test", walkTitle: "Walk test", walkRunning: "Open each door or window and walk past each motion sensor. {n} of {total} seen.", walkStop: "Stop the test", walkDone: "Done: {seen} of {total} seen.", walkAgain: "Again", walkMissing: "Not seen", walkReason: { no_response: "did not react", unavailable: "is unavailable" }, walkSeen: "Seen", walkNone: "All sensors reacted.", walkLast: "Last walk test: {seen} of {total} seen ({time}).", close: "Close" },
     wizard: {
       title: "Set up Vigil", button: "Setup wizard", step: "Step {n} of {total}", back: "Back", next: "Next", skip: "Skip", finish: "Done", stop: "Continue later", resume: "Continue the wizard",
       cardTitle: "Set up Vigil", cardText: "Not everything is set up yet. The wizard goes through it step by step; you can skip any step and come back later.", start: "Start the wizard",
@@ -691,6 +695,7 @@ class VigilPanel extends HTMLElement {
       this._live = live;
       this._renderHeader();
       this._renderBody();
+      if (this._walkUpdate) this._walkUpdate();
     }, { type: "vigil_alarm/subscribe" }).catch(() => null);
   }
 
@@ -726,7 +731,8 @@ class VigilPanel extends HTMLElement {
       this._narrow ? el("button", { class: "menu", "aria-label": "menu", text: "☰", onclick: () => this.dispatchEvent(new CustomEvent("hass-toggle-menu", { bubbles: true, composed: true })) }) : null,
       el("h1", { text: t.title }),
       live ? el("span", { class: "chip" + (live.state === "triggered" ? " alarm" : ""),
-        text: this._stateText(live) + (live.mode && live.state !== "disarmed" ? " · " + (t.mode[live.mode] || live.mode) : "") }) : null);
+        text: this._stateText(live) + (live.mode && live.state !== "disarmed" ? " · " + (t.mode[live.mode] || live.mode) : "") }) : null,
+      live && live.practice_until ? el("span", { class: "chip alarm", style: "margin-left:8px", text: t.practice.chip }) : null);
     this._q("header").replaceChildren(header);
     this._renderNav();
   }
@@ -991,6 +997,68 @@ class VigilPanel extends HTMLElement {
       el("ul", { class: "plain" }, list), never ? el("p", { class: "note", text: w.neverBypass }) : null, el("p", { class: "note", text: w.hint }));
   }
 
+  // ---- practice mode and walk test
+  _practiceCard() {
+    const t = this.t.practice;
+    const live = this._live;
+    if (!live) return null;
+    const on = !!live.practice_until;
+    const left = on ? Math.max(1, Math.ceil((live.practice_until - Date.now() / 1000) / 60)) : 0;
+    const walk = live.walktest || {};
+    const last = walk.last;
+    const toggle = async () => {
+      try { await this._hass.callWS({ type: "vigil_alarm/practice", enable: !on }); } catch (err) { this._toast(live.state !== "disarmed" ? t.needsOff : String((err && err.message) || err)); }
+    };
+    return el("div", { class: "card" }, el("h2", { text: t.title }),
+      el("p", { class: "muted", text: t.text }),
+      on ? el("p", { class: "badge warn", text: t.chip + " · " + fill(t.left, { n: left }) }) : null,
+      el("button", { class: "btn" + (on ? "" : " primary"), text: on ? t.stop : t.start, onclick: toggle }),
+      el("p", { class: "muted", style: "margin-top:16px", text: t.walk }),
+      last && !walk.active ? el("p", { class: "muted", text: fill(t.walkLast, { seen: last.total - last.missing.length, total: last.total, time: new Date(last.time).toLocaleString() }) }) : null,
+      el("button", { class: "btn", text: t.walkStart, onclick: () => this._openWalkTest() }));
+  }
+
+  _openWalkTest() {
+    const t = this.t.practice;
+    const body = el("div");
+    let close = () => {};
+    const draw = () => {
+      const walk = (this._live && this._live.walktest) || {};
+      const nodes = [];
+      if (walk.active) {
+        const seen = walk.sensors.filter((s) => s.seen).length;
+        nodes.push(el("p", { text: fill(t.walkRunning, { n: seen, total: walk.sensors.length }) }),
+          el("ul", { class: "plain" }, walk.sensors.map((s) => el("li", {},
+            el("span", { class: "badge " + (s.seen ? "ok" : ""), text: s.seen ? t.walkSeen : "…" }), " ", s.name))));
+      } else if (this._walkStarted && walk.last) {
+        const l = walk.last, seen = l.total - l.missing.length;
+        nodes.push(el("p", { text: fill(t.walkDone, { seen, total: l.total }) }),
+          l.missing.length
+            ? el("div", {}, el("h3", { text: t.walkMissing }), el("ul", { class: "plain" }, l.missing.map((m) => el("li", {}, el("strong", { text: m.name }), " ", t.walkReason[m.reason] || m.reason))))
+            : el("p", { class: "badge ok", text: t.walkNone }));
+      }
+      body.replaceChildren(...nodes);
+      stopBtn.style.display = walk.active ? "" : "none";
+      againBtn.style.display = walk.active ? "none" : "";
+    };
+    this._walkUpdate = draw;
+    const stopBtn = el("button", { class: "btn danger", text: t.walkStop });
+    const againBtn = el("button", { class: "btn primary", text: t.walkAgain });
+    stopBtn.addEventListener("click", async () => { try { await this._hass.callWS({ type: "vigil_alarm/walktest", action: "stop" }); } catch (err) { /* nothing was running */ } draw(); });
+    const start = async () => {
+      try { await this._hass.callWS({ type: "vigil_alarm/walktest", action: "start" }); this._walkStarted = true; }
+      catch (err) { this._toast(t.needsOff); }
+      draw();
+    };
+    againBtn.addEventListener("click", start);
+    this._walkStarted = false;
+    this._dialog(t.walkTitle, [el("p", { class: "muted", text: t.walk }), body], (closeDialog) => {
+      close = () => { this._walkUpdate = null; closeDialog(); };
+      return [stopBtn, againBtn, el("button", { class: "btn", text: t.close, onclick: close })];
+    }, true);
+    start();
+  }
+
   // ---- setup wizard: steps that use the same forms as the tabs; every step can be skipped and the wizard can be reopened
   _wizardStatus() {
     const d = this._data, n = (k) => this._shown(k).length;
@@ -1125,6 +1193,7 @@ class VigilPanel extends HTMLElement {
           el("h2", { text: t.tabs[k] }), el("div", { class: "stat", text: String(this._shown(k).length) })))),
       this._wizardCard(),
       this._newSensorsCard(),
+      this._practiceCard(),
       this._whyCard(),
       this._readyCard(),
       this._selftestCard(),
@@ -1283,6 +1352,7 @@ class VigilPanel extends HTMLElement {
       : el("div", { class: "empty", text: t.empty[kind] });
     return el("div", {},
       el("div", { class: "bar" }, el("p", { class: "intro", text: t.intro[kind] }),
+        kind === "sensor" ? el("button", { class: "btn", text: t.practice.walkTitle, onclick: () => this._openWalkTest() }) : null,
         kind === "sensor" ? el("button", { class: "btn", text: t.find.button, onclick: () => this._openFind() }) : null,
         el("button", { class: "btn primary", text: t.add[kind], onclick: () => this._openForm(kind) })),
       kind === "panel" ? el("p", { class: "muted", text: t.panel.hint }) : null,
