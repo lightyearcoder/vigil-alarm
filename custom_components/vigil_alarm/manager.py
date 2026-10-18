@@ -202,6 +202,8 @@ class VigilManager:
         self.heartbeat = Heartbeat(hass, entry)
         from .backups import ConfigBackups  # here: backups.py reads build_config from this module
         self.backups = ConfigBackups(hass, entry)
+        from .newsensors import NewSensors  # here: it reads from discovery, which reads from items
+        self.new_sensors = NewSensors(hass, entry, self)
         self.supervisor = Supervisor(hass, self)
         self.users: list[Item] = [
             sub for sub in items_of(entry).values() if sub.subentry_type == SUBENTRY_USER
@@ -236,6 +238,7 @@ class VigilManager:
 
     async def async_setup(self) -> None:
         await self.backups.async_start()
+        await self.new_sensors.async_start()
         await self.eventlog.async_load()
         await self.lockout.async_load()
         await self.panels.async_load()
@@ -325,6 +328,7 @@ class VigilManager:
         self.notifier.async_stop()
         self.sirens.async_stop()
         self.supervisor.stop()
+        self.new_sensors.stop()
         self.panels.stop()
         if self._unsub_timer:
             self._unsub_timer()
@@ -357,6 +361,11 @@ class VigilManager:
     def _sync(self) -> None:
         """Bring the engine's clock up to the wall clock (fires due timers)."""
         self.engine.advance(max(self._wall(), self.engine.now))
+
+    @callback
+    def notify_changed(self) -> None:
+        """Tell the panel something changed that is not the alarm itself (for example new sensors found)."""
+        async_dispatcher_send(self.hass, SIGNAL_UPDATE.format(self.entry.entry_id))
 
     @callback
     def _after(self) -> None:

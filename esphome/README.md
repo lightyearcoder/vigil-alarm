@@ -7,8 +7,8 @@ and show is set in Vigil (tab *Panels*) and the panel reads that from its **prof
 Made for ESPHome 2026.9. The hardware file is for the **Guition ESP32-S3-4848S040** (480x480).
 Other displays work with another hardware file, see below.
 
-> **Status (0.4.1):** the logic and the way the panel works with Home Assistant were tested on a real
-> Guition 4848 panel (0.4.0). The new look of 0.4.1 (ring, tabs, icons) is validated with `esphome config`
+> **Status (0.5.0):** the logic and the way the panel works with Home Assistant were tested on a real
+> Guition 4848 panel (0.4.0). The new look of 0.4.1 (ring, tabs, icons) and *Bypass and arm* of 0.5.0 are validated with `esphome config`
 > and drawn on a computer by LVGL (see `tools/panel-simulator/`), but has not yet run on a real panel:
 > please report what you see, also on other hardware.
 

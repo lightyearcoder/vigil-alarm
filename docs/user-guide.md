@@ -91,6 +91,7 @@ the alarm state is kept.
 5. **Optional: a confirmation rule** (tab *Confirmation rules*): choose the instant intrusion
    sensors, how many must trigger, and in what time window.
 6. **Optional: a siren** (tab *Sirens*). See below.
+0. **New: the setup wizard.** When not enough is set up yet, the *Overview* tab starts with the card *Set up Vigil*, and the card *Ready for use?* has a *Setup wizard* button. The wizard goes step by step through the modes, the sensors, the user (also made from a Home Assistant person), the notification channel (a phone with the app in one click), the siren and the panel, and ends with *Ready for use?*. Every step can be skipped, *Continue later* closes the wizard and the card *Continue the wizard* brings you back where you were. The wizard uses the same forms as the tabs and saves nothing until you confirm it.
 7. **Look at *Ready for use?*** at the top of the *Overview* tab. It names what is still missing (a user with a code, a notification channel, a mode that nothing watches, sensors without a battery sensor) and has a button to the right place. If you have no notification channel yet and Home Assistant knows your phone, one button adds it and sends a test message.
 8. **Test everything** with the *Test* buttons and by arming and opening a door. Use the
    [test guide](installatie-en-testen.nl.md) (Dutch) for a full test plan with virtual sensors.
@@ -131,6 +132,15 @@ Vigil tells you why: *an alarm condition is open* (a fire or tamper sensor is on
 unavailable* (an intrusion sensor is unreachable and set to block), or *a sensor is open* (a
 sensor set to refuse). The attribute `refuse_reason` and the notification say which sensors. Fix
 the sensor, or bypass it.
+
+**Why can't I arm?** The *Overview* tab of the Vigil panel has a card with that name while something
+stops arming: per sensor what is wrong and in which modes, with *Show* and *Bypass* buttons (a fire or
+gas sensor cannot be bypassed: remove the cause first). On the touch panel and in the Vigil card a refused
+arm says what stops it (*Cannot arm: Front door tamper is open*) and, if the panel may bypass, shows one
+button, **Bypass and arm**, which asks for a code and then bypasses what stops it and arms. It needs the
+same rights as bypassing by hand (the right to bypass, and the right to bypass tamper for a tamper
+sensor), and it is never possible for a fire or gas sensor. In your own automations the same is the
+`vigil_alarm.arm` action with `bypass_open: true`.
 
 ### Bypassing a sensor
 
@@ -221,14 +231,15 @@ Actions in the lists are icon buttons (edit, copy, delete, test); hover for the 
 
 | Tab | What you do there |
 |---|---|
-| **Overview** | *Ready for use?* (what is still missing), the *Self-test* card (last check, last siren test, next test, *Test siren now*), the *Heartbeat* card (last success, *Test now*), a *Dashboard* card with a button that copies a dashboard with your own entity ids, alarm state, attention points (low batteries, unreachable devices), what each mode watches, and the live status of every sensor. |
+| **Overview** | the card *Set up Vigil* (the wizard, while something is still missing), the card *New sensors found* (sensors that appeared in Home Assistant since Vigil last looked; *Review and add* opens the list with only the new ones, *Not now* does not announce them again; nothing is ever added by itself, and the *Sensors* tab shows a badge), *Ready for use?* (what is still missing), the *Self-test* card (last check, last siren test, next test, *Test siren now*), the *Heartbeat* card (last success, *Test now*), a *Dashboard* card with a button that copies a dashboard with your own entity ids, alarm state, attention points (low batteries, unreachable devices), what each mode watches, and the live status of every sensor. |
 | **Sensors** | *Find sensors* proposes sensors from Home Assistant; add, edit, copy and delete sensors. Under each name a sentence says how the sensor reacts and when it is watching. The table shows battery level in its own column. One entity can belong to only one sensor. The *Tamper entity* field links the tamper signal of the same device: Vigil creates a separate tamper sensor that can be bypassed on its own. You can also create a standalone tamper sensor. |
 | **Sensor groups** | Which sensors watch in which modes. A group can *suggest itself* for new door contacts or motion sensors. A group that is still in use cannot be deleted. |
 | **Confirmation rules** | Several sensors must trigger within a time window. A sensor that is in a rule cannot be deleted. |
 | **Users** | (Cannot be copied.) Name, code, allowed modes, right to bypass, right to bypass tamper. Codes are stored hashed and never shown. Leave the code empty when editing to keep it. |
 | **Notifications** | `notify` service, kinds of message (alarm, entry delay, arming and disarming, faults and notices, technical alarms), delay, high priority. *Test* sends a test message. |
 | **Sirens** | See above. *Test* sounds the siren for 3 seconds (refused during a real alarm). |
-| **Log** | Everything Vigil publishes as an event, newest first (the newest 200 are shown). *Download* gives the whole log as JSON Lines or CSV (RFC 4180), with times in UTC (RFC 3339) and the fields `time`, `event`, `source`, `user`, `item`, `result` and `detail`. It keeps 90 days by default (*Settings*), holds no codes and survives restarts. |
+| **Log** | Everything Vigil publishes as an event, newest first (the newest 200 are shown). The *User* column says who did it and *Via* where (panel or device); armed on a panel without a code reads *unknown (no code)*. *Download* gives the whole log as JSON Lines or CSV (RFC 4180), with times in UTC (RFC 3339) and the fields `time`, `event`, `source`, `user`, `item`, `result` and `detail`. It keeps 90 days by default (*Settings*), holds no codes and survives restarts. |
+| **Backup** | The last 10 versions of your configuration (one is kept at every change, with what changed), *Restore* for each (it shows what would change first, and the restore itself can be undone the same way), and *Export configuration* and *Import configuration…* as a file. See *Backups, export and import* below. |
 | **Settings** | Modes, exit delays, entry delay, alarm duration, how long to wait for slow sensors after a restart of Home Assistant (seconds, default 120), the screen of the panels (seconds until the screen goes dark, default 30, and whether it may also go dark during an alarm, default no), battery limit, code required to arm, minimum code length (4 to 12 characters, default 4; applies to new and changed codes, existing codes keep working), days to keep the log (default 90), and the self-test: reminder interval (default 30 days, 0 = off), seconds the siren sounds (1 to 5, default 2), sounding by itself, and the hours it may do so, and the heartbeat address and its interval in minutes (default 5). |
 | **About** | A "new" badge after an update, version, links to the user guide and GitHub, release notes (newest first) and a button that copies the details for a bug report. |
 
@@ -321,6 +332,23 @@ A siren and a notification only help when Home Assistant itself is running. The 
 Other services work the same way: you need an address that expects a call, a period, and a way to be told when it is missed.
 
 ## Restarts and updates
+
+### Backups, export and import
+
+Whenever your configuration changes (an edit in the panel, an import, a restore) Vigil keeps the
+configuration as it was just before, together with a summary of what changed (*Sensors: 3 added,
+Users: 1 changed*). The last 10 versions are kept (the number is a setting, 1 to 50, under *Settings* → *Backup*; lowering it drops the oldest versions at once); the **Backup** tab lists them. *Restore* shows what
+would change and puts that version back. Restoring is a change too, so you can undo it with the
+version it creates. After a save in the panel the message *Saved* has an *Undo* link that restores the
+version from just before. The eye icon (*View*) on a version opens a window with the change itself (which items were added, changed or removed, and which settings). The arrow icon (*Restore*) puts the version back. The *Vigil version* column says which Vigil version made each version. An **update of Vigil** that changes your stored configuration (a migration) keeps the configuration from before it too, as *Vigil update*. A version that was made by an older *storage version* can be viewed but not restored (that would need a migration, and the list says so); versions made after the update can. Only the configuration is kept, not the state of the alarm (armed, bypassed).
+
+*Export configuration* downloads the whole configuration as a file; *Import configuration…* reads such a
+file, shows what would change and replaces the configuration when you confirm (the present configuration
+is kept as a version first). The file holds no codes, but it does hold the hashed codes, the heartbeat
+address and the names of your notification services, so keep it safe. A file is only accepted from
+the same storage format (the file says which); import it in the same version of Vigil it came from.
+Sensors, users and panels keep their id in the file, so importing in the installation it came from keeps
+the entities; in another installation the entities are created again.
 
 - The alarm state and running timers are saved. After a restart the alarm is in the same state;
   an entry delay that ran out during the restart becomes an alarm, with the correct time.

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.1
+
+- **Installation wizard.** A wizard in the Vigil panel goes step by step through the modes, the sensors (Find sensors), the user (also made from a Home Assistant person), the notification channel (a phone with the app in one click), the siren and the panel, and ends with *Ready for use?*. It starts from the card *Set up Vigil* on the *Overview* tab while something is still missing, and can be opened again from *Ready for use?*. Every step can be skipped and the wizard comes back after a form is saved or cancelled. It uses the same forms as the tabs and saves nothing by itself.
+- **New sensors found.** Vigil remembers which sensors it has already offered. Sensors that appear in Home Assistant later are counted: a badge on the *Sensors* tab and a card on the *Overview* tab, with *Review and add* (the list with only the new ones) and *Not now* (not announced again). Nothing is added by itself and there is no push message. After an update the sensors that exist are not announced as new.
+- **The export file name has the time of the last save of the configuration** (not of the export): `vigil-alarm-2026-10-18-13-27-05.json`, in your local time. Exporting again without a change gives the same name. The file holds it as `changed_at`.
+- **Fixed:** a dialog stays open when the panel reloads its data.
+
 ## 0.5.0
 
 - **The log tells user and panel apart.** The *By* column of the *Log* tab is now two columns, *User* and *Via* (the panel or device it was done on), and the alarm entity has a new attribute `changed_via` next to `changed_by` (which is now only the user). The touch panel and the Vigil card show the two on separate lines. A change made without a code reads *unknown (no code)*. Unlocking the sensor list on a panel with a user code now logs that user (the installer code reads *installer code*). Bypasses that end because of a disarm name who disarmed and where; those that end because the sensor closed read *automatic*. The log export has the same split: `user` holds only the name and `source` the panel or device.

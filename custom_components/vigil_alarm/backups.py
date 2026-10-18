@@ -136,14 +136,16 @@ def check_state(state: Any) -> dict[str, Any]:
     return clean
 
 
-def export_payload(entry: ConfigEntry, integration_version: str) -> dict[str, Any]:
-    """The configuration as a file. It holds code hashes and addresses; the panel says so."""
+def export_payload(entry: ConfigEntry, integration_version: str, changed_at: str | None = None) -> dict[str, Any]:
+    """The configuration as a file. It holds code hashes and addresses; the panel says so. `changed_at` is when this
+    configuration was last saved: that is what the file is named after, not the moment of the export."""
     return {
         "format": EXPORT_FORMAT,
         "format_version": EXPORT_FORMAT_VERSION,
         "integration_version": integration_version,
         "entry_version": entry.version,
         "exported_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "changed_at": changed_at,
         "title": entry.title,
         **capture(entry),
     }
@@ -171,6 +173,8 @@ class ConfigBackups:
         # is kept carries those of its own state, so it is clear what an old one was made by.
         self._meta: dict[str, Any] = {}
         self._versions: list[dict[str, Any]] = []
+        # When the current configuration became the current one (the last save); older stores take the newest version's time.
+        self.changed_at: str | None = None
 
     async def async_start(self) -> None:
         """Load what is kept, and note a configuration that changed while Vigil was not watching (a change made
@@ -178,6 +182,7 @@ class ConfigBackups:
         stored = await self._store.async_load() or {}
         self._current = stored.get("current")
         self._versions = list(stored.get("versions") or [])
+        self.changed_at = stored.get("changed_at") or (self._versions[-1]["time"] if self._versions else _now())
         self._trim()
         running = (await async_get_integration(self.hass, DOMAIN)).version.string
         before_meta = stored.get("meta") or {"entry_version": self.entry.version, "integration_version": None}
@@ -216,6 +221,7 @@ class ConfigBackups:
             })
             self._trim()
         self._current = after
+        self.changed_at = _now()
         self._meta = {**self._meta, "entry_version": self.entry.version}
         await self._save()
 
@@ -231,7 +237,7 @@ class ConfigBackups:
         del self._versions[:-self.keep()]
 
     async def _save(self) -> None:
-        await self._store.async_save({"current": self._current, "meta": self._meta, "versions": self._versions})
+        await self._store.async_save({"current": self._current, "meta": self._meta, "versions": self._versions, "changed_at": self.changed_at})
 
     # ---- reading
 
@@ -263,6 +269,10 @@ class ConfigBackups:
 
     async def async_remove(self) -> None:
         await self._store.async_remove()
+
+
+def _now() -> str:
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def backups_store_key(entry_id: str) -> str:

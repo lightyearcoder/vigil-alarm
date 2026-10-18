@@ -66,6 +66,21 @@ const TXT = {
     summary: { always: "{cls}, altijd actief", instant: "direct", delayed: "vertraagd ({s} s)", follower: "volger", and: "en", watching: "{type}, bewaakt in {modes}", nowhere: "{type}, bewaakt in geen enkele modus" },
     whatsNew: "nieuw", batteryLow: "laag", batteryOk: "ok",
     copySuffix: " (kopie)",
+    wizard: {
+      title: "Vigil instellen", button: "Installatiewizard", step: "Stap {n} van {total}", back: "Terug", next: "Volgende", skip: "Overslaan", finish: "Klaar", stop: "Later verder", resume: "Ga verder met de wizard",
+      cardTitle: "Vigil instellen", cardText: "Nog niet alles is ingesteld. De wizard loopt er stap voor stap doorheen; je kunt elke stap overslaan en later terugkomen.", start: "Start de wizard",
+      done: "Gedaan", todo: "Nog te doen", optional: "Aanbevolen",
+      welcome: { title: "Welkom bij Vigil", text: "In een paar stappen stel je het alarm in: welke standen je gebruikt, welke sensoren meedoen, wie een code krijgt en hoe je een melding krijgt. Er wordt pas iets opgeslagen als je dat in een stap bevestigt, en elke wijziging is terug te zetten via het tabblad Back-up." },
+      modes: { title: "Welke standen gebruik je?", text: "Thuis (je bent er, de buitenschil is bewaakt), Weg (niemand thuis) en Nacht (je slaapt). Kies alleen wat je echt gebruikt; de uitlooptijden kun je later onder Instellingen aanpassen.", save: "Opslaan", saved: "Standen opgeslagen.", none: "Kies minstens één stand." },
+      sensors: { title: "Sensoren", text: "Vigil zoekt deur-, raam-, beweging-, rook-, gas- en watersensoren in Home Assistant. Je kiest welke je toevoegt.", have: "{n} sensoren ingesteld.", none: "Nog geen sensoren.", find: "Sensoren zoeken", fresh: "{n} nieuw gevonden." },
+      user: { title: "Wie mag het alarm bedienen?", text: "Een gebruiker heeft een code. Je kunt een gebruiker aanmaken van een Home Assistant-persoon of er een met de hand toevoegen.", have: "{n} gebruiker(s) met een code.", none: "Nog geen gebruiker met een code.", fromPerson: "Maak gebruiker van {name}", add: "Gebruiker toevoegen" },
+      notification: { title: "Waar wil je een melding krijgen?", text: "Bij een alarm of storing stuurt Vigil een bericht. Een telefoon met de Home Assistant-app is het makkelijkst.", have: "{n} meldingskanaal(en).", none: "Nog geen meldingskanaal.", phone: "Voeg {name} toe", add: "Meldingskanaal toevoegen", added: "{name} is toegevoegd; er is een testmelding gestuurd." },
+      siren: { title: "Sirene", text: "Een sirene is niet verplicht, maar zonder sirene hoor je een alarm alleen via meldingen.", have: "{n} sirene(s).", none: "Nog geen sirene.", add: "Sirene toevoegen" },
+      panel: { title: "Paneel aan de muur", text: "Een ESPHome-scherm of een tablet of telefoon kan het alarm bedienen. Dit is niet verplicht.", have: "{n} paneel/panelen.", none: "Nog geen paneel.", add: "Paneel koppelen" },
+      test: { title: "Klaar voor gebruik?", text: "Dit is wat Vigil nu nog mist. Alles wat 'probleem' heet, houdt het alarm nog van beschermen.", allGood: "Alles is in orde.", testSiren: "Test de sirene", sirenStarted: "De sirene klinkt kort." },
+      end: { title: "Klaar", text: "Vigil is ingesteld. Een proefrondje: zet het alarm aan, open een deur en kijk of je melding komt. Daarna kun je automatiseringen toevoegen met de meegeleverde blueprints (automatisch inschakelen als iedereen weg is, lichten laten knipperen bij een alarm, een bericht uitspreken). Je vindt ze in de handleiding onder Automatiseringen en blueprints." },
+    },
+    newSensors: { title: "Nieuwe sensoren gevonden", text: "Deze sensoren zijn in Home Assistant bijgekomen sinds Vigil voor het laatst keek. Er is niets toegevoegd.", review: "Bekijk en voeg toe", later: "Niet nu", badge: "{n} nieuw", dismissed: "Oké, Vigil meldt deze niet opnieuw. Je kunt ze altijd nog toevoegen via Sensoren zoeken.", onlyNew: "Alleen de nieuwe sensoren worden getoond.", showAll: "Toon alle sensoren", showNew: "Toon alleen nieuwe" },
     find: {
       button: "Sensoren zoeken", title: "Sensoren zoeken",
       intro: "Deze sensoren zijn gevonden in Home Assistant. Kies welke je wilt toevoegen. Er wordt niets opgeslagen voordat je op de knop onderaan drukt.",
@@ -266,6 +281,21 @@ const TXT = {
     summary: { always: "{cls}, always on", instant: "instant", delayed: "delayed ({s} s)", follower: "follower", and: "and", watching: "{type}, watching in {modes}", nowhere: "{type}, not watching in any mode" },
     whatsNew: "new", batteryLow: "low", batteryOk: "ok",
     copySuffix: " (copy)",
+    wizard: {
+      title: "Set up Vigil", button: "Setup wizard", step: "Step {n} of {total}", back: "Back", next: "Next", skip: "Skip", finish: "Done", stop: "Continue later", resume: "Continue the wizard",
+      cardTitle: "Set up Vigil", cardText: "Not everything is set up yet. The wizard goes through it step by step; you can skip any step and come back later.", start: "Start the wizard",
+      done: "Done", todo: "To do", optional: "Recommended",
+      welcome: { title: "Welcome to Vigil", text: "In a few steps you set up the alarm: which modes you use, which sensors take part, who gets a code and how you get a message. Nothing is saved until you confirm it in a step, and every change can be put back from the Backup tab." },
+      modes: { title: "Which modes do you use?", text: "Home (you are in, the outer shell is watched), Away (nobody home) and Night (you are asleep). Choose only what you really use; the exit delays can be changed later under Settings.", save: "Save", saved: "Modes saved.", none: "Choose at least one mode." },
+      sensors: { title: "Sensors", text: "Vigil looks for door, window, motion, smoke, gas and water sensors in Home Assistant. You choose which ones to add.", have: "{n} sensors set up.", none: "No sensors yet.", find: "Find sensors", fresh: "{n} newly found." },
+      user: { title: "Who may operate the alarm?", text: "A user has a code. You can create a user from a Home Assistant person or add one by hand.", have: "{n} user(s) with a code.", none: "No user with a code yet.", fromPerson: "Make a user of {name}", add: "Add a user" },
+      notification: { title: "Where do you want a message?", text: "On an alarm or a fault Vigil sends a message. A phone with the Home Assistant app is the easiest.", have: "{n} notification channel(s).", none: "No notification channel yet.", phone: "Add {name}", add: "Add a notification channel", added: "{name} was added; a test message was sent." },
+      siren: { title: "Siren", text: "A siren is not required, but without one you only hear an alarm through messages.", have: "{n} siren(s).", none: "No siren yet.", add: "Add a siren" },
+      panel: { title: "Panel on the wall", text: "An ESPHome screen or a tablet or phone can operate the alarm. This is optional.", have: "{n} panel(s).", none: "No panel yet.", add: "Link a panel" },
+      test: { title: "Ready for use?", text: "This is what Vigil still misses. Anything marked 'problem' still keeps the alarm from protecting.", allGood: "Everything is in order.", testSiren: "Test the siren", sirenStarted: "The siren sounds briefly." },
+      end: { title: "Done", text: "Vigil is set up. A trial run: arm the alarm, open a door and see whether your message arrives. After that you can add automations with the included blueprints (arm automatically when everyone leaves, flash lights on an alarm, speak a message). You find them in the guide under Automations and blueprints." },
+    },
+    newSensors: { title: "New sensors found", text: "These sensors have appeared in Home Assistant since Vigil last looked. Nothing has been added.", review: "Review and add", later: "Not now", badge: "{n} new", dismissed: "OK, Vigil will not announce these again. You can still add them with Find sensors.", onlyNew: "Only the new sensors are shown.", showAll: "Show all sensors", showNew: "Show only new" },
     find: {
       button: "Find sensors", title: "Find sensors",
       intro: "These sensors were found in Home Assistant. Choose which ones to add. Nothing is saved until you press the button at the bottom.",
@@ -678,9 +708,12 @@ class VigilPanel extends HTMLElement {
 
   // ---- rendering
   _render() {
-    this._root.replaceChildren(el("div", { id: "header" }), el("div", { id: "nav" }), el("div", { id: "body" }), el("div", { id: "layer" }));
+    // An open dialog stays open when the data is reloaded (the wizard goes on after a save).
+    const layer = this._root.querySelector("#layer") || el("div", { id: "layer" });
+    this._root.replaceChildren(el("div", { id: "header" }), el("div", { id: "nav" }), el("div", { id: "body" }), layer);
     this._renderHeader();
     this._renderBody();
+    if (this._wizardShown) this._openWizard();
   }
 
   _q(id) { return this._root.querySelector(`#${id}`); }
@@ -719,7 +752,8 @@ class VigilPanel extends HTMLElement {
       const fresh = tab === "about" && this._tab !== "about" && this._newVersion();
       return el("button", { class: tab === this._tab ? "active" : "", onclick: () => { this._tab = tab; if (tab === "log") this._logNode = null; if (tab === "about") { this._about = null; this._markVersionSeen(); } this._renderNav(); this._renderBody(); } },
         t.tabs[tab], count !== null ? el("span", { class: "count", text: `(${count})` }) : null,
-        fresh ? el("span", { class: "badge ok", style: "margin-left:6px", text: t.whatsNew }) : null);
+        fresh ? el("span", { class: "badge ok", style: "margin-left:6px", text: t.whatsNew }) : null,
+        tab === "sensor" && this._newSensors().length ? el("span", { class: "badge warn", style: "margin-left:6px", text: fill(t.newSensors.badge, { n: this._newSensors().length }) }) : null);
     }));
     this._q("nav").replaceChildren(nav);
   }
@@ -880,6 +914,7 @@ class VigilPanel extends HTMLElement {
       el("span", { class: "badge " + (f.level === "problem" ? "bad" : "warn"), text: f.level === "problem" ? r.problem : r.advice }),
       " ", fill(r.text[f.code] || f.code, f.params), " ", go(f));
     return el("div", { class: "card" }, el("h2", { text: r.title }),
+      findings.length ? el("button", { class: "btn", text: t.wizard.button, onclick: () => this._openWizard() }) : null,
       findings.length ? el("ul", { class: "plain" }, findings.map(row)) : el("div", { class: "muted", text: r.allGood }));
   }
 
@@ -956,6 +991,126 @@ class VigilPanel extends HTMLElement {
       el("ul", { class: "plain" }, list), never ? el("p", { class: "note", text: w.neverBypass }) : null, el("p", { class: "note", text: w.hint }));
   }
 
+  // ---- setup wizard: steps that use the same forms as the tabs; every step can be skipped and the wizard can be reopened
+  _wizardStatus() {
+    const d = this._data, n = (k) => this._shown(k).length;
+    return {
+      modes: (d.entry.data.modes || []).length > 0,
+      sensors: n("sensor") > 0,
+      user: d.items.user.some((u) => u.has_code),
+      notification: n("notification") > 0,
+      siren: n("siren") > 0,
+      panel: n("panel") > 0,
+    };
+  }
+
+  _wizardNeeded() {
+    return (this._ready || []).some((f) => f.level === "problem");
+  }
+
+  _openWizard() {
+    if (!this._data || !this._root || !this._q("layer")) return;
+    const t = this.t, w = t.wizard;
+    const steps = ["welcome", "modes", "sensors", "user", "notification", "siren", "panel", "test", "end"];
+    const at = Math.min(Math.max(this._wizard ? this._wizard.step : 0, 0), steps.length - 1);
+    this._wizard = { step: at };
+    this._wizardShown = true;
+    const id = steps[at];
+    const status = this._wizardStatus();
+    const sub = w[id];
+    const go = (step) => { this._wizard.step = step; this._openWizard(); };
+    // Open one of the normal forms on top of the wizard; closing it brings the wizard back.
+    const via = (open) => () => { this._wizardResume = true; this._wizardShown = false; open(); };
+    const badge = (done, optional) => el("span", { class: "badge " + (done ? "ok" : optional ? "" : "warn"), text: done ? w.done : optional ? w.optional : w.todo });
+    const body = [el("p", { class: "muted", text: fill(w.step, { n: at + 1, total: steps.length }) }), el("p", { text: sub.text })];
+    const row = (label, done, optional) => el("p", {}, badge(done, optional), " ", label);
+    const btn = (text, onclick, primary = true) => el("button", { class: "btn" + (primary ? " primary" : ""), text, onclick });
+    const count = (k) => this._shown(k).length;
+
+    if (id === "modes") {
+      const have = new Set(this._data.entry.data.modes || []);
+      const boxes = ["home", "away", "night"].map((m) => {
+        const input = el("input", { type: "checkbox", checked: have.has(m), "aria-label": t.mode[m] || m });
+        return { m, input, node: el("label", { class: "check" }, input, " ", t.mode[m] || m) };
+      });
+      const msg = el("div");
+      body.push(el("div", {}, boxes.map((b) => el("div", {}, b.node))), msg,
+        btn(sub.save, async () => {
+          const modes = boxes.filter((b) => b.input.checked).map((b) => b.m);
+          if (!modes.length) { msg.replaceChildren(el("div", { class: "baseerror", text: sub.none })); return; }
+          const res = await this._call({ type: "vigil_alarm/save_settings", data: { ...this._data.entry.data, modes } });
+          if (res.ok) { this._toast(sub.saved); await this._load(); } else msg.replaceChildren(el("div", { class: "baseerror", text: this._errorText(Object.keys(res.errors || {})[0] || "base", res) }));
+        }, false));
+    } else if (id === "sensors") {
+      const fresh = this._newSensors().length;
+      body.push(row(count("sensor") ? fill(sub.have, { n: count("sensor") }) : sub.none, status.sensors),
+        fresh ? el("p", { class: "muted", text: fill(sub.fresh, { n: fresh }) }) : null,
+        btn(sub.find, via(() => this._openFind({ onlyNew: false }))));
+    } else if (id === "user") {
+      const users = this._data.items.user.filter((u) => u.has_code).length;
+      body.push(row(users ? fill(sub.have, { n: users }) : sub.none, status.user));
+      const have = new Set(this._data.items.user.map((u) => u.title.toLowerCase()));
+      const people = Object.values(this._hass.states).filter((x) => x.entity_id.startsWith("person.") && !have.has(String((x.attributes || {}).friendly_name || "").toLowerCase()));
+      body.push(el("div", {}, people.slice(0, 6).map((x) => btn(fill(sub.fromPerson, { name: x.attributes.friendly_name || x.entity_id }), via(() => this._openForm("user", null, false, { name: x.attributes.friendly_name || x.entity_id })), false))),
+        btn(sub.add, via(() => this._openForm("user"))));
+    } else if (id === "notification") {
+      body.push(row(count("notification") ? fill(sub.have, { n: count("notification") }) : sub.none, status.notification));
+      const phones = ((this._ready || []).find((f) => f.go === "add_phone") || {}).phones || [];
+      body.push(el("div", {}, phones.map((ph) => btn(fill(sub.phone, { name: ph.title }), async () => {
+        const res = await this._call({ type: "vigil_alarm/add_phone", service: ph.service });
+        if (!res.ok) { this._toast(this._errorText(Object.keys(res.errors || {})[0] || "base", res)); return; }
+        await this._load();
+        try { await this._hass.callService("vigil_alarm", "test_notification", { channel: res.title }); } catch (err) { /* the toast says enough */ }
+        this._toast(fill(sub.added, { name: res.title }));
+      }, false))), btn(sub.add, via(() => this._openForm("notification"))));
+    } else if (id === "siren") {
+      body.push(row(count("siren") ? fill(sub.have, { n: count("siren") }) : sub.none, status.siren, true), btn(sub.add, via(() => this._openForm("siren"))));
+    } else if (id === "panel") {
+      body.push(row(count("panel") ? fill(sub.have, { n: count("panel") }) : sub.none, status.panel, true), btn(sub.add, via(() => this._openForm("panel"))));
+    } else if (id === "test") {
+      const findings = this._ready || [];
+      body.push(findings.length
+        ? el("ul", { class: "plain" }, findings.map((f) => el("li", { class: "readyrow" },
+            el("span", { class: "badge " + (f.level === "problem" ? "bad" : "warn"), text: f.level === "problem" ? t.ready.problem : t.ready.advice }), " ", fill(t.ready.text[f.code] || f.code, f.params))))
+        : el("p", { class: "badge ok", text: sub.allGood }),
+        count("siren") ? btn(sub.testSiren, async () => {
+          try { await this._hass.callService("vigil_alarm", "test_siren", { duration: 3 }); this._toast(sub.sirenStarted); } catch (err) { this._toast(String((err && err.message) || err)); }
+        }, false) : null);
+    }
+
+    const last = at === steps.length - 1;
+    const stop = () => { this._wizardShown = false; this._wizard = last ? null : this._wizard; this._q("layer").replaceChildren(); this._renderBody(); };
+    this._dialog(w.title + ": " + sub.title, body, () => [
+      last ? null : el("button", { class: "btn", text: w.stop, onclick: stop }),
+      at > 0 ? el("button", { class: "btn", text: w.back, onclick: () => go(at - 1) }) : null,
+      last ? el("button", { class: "btn primary", text: w.finish, onclick: stop })
+        : el("button", { class: "btn primary", text: (at > 0 && at < steps.length - 2 && !status[id]) ? w.skip : w.next, onclick: () => go(at + 1) }),
+    ], true, true);
+  }
+
+  _wizardCard() {
+    const t = this.t.wizard;
+    if (!this._wizardNeeded() && !this._wizard) return null;
+    return el("div", { class: "card" }, el("h2", { text: t.cardTitle }), el("p", { class: "muted", text: t.cardText }),
+      el("button", { class: "btn primary", text: this._wizard ? t.resume : t.start, onclick: () => this._openWizard() }));
+  }
+
+  _newSensors() { return (this._live && this._live.new_sensors) || []; }
+
+  // "New sensors found": the discovery found sensors Vigil has not offered before. Nothing is added by itself.
+  _newSensorsCard() {
+    const t = this.t, n = t.newSensors;
+    const found = this._newSensors();
+    if (!found.length) return null;
+    const names = found.slice(0, 5).map((e) => e.name).join(", ") + (found.length > 5 ? ` +${found.length - 5}` : "");
+    return el("div", { class: "card" }, el("h2", { text: `${n.title} (${found.length})` }), el("p", { class: "muted", text: n.text }),
+      el("p", { text: names }),
+      el("button", { class: "btn primary", text: n.review, onclick: () => this._openFind({ onlyNew: true }) }),
+      el("button", { class: "btn", text: n.later, onclick: async () => {
+        try { await this._hass.callWS({ type: "vigil_alarm/new_sensors_dismiss" }); this._toast(n.dismissed); } catch (err) { this._toast(String((err && err.message) || err)); }
+      } }));
+  }
+
   _overview() {
     const t = this.t;
     const live = this._live;
@@ -968,6 +1123,8 @@ class VigilPanel extends HTMLElement {
           el("div", { class: "muted", text: live && live.mode ? (t.mode[live.mode] || live.mode) : "" })),
         ...KINDS.map((k) => el("div", { class: "card", style: "cursor:pointer", onclick: () => { this._tab = k; this._renderBody(); } },
           el("h2", { text: t.tabs[k] }), el("div", { class: "stat", text: String(this._shown(k).length) })))),
+      this._wizardCard(),
+      this._newSensorsCard(),
       this._whyCard(),
       this._readyCard(),
       this._selftestCard(),
@@ -1277,7 +1434,7 @@ class VigilPanel extends HTMLElement {
       if (!payload || payload.format === undefined) { this._toast(t.errors.generic); return; }
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
-      const a = el("a", { href: url, download: `vigil-alarm-${new Date().toISOString().slice(0, 10)}.json` });
+      const a = el("a", { href: url, download: `vigil-alarm-${(() => { const d = new Date(payload.changed_at || Date.now()), p = (n) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}-${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}`; })()}.json` });
       this._root.append(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     };
@@ -1399,9 +1556,13 @@ class VigilPanel extends HTMLElement {
   }
 
   // ---- dialogs
-  _dialog(title, body, buttons, wide = false) {
+  _dialog(title, body, buttons, wide = false, keep = false) {
     const layer = this._q("layer");
-    const close = () => layer.replaceChildren();
+    const close = () => {
+      layer.replaceChildren();
+      this._wizardShown = false;
+      if (this._wizardResume && !keep) { this._wizardResume = false; this._openWizard(); }
+    };
     const overlay = el("div", { class: "overlay", onmousedown: (e) => { if (e.target === overlay) close(); } },
       el("div", { class: "dialog" + (wide ? " wide" : ""), role: "dialog" }, el("h2", { text: title }), el("div", { class: "body" }, body), el("div", { class: "foot" }, buttons(close))));
     layer.replaceChildren(overlay);
@@ -1440,12 +1601,13 @@ class VigilPanel extends HTMLElement {
   }
 
   // ---- find sensors: a proposal from the entity registry, nothing is saved until the person confirms
-  async _openFind() {
+  async _openFind(opts = {}) {
     const t = this.t;
     const f = t.find;
     const res = await this._call({ type: "vigil_alarm/discover" });
     if (!res || !res.candidates) { this._toast(t.errors.generic); return; }
     const groupName = (id) => this._groupName(id);
+    const newIds = new Set(this._newSensors().map((e) => e.entity_id));
     const rows = [
       ...res.candidates.map((c) => ({ c, tamperOnly: false })),
       ...(res.tamper_only || []).map((c) => ({ c: { ...c, cls: "tamper", groups: [], entrance: false }, tamperOnly: true })),
@@ -1456,24 +1618,27 @@ class VigilPanel extends HTMLElement {
       r.name = r.c.name;
       r.entrance = !!r.c.entrance && intrusion;
       r.nameInput = null;
+      r.isNew = newIds.has(r.c.entity_id);
       return r;
     });
+    let onlyNew = !!opts.onlyNew && newIds.size > 0;
+    const shown = () => rows.filter((r) => !onlyNew || r.isNew);
     const base = el("div");
     const tableHost = el("div");
     let close = () => {};
     const addBtn = el("button", { class: "btn primary" });
-    const count = () => rows.filter((r) => r.on && !r.blocked).length;
+    const count = () => shown().filter((r) => r.on && !r.blocked).length;
     const refresh = () => {
       const n = count();
       addBtn.textContent = fill(f.add, { n });
       addBtn.disabled = n === 0;
     };
     const build = () => {
-      const missingGroup = rows.some((r) => r.blocked === f.needsGroup);
-      if (!rows.length) { tableHost.replaceChildren(el("div", { class: "empty", text: f.none })); refresh(); return; }
+      const missingGroup = shown().some((r) => r.blocked === f.needsGroup);
+      if (!shown().length) { tableHost.replaceChildren(el("div", { class: "empty", text: f.none })); refresh(); return; }
       const table = el("div", { class: "tablewrap" }, el("table", {},
         el("thead", {}, el("tr", {}, el("th", {}), ...["name", "cls", "entrance", "groups", "extra"].map((k) => el("th", { text: f.cols[k] })))),
-        el("tbody", {}, rows.map((r) => {
+        el("tbody", {}, shown().map((r) => {
           const check = el("input", { type: "checkbox", checked: r.on && !r.blocked, disabled: !!r.blocked, "aria-label": r.name });
           check.addEventListener("change", () => { r.on = check.checked; refresh(); });
           const nameInput = el("input", { type: "text", value: r.name, disabled: !!r.blocked, "aria-label": f.cols.name });
@@ -1499,21 +1664,30 @@ class VigilPanel extends HTMLElement {
       tableHost.replaceChildren(missingGroup ? el("div", {}, el("p", { class: "intro", text: f.noGroups }), makeGroups) : null, table);
       refresh();
     };
-    const setAll = (on) => { rows.forEach((r) => { r.on = on && !r.blocked; }); build(); };
+    const setAll = (on) => { shown().forEach((r) => { r.on = on && !r.blocked; }); build(); };
     const copy = el("button", { class: "btn", text: f.copy, title: f.copyHelp });
     copy.addEventListener("click", async () => {
       const report = await this._call({ type: "vigil_alarm/discover_report" });
       try { await navigator.clipboard.writeText(JSON.stringify(report.entities || [], null, 1)); this._toast(t.about.copied); }
       catch (err) { this._toast(t.about.copyFailed); }
     });
+    const filterNote = el("p", { class: "muted" });
+    const filterBtn = el("button", { class: "btn" });
+    const syncFilter = () => {
+      filterNote.textContent = onlyNew ? t.newSensors.onlyNew : "";
+      filterBtn.textContent = onlyNew ? t.newSensors.showAll : t.newSensors.showNew;
+      filterBtn.style.display = newIds.size ? "" : "none";
+    };
+    filterBtn.addEventListener("click", () => { onlyNew = !onlyNew; syncFilter(); build(); });
+    syncFilter();
     build();
-    this._dialog(f.title, [el("p", { class: "intro", text: f.intro }), base,
+    this._dialog(f.title, [el("p", { class: "intro", text: f.intro }), filterNote, base,
       el("div", { class: "bar" }, el("button", { class: "btn", text: f.all, onclick: () => setAll(true) }),
-        el("button", { class: "btn", text: f.nothing, onclick: () => setAll(false) }), copy),
+        el("button", { class: "btn", text: f.nothing, onclick: () => setAll(false) }), filterBtn, copy),
       tableHost], (closeDialog) => {
       close = closeDialog;
       addBtn.addEventListener("click", async () => {
-        const chosen = rows.filter((r) => r.on && !r.blocked);
+        const chosen = shown().filter((r) => r.on && !r.blocked);
         const items = chosen.map((r) => {
           const c = r.c;
           const data = { name: (r.name || "").trim() || c.name, entity_id: c.entity_id, cls: c.cls };
@@ -1535,11 +1709,12 @@ class VigilPanel extends HTMLElement {
     }, true);
   }
 
-  _openForm(kind, item, copy = false) {
+  _openForm(kind, item, copy = false, prefill = null) {
     const t = this.t;
     const schema = this._data.forms[kind];
     const initial = item ? { name: item.title, ...item.data } : {};
     if (copy) initial.name = item.title + t.copySuffix;
+    if (prefill) Object.assign(initial, prefill);
     const editing = item && !copy;
     const form = this._makeForm(schema, initial, { ctx: kind, kind, editing: !!editing, hasCode: !!(item && item.has_code && editing) });
     const base = el("div");

@@ -50,7 +50,7 @@ SCENES = [
     ("not-ready", "main", OPEN_ONE + 'c.faults_total = 1;', 0, "", ""),
     ("arming", "main", 'c.state = "arming"; c.mode = "away"; c.delay_end = c.now + 42;', 0, "", ""),
     ("armed-home", "main", 'c.state = "armed_home"; c.mode = "home"; c.changed_by = "Anna";', 0, "", ""),
-    ("armed-away", "main", 'c.state = "armed_away"; c.mode = "away"; c.changed_by = "Anna";', 0, "", ""),
+    ("armed-away", "main", 'c.state = "armed_away"; c.mode = "away"; c.changed_by = "Anna"; c.changed_via = "vigil-panel-garage";', 0, "", ""),
     ("armed-night", "main", 'c.state = "armed_night"; c.mode = "night"; c.changed_by = "Anna";', 0, "", ""),
     ("pending", "main", 'c.state = "pending"; c.mode = "away"; c.cause_sensor = "Voordeur"; c.delay_end = c.now + 21;', 0, "", ""),
     ("triggered", "main", 'c.state = "triggered"; c.mode = "away"; c.cause = "intrusion"; c.cause_sensor = "Beweging gang";', 0, "", ""),
@@ -62,4 +62,9 @@ SCENES = [
     ("offline", "main", 'c.ha_connected = false; c.state = "";', 0, "", ""),
     ("not-linked", "main", 'c.profile_version = 0;', 0, "", ""),
     ("blocked", "main", 'c.blocked = true; c.modes_mask = 0;', 0, "", ""),
+    # Arming was refused because a tamper contact is open: the text says so, and one button bypasses and arms.
+    ("refused", "main", 'c.message = vigil::parse_refusal("Arming refused: alarm_condition (Sabotage voordeur).").text; '
+     'c.refused_action = vigil::ARM_AWAY;', 0, "", ""),
+    # Armed on a panel without a code: the panel is known, the person is not.
+    ("armed-away-nocode", "main", 'c.state = "armed_away"; c.mode = "away"; c.changed_via = "vigil-panel-garage";', 0, "", ""),
 ]

@@ -12,6 +12,13 @@ from .test_integration import _setup
 from .test_panel import _client, _ws
 
 
+def _manifest_version() -> str:
+    import json
+    from pathlib import Path
+
+    return json.loads((Path(__file__).parents[2] / "custom_components/vigil_alarm/manifest.json").read_text())["version"]
+
+
 async def _save_sensor(client, name, entity):
     return await _ws(client, type="vigil_alarm/save", kind="sensor",
                      data={"name": name, "entity_id": entity, "cls": "intrusion", "type": "instant",
@@ -94,6 +101,20 @@ async def test_the_versions_survive_a_restart_and_a_change_made_while_stopped_is
     versions = await _versions(client)
     assert [v["reason"] for v in versions] == ["external", "edit"]
     assert versions[0]["summary"]["counts"] == {"zone": {"removed": 1}}
+
+
+async def test_the_export_carries_the_time_of_the_last_save_not_of_the_export(hass, hass_ws_client, freezer):
+    from datetime import timedelta
+
+    entry, client = await _client(hass, hass_ws_client)
+    await _save_sensor(client, "Garage", "binary_sensor.garage")
+    await hass.async_block_till_done()
+    first = (await _ws(client, type="vigil_alarm/export"))["result"]
+    newest = (await _ws(client, type="vigil_alarm/backups"))["result"]["versions"][0]
+    assert first["changed_at"] == newest["time"]
+    freezer.tick(timedelta(hours=3))
+    second = (await _ws(client, type="vigil_alarm/export"))["result"]
+    assert second["changed_at"] == first["changed_at"] and second["exported_at"] != first["exported_at"]
 
 
 async def test_export_and_import_round_trip(hass, hass_ws_client):
@@ -229,4 +250,4 @@ async def test_an_update_keeps_the_configuration_from_before_with_the_version_th
     await _save_sensor(client, "Garage", "binary_sensor.garage")
     await hass.async_block_till_done()
     new = (await _versions(client))[0]
-    assert new["restorable"] is True and new["integration_version"] == "0.5.0" and new["entry_version"] == 3
+    assert new["restorable"] is True and new["integration_version"] == _manifest_version() and new["entry_version"] == 3

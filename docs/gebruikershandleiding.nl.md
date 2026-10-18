@@ -91,6 +91,7 @@ opnieuw; de alarmstand blijft behouden.
 5. **Optioneel: een bevestigingsregel** (tabblad *Bevestigingsregels*): kies de directe
    inbraaksensoren, hoeveel er moeten aanslaan en binnen welk tijdvenster.
 6. **Optioneel: een sirene** (tabblad *Sirenes*). Zie hieronder.
+0. **Nieuw: de installatiewizard.** Is er nog niet genoeg ingesteld, dan staat bovenaan het tabblad *Overzicht* de kaart *Vigil instellen*, en op de kaart *Klaar voor gebruik?* de knop *Installatiewizard*. De wizard loopt stap voor stap langs de standen, de sensoren, de gebruiker (ook te maken van een Home Assistant-persoon), het meldingskanaal (een telefoon met de app in één klik), de sirene en het paneel, en sluit af met *Klaar voor gebruik?*. Elke stap is over te slaan, *Later verder* sluit de wizard en de kaart *Ga verder met de wizard* brengt je terug waar je was. De wizard gebruikt dezelfde formulieren als de tabbladen en slaat niets op zonder dat je dat bevestigt.
 7. **Kijk bij *Klaar voor gebruik?*** bovenaan het tabblad *Overzicht*. Daar staat wat er nog ontbreekt (een gebruiker met code, een meldingskanaal, een modus die niets bewaakt, sensoren zonder batterijsensor), met een knop naar de juiste plek. Heb je nog geen meldingskanaal en kent Home Assistant je telefoon, dan voegt één knop hem toe en stuurt een testmelding.
 8. **Test alles** met de knoppen *Test* en door in te schakelen en een deur te openen. Het
    [testplan](installatie-en-testen.nl.md) heeft een volledige test met virtuele sensoren.
@@ -132,6 +133,16 @@ Vigil zegt waarom: *een alarmmelding staat open* (een brand- of sabotagesensor i
 is onbereikbaar* (een inbraaksensor is onbereikbaar en staat op blokkeren) of *een sensor staat
 open* (een sensor die op weigeren staat). Het attribuut `refuse_reason` en de melding noemen welke
 sensoren. Herstel de sensor of omzeil hem.
+
+**Waarom kan ik niet inschakelen?** Het tabblad *Overzicht* van het Vigil-paneel heeft een kaart met die naam
+zolang iets het inschakelen tegenhoudt: per sensor wat er aan de hand is en bij welke modi, met de knoppen
+*Toon* en *Omzeilen* (een brand- of gassensor kun je niet omzeilen: haal eerst de oorzaak weg). Op het
+aanraakpaneel en in de Vigil-kaart zegt een geweigerde inschakeling wat het tegenhoudt (*Inschakelen kan niet:
+Sabotage voordeur staat open*) en, als het paneel mag omzeilen, verschijnt één knop, **Omzeilen en inschakelen**.
+Die vraagt om een code en omzeilt dan wat het tegenhoudt en schakelt in. Daarvoor gelden dezelfde rechten als
+bij handmatig omzeilen (het recht om te omzeilen, en voor een sabotagesensor het recht om sabotage te omzeilen),
+en het kan nooit voor een brand- of gassensor. In je eigen automatiseringen is het dezelfde actie
+`vigil_alarm.arm` met `bypass_open: true`.
 
 ### Een sensor omzeilen
 
@@ -222,14 +233,15 @@ Acties in de lijsten zijn icoonknoppen (bewerken, kopiëren, verwijderen, testen
 
 | Tabblad | Wat je er doet |
 |---|---|
-| **Overzicht** | *Klaar voor gebruik?*, de kaart *Zelftest* (laatste controle, laatste sirenetest, volgende test, *Sirene nu testen*), de kaart *Hartslag* (laatste succes, *Nu testen*), (wat ontbreekt er nog), een kaart *Dashboard* met een knop die een dashboard met je eigen entiteit-id's kopieert, alarmstand, aandachtspunten (bijna lege batterijen, onbereikbare apparaten), wat elke modus bewaakt en de live status van elke sensor. |
+| **Overzicht** | de kaart *Vigil instellen* (de wizard, zolang er nog iets ontbreekt), de kaart *Nieuwe sensoren gevonden* (sensoren die in Home Assistant zijn bijgekomen sinds Vigil voor het laatst keek; *Bekijk en voeg toe* opent de lijst met alleen de nieuwe, *Niet nu* meldt ze niet opnieuw; er wordt nooit iets zelf toegevoegd, en op het tabblad *Sensoren* staat een badge), *Klaar voor gebruik?*, de kaart *Zelftest* (laatste controle, laatste sirenetest, volgende test, *Sirene nu testen*), de kaart *Hartslag* (laatste succes, *Nu testen*), (wat ontbreekt er nog), een kaart *Dashboard* met een knop die een dashboard met je eigen entiteit-id's kopieert, alarmstand, aandachtspunten (bijna lege batterijen, onbereikbare apparaten), wat elke modus bewaakt en de live status van elke sensor. |
 | **Sensoren** | *Sensoren zoeken* stelt sensoren uit Home Assistant voor; sensoren toevoegen, bewerken, kopiëren en verwijderen. De tabel toont ook het batterijpercentage in een eigen kolom. Eén entiteit kan maar bij één sensor horen. Met het veld *Sabotage-entiteit* koppel je het sabotagesignaal van dezelfde sensor: Vigil maakt daar vanzelf een aparte sabotagesensor van die je los kunt omzeilen. Je kunt ook gewoon een losse sabotagesensor aanmaken. |
 | **Sensorgroepen** | Welke sensoren in welke modi bewaken. Een groep kan zichzelf *voorstellen* voor nieuwe deurcontacten of bewegingssensoren. Een groep die nog in gebruik is kan niet verwijderd worden. |
 | **Bevestigingsregels** | Meerdere sensoren moeten binnen een tijdvenster aanslaan. Een sensor die in een regel zit kan niet verwijderd worden. |
 | **Gebruikers** | (Niet te kopiëren.) Naam, code, toegestane modi, recht om te omzeilen, recht om sabotage te omzeilen. Codes worden versleuteld opgeslagen en nooit getoond. Laat de code leeg bij bewerken om hem te behouden. |
 | **Meldingen** | `notify`-dienst, soorten berichten (alarm, inlooptijd, in- en uitschakelen, storingen en mededelingen, technische alarmen), vertraging, hoge prioriteit. *Test* stuurt een testbericht. |
 | **Sirenes** | Zie hierboven. *Test* laat de sirene 3 seconden klinken (geweigerd tijdens een echt alarm). |
-| **Logboek** | Alles wat Vigil als gebeurtenis meldt, de nieuwste bovenaan (de laatste 200 staan in beeld). *Download* geeft het hele logboek als JSON Lines of CSV (RFC 4180), met tijden in UTC (RFC 3339) en de velden `time`, `event`, `source`, `user`, `item`, `result` en `detail`. Standaard 90 dagen bewaard (*Instellingen*), zonder codes, en het blijft bestaan na een herstart. |
+| **Logboek** | Alles wat Vigil als gebeurtenis meldt, de nieuwste bovenaan (de laatste 200 staan in beeld). De kolom *Gebruiker* toont wie het deed en *Via* waar (paneel of apparaat); is er op een paneel zonder code ingeschakeld, dan staat er *onbekend (geen code)*. *Download* geeft het hele logboek als JSON Lines of CSV (RFC 4180), met tijden in UTC (RFC 3339) en de velden `time`, `event`, `source`, `user`, `item`, `result` en `detail`. Standaard 90 dagen bewaard (*Instellingen*), zonder codes, en het blijft bestaan na een herstart. |
+| **Back-up** | De laatste 10 versies van je configuratie (bij elke wijziging wordt er één bewaard, met wat er veranderde), *Terugzetten* per versie (eerst zie je wat er zou veranderen, en het terugzetten zelf is op dezelfde manier ongedaan te maken) en *Configuratie exporteren* en *Configuratie importeren…* als bestand. Zie *Back-ups, export en import* hieronder. |
 | **Instellingen** | Modi, uitlooptijden, inlooptijd, alarmduur, hoe lang er na een herstart van Home Assistant op trage sensoren wordt gewacht (seconden, standaard 120), het scherm van de panelen (seconden tot het scherm uitgaat, standaard 30, en of het ook tijdens een alarm uit mag gaan, standaard nee), batterijgrens, code nodig om in te schakelen, minimale codelengte (4 tot 12 tekens, standaard 4; geldt voor nieuwe en gewijzigde codes, bestaande codes blijven werken), dagen dat het logboek bewaard blijft (standaard 90), en de zelftest: herinneringsinterval (standaard 30 dagen, 0 = uit), seconden dat de sirene klinkt (1 tot 5, standaard 2), zelf laten klinken en de uren waarbinnen dat mag, en het hartslag-adres met het interval in minuten (standaard 5). |
 | **Over** | Een badge "nieuw" na een update, versie, links naar de handleiding en GitHub, release notes (nieuwste bovenaan) en een knop die de gegevens kopieert voor een foutmelding. |
 
@@ -325,6 +337,25 @@ Een sirene en een melding helpen alleen als Home Assistant zelf draait. De harts
 Andere diensten werken op dezelfde manier: je hebt een adres nodig dat een aanroep verwacht, een periode, en een manier om te horen als die gemist wordt.
 
 ## Herstarten en bijwerken
+
+### Back-ups, export en import
+
+Telkens als je configuratie verandert (een wijziging in het paneel, een import, een terugzetting) bewaart Vigil
+de configuratie zoals ze vlak daarvoor was, samen met een samenvatting van wat er veranderde (*Sensoren: 3
+toegevoegd, Gebruikers: 1 gewijzigd*). De laatste 10 versies blijven bewaard (het aantal is een instelling, 1 tot 50, bij *Instellingen* → *Back-up*; een lager aantal gooit de oudste versies meteen weg); het tabblad **Back-up** toont ze.
+*Terugzetten* laat zien wat er zou veranderen en zet die versie terug. Terugzetten is zelf ook een wijziging, dus
+je kunt het ongedaan maken met de versie die daarbij ontstaat. Na het opslaan in het paneel heeft de melding
+*Opgeslagen* een link *Ongedaan maken* die de versie van vlak daarvoor terugzet. Het oog-icoon (*Bekijk*) bij een versie opent een venster met de wijziging zelf (welke onderdelen zijn toegevoegd, gewijzigd of verwijderd, en welke instellingen). Het pijl-icoon (*Terugzetten*) zet de versie terug. De kolom *Vigil-versie* zegt met welke Vigil-versie elke versie is gemaakt. Een **update van Vigil** die je opgeslagen configuratie omzet (een migratie) bewaart de configuratie van vóór de update ook, als *Update van Vigil*. Een versie die met een oudere *opslagversie* is gemaakt kun je bekijken maar niet terugzetten (dat zou een migratie vragen, en de lijst zegt dat); versies van na de update wel. Alleen de configuratie wordt
+bewaard, niet de toestand van het alarm (ingeschakeld, omzeild).
+
+*Configuratie exporteren* downloadt de hele configuratie als bestand; *Configuratie importeren…* leest zo'n
+bestand, laat zien wat er zou veranderen en vervangt de configuratie als je bevestigt (de huidige configuratie
+wordt eerst als versie bewaard). Het bestand bevat geen codes, wel de versleutelde codes (hashes), het
+heartbeat-adres en de namen van je meldingsdiensten: bewaar het veilig. Een bestand wordt alleen
+geaccepteerd bij hetzelfde opslagformaat (het bestand zegt welk); importeer het in dezelfde versie van Vigil
+waarin het gemaakt is. Sensoren, gebruikers en panelen houden hun id in het bestand: importeren in de
+installatie waar het vandaan komt behoudt de entiteiten, in een andere installatie worden de entiteiten
+opnieuw aangemaakt.
 
 - De alarmstand en lopende timers worden bewaard. Na een herstart staat het alarm in dezelfde stand;
   een inlooptijd die tijdens de herstart afliep wordt een alarm, met de juiste tijd.

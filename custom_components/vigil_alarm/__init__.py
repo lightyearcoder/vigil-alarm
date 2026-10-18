@@ -267,3 +267,4 @@ async def async_remove_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> No
     await Store(hass, LOCKOUT_STORAGE_VERSION, f"{DOMAIN}.lockout.{entry.entry_id}").async_remove()
     await Store(hass, 1, f"{DOMAIN}.tablets.{entry.entry_id}").async_remove()
     await Store(hass, BACKUPS_STORAGE_VERSION, backups_store_key(entry.entry_id)).async_remove()
+    await Store(hass, 1, f"{DOMAIN}.newsensors.{entry.entry_id}").async_remove()
