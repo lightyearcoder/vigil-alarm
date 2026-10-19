@@ -32,6 +32,8 @@ static const Text TEXTS[] = {
     {"armed_home", {"Thuis", "Home"}},
     {"armed_away", {"Weg", "Away"}},
     {"armed_night", {"Nacht", "Night"}},
+    {"armed_vacation", {"Vakantie", "Vacation"}},
+    {"armed_custom_bypass", {"Aangepast", "Custom"}},
     {"arming", {"Inschakelen", "Arming"}},
     {"pending", {"Binnenkomst", "Entry"}},
     {"triggered", {"ALARM", "ALARM"}},
@@ -39,10 +41,15 @@ static const Text TEXTS[] = {
     {"home", {"Thuis", "Home"}},
     {"away", {"Weg", "Away"}},
     {"night", {"Nacht", "Night"}},
+    {"vacation", {"Vakantie", "Vacation"}},
+    {"custom", {"Aangepast", "Custom"}},
     {"disarm", {"Uitschakelen", "Disarm"}},
     {"arm_home", {"Thuis inschakelen", "Arm home"}},
     {"arm_away", {"Weg inschakelen", "Arm away"}},
     {"arm_night", {"Nacht inschakelen", "Arm night"}},
+    {"arm_vacation", {"Vakantie inschakelen", "Arm vacation"}},
+    {"arm_custom", {"Aangepast inschakelen", "Arm custom"}},
+    {"last_alarm", {"Laatste alarm: ", "Last alarm: "}},
     {"bypass", {"Omzeilen", "Bypass"}},
     {"force", {"Omzeilen en inschakelen", "Bypass and arm"}},
     {"force_title", {"Omzeilen en inschakelen: ", "Bypass and arm: "}},
@@ -113,6 +120,9 @@ static const Text TEXTS[] = {
     {"cause_fire", {"Brand", "Fire"}},
     {"cause_gas", {"Gas", "Gas"}},
     {"cause_tamper", {"Sabotage", "Tamper"}},
+    {"cause_alarm24", {"24-uursalarm", "24-hour alarm"}},
+    {"cause_silent24", {"Stil alarm", "Silent alarm"}},
+    {"cause_water", {"Water", "Water"}},
     {"cause_fault", {"Sensorstoring", "Sensor fault"}},
     // codes
     {"nav_alarm", {"Alarm", "Alarm"}},
@@ -141,12 +151,12 @@ struct Context {
   int lang = NL;
   bool ha_connected = false;
   std::string state;      // alarm_control_panel state
-  std::string mode;       // home / away / night: the armed mode, or the target while arming
+  std::string mode;       // home / away / night / vacation / custom: the armed mode, or the target while arming
   // From the profile entity of this panel in Vigil:
   int profile_version = 0;  // 0 until the profile is there (not added in Vigil yet, or Vigil is too old)
   std::string panel_id;
   bool blocked = false;
-  int modes_mask = 0;       // 1 home, 2 away, 4 night; 0 if blocked
+  int modes_mask = 0;       // 1 home, 2 away, 4 night, 8 vacation, 16 custom; 0 if blocked
   bool can_disarm = true;
   bool can_bypass = true;
   bool has_admin_code = false;
@@ -163,6 +173,7 @@ struct Context {
   std::string changed_via;  // the panel or device it was done on
   std::string cause;
   std::string cause_sensor;
+  std::string last_alarm;  // the alarm memory in one line ("14:03 Front door > Hall"), empty if there is none
   std::string open_now;   // names of the sensors that are open at all
   std::string open_mode;  // names of the sensors that are open in the current mode
   std::string faults;
@@ -308,6 +319,8 @@ constexpr uint32_t COL_ALARM = 0xF0605D;    // alarm
 constexpr uint32_t COL_HOME = 0x5B9BF0;
 constexpr uint32_t COL_AWAY = 0xFF8A5B;
 constexpr uint32_t COL_NIGHT = 0x9A8CF2;
+constexpr uint32_t COL_VACATION = 0x4FC3C9;
+constexpr uint32_t COL_CUSTOM = 0xD58BDD;
 constexpr uint32_t COL_OFF = 0x8A94A6;      // no connection, not linked, blocked
 
 // ---------------------------------------------------------------------------------- sensors
@@ -410,13 +423,15 @@ inline std::string sensors_button_text() {
 // ---------------------------------------------------------------------------- the main page
 
 inline bool is_armed_state(const std::string &s) {
-  return s == "armed_home" || s == "armed_away" || s == "armed_night";
+  return s == "armed_home" || s == "armed_away" || s == "armed_night" || s == "armed_vacation" || s == "armed_custom_bypass";
 }
 
 inline std::string mode_name(const std::string &mode) {
   if (mode == "home") return tr("home");
   if (mode == "away") return tr("away");
   if (mode == "night") return tr("night");
+  if (mode == "vacation") return tr("vacation");
+  if (mode == "custom") return tr("custom");
   return "";
 }
 
@@ -437,6 +452,8 @@ inline uint32_t state_color() {
   if (ctx.state == "armed_home") return COL_HOME;
   if (ctx.state == "armed_away") return COL_AWAY;
   if (ctx.state == "armed_night") return COL_NIGHT;
+  if (ctx.state == "armed_vacation") return COL_VACATION;
+  if (ctx.state == "armed_custom_bypass") return COL_CUSTOM;
   if (ctx.state == "arming") return COL_WARN;
   if (ctx.state == "pending") return COL_ENTRY;
   if (ctx.state == "triggered") return COL_ALARM;
@@ -453,6 +470,8 @@ inline uint32_t tint_of(uint32_t color) {
     case COL_HOME: return 0x17233A;
     case COL_AWAY: return 0x2E1E17;
     case COL_NIGHT: return 0x211E3A;
+    case COL_VACATION: return 0x14282B;
+    case COL_CUSTOM: return 0x2D1E33;
     default: return 0x1B232D;
   }
 }
@@ -466,6 +485,8 @@ inline uint32_t state_tint() { return tint_of(state_color()); }
 #define VIGIL_ICON_HOME "\U000F06A1"
 #define VIGIL_ICON_AWAY "\U000F0A48"
 #define VIGIL_ICON_NIGHT "\U000F0594"
+#define VIGIL_ICON_VACATION "\U000F001D"  // airplane
+#define VIGIL_ICON_CUSTOM "\U000F062E"    // tune
 #define VIGIL_ICON_UNLOCK "\U000F0FC7"
 #define VIGIL_ICON_LOCK "\U000F0341"
 #define VIGIL_ICON_GRID "\U000F11D9"
@@ -493,6 +514,8 @@ inline std::string state_icon() {
   if (s == "armed_home") return VIGIL_ICON_HOME;
   if (s == "armed_away") return VIGIL_ICON_AWAY;
   if (s == "armed_night") return VIGIL_ICON_NIGHT;
+  if (s == "armed_vacation") return VIGIL_ICON_VACATION;
+  if (s == "armed_custom_bypass") return VIGIL_ICON_CUSTOM;
   if (s == "arming" || s == "pending") return VIGIL_ICON_TIMER;
   if (s == "triggered") return VIGIL_ICON_BELL;
   return VIGIL_ICON_SHIELD_OFF;
@@ -573,6 +596,7 @@ inline std::string state_sub(double /*now: the ring shows the countdown*/) {
     int open = open_total_count();
     if (open > 0) add_line(out, tr("open") + std::to_string(open));
     else add_line(out, tr("all_closed"));
+    if (details_visible() && !ctx.last_alarm.empty()) add_line(out, tr("last_alarm") + ctx.last_alarm);
     if (!ctx.faults.empty()) add_line(out, tr("problems") + ctx.faults);
     else if (ctx.faults_total > 0 || ctx.problems > 0) add_line(out, tr("problems") + std::to_string(ctx.faults_total > 0 ? ctx.faults_total : ctx.problems));
   } else if (is_armed_state(s)) {
@@ -601,6 +625,13 @@ inline std::string state_sub(double /*now: the ring shows the countdown*/) {
 inline bool show_home() { return usable() && ctx.state == "disarmed" && (ctx.modes_mask & 1); }
 inline bool show_away() { return usable() && ctx.state == "disarmed" && (ctx.modes_mask & 2); }
 inline bool show_night() { return usable() && ctx.state == "disarmed" && (ctx.modes_mask & 4); }
+inline bool show_vacation() { return usable() && ctx.state == "disarmed" && (ctx.modes_mask & 8); }
+inline bool show_custom() { return usable() && ctx.state == "disarmed" && (ctx.modes_mask & 16); }
+// More than three buttons in one row: the texts get smaller so they fit.
+inline int mode_count() {
+  return (show_home() ? 1 : 0) + (show_away() ? 1 : 0) + (show_night() ? 1 : 0) + (show_vacation() ? 1 : 0) +
+         (show_custom() ? 1 : 0);
+}
 // After a refused arm that bypassing could solve: one button instead of the tiles, until the message is gone.
 inline bool show_force() { return usable() && ctx.state == "disarmed" && ctx.refused_action != 0 && ctx.can_bypass; }
 inline bool show_disarm() { return usable() && ctx.state != "disarmed" && ctx.can_disarm; }
@@ -612,8 +643,21 @@ inline bool bypass_allowed() { return usable() && ctx.can_bypass; }
 // panel says so), the installer code of the panel unlocks the list and the info. Arming only
 // when Vigil asks for a code to arm, the same as in Home Assistant itself.
 enum Action {
-  NONE = 0, ARM_HOME = 1, ARM_AWAY = 2, ARM_NIGHT = 3, DISARM = 4, BYPASS = 5, UNBYPASS = 6, UNLOCK = 7, INFO = 8
+  NONE = 0, ARM_HOME = 1, ARM_AWAY = 2, ARM_NIGHT = 3, DISARM = 4, BYPASS = 5, UNBYPASS = 6, UNLOCK = 7, INFO = 8,
+  ARM_VACATION = 9, ARM_CUSTOM = 10
 };
+
+inline bool is_arm_action(int a) { return (a >= ARM_HOME && a <= ARM_NIGHT) || a == ARM_VACATION || a == ARM_CUSTOM; }
+// The mode name the vigil_alarm.arm service takes.
+inline const char *arm_mode_name(int a) {
+  switch (a) {
+    case ARM_HOME: return "home";
+    case ARM_AWAY: return "away";
+    case ARM_VACATION: return "vacation";
+    case ARM_CUSTOM: return "custom";
+    default: return "night";
+  }
+}
 
 inline bool needs_code(int action) {
   if (ctx.force) return true;  // bypassing always needs a code, like bypassing a sensor by hand
@@ -634,6 +678,8 @@ inline std::string keypad_title(int action, const std::string &sensor_name) {
     case ARM_HOME: return ctx.force ? tr("force_title") + tr("home") : tr("arm_home");
     case ARM_AWAY: return ctx.force ? tr("force_title") + tr("away") : tr("arm_away");
     case ARM_NIGHT: return ctx.force ? tr("force_title") + tr("night") : tr("arm_night");
+    case ARM_VACATION: return ctx.force ? tr("force_title") + tr("vacation") : tr("arm_vacation");
+    case ARM_CUSTOM: return ctx.force ? tr("force_title") + tr("custom") : tr("arm_custom");
     case DISARM: return tr("disarm");
     case BYPASS: return tr("bypass_title") + sensor_name;
     case UNBYPASS: return tr("unbypass_title") + sensor_name;
@@ -660,7 +706,7 @@ inline bool screen_may_sleep() {
 inline int keypad_route(bool keypad_open, int action) {
   if (!keypad_open) return 0;
   if (action == DISARM) return ctx.state == "disarmed" ? 2 : 0;  // nobody has to disarm any more
-  if ((action == ARM_HOME || action == ARM_AWAY || action == ARM_NIGHT) && ctx.state != "disarmed") return 2;
+  if (is_arm_action(action) && ctx.state != "disarmed") return 2;
   return 0;
 }
 

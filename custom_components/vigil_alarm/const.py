@@ -16,8 +16,11 @@ SUBENTRY_PANEL = "panel"
 
 # Modes available in release 1; the rest of the code derives everything from
 # the enabled modes, so a mode can be added here later.
-MODES = ("home", "away", "night")
-DEFAULT_EXIT_DELAY = {"home": 0, "away": 60, "night": 10}
+MODES = ("home", "away", "night", "vacation", "custom")
+DEFAULT_MODES = ("home", "away", "night")  # what a new installation turns on, and what a stored entry without modes means
+DEFAULT_EXIT_DELAY = {"home": 0, "away": 60, "night": 10, "vacation": 60, "custom": 30}
+# Bits of `modes_mask` in the profile of a panel (read by the ESPHome firmware).
+MODE_BITS = {"home": 1, "away": 2, "night": 4, "vacation": 8, "custom": 16}
 
 CONF_MODES = "modes"
 CONF_EXIT_DELAY = "exit_delay_{mode}"

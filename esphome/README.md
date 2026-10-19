@@ -4,11 +4,11 @@ A touch panel for Vigil Alarm: arm, disarm, see what is open and bypass a sensor
 It runs on an ESP32 with an LVGL display. It is a *dumb terminal*: it decides nothing. What it may do
 and show is set in Vigil (tab *Panels*) and the panel reads that from its **profile**.
 
-Made for ESPHome 2026.9. The hardware file is for the **Guition ESP32-S3-4848S040** (480x480).
+Made for ESPHome 2026.9 (the only version it was checked with: `esphome config` and the simulator ran on 2026.9.1; older versions were not tried, so 2026.9 is the minimum we can name). The hardware file is for the **Guition ESP32-S3-4848S040** (480x480).
 Other displays work with another hardware file, see below.
 
-> **Status (0.5.0):** the logic and the way the panel works with Home Assistant were tested on a real
-> Guition 4848 panel (0.4.0). The new look of 0.4.1 (ring, tabs, icons) and *Bypass and arm* of 0.5.0 are validated with `esphome config`
+> **Status (0.5.4):** the logic and the way the panel works with Home Assistant were tested on a real
+> Guition 4848 panel (0.4.0). The new look of 0.4.1 (ring, tabs, icons) *Bypass and arm* of 0.5.0 and the 0.5.4 additions (buttons for *Vacation* and *Custom*, the last alarm under the state) are validated with `esphome config`
 > and drawn on a computer by LVGL (see `tools/panel-simulator/`), but has not yet run on a real panel:
 > please report what you see, also on other hardware.
 
@@ -48,10 +48,11 @@ For a second panel copy the example file again, with another `name`.
 ![The states of the panel: disarmed, not ready, arming, alarm](../docs/images/touch-panel-states-en.png)
 
 - **Main page**: the state is a ring with an icon, in the colour of the state (green disarmed, amber arming or
-  something open, orange entry delay, blue Home, coral Away, violet Night, red alarm, grey no connection), with the
+  something open, orange entry delay, blue Home, coral Away, violet Night, teal Vacation, pink Custom, red alarm, grey no connection), with the
   state and what is the matter under it. While the exit or entry delay runs the ring is the countdown: the seconds in
-  the middle, the ring running down from full to empty. Under it the buttons: *Home*, *Away* and *Night*, only for the
-  modes this panel may arm in. When the alarm is on, there is one big button: *Disarm* (if the panel may disarm). While
+  the middle, the ring running down from full to empty. Under it the buttons: *Home*, *Away*, *Night* and, if switched on in Vigil, *Vacation* and *Custom* (with five buttons the
+  text is smaller), only for the modes this panel may arm in. Disarmed, the line *Last alarm: 14:03 Front door > Hall* (the
+  alarm memory) is under the state, when this panel may show sensor names. When the alarm is on, there is one big button: *Disarm* (if the panel may disarm). While
   the alarm is going off the screen has a red frame. At the bottom are the tabs *Alarm*, *Sensors* and *Info*.
 - **Keypad**: never opens by itself. During the entry delay and an alarm the main page shows what is going on (entry delay with countdown, or ALARM with the cause), with the *Disarm* button; whoever wants to disarm presses it. Wrong code, a refused
   arming and other errors are shown with the text Home Assistant gives.

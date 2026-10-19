@@ -36,7 +36,7 @@ blueprint:
       default: night
       selector:
         select:
-          options: [away, home, night]
+          options: [away, home, night, vacation, custom]
     code:
       name: Code (optional)
       default: ""
@@ -85,6 +85,22 @@ actions:
       - conditions: "{{ mode == 'night' }}"
         sequence:
           - action: alarm_control_panel.alarm_arm_night
+            continue_on_error: true
+            target:
+              entity_id: !input alarm
+            data:
+              code: "{{ code }}"
+      - conditions: "{{ mode == 'vacation' }}"
+        sequence:
+          - action: alarm_control_panel.alarm_arm_vacation
+            continue_on_error: true
+            target:
+              entity_id: !input alarm
+            data:
+              code: "{{ code }}"
+      - conditions: "{{ mode == 'custom' }}"
+        sequence:
+          - action: alarm_control_panel.alarm_arm_custom_bypass
             continue_on_error: true
             target:
               entity_id: !input alarm

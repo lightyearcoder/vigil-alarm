@@ -120,7 +120,8 @@ class SirenController:
     @callback
     def _begin(self, cause: str, sensor_id: str | None) -> None:
         for siren in self.sirens:
-            if cause in siren.causes:
+            # a 24 hour audible alarm sounds the sirens that sound for an intrusion
+            if cause in siren.causes or (cause == "alarm24" and "intrusion" in siren.causes):
                 self.hass.async_create_task(self._async_start(siren, cause, sensor_id))
 
     @callback

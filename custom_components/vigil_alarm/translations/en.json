@@ -10,6 +10,8 @@
           "exit_delay_home": "Exit delay: home",
           "exit_delay_away": "Exit delay: away",
           "exit_delay_night": "Exit delay: night",
+          "exit_delay_vacation": "Exit delay: vacation",
+          "exit_delay_custom": "Exit delay: custom",
           "default_entry_delay": "Default entry delay",
           "trigger_time": "Alarm duration (0 = until disarmed)",
           "abort_seconds": "Cancel window after the siren (seconds, 0 = off)",
@@ -48,6 +50,8 @@
           "exit_delay_home": "Exit delay: home",
           "exit_delay_away": "Exit delay: away",
           "exit_delay_night": "Exit delay: night",
+          "exit_delay_vacation": "Exit delay: vacation",
+          "exit_delay_custom": "Exit delay: custom",
           "default_entry_delay": "Default entry delay",
           "trigger_time": "Alarm duration (0 = until disarmed)",
           "abort_seconds": "Cancel window after the siren (seconds, 0 = off)",
@@ -93,7 +97,9 @@
       "options": {
         "home": "Home",
         "away": "Away",
-        "night": "Night"
+        "night": "Night",
+        "vacation": "Vacation",
+        "custom": "Custom"
       }
     }
   },
@@ -259,6 +265,9 @@
       },
       "technical_alarm": {
         "name": "Water alarm"
+      },
+      "active_alarm24": {
+        "name": "24-hour alarm"
       }
     },
     "alarm_control_panel": {
@@ -368,7 +377,7 @@
       "fields": {
         "mode": {
           "name": "Mode",
-          "description": "Home, away or night."
+          "description": "Home, away, night, vacation or custom."
         },
         "code": {
           "name": "Code",

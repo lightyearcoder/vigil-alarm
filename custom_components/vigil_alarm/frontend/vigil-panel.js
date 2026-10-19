@@ -24,7 +24,7 @@ const TXT = {
     add: { sensor: "Sensor toevoegen", sensor_group: "Sensorgroep toevoegen", rule: "Bevestigingsregel toevoegen", user: "Gebruiker toevoegen", notification: "Melding toevoegen", siren: "Sirene toevoegen", panel: "Paneel toevoegen" },
     edit: { sensor: "Sensor bewerken", sensor_group: "Sensorgroep bewerken", rule: "Bevestigingsregel bewerken", user: "Gebruiker bewerken", notification: "Melding bewerken", siren: "Sirene bewerken", panel: "Paneel bewerken" },
     intro: {
-      sensor: "Eén melder, zoals een deurcontact, PIR of rookmelder. Bij een inbraaksensor kies je in welke sensorgroepen hij zit. Brand-, gas-, water- en sabotagesensoren bewaken altijd en hebben geen sensorgroep nodig.",
+      sensor: "Eén melder, zoals een deurcontact, PIR of rookmelder. Bij een inbraaksensor kies je in welke sensorgroepen hij zit. Brand-, gas-, water- en sabotagesensoren bewaken altijd en hebben geen sensorgroep nodig. Ook 24 uur hoorbaar (een paniekknop, een schuurdeur: alarm met sirene, ook als het alarm uit staat) en 24 uur stil (een vriezer of lekdetectie: alleen een melding en een regel in het logboek) bewaken altijd.",
       sensor_group: "Een sensorgroep bepaalt in welke modi de sensoren erin bewaken. Bijvoorbeeld: Buitenschil (deuren en ramen) bij Thuis, Weg en Nacht, en Binnen (beweging) alleen bij Weg.",
       rule: "Een alarm volgt pas als het opgegeven aantal verschillende sensoren binnen het tijdvenster afgaat. Handig tegen een vals alarm door één PIR.",
       user: "Personen die het alarm met een code kunnen bedienen. Wie bedient, bepaalt de code; welk apparaat bedient, regel je onder Panelen.",
@@ -74,7 +74,7 @@ const TXT = {
       cardTitle: "Vigil instellen", cardText: "Nog niet alles is ingesteld. De wizard loopt er stap voor stap doorheen; je kunt elke stap overslaan en later terugkomen.", start: "Start de wizard",
       done: "Gedaan", todo: "Nog te doen", optional: "Aanbevolen",
       welcome: { title: "Welkom bij Vigil", text: "In een paar stappen stel je het alarm in: welke standen je gebruikt, welke sensoren meedoen, wie een code krijgt en hoe je een melding krijgt. Er wordt pas iets opgeslagen als je dat in een stap bevestigt, en elke wijziging is terug te zetten via het tabblad Back-up." },
-      modes: { title: "Welke standen gebruik je?", text: "Thuis (je bent er, de buitenschil is bewaakt), Weg (niemand thuis) en Nacht (je slaapt). Kies alleen wat je echt gebruikt; de uitlooptijden kun je later onder Instellingen aanpassen.", save: "Opslaan", saved: "Standen opgeslagen.", none: "Kies minstens één stand." },
+      modes: { title: "Welke standen gebruik je?", text: "Thuis (je bent er, de buitenschil is bewaakt), Weg (niemand thuis), Nacht (je slaapt), Vakantie (lang weg) en Aangepast (een stand voor jezelf, bijvoorbeeld alleen de garage). Kies alleen wat je echt gebruikt; de uitlooptijden kun je later onder Instellingen aanpassen.", save: "Opslaan", saved: "Standen opgeslagen.", none: "Kies minstens één stand." },
       sensors: { title: "Sensoren", text: "Vigil zoekt deur-, raam-, beweging-, rook-, gas- en watersensoren in Home Assistant. Je kiest welke je toevoegt.", have: "{n} sensoren ingesteld.", none: "Nog geen sensoren.", find: "Sensoren zoeken", fresh: "{n} nieuw gevonden." },
       user: { title: "Wie mag het alarm bedienen?", text: "Een gebruiker heeft een code. Je kunt een gebruiker aanmaken van een Home Assistant-persoon of er een met de hand toevoegen.", have: "{n} gebruiker(s) met een code.", none: "Nog geen gebruiker met een code.", fromPerson: "Maak gebruiker van {name}", add: "Gebruiker toevoegen" },
       notification: { title: "Waar wil je een melding krijgen?", text: "Bij een alarm of storing stuurt Vigil een bericht. Een telefoon met de Home Assistant-app is het makkelijkst.", have: "{n} meldingskanaal(en).", none: "Nog geen meldingskanaal.", phone: "Voeg {name} toe", add: "Meldingskanaal toevoegen", added: "{name} is toegevoegd; er is een testmelding gestuurd." },
@@ -116,7 +116,7 @@ const TXT = {
     alarm: "Alarm", problems: "Aandachtspunten", noProblems: "Geen problemen", sensorsNow: "Sensoren nu",
     coverage: "Wat bewaakt elke modus", coverageNothing: "geen sensorgroep: er wordt niets bewaakt", alwaysOn: "Altijd actief", sensorsCount: "{n} sensoren",
     state: { disarmed: "Uit", arming: "Wordt ingeschakeld", armed: "Ingeschakeld", pending: "Inlooptijd", triggered: "ALARM" },
-    mode: { home: "Thuis", away: "Weg", night: "Nacht" },
+    mode: { home: "Thuis", away: "Weg", night: "Nacht", vacation: "Vakantie", custom: "Aangepast" },
     zstatus: { closed: "Dicht", open: "Open", unavailable: "Onbereikbaar", bypassed: "Omzeild", bypassed_at_arm: "Omzeild bij inschakelen", waiting: "Wacht tot dicht" },
     problem: { battery_low: "batterij bijna leeg", unavailable: "niet bereikbaar", on_battery: "geen netstroom" },
     cols: {
@@ -141,7 +141,7 @@ const TXT = {
       light: "Flitslicht", tone_entity: "Toonkeuze-entiteit", volume_entity: "Volume-entiteit", power_entity: "Voedingsmodus-entiteit", power_battery_value: "Waarde bij batterijvoeding",
       tone: "Toon", volume: "Volume", preset: "Voorinstelling",
       device: "Soort apparaat", panel_id: "Naam van het ESPHome-apparaat (paneel-id)", ha_user: "Home Assistant-account (tablet of telefoon)", language: "Taal", can_disarm: "Mag uitschakelen (met code)", can_bypass: "Mag sensoren omzeilen (met code)", can_silence: "Mag dempen en bevestigen", sensor_list: "Sensorlijst tonen", unlock_seconds: "Ontgrendeld blijft (seconden)", watch: "Bewaken of dit paneel bereikbaar is (melding als het wegvalt)", blocked: "Paneel geblokkeerd", "panel.code": "Installateurscode van dit paneel (leeg = geen)", "panel.allowed_modes": "Mag inschakelen in modi (leeg = alle)",
-      "s.modes": "Beschikbare modi", exit_delay_home: "Uitlooptijd thuis", exit_delay_away: "Uitlooptijd weg", exit_delay_night: "Uitlooptijd nacht",
+      "s.modes": "Beschikbare modi", exit_delay_home: "Uitlooptijd thuis", exit_delay_away: "Uitlooptijd weg", exit_delay_night: "Uitlooptijd nacht", exit_delay_vacation: "Uitlooptijd vakantie", exit_delay_custom: "Uitlooptijd aangepast",
       default_entry_delay: "Standaard inlooptijd", trigger_time: "Alarmduur (0 = tot uitschakelen)", abort_seconds: "Annuleervenster na het afgaan van de sirene (seconden, 0 = uit)", chime_entity: "Deurbel: wat laat het geluid horen", chime_seconds: "Deurbel klinkt (seconden)", battery_threshold: "Batterijgrens", backup_versions: "Aantal bewaarde versies", code_arm_required: "Code nodig om in te schakelen", startup_wait_seconds: "Maximaal wachten op sensoren na een herstart (seconden)", lock_tries_1: "Foute codes voor de eerste vergrendeling", lock_wait_1: "Eerste vergrendeling duurt (minuten)", lock_tries_2: "Daarna foute codes voor de tweede vergrendeling", lock_wait_2: "Tweede vergrendeling duurt (minuten)", lock_tries_3: "Daarna foute codes voor de derde vergrendeling", lock_wait_3: "Derde vergrendeling duurt (minuten)", lock_tries_4: "Daarna foute codes voor de permanente vergrendeling", screen_off_seconds: "Scherm uit na (seconden zonder aanraking)", screen_off_on_alarm: "Scherm ook uit laten gaan tijdens een alarm", min_code_length: "Minimale codelengte (cijfers/tekens)", log_retention_days: "Logboek bewaren (dagen)", selftest_interval_days: "Herinnering sirenetest (dagen, 0 = uit)", selftest_siren_seconds: "Sirene klinkt bij test (seconden)", selftest_auto: "Sirene zelf laten klinken voor de test", selftest_window_start: "Test niet voor (uur)", selftest_window_end: "Test niet na (uur)", heartbeat_url: "Hartslag-adres (leeg = uit)", heartbeat_interval_minutes: "Minuten tussen hartslagen",
     },
     helpMore: {
@@ -179,15 +179,15 @@ const TXT = {
     },
     opt: {
       preset: { "": "—", sonoff_snzb_09p_z2m: "Sonoff SNZB-09P (Zigbee2MQTT)" },
-      cls: { intrusion: "Inbraak", fire: "Brand", gas: "Gas", tamper: "Sabotage", water: "Water" },
+      cls: { intrusion: "Inbraak", fire: "Brand", gas: "Gas", tamper: "Sabotage", water: "Water", alarm24: "24 uur hoorbaar", silent24: "24 uur stil" },
       type: { instant: "Direct", delayed: "Vertraagd (inlooptijd)", follower: "Volger" },
       at_arm_open: { bypass: "Omzeilen met melding", wait_clear: "Wachten tot dicht", refuse: "Inschakelen weigeren", pending: "Inlooptijd starten" },
       gas_type: { co: "Koolmonoxide", natural_gas: "Aardgas", lpg: "LPG", other: "Anders" },
       on_unavailable: { default: "Standaard van de klasse", block: "Inschakelen blokkeren", notify: "Alleen melden", trigger: "Alarm geven", bypass: "Toch inschakelen (omzeilen)" },
       categories: { alarm: "Alarm", pending: "Inlooptijd", arming: "In- en uitschakelen", fault: "Storingen en meldingen", technical: "Technische alarmen (water)", duress: "Dwang (stil alarm)" },
       causes: { intrusion: "Inbraak", fire: "Brand", gas: "Gas", tamper: "Sabotage", fault: "Sensorstoring" },
-      cause: { intrusion: "Inbraak", fire: "Brand", gas: "Gas", tamper: "Sabotage" },
-      mode: { home: "Thuis", away: "Weg", night: "Nacht" },
+      cause: { intrusion: "Inbraak", fire: "Brand", gas: "Gas", tamper: "Sabotage", alarm24: "24-uursalarm" },
+      mode: { home: "Thuis", away: "Weg", night: "Nacht", vacation: "Vakantie", custom: "Aangepast" },
       suggest_for: { "": "Geen", contacts: "Deuren en ramen (contacten)", motion: "Beweging" },
       language: { nl: "Nederlands", en: "English" },
       device: { esphome: "ESPHome-paneel (zelfbouwscherm)", account: "Tablet of telefoon met Home Assistant" },
@@ -248,7 +248,7 @@ const TXT = {
     add: { sensor: "Add sensor", sensor_group: "Add sensor group", rule: "Add confirmation rule", user: "Add user", notification: "Add notification", siren: "Add siren", panel: "Add panel" },
     edit: { sensor: "Edit sensor", sensor_group: "Edit sensor group", rule: "Edit confirmation rule", user: "Edit user", notification: "Edit notification", siren: "Edit siren", panel: "Edit panel" },
     intro: {
-      sensor: "One detector, such as a door contact, PIR or smoke detector. For an intrusion sensor you choose which sensor groups it is in. Fire, gas, water and tamper sensors always watch and need no sensor group.",
+      sensor: "One detector, such as a door contact, PIR or smoke detector. For an intrusion sensor you choose which sensor groups it is in. Fire, gas, water and tamper sensors always watch and need no sensor group. So do 24 hours, audible (a panic button, a shed door: an alarm with siren, also while the alarm is off) and 24 hours, silent (a freezer or a leak detector: only a message and a line in the log).",
       sensor_group: "A sensor group decides in which modes the sensors in it are watching. For example: Perimeter (doors and windows) for Home, Away and Night, and Interior (motion) for Away only.",
       rule: "An alarm follows only when the given number of different sensors trigger within the time window. Handy against a false alarm from a single PIR.",
       user: "People who can operate the alarm with a code. The code says who operates; which devices may operate is set under Panels.",
@@ -298,7 +298,7 @@ const TXT = {
       cardTitle: "Set up Vigil", cardText: "Not everything is set up yet. The wizard goes through it step by step; you can skip any step and come back later.", start: "Start the wizard",
       done: "Done", todo: "To do", optional: "Recommended",
       welcome: { title: "Welcome to Vigil", text: "In a few steps you set up the alarm: which modes you use, which sensors take part, who gets a code and how you get a message. Nothing is saved until you confirm it in a step, and every change can be put back from the Backup tab." },
-      modes: { title: "Which modes do you use?", text: "Home (you are in, the outer shell is watched), Away (nobody home) and Night (you are asleep). Choose only what you really use; the exit delays can be changed later under Settings.", save: "Save", saved: "Modes saved.", none: "Choose at least one mode." },
+      modes: { title: "Which modes do you use?", text: "Home (you are in, the outer shell is watched), Away (nobody home), Night (you are asleep), Vacation (away for long) and Custom (a mode of your own, for example only the garage). Choose only what you really use; the exit delays can be changed later under Settings.", save: "Save", saved: "Modes saved.", none: "Choose at least one mode." },
       sensors: { title: "Sensors", text: "Vigil looks for door, window, motion, smoke, gas and water sensors in Home Assistant. You choose which ones to add.", have: "{n} sensors set up.", none: "No sensors yet.", find: "Find sensors", fresh: "{n} newly found." },
       user: { title: "Who may operate the alarm?", text: "A user has a code. You can create a user from a Home Assistant person or add one by hand.", have: "{n} user(s) with a code.", none: "No user with a code yet.", fromPerson: "Make a user of {name}", add: "Add a user" },
       notification: { title: "Where do you want a message?", text: "On an alarm or a fault Vigil sends a message. A phone with the Home Assistant app is the easiest.", have: "{n} notification channel(s).", none: "No notification channel yet.", phone: "Add {name}", add: "Add a notification channel", added: "{name} was added; a test message was sent." },
@@ -340,7 +340,7 @@ const TXT = {
     alarm: "Alarm", problems: "Attention", noProblems: "No problems", sensorsNow: "Sensors now",
     coverage: "What each mode watches", coverageNothing: "no sensor group: nothing is watched", alwaysOn: "Always on", sensorsCount: "{n} sensors",
     state: { disarmed: "Off", arming: "Arming", armed: "Armed", pending: "Entry delay", triggered: "ALARM" },
-    mode: { home: "Home", away: "Away", night: "Night" },
+    mode: { home: "Home", away: "Away", night: "Night", vacation: "Vacation", custom: "Custom" },
     zstatus: { closed: "Closed", open: "Open", unavailable: "Unreachable", bypassed: "Bypassed", bypassed_at_arm: "Bypassed at arming", waiting: "Waiting to close" },
     problem: { battery_low: "battery low", unavailable: "unreachable", on_battery: "no mains power" },
     cols: {
@@ -365,7 +365,7 @@ const TXT = {
       light: "Flash light", tone_entity: "Tone selection entity", volume_entity: "Volume entity", power_entity: "Power mode entity", power_battery_value: "Value when on battery",
       tone: "Tone", volume: "Volume", preset: "Preset",
       device: "Kind of device", panel_id: "Name of the ESPHome device (panel id)", ha_user: "Home Assistant account (tablet or phone)", language: "Language", can_disarm: "May disarm (with a code)", can_bypass: "May bypass sensors (with a code)", can_silence: "May silence and acknowledge", sensor_list: "Show the sensor list", unlock_seconds: "Stays unlocked for (seconds)", watch: "Watch whether this panel is reachable (notify when it drops out)", blocked: "Panel blocked", "panel.code": "Installer code of this panel (empty = none)", "panel.allowed_modes": "May arm in modes (empty = all)",
-      "s.modes": "Available modes", exit_delay_home: "Exit delay home", exit_delay_away: "Exit delay away", exit_delay_night: "Exit delay night",
+      "s.modes": "Available modes", exit_delay_home: "Exit delay home", exit_delay_away: "Exit delay away", exit_delay_night: "Exit delay night", exit_delay_vacation: "Exit delay vacation", exit_delay_custom: "Exit delay custom",
       default_entry_delay: "Default entry delay", trigger_time: "Alarm duration (0 = until disarmed)", abort_seconds: "Cancel window after the siren goes off (seconds, 0 = off)", chime_entity: "Chime: what makes the sound", chime_seconds: "Chime sounds for (seconds)", battery_threshold: "Battery threshold", backup_versions: "Number of versions kept", code_arm_required: "Code required to arm", startup_wait_seconds: "Longest wait for sensors after a restart (seconds)", lock_tries_1: "Wrong codes before the first lock", lock_wait_1: "First lock lasts (minutes)", lock_tries_2: "Then wrong codes before the second lock", lock_wait_2: "Second lock lasts (minutes)", lock_tries_3: "Then wrong codes before the third lock", lock_wait_3: "Third lock lasts (minutes)", lock_tries_4: "Then wrong codes before the permanent lock", screen_off_seconds: "Screen off after (seconds without touch)", screen_off_on_alarm: "Also let the screen go dark during an alarm", log_retention_days: "Keep the log (days)", selftest_interval_days: "Siren test reminder (days, 0 = off)", selftest_siren_seconds: "Siren sounds in a test (seconds)", selftest_auto: "Sound the siren by itself for the test", selftest_window_start: "Not before (hour)", selftest_window_end: "Not after (hour)", heartbeat_url: "Heartbeat address (empty = off)", heartbeat_interval_minutes: "Minutes between heartbeats", min_code_length: "Minimum code length (characters)",
     },
     helpMore: {
@@ -403,15 +403,15 @@ const TXT = {
     },
     opt: {
       preset: { "": "—", sonoff_snzb_09p_z2m: "Sonoff SNZB-09P (Zigbee2MQTT)" },
-      cls: { intrusion: "Intrusion", fire: "Fire", gas: "Gas", tamper: "Tamper", water: "Water" },
+      cls: { intrusion: "Intrusion", fire: "Fire", gas: "Gas", tamper: "Tamper", water: "Water", alarm24: "24 hours, audible", silent24: "24 hours, silent" },
       type: { instant: "Instant", delayed: "Delayed (entry delay)", follower: "Follower" },
       at_arm_open: { bypass: "Bypass with a notice", wait_clear: "Wait until closed", refuse: "Refuse to arm", pending: "Start entry delay" },
       gas_type: { co: "Carbon monoxide", natural_gas: "Natural gas", lpg: "LPG", other: "Other" },
       on_unavailable: { default: "Class default", block: "Block arming", notify: "Notify only", trigger: "Raise alarm", bypass: "Arm anyway (bypass)" },
       categories: { alarm: "Alarm", pending: "Entry delay", arming: "Arming and disarming", fault: "Faults and notices", technical: "Technical alarms (water)", duress: "Duress (silent alarm)" },
       causes: { intrusion: "Intrusion", fire: "Fire", gas: "Gas", tamper: "Tamper", fault: "Sensor fault" },
-      cause: { intrusion: "Intrusion", fire: "Fire", gas: "Gas", tamper: "Tamper" },
-      mode: { home: "Home", away: "Away", night: "Night" },
+      cause: { intrusion: "Intrusion", fire: "Fire", gas: "Gas", tamper: "Tamper", alarm24: "24-hour alarm" },
+      mode: { home: "Home", away: "Away", night: "Night", vacation: "Vacation", custom: "Custom" },
       suggest_for: { "": "None", contacts: "Doors and windows (contacts)", motion: "Motion" },
       language: { nl: "Nederlands", en: "English" },
       device: { esphome: "ESPHome panel (DIY screen)", account: "Tablet or phone running Home Assistant" },
@@ -1142,7 +1142,7 @@ class VigilPanel extends HTMLElement {
 
     if (id === "modes") {
       const have = new Set(this._data.entry.data.modes || []);
-      const boxes = ["home", "away", "night"].map((m) => {
+      const boxes = ["home", "away", "night", "vacation", "custom"].map((m) => {
         const input = el("input", { type: "checkbox", checked: have.has(m), "aria-label": t.mode[m] || m });
         return { m, input, node: el("label", { class: "check" }, input, " ", t.mode[m] || m) };
       });

@@ -33,7 +33,7 @@ def async_dashboard(hass: HomeAssistant, entry: ConfigEntry) -> str:
     alarm = find("alarm_control_panel", eid) or "alarm_control_panel.vigil_alarm"
     alarms = [
         e for e in (
-            *(find("binary_sensor", f"{eid}_active_{cls}") for cls in ("intrusion", "fire", "tamper", "gas")),
+            *(find("binary_sensor", f"{eid}_active_{cls}") for cls in ("intrusion", "fire", "tamper", "gas", "alarm24")),
             find("binary_sensor", f"{eid}_technical"),
         ) if e
     ]
@@ -61,8 +61,12 @@ def async_dashboard(hass: HomeAssistant, entry: ConfigEntry) -> str:
         "{% if state_attr(a, 'open_sensors') %}Open: {{ state_attr(a, 'open_sensors') | join(', ') }}\n{% endif %}\n"
         "{% if state_attr(a, 'bypassed_sensors') %}Bypassed: {{ state_attr(a, 'bypassed_sensors') | join(', ') }}\n{% endif %}\n"
     )
+    manager = getattr(entry, "runtime_data", None)
+    modes = manager.config.modes if manager is not None else ("home", "away", "night")
+    states = [f"arm_{m}" for m in ("home", "away", "night") if m in modes]
+    states += [s for m, s in (("vacation", "arm_vacation"), ("custom", "arm_custom_bypass")) if m in modes]
     cards: list[dict[str, Any]] = [
-        {"type": "alarm-panel", "entity": alarm, "name": "Alarm", "states": ["arm_home", "arm_away", "arm_night"]},
+        {"type": "alarm-panel", "entity": alarm, "name": "Alarm", "states": states},
         {"type": "markdown", "title": "Status", "content": content},
     ]
     if alarms or last_event:

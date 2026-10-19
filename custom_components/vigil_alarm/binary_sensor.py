@@ -15,7 +15,7 @@ async def async_setup_entry(
 ) -> None:
     manager = entry.runtime_data
     # Always all of them, so dashboards and automations never point at an entity that is missing.
-    entities = [VigilAlarmActive(manager, c) for c in ("intrusion", "fire", "gas", "tamper")]
+    entities = [VigilAlarmActive(manager, c) for c in ("intrusion", "fire", "gas", "tamper", "alarm24")]
     entities.append(VigilTechnicalActive(manager))
     async_add_entities(entities)
 

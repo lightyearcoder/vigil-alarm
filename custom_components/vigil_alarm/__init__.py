@@ -15,7 +15,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
-from .const import ATTR_SENSOR, DOMAIN, SERVICE_ACKNOWLEDGE, SERVICE_ARM, SERVICE_BYPASS, SERVICE_CHECK_CODE, SERVICE_DISARM, SERVICE_SILENCE, SERVICE_TEST_NOTIFICATION, SERVICE_TEST_SIREN, SERVICE_UNBYPASS, SERVICE_UNLOCK_PANEL
+from .const import ATTR_SENSOR, DOMAIN, MODES, SERVICE_ACKNOWLEDGE, SERVICE_ARM, SERVICE_BYPASS, SERVICE_CHECK_CODE, SERVICE_DISARM, SERVICE_SILENCE, SERVICE_TEST_NOTIFICATION, SERVICE_TEST_SIREN, SERVICE_UNBYPASS, SERVICE_UNLOCK_PANEL
 from .manager import SIGNAL_UPDATE, VigilManager
 from .migration import async_migrate_entry  # noqa: F401  (Home Assistant looks it up here)
 from homeassistant.helpers.storage import Store
@@ -108,7 +108,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.services.async_register(
         DOMAIN, SERVICE_ARM, arm,
         schema=vol.Schema({
-            vol.Required("mode"): vol.In(["home", "away", "night"]),
+            vol.Required("mode"): vol.In(list(MODES)),
             vol.Optional("code"): cv.string,
             vol.Optional("source"): cv.string,
             vol.Optional("bypass_open", default=False): cv.boolean,

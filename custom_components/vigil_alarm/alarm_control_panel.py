@@ -24,11 +24,15 @@ _FEATURE = {
     "home": AlarmControlPanelEntityFeature.ARM_HOME,
     "away": AlarmControlPanelEntityFeature.ARM_AWAY,
     "night": AlarmControlPanelEntityFeature.ARM_NIGHT,
+    "vacation": AlarmControlPanelEntityFeature.ARM_VACATION,
+    "custom": AlarmControlPanelEntityFeature.ARM_CUSTOM_BYPASS,
 }
 _ARMED = {
     "armed_home": AlarmControlPanelState.ARMED_HOME,
     "armed_away": AlarmControlPanelState.ARMED_AWAY,
     "armed_night": AlarmControlPanelState.ARMED_NIGHT,
+    "armed_vacation": AlarmControlPanelState.ARMED_VACATION,
+    "armed_custom": AlarmControlPanelState.ARMED_CUSTOM_BYPASS,
 }
 _STATE = {
     "disarmed": AlarmControlPanelState.DISARMED,
@@ -97,7 +101,7 @@ class VigilAlarmPanel(AlarmControlPanelEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         snap = self._manager.snapshot()
         return {
-            "mode": snap["mode"],  # home/away/night: the armed mode, or the target while arming
+            "mode": snap["mode"],  # the armed mode (home, away, night, vacation or custom), or the target while arming
             "practice": self._manager.practice.active,  # no siren and no messages while on
             "changed_via": self._manager.changed_via,  # the panel or device (`changed_by` is the user)
             "cause": snap["cause"],
@@ -138,3 +142,9 @@ class VigilAlarmPanel(AlarmControlPanelEntity):
 
     async def async_alarm_arm_night(self, code: str | None = None) -> None:
         await self._manager.async_arm("night", code, user_id=self._user_id)
+
+    async def async_alarm_arm_vacation(self, code: str | None = None) -> None:
+        await self._manager.async_arm("vacation", code, user_id=self._user_id)
+
+    async def async_alarm_arm_custom_bypass(self, code: str | None = None) -> None:
+        await self._manager.async_arm("custom", code, user_id=self._user_id)

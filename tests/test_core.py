@@ -166,6 +166,25 @@ def test_water_sensor_is_valid_and_cannot_be_in_a_confirmation_rule():
         Config.from_dict(_with(sensors={"w": {"cls": "water", "gas_type": "co"}}, rules={}))
 
 
+def test_the_new_zone_types_are_valid_and_alarm24_blocks_arming():
+    data = _with(
+        sensors={"p": {"cls": "alarm24"}, "s": {"cls": "silent24"}, "a": {"cls": "intrusion", "modes": ["away"]}}, rules={}
+    )
+    config = Config.from_dict(data)
+    assert config.sensors["p"].always_on and config.sensors["p"].blocks_arming_when_open
+    assert config.sensors["s"].always_on and not config.sensors["s"].blocks_arming_when_open
+    assert config.sensors["p"].on_unavailable == "block" and config.sensors["s"].on_unavailable == "notify"
+    assert Config.from_dict(config.to_dict()).to_dict() == config.to_dict()
+    data["rules"] = {"g": {"sensors": ["a", "s"]}}
+    with pytest.raises(ConfigError, match="intrusion-only"):
+        Config.from_dict(data)
+
+
+def test_the_new_modes_exist_in_a_config_and_unknown_modes_are_still_refused():
+    config = Config.from_dict(_with(modes={"vacation": {"exit_delay": 5}, "custom": {"exit_delay": 5}}, sensors={}, rules={}))
+    assert set(config.modes) == {"vacation", "custom"}
+
+
 def test_snapshot_exposes_technical_alarms():
     engine = Engine(Config.from_dict(HOUSE))
     engine.set_sensor("water_bath", "open")

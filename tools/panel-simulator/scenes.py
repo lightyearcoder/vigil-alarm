@@ -67,4 +67,9 @@ SCENES = [
      'c.refused_action = vigil::ARM_AWAY;', 0, "", ""),
     # Armed on a panel without a code: the panel is known, the person is not.
     ("armed-away-nocode", "main", 'c.state = "armed_away"; c.mode = "away"; c.changed_via = "vigil-panel-garage";', 0, "", ""),
+    # Release 0.5.4: five modes in one row (smaller text), and the alarm memory under the state.
+    ("disarmed-five-modes", "main", 'c.modes_mask = 31; c.last_alarm = "14:03 Voordeur > Gang > Woonkamer";', 0, "", ""),
+    ("armed-vacation", "main", 'c.state = "armed_vacation"; c.mode = "vacation"; c.changed_by = "Anna";', 0, "", ""),
+    ("armed-custom", "main", 'c.state = "armed_custom_bypass"; c.mode = "custom"; c.changed_by = "Anna";', 0, "", ""),
+    ("triggered-alarm24", "main", 'c.state = "triggered"; c.mode = "away"; c.cause = "alarm24"; c.cause_sensor = "Paniekknop";', 0, "", ""),
 ]

@@ -12,7 +12,10 @@ from typing import Any, Mapping
 
 SCHEMA_VERSION = 1
 
-CLASSES = ("intrusion", "fire", "gas", "tamper", "water")
+# alarm24 and silent24 are the "24 hour" types: always watching, in every state, also while disarmed. alarm24 goes off
+# like a tamper contact (siren and messages); silent24 only reports, like water (messages and the log, no siren).
+CLASSES = ("intrusion", "fire", "gas", "tamper", "water", "alarm24", "silent24")
+TECHNICAL_CLASSES = ("water", "silent24")
 SENSOR_TYPES = ("instant", "delayed", "follower")
 GAS_TYPES = ("co", "natural_gas", "lpg", "other")
 AT_ARM_OPEN = ("wait_clear", "bypass", "refuse", "pending")
@@ -25,6 +28,8 @@ DEFAULT_ON_UNAVAILABLE = {
     "fire": "notify",
     "gas": "notify",
     "water": "notify",
+    "alarm24": "block",
+    "silent24": "notify",
 }
 
 
@@ -50,8 +55,8 @@ class Sensor:
 
     @property
     def blocks_arming_when_open(self) -> bool:
-        """An open fire, gas or tamper sensor is an alarm condition; water is not."""
-        return self.cls in ("fire", "gas", "tamper")
+        """An open fire, gas, tamper or 24 hour audible sensor is an alarm condition; water and silent are not."""
+        return self.cls in ("fire", "gas", "tamper", "alarm24")
 
     def active_in(self, mode: str | None) -> bool:
         """Is this sensor part of the given mode (always-on sensors always are)?"""

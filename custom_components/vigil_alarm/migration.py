@@ -23,7 +23,7 @@ from .const import (
     CONF_SENSOR_MODES,
     CONF_SENSORS,
     CONF_SUGGEST_FOR,
-    MODES,
+    DEFAULT_MODES,
     SUBENTRY_RULE,
     SUBENTRY_SENSOR,
     SUBENTRY_SENSOR_GROUP,
@@ -66,7 +66,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 def _v1_to_v2(hass: HomeAssistant, entry: ConfigEntry) -> None:
     language = hass.config.language
-    enabled = list(entry.data.get(CONF_MODES, MODES))
+    enabled = list(entry.data.get(CONF_MODES, DEFAULT_MODES))
     group_for: dict[tuple[str, ...], str] = {}
     taken = {s.title for s in entry.subentries.values()}
     for sub in list(entry.subentries.values()):

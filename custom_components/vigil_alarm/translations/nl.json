@@ -10,6 +10,8 @@
           "exit_delay_home": "Uitlooptijd: thuis",
           "exit_delay_away": "Uitlooptijd: weg",
           "exit_delay_night": "Uitlooptijd: nacht",
+          "exit_delay_vacation": "Uitlooptijd: vakantie",
+          "exit_delay_custom": "Uitlooptijd: aangepast",
           "default_entry_delay": "Standaard inlooptijd",
           "trigger_time": "Duur alarm (0 = tot uitschakelen)",
           "abort_seconds": "Annuleervenster na de sirene (seconden, 0 = uit)",
@@ -48,6 +50,8 @@
           "exit_delay_home": "Uitlooptijd: thuis",
           "exit_delay_away": "Uitlooptijd: weg",
           "exit_delay_night": "Uitlooptijd: nacht",
+          "exit_delay_vacation": "Uitlooptijd: vakantie",
+          "exit_delay_custom": "Uitlooptijd: aangepast",
           "default_entry_delay": "Standaard inlooptijd",
           "trigger_time": "Duur alarm (0 = tot uitschakelen)",
           "abort_seconds": "Annuleervenster na de sirene (seconden, 0 = uit)",
@@ -93,7 +97,9 @@
       "options": {
         "home": "Thuis",
         "away": "Weg",
-        "night": "Nacht"
+        "night": "Nacht",
+        "vacation": "Vakantie",
+        "custom": "Aangepast"
       }
     }
   },
@@ -259,6 +265,9 @@
       },
       "technical_alarm": {
         "name": "Wateralarm"
+      },
+      "active_alarm24": {
+        "name": "24-uursalarm"
       }
     },
     "alarm_control_panel": {
@@ -368,7 +377,7 @@
       "fields": {
         "mode": {
           "name": "Modus",
-          "description": "Thuis, weg of nacht."
+          "description": "Thuis, weg, nacht, vakantie of aangepast."
         },
         "code": {
           "name": "Code",

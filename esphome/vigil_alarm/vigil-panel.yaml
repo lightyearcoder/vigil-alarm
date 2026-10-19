@@ -22,7 +22,7 @@ substitutions:
   # How long the screen stays on without touch, until Vigil has told the panel (setting "Screen off after" in Vigil).
   backlight_timeout_seconds: "30"
   # The version of this firmware, reported to Vigil.
-  firmware_version: "0.5.0"
+  firmware_version: "0.5.4"
   # The width of the cards and buttons: the screen minus a margin on both sides.
   content_w: ${ screen_width | int - 24 }
   # The sizes follow the screen: the ring is a bit over a quarter of the shortest side, the keys fill the keypad.
@@ -63,6 +63,8 @@ font:
       - "\U000F06A1"
       - "\U000F0A48"
       - "\U000F0594"
+      - "\U000F001D"
+      - "\U000F062E"
       - "\U000F0FC7"
       - "\U000F0341"
       - "\U000F11D9"
@@ -284,6 +286,15 @@ text_sensor:
     on_value:
       then:
         - lambda: vigil::ctx.open_now = vigil::clean(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_last_alarm
+    entity_id: ${profile_entity}
+    attribute: last_alarm_text
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.last_alarm = vigil::clean(x);
         - script.execute: refresh_ui
   - platform: homeassistant
     id: ha_profile_open_mode
@@ -568,9 +579,15 @@ script:
           hide(id(btn_home), !show_home());
           hide(id(btn_away), !show_away());
           hide(id(btn_night), !show_night());
+          hide(id(btn_vacation), !show_vacation());
+          hide(id(btn_custom), !show_custom());
+          // Up to three buttons: the large text; more: smaller, so five fit in the row.
+          const lv_font_t *mode_font = mode_count() > 3 ? &lv_font_montserrat_14 : &lv_font_montserrat_20;
+          for (lv_obj_t *l : {id(lbl_btn_home), id(lbl_btn_away), id(lbl_btn_night), id(lbl_btn_vacation), id(lbl_btn_custom)})
+            lv_obj_set_style_text_font(l, mode_font, 0);
           hide(id(btn_disarm), !show_disarm());
           hide(id(btn_force), !show_force());
-          hide(id(row_modes), show_force() || !(show_home() || show_away() || show_night()));
+          hide(id(row_modes), show_force() || mode_count() == 0);
           // The alarm: a red frame, and everything a little red
           hide(id(alarm_frame), !alarm);
           const uint32_t ground = alarm ? 0x1A0F12 : 0x0E1116;
@@ -619,6 +636,12 @@ script:
       - lvgl.label.update:
           id: lbl_btn_night
           text: !lambda 'return vigil::tr("night");'
+      - lvgl.label.update:
+          id: lbl_btn_vacation
+          text: !lambda 'return vigil::tr("vacation");'
+      - lvgl.label.update:
+          id: lbl_btn_custom
+          text: !lambda 'return vigil::tr("custom");'
       - lvgl.label.update:
           id: lbl_btn_disarm
           text: !lambda 'return vigil::tr("disarm");'
@@ -877,13 +900,13 @@ script:
     then:
       - if:
           condition:
-            lambda: return id(pending_action) >= vigil::ARM_HOME && id(pending_action) <= vigil::ARM_NIGHT;
+            lambda: return vigil::is_arm_action(id(pending_action));
           then:
             - homeassistant.action:
                 action: vigil_alarm.arm
                 data:
                   mode: !lambda |-
-                    return id(pending_action) == vigil::ARM_HOME ? "home" : (id(pending_action) == vigil::ARM_AWAY ? "away" : "night");
+                    return std::string(vigil::arm_mode_name(id(pending_action)));
                   source: ${name}
                   code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
                   bypass_open: !lambda 'return std::string(vigil::ctx.force ? "true" : "false");'
@@ -1016,7 +1039,7 @@ script:
       # "Bypass and arm" in place of the tiles (not when that was just tried).
       - lambda: |-
           vigil::Refusal refusal = vigil::parse_refusal(message);
-          const bool arm = id(pending_action) >= vigil::ARM_HOME && id(pending_action) <= vigil::ARM_NIGHT;
+          const bool arm = vigil::is_arm_action(id(pending_action));
           if (arm && !refusal.text.empty()) {
             vigil::ctx.message = refusal.text;
             vigil::ctx.refused_action = (refusal.forceable && !vigil::ctx.force) ? id(pending_action) : 0;
@@ -1492,6 +1515,98 @@ lvgl:
                     - label:
                         id: lbl_btn_night
                         text: "Night"
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+              - button:
+                  id: btn_vacation
+                  height: 100%
+                  flex_grow: 1
+                  radius: 22
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - lambda: |-
+                          id(pending_action) = vigil::ARM_VACATION;
+                          id(pending_entity) = "";
+                      - script.execute: start_action
+                  layout:
+                    type: flex
+                    flex_flow: COLUMN
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_row: 6
+                  widgets:
+                    - obj:
+                        width: 44
+                        height: 44
+                        radius: 22
+                        bg_color: 0x14282B
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                        widgets:
+                          - label:
+                              text: "\U000F001D"
+                              text_font: font_icons_30
+                              text_color: 0x4FC3C9
+                              align: CENTER
+                    - label:
+                        id: lbl_btn_vacation
+                        text: "Vacation"
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+              - button:
+                  id: btn_custom
+                  height: 100%
+                  flex_grow: 1
+                  radius: 22
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - lambda: |-
+                          id(pending_action) = vigil::ARM_CUSTOM;
+                          id(pending_entity) = "";
+                      - script.execute: start_action
+                  layout:
+                    type: flex
+                    flex_flow: COLUMN
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_row: 6
+                  widgets:
+                    - obj:
+                        width: 44
+                        height: 44
+                        radius: 22
+                        bg_color: 0x2D1E33
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                        widgets:
+                          - label:
+                              text: "\U000F062E"
+                              text_font: font_icons_30
+                              text_color: 0xD58BDD
+                              align: CENTER
+                    - label:
+                        id: lbl_btn_custom
+                        text: "Custom"
                         text_font: montserrat_20
                         text_color: 0xE8ECF2
         # Disarm: one wide button of its own, as wide as the card above it

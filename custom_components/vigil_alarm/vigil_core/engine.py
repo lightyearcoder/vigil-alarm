@@ -11,10 +11,10 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from .model import Config, Sensor
+from .model import TECHNICAL_CLASSES, Config, Sensor
 
 # Higher wins when a trigger is already running.
-PRIORITY = {"fire": 5, "gas": 4, "tamper": 3, "fault": 2, "intrusion": 1}
+PRIORITY = {"fire": 5, "gas": 4, "tamper": 3, "alarm24": 3, "fault": 2, "intrusion": 1}
 
 SENSOR_VALUES = ("closed", "open", "unavailable")
 TIMER_KINDS = ("exit", "entry", "trigger_end", "rule")
@@ -487,7 +487,10 @@ class Engine:
         if sensor.cls == "tamper":
             self._trigger("tamper", sensor.id)
             return
-        if sensor.cls == "water":
+        if sensor.cls == "alarm24":
+            self._trigger("alarm24", sensor.id)
+            return
+        if sensor.cls in TECHNICAL_CLASSES:
             self._technical_start(sensor)
             return
 
@@ -515,7 +518,7 @@ class Engine:
 
     def _technical_resume(self, sensor: Sensor) -> None:
         """A bypass was lifted while the sensor still reports the problem."""
-        if sensor.cls == "water" and self._rt[sensor.id].value == "open":
+        if sensor.cls in TECHNICAL_CLASSES and self._rt[sensor.id].value == "open":
             self._technical_start(sensor)
 
     def _rule_fault(self, sensor: Sensor) -> None:

@@ -23,11 +23,11 @@
 
 ## What it does
 
-- **One alarm entity** (`alarm_control_panel`) with the modes *Home*, *Away* and *Night*, exit
+- **One alarm entity** (`alarm_control_panel`) with the modes *Home*, *Away* and *Night* (and, if you switch them on, *Vacation* and *Custom*), exit
   and entry delays per mode, and codes per user. It works with the standard alarm panel card,
   the tile card and the Companion app.
 - **Sensors with a class:** intrusion (instant, delayed or follower), fire, gas, water and
-  tamper. Fire and gas always watch; intrusion sensors watch in the modes of their
+  tamper, and the 24-hour types (audible and silent). Fire, gas and the 24-hour types always watch; intrusion sensors watch in the modes of their
   **sensor groups**, for example *Perimeter* (doors and windows) in every mode and *Interior*
   (motion) in Away only.
 - **Confirmation rules:** an alarm only follows when, say, two different motion sensors trigger

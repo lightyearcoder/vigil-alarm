@@ -104,5 +104,19 @@ int main(){
   ctx.can_bypass=false; assert(!show_force()); ctx.can_bypass=true; ctx.state="armed_away"; assert(!show_force()); ctx.state="disarmed";
   ctx.code_arm_required=false; assert(!needs_code(ARM_AWAY)); ctx.force=true; assert(needs_code(ARM_AWAY));  // bypassing always asks a code
   assert(keypad_title(ARM_AWAY,"")=="Bypass and arm: Away"); ctx.force=false; assert(keypad_title(ARM_AWAY,"")=="Arm away");
+  // 0.5.4: vacation and custom modes, the alarm memory line
+  ctx=Context(); ctx.lang=EN; ctx.ha_connected=true; ctx.profile_version=PROFILE_VERSION; ctx.sensor_list=LIST_ALWAYS; ctx.state="disarmed";
+  ctx.modes_mask=31; assert(show_home()&&show_away()&&show_night()&&show_vacation()&&show_custom()&&mode_count()==5);
+  ctx.modes_mask=8; assert(!show_home()&&show_vacation()&&!show_custom()&&mode_count()==1);
+  ctx.modes_mask=7; assert(!show_vacation()&&!show_custom()&&mode_count()==3);
+  ctx.state="armed_vacation"; ctx.mode="vacation"; assert(is_armed_state(ctx.state)&&state_color()==COL_VACATION&&state_icon()==VIGIL_ICON_VACATION&&state_title()=="Vacation");
+  ctx.state="armed_custom_bypass"; ctx.mode="custom"; assert(is_armed_state(ctx.state)&&state_color()==COL_CUSTOM&&state_icon()==VIGIL_ICON_CUSTOM&&state_title()=="Custom");
+  assert(is_arm_action(ARM_VACATION)&&is_arm_action(ARM_CUSTOM)&&is_arm_action(ARM_HOME)&&!is_arm_action(DISARM)&&!is_arm_action(INFO));
+  assert(std::string(arm_mode_name(ARM_VACATION))=="vacation"&&std::string(arm_mode_name(ARM_CUSTOM))=="custom"&&std::string(arm_mode_name(ARM_NIGHT))=="night");
+  assert(keypad_route(true, ARM_VACATION)==2 && keypad_route(true, ARM_CUSTOM)==2);  // armed in the meantime: the keypad closes
+  ctx.state="disarmed"; assert(keypad_route(true, ARM_CUSTOM)==0);
+  ctx.last_alarm="14:03 Front door > Hall"; assert(state_sub(0).find("Last alarm: 14:03 Front door > Hall")!=std::string::npos);
+  ctx.last_alarm=""; assert(state_sub(0).find("Last alarm")==std::string::npos);
+  ctx.state="triggered"; ctx.cause="alarm24"; assert(cause_text()=="24-hour alarm"); ctx.cause="silent24"; assert(cause_text()=="Silent alarm");
   std::cout << "ok\n";
 }

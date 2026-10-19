@@ -23,6 +23,8 @@ views:
           - arm_home
           - arm_away
           - arm_night
+          - arm_vacation
+          - arm_custom_bypass
 
       - type: markdown
         title: Status

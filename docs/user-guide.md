@@ -25,8 +25,8 @@ This guide explains how to set up and use Vigil Alarm. For installation see the
 
 | Part | What it is |
 |---|---|
-| **Alarm** | One `alarm_control_panel` entity. States: *disarmed*, *arming* (exit delay), *armed home / away / night*, *pending* (entry delay) and *triggered*. |
-| **Modes** | *Home* (you are in, the outside is guarded), *Away* (nobody home, everything is guarded) and *Night* (you sleep, the outside is guarded). Each mode has its own exit delay. |
+| **Alarm** | One `alarm_control_panel` entity. States: *disarmed*, *arming* (exit delay), *armed home / away / night / vacation / custom*, *pending* (entry delay) and *triggered*. |
+| **Modes** | *Home* (you are in, the outside is guarded), *Away* (nobody home, everything is guarded) and *Night* (you sleep, the outside is guarded). Two more modes can be switched on under *Settings*: *Vacation* (away for a longer time) and *Custom* (your own choice; Home Assistant calls it *custom bypass*). Each mode has its own exit delay, and sensor groups can be active in them like in the other modes. Vigil does not decide what they mean: you choose which sensor groups watch in them. |
 | **Sensor** | One detector, linked to a `binary_sensor` (on = open or alarm). Every sensor has a **class**. |
 | **Sensor group** | Decides **in which modes** the intrusion sensors in it are watching. |
 | **Confirmation rule** | Optional. An alarm only follows when several different sensors trigger within a time window. |
@@ -43,6 +43,8 @@ This guide explains how to set up and use Vigil Alarm. For installation see the
 | **Gas** | Always watches. Choose the kind of gas: carbon monoxide, natural gas, LPG or other. With natural gas or LPG Vigil never switches the flash light, because of the risk of sparks. |
 | **Tamper** | Always watches. A tamper contact that opens raises an alarm. |
 | **Water** | Always watches. A *technical alarm*: it never changes the alarm state, it only publishes events and an "alarm active" sensor. |
+| **24 hours audible** | Always watches, in every state, also with the alarm off, like a tamper contact: when it opens the siren sounds and the alarm channels get a message (cause *24-hour alarm*). For a panic button or a safe. While it is open, arming is refused. |
+| **24 hours silent** | Always watches, no siren: a *technical alarm* like water, with a message to the *Technical* channels and a line in the log. For a silent panic button or a freezer that gets too warm. |
 
 ### Sensor groups: which sensors watch in which mode
 
@@ -157,7 +159,7 @@ Bypass leaves one sensor out until the alarm is switched off (or until you un-by
 
 ![The states of the touch panel: disarmed, not ready, arming, alarm](images/touch-panel-states-en.png)
 
-The panel and the Vigil card share one look. The state is a **ring with an icon** in the colour of the state: green when disarmed and everything is closed, amber when something is open or while arming, orange during the entry delay, blue, coral and violet for home, away and night, red for an alarm (with a red frame around the screen), grey without a connection. During the exit and entry delay the ring is the **countdown**: the seconds in the middle, the ring running down to empty; when it reaches zero the alarm is on. Under the ring you see the buttons for the modes this panel may use, or one big *Disarm* button when the alarm is on. At the bottom are the tabs *Alarm*, *Sensors* (with the number of open sensors) and *Info*; the keypad has no tabs.
+The panel and the Vigil card share one look. The state is a **ring with an icon** in the colour of the state: green when disarmed and everything is closed, amber when something is open or while arming, orange during the entry delay, blue, coral, violet, teal and pink for home, away, night, vacation and custom, red for an alarm (with a red frame around the screen), grey without a connection. During the exit and entry delay the ring is the **countdown**: the seconds in the middle, the ring running down to empty; when it reaches zero the alarm is on. Under the ring you see the buttons for the modes this panel may use, or one big *Disarm* button when the alarm is on. At the bottom are the tabs *Alarm*, *Sensors* (with the number of open sensors) and *Info*; the keypad has no tabs.
 
 ![The other pages: keypad, sensors, info, armed away](images/touch-panel-pages-en.png)
 

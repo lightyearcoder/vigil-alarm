@@ -63,6 +63,7 @@ from .const import (
     DEFAULT_EXIT_DELAY,
     DOMAIN,
     MODES,
+    DEFAULT_MODES,
 )
 from .editing import CONF_NAME, _TrialEntry
 from .manager import build_config
@@ -102,7 +103,7 @@ def _heartbeat_ok(user_input: dict[str, Any]) -> bool:
 
 def _entry_schema(d: dict[str, Any]) -> vol.Schema:
     fields: dict[Any, Any] = {
-        vol.Required(CONF_MODES, default=d.get(CONF_MODES, list(MODES))): _select(
+        vol.Required(CONF_MODES, default=d.get(CONF_MODES, list(DEFAULT_MODES))): _select(
             list(MODES), "mode", multiple=True
         ),
     }

@@ -4,7 +4,7 @@ arm:
       required: true
       selector:
         select:
-          options: [home, away, night]
+          options: [home, away, night, vacation, custom]
           translation_key: mode
     code:
       required: false

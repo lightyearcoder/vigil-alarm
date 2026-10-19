@@ -23,9 +23,11 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_call_later, async_track_time_interval
 from homeassistant.helpers.storage import Store
+from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_ALLOWED_MODES,
+    MODE_BITS,
     CONF_BLOCKED,
     CONF_CAN_BYPASS,
     CONF_CAN_DISARM,
@@ -181,13 +183,14 @@ class PanelRegistry:
             "has_admin_code": bool(d.get("code_hash")),
             "unlocked": unlocked,
             "kind": "tablet" if d.get(CONF_HA_USER) else "esphome",
-            "modes_mask": 0 if blocked else sum({"home": 1, "away": 2, "night": 4}[m] for m in self.allowed_modes(panel)),
+            "modes_mask": 0 if blocked else sum(MODE_BITS[m] for m in self.allowed_modes(panel)),
             "open_count": len(snap["open_now"]),
             "faults_count": len(snap["faults"]),
             "problems_count": len(snap["problems"]),
             "open_now_text": "",
             "open_sensors_text": "",
             "faults_text": "",
+            "last_alarm_text": "",
             "sensors": "",
         }
         if visible:
@@ -195,7 +198,21 @@ class PanelRegistry:
             profile["open_sensors_text"] = ", ".join(snap["open_sensors"])
             profile["faults_text"] = ", ".join(snap["faults"])
             profile["sensors"] = snap["panel_sensors"]
+            profile["last_alarm_text"] = self._last_alarm_text(profile["language"])
         return profile
+
+    def _last_alarm_text(self, language: str) -> str:
+        """The alarm memory in one line for the panel: "14:03 Front door > Hall > Living room". Names of sensors,
+        so it follows the same rule as the sensor list."""
+        view = self.manager.alarmmemory.view()
+        if not view or not view.get("started"):
+            return ""
+        when = dt_util.as_local(dt_util.utc_from_timestamp(view["started"])).strftime("%H:%M")
+        names = [str(step["name"]) for step in view["path"] if step.get("name")]
+        text = when + (" " + " > ".join(names[-4:]) if names else (" " + str(view["sensor_name"]) if view.get("sensor_name") else ""))
+        if view.get("cancelled"):
+            text += " (vals alarm)" if language == "nl" else " (false alarm)"
+        return text
 
     # ------------------------------------------------------------ enforcement
     def check(self, source: str | None, action: str, mode: str | None = None) -> Item | None:

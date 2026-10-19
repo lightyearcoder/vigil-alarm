@@ -26,7 +26,7 @@ Deze handleiding legt uit hoe je Vigil Alarm instelt en gebruikt. Voor het insta
 | Onderdeel | Wat het is |
 |---|---|
 | **Alarm** | Eén `alarm_control_panel`-entiteit. Standen: *uitgeschakeld*, *bezig met inschakelen* (uitlooptijd), *ingeschakeld thuis / weg / nacht*, *inlooptijd* en *alarm*. |
-| **Modi** | *Thuis* (jij bent thuis, de buitenkant wordt bewaakt), *Weg* (niemand thuis, alles wordt bewaakt) en *Nacht* (je slaapt, de buitenkant wordt bewaakt). Elke modus heeft een eigen uitlooptijd. |
+| **Modi** | *Thuis* (jij bent thuis, de buitenkant wordt bewaakt), *Weg* (niemand thuis, alles wordt bewaakt) en *Nacht* (je slaapt, de buitenkant wordt bewaakt). Twee modi kun je extra aanzetten onder *Instellingen*: *Vakantie* (langere tijd weg) en *Aangepast* (eigen keuze; Home Assistant noemt het *custom bypass*). Elke modus heeft een eigen uitlooptijd en sensorgroepen kunnen er net zo in actief zijn als in de andere modi. Wat ze betekenen bepaal je zelf: je kiest welke sensorgroepen erin bewaken. |
 | **Sensor** | Eén melder, gekoppeld aan een `binary_sensor` (aan = open of alarm). Elke sensor heeft een **klasse**. |
 | **Sensorgroep** | Bepaalt **in welke modi** de inbraaksensoren erin bewaken. |
 | **Bevestigingsregel** | Optioneel. Er volgt pas een alarm als meerdere verschillende sensoren binnen een tijdvenster aanslaan. |
@@ -42,6 +42,8 @@ Deze handleiding legt uit hoe je Vigil Alarm instelt en gebruikt. Voor het insta
 | **Brand** | Bewaakt altijd, in elke modus, ook als het alarm uit staat. Meteen alarm. |
 | **Gas** | Bewaakt altijd. Kies de soort gas: koolmonoxide, aardgas, lpg of overig. Bij aardgas en lpg schakelt Vigil nooit het flitslicht, vanwege het risico op vonken. |
 | **Sabotage** | Bewaakt altijd. Een sabotagecontact dat opengaat geeft alarm. |
+| **24 uur hoorbaar** | Bewaakt altijd, in elke toestand, ook als het alarm uit staat, net als een sabotagecontact: als hij opengaat loopt de sirene en krijgen de alarmkanalen een melding (oorzaak *24-uursalarm*). Voor een paniekknop of een kluis. Zolang hij open is, weigert inschakelen. |
+| **24 uur stil** | Bewaakt altijd, zonder sirene: een *technisch alarm* zoals water, met een melding naar de *Technisch*-kanalen en een regel in het logboek. Voor een stille paniekknop of een diepvries die te warm wordt. |
 | **Water** | Bewaakt altijd. Een *technisch alarm*: het verandert de alarmstand nooit, maar geeft alleen events en een "alarm actief"-sensor. |
 
 ### Sensorgroepen: welke sensoren bewaken in welke modus

@@ -17,11 +17,11 @@
 
   const TEXTS = {
     nl: {
-      disarmed: "Uitgeschakeld", armed_home: "Thuis", armed_away: "Weg", armed_night: "Nacht", arming: "Inschakelen",
+      disarmed: "Uitgeschakeld", armed_home: "Thuis", armed_away: "Weg", armed_night: "Nacht", armed_vacation: "Vakantie", armed_custom_bypass: "Aangepast", arming: "Inschakelen",
       pending: "Binnenkomst", triggered: "ALARM", offline: "Geen verbinding",
-      home: "Thuis", away: "Weg", night: "Nacht", disarm: "Uitschakelen",
-      home_sub: "Iemand is thuis", away_sub: "Iedereen vertrekt", night_sub: "Naar bed", countdown: "Nog {n} seconden",
-      arm_home: "Thuis inschakelen", arm_away: "Weg inschakelen", arm_night: "Nacht inschakelen",
+      home: "Thuis", away: "Weg", night: "Nacht", vacation: "Vakantie", custom: "Aangepast", disarm: "Uitschakelen",
+      home_sub: "Iemand is thuis", away_sub: "Iedereen vertrekt", night_sub: "Naar bed", vacation_sub: "Langere tijd weg", custom_sub: "Eigen keuze", countdown: "Nog {n} seconden",
+      arm_home: "Thuis inschakelen", arm_away: "Weg inschakelen", arm_night: "Nacht inschakelen", arm_vacation: "Vakantie inschakelen", arm_custom: "Aangepast inschakelen",
       bypass: "Omzeilen", unbypass: "Herstellen", bypass_title: "Omzeilen: ", unbypass_title: "Herstellen: ",
       unlock_title: "Sensoren bekijken", admin_code: "Installateurscode", hint_user: "Voer uw gebruikerscode in", hint_admin: "Voer de installateurscode in", sensors: "Sensoren", sensors_open: "open",
       all_closed: "Alles dicht", open: "Open: ", problems: "Storingen: ", leave_in: "Verlaat het huis: ",
@@ -34,15 +34,15 @@
       old_profile: "Update Vigil of de kaart", no_admin_code: "Stel eerst een installateurscode in Vigil in",
       st_closed: "dicht", st_open: "open", st_waiting: "wacht", st_bypassed: "omzeild",
       st_bypassed_at_arm: "omzeild bij inschakelen", st_unavailable: "storing",
-      cause_intrusion: "Inbraak", cause_fire: "Brand", cause_gas: "Gas", cause_tamper: "Sabotage",
+      cause_intrusion: "Inbraak", cause_fire: "Brand", cause_gas: "Gas", cause_tamper: "Sabotage", cause_alarm24: "24-uursalarm", cause_silent24: "Stil alarm", cause_water: "Water",
       cause_fault: "Sensorstoring", ok: "OK", delete: "Wis", code: "Code",
     },
     en: {
-      disarmed: "Disarmed", armed_home: "Home", armed_away: "Away", armed_night: "Night", arming: "Arming",
+      disarmed: "Disarmed", armed_home: "Home", armed_away: "Away", armed_night: "Night", armed_vacation: "Vacation", armed_custom_bypass: "Custom", arming: "Arming",
       pending: "Entry", triggered: "ALARM", offline: "No connection",
-      home: "Home", away: "Away", night: "Night", disarm: "Disarm",
-      home_sub: "Someone is home", away_sub: "Everyone is leaving", night_sub: "Going to bed", countdown: "{n} seconds left",
-      arm_home: "Arm home", arm_away: "Arm away", arm_night: "Arm night",
+      home: "Home", away: "Away", night: "Night", vacation: "Vacation", custom: "Custom", disarm: "Disarm",
+      home_sub: "Someone is home", away_sub: "Everyone is leaving", night_sub: "Going to bed", vacation_sub: "Away for a longer time", custom_sub: "Your own choice", countdown: "{n} seconds left",
+      arm_home: "Arm home", arm_away: "Arm away", arm_night: "Arm night", arm_vacation: "Arm vacation", arm_custom: "Arm custom",
       bypass: "Bypass", unbypass: "Restore", bypass_title: "Bypass: ", unbypass_title: "Restore: ",
       unlock_title: "View sensors", admin_code: "Installer code", hint_user: "Enter your user code", hint_admin: "Enter the installer code", sensors: "Sensors", sensors_open: "open",
       all_closed: "All closed", open: "Open: ", problems: "Problems: ", leave_in: "Leave within: ",
@@ -55,7 +55,7 @@
       old_profile: "Update Vigil or the card", no_admin_code: "Set an installer code in Vigil first",
       st_closed: "closed", st_open: "open", st_waiting: "waiting", st_bypassed: "bypassed",
       st_bypassed_at_arm: "bypassed at arming", st_unavailable: "fault",
-      cause_intrusion: "Intrusion", cause_fire: "Fire", cause_gas: "Gas", cause_tamper: "Tamper",
+      cause_intrusion: "Intrusion", cause_fire: "Fire", cause_gas: "Gas", cause_tamper: "Tamper", cause_alarm24: "24-hour alarm", cause_silent24: "Silent alarm", cause_water: "Water",
       cause_fault: "Sensor fault", ok: "OK", delete: "Delete", code: "Code",
     },
   };
@@ -63,9 +63,9 @@
   // One colour per situation; the same set is used by the ESPHome panel (vigil_panel.h). Modes have their own colour.
   const COLORS = {
     none: "#8A94A6", disarmed: "#4CCB8F", notready: "#F2B84B", armed_home: "#5B9BF0", armed_away: "#FF8A5B",
-    armed_night: "#9A8CF2", arming: "#F2B84B", pending: "#FF9F43", triggered: "#F0605D",
+    armed_night: "#9A8CF2", armed_vacation: "#4FC3C9", armed_custom_bypass: "#D58BDD", arming: "#F2B84B", pending: "#FF9F43", triggered: "#F0605D",
   };
-  const MODE_COLORS = { home: "#5B9BF0", away: "#FF8A5B", night: "#9A8CF2" };
+  const MODE_COLORS = { home: "#5B9BF0", away: "#FF8A5B", night: "#9A8CF2", vacation: "#4FC3C9", custom: "#D58BDD" };
   const ICONS = {
     shield: '<path d="M12 3l7 3v5c0 5-3.2 8.2-7 10-3.8-1.8-7-5-7-10V6z"/>',
     check: '<path d="M9 12l2.2 2.2L15.5 10"/>',
@@ -296,7 +296,7 @@
       const out = [];
       const add = (t) => t && out.push(t);
       const left = this._secondsLeft();
-      const armed = ["armed_home", "armed_away", "armed_night"].includes(s);
+      const armed = ["armed_home", "armed_away", "armed_night", "armed_vacation", "armed_custom_bypass"].includes(s);
       if (s === "disarmed") {
         if (Number(p.open_count) > 0) add(this.tr("open") + p.open_count);
         else add(this.tr("all_closed"));
@@ -340,7 +340,7 @@
       const p = this._p();
       if (!this._usable() || this._alarm().state !== "disarmed") return [];
       const mask = Number(p.modes_mask) || 0;
-      return [["home", 1], ["away", 2], ["night", 4]].filter(([, bit]) => mask & bit).map(([m]) => m);
+      return [["home", 1], ["away", 2], ["night", 4], ["vacation", 8], ["custom", 16]].filter(([, bit]) => mask & bit).map(([m]) => m);
     }
     _showDisarm() {
       return this._usable() && this._alarm().state !== "disarmed" && !!this._p().can_disarm;
@@ -493,7 +493,7 @@
 
     _keypadTitle(k) {
       switch (k.action) {
-        case "arm_home": case "arm_away": case "arm_night": case "disarm": return this.tr(k.action);
+        case "arm_home": case "arm_away": case "arm_night": case "arm_vacation": case "arm_custom": case "disarm": return this.tr(k.action);
         case "bypass": return this.tr("bypass_title") + (k.name || "");
         case "unbypass": return this.tr("unbypass_title") + (k.name || "");
         case "unlock": return this.tr("unlock_title");
@@ -550,7 +550,7 @@
         const a = this._alarm();
         const state = this._usable() && a ? a.state : "";
         const glyph = kind === "triggered" ? "siren" : kind === "notready" ? "shield" : state === "armed_home" ? "home"
-          : state === "armed_away" ? "exit" : state === "armed_night" ? "moon" : "shield";
+          : state === "armed_away" ? "exit" : state === "armed_night" ? "moon" : state === "armed_vacation" ? "exit" : state === "armed_custom_bypass" ? "grid" : "shield";
         const extra = kind === "disarmed" ? ICONS.check : kind === "notready" ? ICONS.alert : "";
         inner = `<g transform="translate(33 33) scale(2.75)" class="ring-icon">${ICONS[glyph]}${extra}</g>`;
       }
@@ -570,7 +570,7 @@
 
     _sideHtml() {
       const modes = this._modeButtons().map((m) => `<button class="mode" style="--m:${MODE_COLORS[m]}" data-act="arm" data-mode="${m}">
-          <span class="dot">${icon(m === "away" ? "exit" : m === "home" ? "home" : "moon", 26)}</span>
+          <span class="dot">${icon(m === "away" || m === "vacation" ? "exit" : m === "home" ? "home" : m === "custom" ? "grid" : "moon", 26)}</span>
           <span class="mt"><span class="mn">${esc(this.tr(m))}</span><span class="ms">${esc(this.tr(m + "_sub"))}</span></span>
           ${icon("chevron", 22, 'class="chev"')}</button>`).join("");
       const disarm = this._showDisarm()

@@ -54,6 +54,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         "cause.tamper": "tamper",
         "cause.fault": "sensor fault",
         "cause.water": "water",
+        "cause.alarm24": "24-hour alarm",
+        "cause.silent24": "silent",
         "reason.not_disarmed": "not disarmed",
         "reason.alarm_condition": "an alarm condition is open",
         "reason.sensor_unavailable": "a sensor is unavailable",
@@ -108,6 +110,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         "cause.tamper": "sabotage",
         "cause.fault": "sensorstoring",
         "cause.water": "water",
+        "cause.alarm24": "24-uursalarm",
+        "cause.silent24": "stil ",
         "reason.not_disarmed": "niet uitgeschakeld",
         "reason.alarm_condition": "een alarmmelding staat open",
         "reason.sensor_unavailable": "een sensor is onbereikbaar",
@@ -131,8 +135,8 @@ def render(language: str, key: str, **params: Any) -> str:
 
 
 MODE_NAMES = {
-    "en": {"home": "Home", "away": "Away", "night": "Night"},
-    "nl": {"home": "Thuis", "away": "Weg", "night": "Nacht"},
+    "en": {"home": "Home", "away": "Away", "night": "Night", "vacation": "Vacation", "custom": "Custom"},
+    "nl": {"home": "Thuis", "away": "Weg", "night": "Nacht", "vacation": "Vakantie", "custom": "Aangepast"},
 }
 
 

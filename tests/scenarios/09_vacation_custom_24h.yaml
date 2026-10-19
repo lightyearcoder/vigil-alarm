@@ -1,0 +1,109 @@
+# Release 0.5.4: the modes vacation and custom, and the zone types alarm24 (always on, sounds) and
+# silent24 (always on, no siren: a technical alarm like water).
+configs:
+  five:
+    version: 1
+    default_entry_delay: 30
+    modes:
+      home: {exit_delay: 0}
+      away: {exit_delay: 60}
+      night: {exit_delay: 10}
+      vacation: {exit_delay: 60}
+      custom: {exit_delay: 30}
+    sensors:
+      front_door:
+        cls: intrusion
+        type: delayed
+        modes: [away, vacation]
+        entry_delay: 30
+        at_arm_open: bypass
+      study_window:
+        cls: intrusion
+        type: instant
+        modes: [custom]
+        at_arm_open: bypass
+      panic_button:
+        cls: alarm24
+      silent_button:
+        cls: silent24
+scenarios:
+  - name: vacation_arms_and_watches_only_its_own_sensors
+    config: five
+    steps:
+      - {t: 0, arm: vacation, user: anna}
+      - {t: 61, expect: {state: armed_vacation}}
+      - {t: 70, sensor: study_window, value: open}
+      - {t: 71, expect: {state: armed_vacation}}
+      - {t: 80, sensor: front_door, value: open}
+      - {t: 81, expect: {state: pending}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 80, type: pending_started}
+
+  - name: custom_has_its_own_exit_delay_and_sensors
+    config: five
+    steps:
+      - {t: 0, arm: custom, user: anna}
+      - {t: 29, expect: {state: arming}}
+      - {t: 31, expect: {state: armed_custom}}
+      - {t: 40, sensor: front_door, value: open}
+      - {t: 41, expect: {state: armed_custom}}
+      - {t: 50, sensor: study_window, value: open}
+      - {t: 51, expect: {state: triggered, cause: intrusion, cause_sensor: study_window}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 30, type: armed}
+      - {t: 50, type: triggered, cause: intrusion}
+
+  - name: alarm24_sounds_while_disarmed
+    config: five
+    steps:
+      - {t: 10, sensor: panic_button, value: open}
+      - {t: 11, expect: {state: triggered, cause: alarm24, cause_sensor: panic_button}}
+      - {t: 20, disarm: anna}
+      - {t: 21, expect: {state: disarmed}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 10, type: triggered, cause: alarm24, sensor: panic_button}
+      - {t: 20, type: trigger_ended}
+      - {t: 20, type: disarmed}
+
+  - name: alarm24_is_a_cause_in_every_mode
+    config: five
+    steps:
+      - {t: 0, arm: custom}
+      - {t: 40, sensor: panic_button, value: open}
+      - {t: 41, expect: {state: triggered, cause: alarm24}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 30, type: armed}
+      - {t: 40, type: triggered, cause: alarm24}
+
+  - name: silent24_is_a_technical_alarm_without_a_siren_state
+    config: five
+    steps:
+      - {t: 10, sensor: silent_button, value: open}
+      - {t: 11, expect: {state: disarmed, cause: null, technical_alarms: [silent_button]}}
+      - {t: 50, sensor: silent_button, value: closed}
+      - {t: 51, expect: {technical_alarms: []}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 10, type: technical_alarm_started, sensor: silent_button, cause: silent24}
+      - {t: 50, type: technical_alarm_ended, sensor: silent_button, cause: silent24, reason: closed}
+
+  - name: silent24_does_not_trigger_when_armed
+    config: five
+    steps:
+      - {t: 0, arm: vacation}
+      - {t: 61, expect: {state: armed_vacation}}
+      - {t: 70, sensor: silent_button, value: open}
+      - {t: 71, expect: {state: armed_vacation, cause: null, technical_alarms: [silent_button]}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: arming_started}
+      - {t: 60, type: armed}
+      - {t: 70, type: technical_alarm_started, sensor: silent_button}

@@ -74,6 +74,7 @@ from .const import (
     CONF_SENSORS,
     DOMAIN,
     MODES,
+    DEFAULT_MODES,
     NOTIFICATION_CATEGORIES,
     SIREN_CAUSES,
     PROFILE_CAUSES,
@@ -299,7 +300,7 @@ def _snapshot(hass: HomeAssistant, entry: ConfigEntry, users: list[Any]) -> dict
             kind: [_public(s) for s in items_of(entry).values() if s.subentry_type == TYPE_OF[kind]]
             for kind in KINDS
         },
-        "forms": form_schema(list(entry.data.get(CONF_MODES, MODES))),
+        "forms": form_schema(list(entry.data.get(CONF_MODES, DEFAULT_MODES))),
         "settings_form": settings_schema(),
         "sensor_entities": sensor_entities,
         "alarm_entity": registry.async_get_entity_id("alarm_control_panel", DOMAIN, entry.entry_id),

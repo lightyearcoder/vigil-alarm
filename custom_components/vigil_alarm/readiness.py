@@ -22,7 +22,7 @@ from .const import (
     CONF_SUGGEST_FOR,
     CONF_TAMPER_ENTITY,
     CONF_COMPANION_OF,
-    MODES,
+    DEFAULT_MODES,
     SUBENTRY_NOTIFICATION,
     SUBENTRY_SENSOR,
     SUBENTRY_SENSOR_GROUP,
@@ -62,7 +62,7 @@ def async_readiness(hass: HomeAssistant, entry: ConfigEntry) -> list[dict[str, A
     of = lambda kind: [i for i in items.values() if i.subentry_type == kind]  # noqa: E731
     sensors = [s for s in of(SUBENTRY_SENSOR) if not s.data.get(CONF_COMPANION_OF)]
     groups = of(SUBENTRY_SENSOR_GROUP)
-    modes = list(entry.data.get(CONF_MODES, MODES))
+    modes = list(entry.data.get(CONF_MODES, DEFAULT_MODES))
     found: list[dict[str, Any]] = []
 
     if not sensors:
@@ -139,7 +139,7 @@ def async_create_default_groups(hass: HomeAssistant, entry: ConfigEntry) -> list
         if i.subentry_type == SUBENTRY_SENSOR_GROUP
     }
     taken = {i.title for i in items.values() if i.subentry_type == SUBENTRY_SENSOR_GROUP}
-    modes = list(entry.data.get(CONF_MODES, MODES))
+    modes = list(entry.data.get(CONF_MODES, DEFAULT_MODES))
     wanted = {"contacts": modes, "motion": ["away"] if "away" in modes else modes}
     working = stored_items(entry)
     created: list[str] = []
