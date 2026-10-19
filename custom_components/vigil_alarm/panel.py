@@ -98,6 +98,7 @@ from .dashboard import async_dashboard
 from .discovery import async_discover, async_report
 from .readiness import async_create_default_groups, async_readiness, phone_services, phone_title
 from .editing import EditError, _TrialEntry, async_prepare, companion_id, notify_services, plan_companion
+from .languages import LANGUAGES, language_of
 from .manager import SIGNAL_UPDATE, build_config
 from .presets import siren_preset_ids, siren_suggestion
 from .vigil_core import ConfigError
@@ -106,7 +107,7 @@ from .vigil_core.model import AT_ARM_OPEN, CLASSES, GAS_TYPES, ON_UNAVAILABLE, S
 def _event_labels() -> dict[str, dict[str, str]]:
     """The names of the event types, in each language, from the translation files."""
     out: dict[str, dict[str, str]] = {}
-    for lang in ("en", "nl"):
+    for lang in LANGUAGES:
         data = json.loads((Path(__file__).parent / "translations" / f"{lang}.json").read_text(encoding="utf-8"))
         out[lang] = data["entity"]["event"]["alarm_events"]["state_attributes"]["event_type"]["state"]
     return out
@@ -193,7 +194,7 @@ def form_schema(modes: list[str]) -> dict[str, list[dict[str, Any]]]:
             _f("device", "select", options=["esphome", "account"], default="esphome", required=True),
             _f("panel_id", "text", required=True, show_if={"device": ["esphome"]}),
             _f("ha_user", "ha_user", required=True, show_if={"device": ["account"]}),
-            _f("language", "select", options=["nl", "en"], default="en"),
+            _f("language", "select", options=list(LANGUAGES), default="en"),
             _f("allowed_modes", "multiselect", options=modes, default=[]),
             _f("can_disarm", "boolean", default=True),
             _f("can_bypass", "boolean", default=True),
@@ -510,7 +511,7 @@ def ws_log(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg:
         _no_entry(connection, msg)
         return
     log = entry.runtime_data.eventlog
-    language = "nl" if str(hass.config.language).startswith("nl") else "en"
+    language = language_of(hass.config.language)
     connection.send_result(
         msg["id"],
         {"entries": log.recent(msg["limit"]), "total": len(log.entries), "labels": _EVENT_LABELS[language], "retention_days": log.retention_days},

@@ -58,6 +58,90 @@
       cause_intrusion: "Intrusion", cause_fire: "Fire", cause_gas: "Gas", cause_tamper: "Tamper", cause_alarm24: "24-hour alarm", cause_silent24: "Silent alarm", cause_water: "Water",
       cause_fault: "Sensor fault", ok: "OK", delete: "Delete", code: "Code",
     },
+    de: {
+      disarmed: "Unscharf", armed_home: "Zuhause", armed_away: "Abwesend", armed_night: "Nacht", armed_vacation: "Urlaub", armed_custom_bypass: "Benutzerdef.", arming: "Wird scharf",
+      pending: "Eintritt", triggered: "ALARM", offline: "Keine Verbindung",
+      home: "Zuhause", away: "Abwesend", night: "Nacht", vacation: "Urlaub", custom: "Benutzerdef.", disarm: "Unscharf schalten",
+      home_sub: "Jemand ist zuhause", away_sub: "Alle gehen weg", night_sub: "Schlafen gehen", vacation_sub: "Länger weg", custom_sub: "Eigene Wahl", countdown: "Noch {n} Sekunden",
+      arm_home: "Zuhause scharf schalten", arm_away: "Abwesend scharf schalten", arm_night: "Nacht scharf schalten", arm_vacation: "Urlaub scharf schalten", arm_custom: "Benutzerdef. scharf schalten",
+      bypass: "Überbrücken", unbypass: "Wiederherstellen", bypass_title: "Überbrücken: ", unbypass_title: "Wiederherstellen: ",
+      unlock_title: "Sensoren ansehen", admin_code: "Installateurcode", hint_user: "Benutzercode eingeben", hint_admin: "Installateurcode eingeben", sensors: "Sensoren", sensors_open: "offen",
+      all_closed: "Alles geschlossen", open: "Offen: ", problems: "Störungen: ", leave_in: "Haus verlassen innerhalb: ",
+      enter_in: "Unscharf schalten innerhalb: ", by: "Durch ", by_unknown: "Durch: unbekannt", via: "Über ", practice: "Übungsmodus: keine Sirene, keine Meldungen", last_alarm: "Letzter Alarm: ", bypassed_now: "Überbrückt: ", false_alarm: " (Fehlalarm)", no_sensors: "Keine Sensoren", back: "Zurück", cancel: "Abbrechen",
+      blocked: "Gesperrt", blocked_sub: "Dieses Bedienteil ist in Vigil gesperrt",
+      refuse_alarm_condition: "Scharfschalten nicht möglich: {s} ist offen", refuse_sensor_unavailable: "Scharfschalten nicht möglich: {s} antwortet nicht", refuse_sensor_open: "Scharfschalten nicht möglich: {s} ist offen", refuse_not_disarmed: "Die Alarmanlage ist bereits scharf", force: "Überbrücken und scharf schalten",
+      not_linked: "Nicht verknüpft",
+      not_linked_sub: "Füge dieses Home-Assistant-Konto in Vigil unter Bedienteile hinzu. Konto: ",
+      err_invalid_code: "Ungültiger Code", err_code_required: "Code erforderlich", err_locked_pre: "Zu viele falsche Codes. Erneut versuchen in ", err_locked_post: " Min", err_locked: "Zu viele falsche Codes. Bitte kurz warten", err_locked_permanent: "Zu viele falsche Codes. Gesperrt, bis ein Administrator in Vigil entsperrt", err_bypass_tamper: "Sabotage darf nicht überbrückt oder wiederhergestellt werden", err_bypass: "Sensoren dürfen nicht überbrückt oder wiederhergestellt werden", err_blocked: "Dieses Bedienteil ist gesperrt", err_not_allowed: "Dieses Bedienteil darf das nicht", err_no_installer_code: "Lege zuerst in Vigil einen Installateurcode fest", err_not_bypassable: "Dieser Sensor kann nicht überbrückt werden",
+      old_profile: "Vigil oder die Karte aktualisieren", no_admin_code: "Lege zuerst in Vigil einen Installateurcode fest",
+      st_closed: "geschlossen", st_open: "offen", st_waiting: "wartet", st_bypassed: "überbrückt",
+      st_bypassed_at_arm: "beim Scharfschalten überbrückt", st_unavailable: "Störung",
+      cause_intrusion: "Einbruch", cause_fire: "Feuer", cause_gas: "Gas", cause_tamper: "Sabotage", cause_alarm24: "24-Stunden-Alarm", cause_silent24: "Stiller Alarm", cause_water: "Wasser",
+      cause_fault: "Sensorstörung", ok: "OK", delete: "Löschen", code: "Code",
+    },
+    fr: {
+      disarmed: "Désactivé", armed_home: "Maison", armed_away: "Absent", armed_night: "Nuit", armed_vacation: "Vacances", armed_custom_bypass: "Personnalisé", arming: "Activation",
+      pending: "Entrée", triggered: "ALARME", offline: "Pas de connexion",
+      home: "Maison", away: "Absent", night: "Nuit", vacation: "Vacances", custom: "Personnalisé", disarm: "Désactiver",
+      home_sub: "Quelqu'un est à la maison", away_sub: "Tout le monde part", night_sub: "On va se coucher", vacation_sub: "Absent longtemps", custom_sub: "Votre choix", countdown: "Encore {n} secondes",
+      arm_home: "Activer Maison", arm_away: "Activer Absent", arm_night: "Activer Nuit", arm_vacation: "Activer Vacances", arm_custom: "Activer Personnalisé",
+      bypass: "Inhiber", unbypass: "Rétablir", bypass_title: "Inhiber : ", unbypass_title: "Rétablir : ",
+      unlock_title: "Voir les capteurs", admin_code: "Code installateur", hint_user: "Saisissez votre code utilisateur", hint_admin: "Saisissez le code installateur", sensors: "Capteurs", sensors_open: "ouvert",
+      all_closed: "Tout est fermé", open: "Ouvert : ", problems: "Défauts : ", leave_in: "Quittez la maison dans : ",
+      enter_in: "Désactivez dans : ", by: "Par ", by_unknown: "Par : inconnu", via: "Via ", practice: "Mode d'entraînement : pas de sirène, pas de messages", last_alarm: "Dernière alarme : ", bypassed_now: "Inhibé : ", false_alarm: " (fausse alarme)", no_sensors: "Aucun capteur", back: "Retour", cancel: "Annuler",
+      blocked: "Bloqué", blocked_sub: "Ce clavier est bloqué dans Vigil",
+      refuse_alarm_condition: "Activation impossible : {s} est ouvert", refuse_sensor_unavailable: "Activation impossible : {s} ne répond pas", refuse_sensor_open: "Activation impossible : {s} est ouvert", refuse_not_disarmed: "L'alarme est déjà activée", force: "Inhiber et activer",
+      not_linked: "Non associé",
+      not_linked_sub: "Ajoutez ce compte Home Assistant dans Vigil sous Claviers. Compte : ",
+      err_invalid_code: "Code invalide", err_code_required: "Un code est requis", err_locked_pre: "Trop de codes erronés. Réessayez dans ", err_locked_post: " min", err_locked: "Trop de codes erronés. Patientez un instant", err_locked_permanent: "Trop de codes erronés. Verrouillé jusqu'à ce qu'un administrateur le déverrouille dans Vigil", err_bypass_tamper: "Vous ne pouvez pas inhiber ou rétablir le sabotage", err_bypass: "Vous ne pouvez pas inhiber ou rétablir les capteurs", err_blocked: "Ce clavier est bloqué", err_not_allowed: "Ce clavier n'a pas le droit de faire cela", err_no_installer_code: "Définissez d'abord un code installateur dans Vigil", err_not_bypassable: "Ce capteur ne peut pas être inhibé",
+      old_profile: "Mettez à jour Vigil ou la carte", no_admin_code: "Définissez d'abord un code installateur dans Vigil",
+      st_closed: "fermé", st_open: "ouvert", st_waiting: "en attente", st_bypassed: "inhibé",
+      st_bypassed_at_arm: "inhibé à l'activation", st_unavailable: "défaut",
+      cause_intrusion: "Intrusion", cause_fire: "Incendie", cause_gas: "Gaz", cause_tamper: "Sabotage", cause_alarm24: "Alarme 24 h", cause_silent24: "Alarme silencieuse", cause_water: "Eau",
+      cause_fault: "Défaut de capteur", ok: "OK", delete: "Effacer", code: "Code",
+    },
+    it: {
+      disarmed: "Disinserito", armed_home: "Casa", armed_away: "Fuori casa", armed_night: "Notte", armed_vacation: "Vacanza", armed_custom_bypass: "Personalizzato", arming: "Inserimento",
+      pending: "Ingresso", triggered: "ALLARME", offline: "Nessuna connessione",
+      home: "Casa", away: "Fuori casa", night: "Notte", vacation: "Vacanza", custom: "Personalizzato", disarm: "Disinserisci",
+      home_sub: "Qualcuno è in casa", away_sub: "Escono tutti", night_sub: "Si va a letto", vacation_sub: "Via per un periodo lungo", custom_sub: "La tua scelta", countdown: "Ancora {n} secondi",
+      arm_home: "Inserisci Casa", arm_away: "Inserisci Fuori casa", arm_night: "Inserisci Notte", arm_vacation: "Inserisci Vacanza", arm_custom: "Inserisci Personalizzato",
+      bypass: "Escludi", unbypass: "Ripristina", bypass_title: "Escludi: ", unbypass_title: "Ripristina: ",
+      unlock_title: "Vedi sensori", admin_code: "Codice installatore", hint_user: "Inserisci il tuo codice utente", hint_admin: "Inserisci il codice installatore", sensors: "Sensori", sensors_open: "aperto",
+      all_closed: "Tutto chiuso", open: "Aperto: ", problems: "Guasti: ", leave_in: "Esci di casa entro: ",
+      enter_in: "Disinserisci entro: ", by: "Da ", by_unknown: "Da: sconosciuto", via: "Tramite ", practice: "Modalità prova: nessuna sirena, nessuna notifica", last_alarm: "Ultimo allarme: ", bypassed_now: "Escluso: ", false_alarm: " (falso allarme)", no_sensors: "Nessun sensore", back: "Indietro", cancel: "Annulla",
+      blocked: "Bloccato", blocked_sub: "Questo pannello è bloccato in Vigil",
+      refuse_alarm_condition: "Impossibile inserire: {s} è aperto", refuse_sensor_unavailable: "Impossibile inserire: {s} non risponde", refuse_sensor_open: "Impossibile inserire: {s} è aperto", refuse_not_disarmed: "L'allarme è già inserito", force: "Escludi e inserisci",
+      not_linked: "Non collegato",
+      not_linked_sub: "Aggiungi questo account Home Assistant in Vigil sotto Pannelli. Account: ",
+      err_invalid_code: "Codice non valido", err_code_required: "È richiesto un codice", err_locked_pre: "Troppi codici errati. Riprova tra ", err_locked_post: " min", err_locked: "Troppi codici errati. Attendi un momento", err_locked_permanent: "Troppi codici errati. Bloccato finché un amministratore non lo sblocca in Vigil", err_bypass_tamper: "Non puoi escludere o ripristinare la manomissione", err_bypass: "Non puoi escludere o ripristinare i sensori", err_blocked: "Questo pannello è bloccato", err_not_allowed: "Questo pannello non può farlo", err_no_installer_code: "Imposta prima un codice installatore in Vigil", err_not_bypassable: "Questo sensore non può essere escluso",
+      old_profile: "Aggiorna Vigil o la scheda", no_admin_code: "Imposta prima un codice installatore in Vigil",
+      st_closed: "chiuso", st_open: "aperto", st_waiting: "in attesa", st_bypassed: "escluso",
+      st_bypassed_at_arm: "escluso all'inserimento", st_unavailable: "guasto",
+      cause_intrusion: "Intrusione", cause_fire: "Incendio", cause_gas: "Gas", cause_tamper: "Manomissione", cause_alarm24: "Allarme 24 ore", cause_silent24: "Allarme silenzioso", cause_water: "Acqua",
+      cause_fault: "Guasto sensore", ok: "OK", delete: "Cancella", code: "Codice",
+    },
+    es: {
+      disarmed: "Desactivada", armed_home: "En casa", armed_away: "Fuera", armed_night: "Noche", armed_vacation: "Vacaciones", armed_custom_bypass: "Personalizado", arming: "Activando",
+      pending: "Entrada", triggered: "ALARMA", offline: "Sin conexión",
+      home: "En casa", away: "Fuera", night: "Noche", vacation: "Vacaciones", custom: "Personalizado", disarm: "Desactivar",
+      home_sub: "Hay alguien en casa", away_sub: "Todos se van", night_sub: "A dormir", vacation_sub: "Fuera por mucho tiempo", custom_sub: "A tu elección", countdown: "Quedan {n} segundos",
+      arm_home: "Activar En casa", arm_away: "Activar Fuera", arm_night: "Activar Noche", arm_vacation: "Activar Vacaciones", arm_custom: "Activar Personalizado",
+      bypass: "Anular", unbypass: "Restablecer", bypass_title: "Anular: ", unbypass_title: "Restablecer: ",
+      unlock_title: "Ver sensores", admin_code: "Código de instalador", hint_user: "Introduce tu código de usuario", hint_admin: "Introduce el código de instalador", sensors: "Sensores", sensors_open: "abierto",
+      all_closed: "Todo cerrado", open: "Abierto: ", problems: "Averías: ", leave_in: "Sal de casa antes de: ",
+      enter_in: "Desactiva antes de: ", by: "Por ", by_unknown: "Por: desconocido", via: "Mediante ", practice: "Modo de prueba: sin sirena, sin avisos", last_alarm: "Última alarma: ", bypassed_now: "Anulado: ", false_alarm: " (falsa alarma)", no_sensors: "Sin sensores", back: "Atrás", cancel: "Cancelar",
+      blocked: "Bloqueado", blocked_sub: "Este panel está bloqueado en Vigil",
+      refuse_alarm_condition: "No se puede activar: {s} está abierto", refuse_sensor_unavailable: "No se puede activar: {s} no responde", refuse_sensor_open: "No se puede activar: {s} está abierto", refuse_not_disarmed: "La alarma ya está activada", force: "Anular y activar",
+      not_linked: "Sin vincular",
+      not_linked_sub: "Añade esta cuenta de Home Assistant en Vigil, en Paneles. Cuenta: ",
+      err_invalid_code: "Código no válido", err_code_required: "Se necesita un código", err_locked_pre: "Demasiados códigos erróneos. Inténtalo de nuevo en ", err_locked_post: " min", err_locked: "Demasiados códigos erróneos. Espera un momento", err_locked_permanent: "Demasiados códigos erróneos. Bloqueado hasta que un administrador lo desbloquee en Vigil", err_bypass_tamper: "No puedes anular ni restablecer el sabotaje", err_bypass: "No puedes anular ni restablecer sensores", err_blocked: "Este panel está bloqueado", err_not_allowed: "Este panel no puede hacer esto", err_no_installer_code: "Define primero un código de instalador en Vigil", err_not_bypassable: "Este sensor no se puede anular",
+      old_profile: "Actualiza Vigil o la tarjeta", no_admin_code: "Define primero un código de instalador en Vigil",
+      st_closed: "cerrado", st_open: "abierto", st_waiting: "en espera", st_bypassed: "anulado",
+      st_bypassed_at_arm: "anulado al activar", st_unavailable: "avería",
+      cause_intrusion: "Intrusión", cause_fire: "Incendio", cause_gas: "Gas", cause_tamper: "Sabotaje", cause_alarm24: "Alarma 24 h", cause_silent24: "Alarma silenciosa", cause_water: "Agua",
+      cause_fault: "Avería de sensor", ok: "OK", delete: "Borrar", code: "Código",
+    },
   };
   const PROFILE_VERSION = 1;
   // One colour per situation; the same set is used by the ESPHome panel (vigil_panel.h). Modes have their own colour.
@@ -85,17 +169,19 @@
   const icon = (name, size = 24, extra = "") =>
     `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true" ${extra}>${ICONS[name] || ""}</svg>`;
   const RING = 364.4;  // circumference of the ring (radius 58)
+  // Phrases from Home Assistant's own answer (translations/<language>.json, exceptions); one list per language, in the order
+  // en, nl, de, fr, it, es. The first row that matches wins, so the more specific phrases come first (a test checks the phrases).
   const ERROR_ROWS = [
-    ["until an administrator", "totdat een beheerder", "err_locked_permanent"],
-    ["Too many wrong codes", "Te veel foute codes", "err_locked"],
-    ["Invalid code", "Ongeldige code", "err_invalid_code"],
-    ["A code is required", "Een code is vereist", "err_code_required"],
-    ["right to bypass tamper", "recht om sabotage te omzeilen", "err_bypass_tamper"],
-    ["right to bypass", "recht om te omzeilen", "err_bypass"],
-    ["is blocked", "is geblokkeerd", "err_blocked"],
-    ["may not do this", "mag dit niet", "err_not_allowed"],
-    ["no installer code", "geen installateurscode", "err_no_installer_code"],
-    ["cannot be bypassed", "kan niet worden omzeild", "err_not_bypassable"],
+    [["until an administrator", "totdat een beheerder", "bis ein Administrator", "jusqu'à ce qu'un administrateur", "finché un amministratore", "hasta que un administrador"], "err_locked_permanent"],
+    [["Too many wrong codes", "Te veel foute codes", "Zu viele falsche Codes", "Trop de codes erronés", "Troppi codici errati", "Demasiados códigos erróneos"], "err_locked"],
+    [["Invalid code", "Ongeldige code", "Ungültiger Code", "Code invalide", "Codice non valido", "Código no válido"], "err_invalid_code"],
+    [["A code is required", "Een code is vereist", "Ein Code ist erforderlich", "Un code est requis", "È richiesto un codice", "Se necesita un código"], "err_code_required"],
+    [["right to bypass tamper", "recht om sabotage te omzeilen", "Sabotage überbrücken", "droit d'inhiber le sabotage", "diritto di escludere la manomissione", "derecho de anular sabotaje"], "err_bypass_tamper"],
+    [["right to bypass", "recht om te omzeilen", "Überbrückungsrecht", "droit d'inhiber", "diritto di esclusione", "derecho de anular"], "err_bypass"],
+    [["is blocked", "is geblokkeerd", "ist gesperrt", "est bloqué", "è bloccato", "está bloqueado"], "err_blocked"],
+    [["may not do this", "mag dit niet", "darf das nicht", "n'a pas le droit de faire cela", "non può farlo", "no puede hacer esto"], "err_not_allowed"],
+    [["no installer code", "geen installateurscode", "keinen Installateurcode", "pas de code installateur", "non ha un codice installatore", "no tiene código de instalador"], "err_no_installer_code"],
+    [["cannot be bypassed", "kan niet worden omzeild", "kann nicht überbrückt werden", "ne peut pas être inhibé", "non può essere escluso", "no se puede anular"], "err_not_bypassable"],
   ];
   const ADMIN_ACTIONS = [];  // the sensor list opens with any user code (or the installer code); the card has no info page
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -188,8 +274,8 @@
     // -------------------------------------------------------------------- texts
     _lang() {
       const p = this._p();
-      const l = (p && p.language) || (this._hass && this._hass.language) || "en";
-      return String(l).startsWith("nl") ? "nl" : "en";
+      const l = String((p && p.language) || (this._hass && this._hass.language) || "en").toLowerCase().slice(0, 2);
+      return TEXTS[l] ? l : "en";
     }
     tr(key) {
       return (TEXTS[this._lang()] || TEXTS.en)[key] || key;
@@ -435,15 +521,15 @@
     }
     // "Arming refused: alarm_condition (Front door)." in the language of the panel.
     _refusal(raw) {
-      const m = raw.match(/(?:Arming refused|Inschakelen geweigerd): (\w+) \(([^)]*)\)/);
+      const m = raw.match(/(?:Arming refused|Inschakelen geweigerd|Scharfschalten abgelehnt|Activation refusée|Inserimento rifiutato|Activación rechazada)\s?: (\w+) \(([^)]*)\)/);
       if (!m || !this.tr("refuse_" + m[1])) return null;
       return { reason: m[1], text: this.tr("refuse_" + m[1]).replace("{s}", m[2] || "?") };
     }
     // Home Assistant answers in its own language; Vigil's known refusals are shown in the language of the panel.
-    // The phrases must keep matching translations/en.json and nl.json (a test checks that).
+    // The phrases must keep matching translations/*.json (a test checks that).
     _localError(raw) {
-      for (const [en, nl, key] of ERROR_ROWS) {
-        if (!raw.includes(en) && !raw.includes(nl)) continue;
+      for (const [phrases, key] of ERROR_ROWS) {
+        if (!phrases.some((x) => raw.includes(x))) continue;
         if (key !== "err_locked") return this.tr(key);
         const m = raw.match(/\d+/);
         return m ? this.tr("err_locked_pre") + m[0] + this.tr("err_locked_post") : this.tr("err_locked");

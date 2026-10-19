@@ -50,6 +50,7 @@ from .const import (
 )
 from .credentials import code_matches, find_user_by_code
 from .items import Item, items_of
+from .languages import FALSE_ALARM, language_of
 
 if TYPE_CHECKING:
     from .manager import VigilManager
@@ -147,8 +148,7 @@ class PanelRegistry:
         return [m for m in modes if m in chosen]
 
     def language(self, panel: Item) -> str:
-        lang = panel.data.get(CONF_LANGUAGE) or str(self.hass.config.language)
-        return "nl" if lang.startswith("nl") else "en"
+        return language_of(panel.data.get(CONF_LANGUAGE) or self.hass.config.language)
 
     def unlocked(self, panel_id: str) -> bool:
         return panel_id in self._unlocked
@@ -213,7 +213,7 @@ class PanelRegistry:
         names = [str(step["name"]) for step in view["path"] if step.get("name")]
         text = when + (" " + " > ".join(names[-4:]) if names else (" " + str(view["sensor_name"]) if view.get("sensor_name") else ""))
         if view.get("cancelled"):
-            text += " (vals alarm)" if language == "nl" else " (false alarm)"
+            text += f" ({FALSE_ALARM[language_of(language)]})"
         return text
 
     # ------------------------------------------------------------ enforcement

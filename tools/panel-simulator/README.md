@@ -6,7 +6,7 @@ change to the look is checked before it goes to the hardware.
 
 ```
 tools/panel-simulator/run.sh                    # 480x480, Dutch  -> tools/panel-simulator/out/*.png
-tools/panel-simulator/run.sh out --lang en      # English
+tools/panel-simulator/run.sh out --lang en      # English (also de, fr, it, es)
 tools/panel-simulator/run.sh out --size 800x480 # a wider screen (the layout follows the size)
 ```
 

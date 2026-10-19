@@ -1,10 +1,13 @@
-"""The texts a person can see: every error code the code can raise must have text, in both languages."""
+"""The texts a person can see: every error code the code can raise must have text, in every language."""
 
 from __future__ import annotations
 
 import json
 import pathlib
 import re
+import string
+
+from custom_components.vigil_alarm.languages import LANGUAGES
 
 ROOT = pathlib.Path(__file__).parents[2] / "custom_components" / "vigil_alarm"
 
@@ -17,10 +20,51 @@ def _keys(node, prefix=""):
         yield prefix
 
 
-def test_both_languages_have_the_same_keys():
-    en = set(_keys(json.loads((ROOT / "translations/en.json").read_text())))
-    nl = set(_keys(json.loads((ROOT / "translations/nl.json").read_text())))
-    assert en == nl, sorted(en ^ nl)
+def _leaves(node, prefix=""):
+    if isinstance(node, dict):
+        for k, v in node.items():
+            yield from _leaves(v, f"{prefix}.{k}" if prefix else k)
+    else:
+        yield prefix, node
+
+
+def _placeholders(text: str) -> list[str]:
+    return sorted(name for _, name, _, _ in string.Formatter().parse(text) if name)
+
+
+def test_every_language_has_the_same_keys():
+    en = set(_keys(json.loads((ROOT / "translations/en.json").read_text(encoding="utf-8"))))
+    for lang in LANGUAGES:
+        other = set(_keys(json.loads((ROOT / f"translations/{lang}.json").read_text(encoding="utf-8"))))
+        assert en == other, (lang, sorted(en ^ other))
+
+
+def test_every_translation_has_the_same_placeholders_and_is_not_empty():
+    en = dict(_leaves(json.loads((ROOT / "translations/en.json").read_text(encoding="utf-8"))))
+    for lang in LANGUAGES:
+        other = dict(_leaves(json.loads((ROOT / f"translations/{lang}.json").read_text(encoding="utf-8"))))
+        for key, text in en.items():
+            assert other[key].strip(), (lang, key)
+            assert _placeholders(other[key]) == _placeholders(text), (lang, key)
+
+
+def test_every_message_language_has_the_same_keys_and_placeholders():
+    from custom_components.vigil_alarm.messages import MESSAGES, MODE_NAMES
+
+    assert set(MESSAGES) == set(MODE_NAMES) == set(LANGUAGES)
+    for lang, messages in MESSAGES.items():
+        assert set(messages) == set(MESSAGES["en"]), (lang, set(messages) ^ set(MESSAGES["en"]))
+        for key, text in messages.items():
+            assert _placeholders(text) == _placeholders(MESSAGES["en"][key]), (lang, key)
+        assert set(MODE_NAMES[lang]) == set(MODE_NAMES["en"]), lang
+
+
+def test_language_of_maps_any_locale_to_a_supported_language():
+    from custom_components.vigil_alarm.languages import language_of
+
+    assert [language_of(x) for x in ("nl", "nl-NL", "de_AT", "FR", "it-CH", "es-419", "pt", "", None)] == [
+        "nl", "nl", "de", "fr", "it", "es", "en", "en", "en",
+    ]
 
 
 def _panel_only_codes() -> set[str]:
@@ -54,8 +98,8 @@ def test_every_error_code_in_editing_has_a_text_in_the_panel():
 
 
 def test_the_entry_flow_has_its_texts():
-    for lang in ("en", "nl"):
-        data = json.loads((ROOT / f"translations/{lang}.json").read_text())
+    for lang in LANGUAGES:
+        data = json.loads((ROOT / f"translations/{lang}.json").read_text(encoding="utf-8"))
         assert {"no_modes", "invalid_config"} <= set(data["config"]["error"]), lang
 
 
@@ -65,12 +109,12 @@ def test_the_panel_shows_armed_home_away_and_night_as_armed():
     assert 'startsWith("armed_")' in js and js.count("this._stateText(live)") == 2
 
 
-def test_every_event_type_cause_and_refusal_has_a_text_in_both_languages():
+def test_every_event_type_cause_and_refusal_has_a_text_in_every_language():
     """What Home Assistant shows for the event entity, the last-event sensor and the alarm attributes."""
     from custom_components.vigil_alarm.const import EVENT_TYPES
 
-    for lang in ("en", "nl"):
-        ent = json.loads((ROOT / f"translations/{lang}.json").read_text())["entity"]
+    for lang in LANGUAGES:
+        ent = json.loads((ROOT / f"translations/{lang}.json").read_text(encoding="utf-8"))["entity"]
         shown = ent["event"]["alarm_events"]["state_attributes"]["event_type"]["state"]
         assert set(shown) == set(EVENT_TYPES), (lang, set(shown) ^ set(EVENT_TYPES))
         assert ent["sensor"]["last_event"]["state"] == shown

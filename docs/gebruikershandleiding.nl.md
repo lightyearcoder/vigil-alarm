@@ -253,8 +253,13 @@ Acties in de lijsten zijn icoonknoppen (bewerken, kopiëren, verwijderen, testen
 | **Instellingen** | Modi, uitlooptijden, inlooptijd, alarmduur, hoe lang er na een herstart van Home Assistant op trage sensoren wordt gewacht (seconden, standaard 120), het scherm van de panelen (seconden tot het scherm uitgaat, standaard 30, en of het ook tijdens een alarm uit mag gaan, standaard nee), batterijgrens, code nodig om in te schakelen, minimale codelengte (4 tot 12 tekens, standaard 4; geldt voor nieuwe en gewijzigde codes, bestaande codes blijven werken), dagen dat het logboek bewaard blijft (standaard 90), en de zelftest: herinneringsinterval (standaard 30 dagen, 0 = uit), seconden dat de sirene klinkt (1 tot 5, standaard 2), zelf laten klinken en de uren waarbinnen dat mag, en het hartslag-adres met het interval in minuten (standaard 5). |
 | **Over** | Een badge "nieuw" na een update, versie, links naar de handleiding en GitHub, release notes (nieuwste bovenaan) en een knop die de gegevens kopieert voor een foutmelding. |
 
-De taal van de **meldingsteksten** volgt de systeemtaal van Home Assistant (Instellingen → Systeem →
-Algemeen). Het paneel volgt de taal van je eigen profiel (Nederlands en Engels).
+Vigil spreekt **Engels, Nederlands, Duits, Frans, Italiaans en Spaans**; elke andere taal toont Engels. De taal van
+de **meldingsteksten** volgt de systeemtaal van Home Assistant (Instellingen → Systeem → Algemeen). Het beheerpaneel
+en de Vigil-kaart volgen de taal van je eigen profiel. Een aanraakpaneel of tablet heeft de taal die je er onder
+*Panelen* voor kiest (een nieuw paneel begint met de taal van je account). De vertalingen in het Duits, Frans,
+Italiaans en Spaans zijn geschreven door Claude (een AI) en niet door een moedertaalspreker gecontroleerd: meld
+een rare of foute tekst gerust als issue. Een aanraakpaneel (ESPHome) heeft de firmware van 0.5.6 nodig voor de
+nieuwe talen; oudere firmware toont daarvoor Engels.
 
 ## Oefenmodus en looptest
 

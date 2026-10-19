@@ -1,0 +1,569 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vigil Alarm",
+        "description": "Réglages de l'alarme. Les capteurs, groupes et utilisateurs sont ajoutés ensuite.",
+        "data": {
+          "name": "Nom",
+          "modes": "Modes activés",
+          "exit_delay_home": "Temporisation de sortie : maison",
+          "exit_delay_away": "Temporisation de sortie : absent",
+          "exit_delay_night": "Temporisation de sortie : nuit",
+          "exit_delay_vacation": "Temporisation de sortie : vacances",
+          "exit_delay_custom": "Temporisation de sortie : personnalisé",
+          "default_entry_delay": "Temporisation d'entrée par défaut",
+          "trigger_time": "Durée de l'alarme (0 = jusqu'à la désactivation)",
+          "abort_seconds": "Fenêtre d'annulation après la sirène (secondes, 0 = désactivée)",
+          "chime_entity": "Carillon : ce qui sonne (facultatif)",
+          "chime_seconds": "Durée du carillon (secondes)",
+          "code_arm_required": "Exiger un code pour activer",
+          "min_code_length": "Longueur minimale du code",
+          "battery_threshold": "Pile faible à partir de",
+          "lock_tries_1": "Codes erronés avant le premier verrouillage",
+          "lock_wait_1": "Durée du premier verrouillage (minutes)",
+          "lock_tries_2": "Ensuite, codes erronés avant le deuxième verrouillage",
+          "lock_wait_2": "Durée du deuxième verrouillage (minutes)",
+          "lock_tries_3": "Ensuite, codes erronés avant le troisième verrouillage",
+          "lock_wait_3": "Durée du troisième verrouillage (minutes)",
+          "lock_tries_4": "Ensuite, codes erronés avant le verrouillage permanent",
+          "startup_wait_seconds": "Attente des capteurs après un redémarrage (secondes)",
+          "screen_off_seconds": "Écran éteint après (secondes)",
+          "screen_off_on_alarm": "Laisser l'écran s'éteindre pendant une alarme",
+          "log_retention_days": "Jours de conservation du journal des événements",
+          "backup_versions": "Versions de la configuration à conserver (sauvegardes)",
+          "selftest_interval_days": "Jours entre les rappels de test de la sirène (0 = désactivé)",
+          "selftest_siren_seconds": "Secondes pendant lesquelles la sirène sonne lors d'un test",
+          "selftest_auto": "Faire sonner la sirène automatiquement pour le test",
+          "selftest_window_start": "Heure la plus précoce pour le test",
+          "selftest_window_end": "Heure la plus tardive pour le test",
+          "heartbeat_url": "Adresse du signal de vie (facultatif)",
+          "heartbeat_interval_minutes": "Minutes entre les signaux de vie"
+        }
+      },
+      "reconfigure": {
+        "title": "Vigil Alarm",
+        "description": "Réglages de l'alarme. Les capteurs, groupes et utilisateurs sont ajoutés ensuite.\n\n{error}",
+        "data": {
+          "name": "Nom",
+          "modes": "Modes activés",
+          "exit_delay_home": "Temporisation de sortie : maison",
+          "exit_delay_away": "Temporisation de sortie : absent",
+          "exit_delay_night": "Temporisation de sortie : nuit",
+          "exit_delay_vacation": "Temporisation de sortie : vacances",
+          "exit_delay_custom": "Temporisation de sortie : personnalisé",
+          "default_entry_delay": "Temporisation d'entrée par défaut",
+          "trigger_time": "Durée de l'alarme (0 = jusqu'à la désactivation)",
+          "abort_seconds": "Fenêtre d'annulation après la sirène (secondes, 0 = désactivée)",
+          "chime_entity": "Carillon : ce qui sonne (facultatif)",
+          "chime_seconds": "Durée du carillon (secondes)",
+          "code_arm_required": "Exiger un code pour activer",
+          "min_code_length": "Longueur minimale du code",
+          "battery_threshold": "Pile faible à partir de",
+          "lock_tries_1": "Codes erronés avant le premier verrouillage",
+          "lock_wait_1": "Durée du premier verrouillage (minutes)",
+          "lock_tries_2": "Ensuite, codes erronés avant le deuxième verrouillage",
+          "lock_wait_2": "Durée du deuxième verrouillage (minutes)",
+          "lock_tries_3": "Ensuite, codes erronés avant le troisième verrouillage",
+          "lock_wait_3": "Durée du troisième verrouillage (minutes)",
+          "lock_tries_4": "Ensuite, codes erronés avant le verrouillage permanent",
+          "startup_wait_seconds": "Attente des capteurs après un redémarrage (secondes)",
+          "screen_off_seconds": "Écran éteint après (secondes)",
+          "screen_off_on_alarm": "Laisser l'écran s'éteindre pendant une alarme",
+          "log_retention_days": "Jours de conservation du journal des événements",
+          "backup_versions": "Versions de la configuration à conserver (sauvegardes)",
+          "selftest_interval_days": "Jours entre les rappels de test de la sirène (0 = désactivé)",
+          "selftest_siren_seconds": "Secondes pendant lesquelles la sirène sonne lors d'un test",
+          "selftest_auto": "Faire sonner la sirène automatiquement pour le test",
+          "selftest_window_start": "Heure la plus précoce pour le test",
+          "selftest_window_end": "Heure la plus tardive pour le test",
+          "heartbeat_url": "Adresse du signal de vie (facultatif)",
+          "heartbeat_interval_minutes": "Minutes entre les signaux de vie"
+        }
+      }
+    },
+    "error": {
+      "no_modes": "Activez au moins un mode.",
+      "invalid_config": "Les réglages ne sont pas cohérents avec les capteurs : {error}",
+      "heartbeat_url_invalid": "Ce n'est pas une adresse web (elle doit commencer par http:// ou https://)."
+    },
+    "abort": {
+      "already_configured": "Vigil Alarm est déjà configuré.",
+      "reconfigure_successful": "Enregistré."
+    }
+  },
+  "selector": {
+    "mode": {
+      "options": {
+        "home": "Maison",
+        "away": "Absent",
+        "night": "Nuit",
+        "vacation": "Vacances",
+        "custom": "Personnalisé"
+      }
+    }
+  },
+  "entity": {
+    "event": {
+      "alarm_events": {
+        "name": "Événements d'alarme",
+        "state_attributes": {
+          "event_type": {
+            "name": "Type d'événement",
+            "state": {
+              "armed": "Activée",
+              "arming_started": "Activation démarrée",
+              "arm_refused": "Activation refusée",
+              "disarmed": "Désactivée",
+              "pending_started": "Temporisation d'entrée démarrée",
+              "triggered": "Alarme déclenchée",
+              "trigger_cause_changed": "Cause de l'alarme modifiée",
+              "trigger_ended": "Alarme terminée",
+              "sensor_faulted": "Défaut de capteur",
+              "sensor_unconfirmed": "Déclenchement non confirmé",
+              "sensor_unconfirmed_escalated": "Déclenchement non confirmé escaladé",
+              "sensor_bypassed": "Capteur inhibé",
+              "sensor_bypassed_at_arm": "Capteur inhibé à l'activation",
+              "sensor_unbypassed": "Inhibition du capteur levée",
+              "bypass_refused": "Inhibition refusée",
+              "supervision_lost": "Capteur perdu",
+              "supervision_restored": "Capteur de retour",
+              "technical_alarm_started": "Alarme technique démarrée",
+              "technical_alarm_ended": "Alarme technique terminée",
+              "state_restore_failed": "État enregistré non restauré",
+              "notification_failed": "Échec de la notification",
+              "siren_started": "Sirène démarrée",
+              "siren_stopped": "Sirène arrêtée",
+              "siren_failed": "Échec de la sirène",
+              "siren_unavailable": "Sirène injoignable",
+              "siren_available": "Sirène de nouveau joignable",
+              "siren_power_lost": "Sirène sans alimentation secteur",
+              "siren_power_restored": "Sirène de nouveau sur secteur",
+              "battery_low": "Pile faible",
+              "battery_ok": "Pile de nouveau en ordre",
+              "alarm_silenced": "Alarme mise en sourdine",
+              "alarm_acknowledged": "Alarme acquittée",
+              "code_rejected": "Code refusé",
+              "code_locked": "Codes verrouillés après trop de codes erronés",
+              "code_locked_permanent": "Codes verrouillés définitivement après trop de codes erronés",
+              "startup_settled": "Démarrage terminé (attente des capteurs)",
+              "selftest_checked": "Autocontrôle effectué",
+              "selftest_reminder": "Rappel de test envoyé",
+              "selftest_siren_tested": "Sirène testée",
+              "practice_started": "Mode d'entraînement activé",
+              "practice_ended": "Mode d'entraînement désactivé",
+              "alarm_cancelled": "Alarme annulée (fausse alerte)",
+              "duress_used": "Code de contrainte utilisé",
+              "alarm_sensor_seen": "Capteur ouvert pendant l'alarme (ne comptait pas)",
+              "alarm_memory_cleared": "Mémoire d'alarme effacée",
+              "chime": "Carillon",
+              "walktest_started": "Test de parcours démarré",
+              "walktest_finished": "Test de parcours terminé",
+              "panel_refused": "Appel du clavier refusé",
+              "user_refused": "Appel de l'utilisateur refusé",
+              "panel_unlocked": "Clavier déverrouillé",
+              "panel_lock_cleared": "Verrouillage du clavier levé",
+              "panel_offline": "Clavier injoignable",
+              "panel_online": "Clavier de nouveau joignable"
+            }
+          }
+        }
+      }
+    },
+    "sensor": {
+      "sensor_status": {
+        "name": "Statut",
+        "state": {
+          "closed": "Fermé",
+          "open": "Ouvert",
+          "unavailable": "Injoignable",
+          "bypassed": "Inhibé",
+          "bypassed_at_arm": "Inhibé à l'activation",
+          "waiting": "En attente de fermeture"
+        }
+      },
+      "last_event": {
+        "name": "Dernier événement",
+        "state": {
+          "armed": "Activée",
+          "arming_started": "Activation démarrée",
+          "arm_refused": "Activation refusée",
+          "disarmed": "Désactivée",
+          "pending_started": "Temporisation d'entrée démarrée",
+          "triggered": "Alarme déclenchée",
+          "trigger_cause_changed": "Cause de l'alarme modifiée",
+          "trigger_ended": "Alarme terminée",
+          "sensor_faulted": "Défaut de capteur",
+          "sensor_unconfirmed": "Déclenchement non confirmé",
+          "sensor_unconfirmed_escalated": "Déclenchement non confirmé escaladé",
+          "sensor_bypassed": "Capteur inhibé",
+          "sensor_bypassed_at_arm": "Capteur inhibé à l'activation",
+          "sensor_unbypassed": "Inhibition du capteur levée",
+          "bypass_refused": "Inhibition refusée",
+          "supervision_lost": "Capteur perdu",
+          "supervision_restored": "Capteur de retour",
+          "technical_alarm_started": "Alarme technique démarrée",
+          "technical_alarm_ended": "Alarme technique terminée",
+          "state_restore_failed": "État enregistré non restauré",
+          "notification_failed": "Échec de la notification",
+          "siren_started": "Sirène démarrée",
+          "siren_stopped": "Sirène arrêtée",
+          "siren_failed": "Échec de la sirène",
+          "siren_unavailable": "Sirène injoignable",
+          "siren_available": "Sirène de nouveau joignable",
+          "siren_power_lost": "Sirène sans alimentation secteur",
+          "siren_power_restored": "Sirène de nouveau sur secteur",
+          "battery_low": "Pile faible",
+          "battery_ok": "Pile de nouveau en ordre",
+          "alarm_silenced": "Alarme mise en sourdine",
+          "alarm_acknowledged": "Alarme acquittée",
+          "code_rejected": "Code refusé",
+          "code_locked": "Codes verrouillés après trop de codes erronés",
+          "code_locked_permanent": "Codes verrouillés définitivement après trop de codes erronés",
+          "startup_settled": "Démarrage terminé (attente des capteurs)",
+          "selftest_checked": "Autocontrôle effectué",
+          "selftest_reminder": "Rappel de test envoyé",
+          "selftest_siren_tested": "Sirène testée",
+          "practice_started": "Mode d'entraînement activé",
+          "practice_ended": "Mode d'entraînement désactivé",
+          "alarm_cancelled": "Alarme annulée (fausse alerte)",
+          "duress_used": "Code de contrainte utilisé",
+          "alarm_sensor_seen": "Capteur ouvert pendant l'alarme (ne comptait pas)",
+          "alarm_memory_cleared": "Mémoire d'alarme effacée",
+          "chime": "Carillon",
+          "walktest_started": "Test de parcours démarré",
+          "walktest_finished": "Test de parcours terminé",
+          "panel_refused": "Appel du clavier refusé",
+          "user_refused": "Appel de l'utilisateur refusé",
+          "panel_unlocked": "Clavier déverrouillé",
+          "panel_lock_cleared": "Verrouillage du clavier levé",
+          "panel_offline": "Clavier injoignable",
+          "panel_online": "Clavier de nouveau joignable"
+        }
+      },
+      "panel_profile": {
+        "name": "Profil"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Inhibition"
+      }
+    },
+    "binary_sensor": {
+      "active_intrusion": {
+        "name": "Alarme d'intrusion"
+      },
+      "active_fire": {
+        "name": "Alarme incendie"
+      },
+      "active_gas": {
+        "name": "Alarme gaz"
+      },
+      "active_tamper": {
+        "name": "Alarme de sabotage"
+      },
+      "technical_alarm": {
+        "name": "Alarme d'eau"
+      },
+      "active_alarm24": {
+        "name": "Alarme 24 h"
+      }
+    },
+    "alarm_control_panel": {
+      "alarm": {
+        "state_attributes": {
+          "cause": {
+            "name": "Cause",
+            "state": {
+              "intrusion": "Intrusion",
+              "fire": "Incendie",
+              "gas": "Gaz",
+              "tamper": "Sabotage",
+              "fault": "Défaut de capteur"
+            }
+          },
+          "refuse_reason": {
+            "name": "Refusée parce que",
+            "state": {
+              "not_disarmed": "Pas désactivée",
+              "alarm_condition": "Une condition d'alarme est présente",
+              "sensor_unavailable": "Un capteur est injoignable",
+              "sensor_open": "Un capteur est ouvert"
+            }
+          }
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "code_required": {
+      "message": "Un code est requis."
+    },
+    "code_locked_permanent": {
+      "message": "Trop de codes erronés. Verrouillé jusqu'à ce qu'un administrateur le déverrouille dans Vigil."
+    },
+    "code_locked": {
+      "message": "Trop de codes erronés. Réessayez dans {minutes} min."
+    },
+    "invalid_code": {
+      "message": "Code invalide."
+    },
+    "not_ready": {
+      "message": "L'alarme est encore en cours de démarrage."
+    },
+    "mode_not_allowed": {
+      "message": "{user} n'est pas autorisé à activer le mode {mode}."
+    },
+    "arm_refused": {
+      "message": "Activation refusée : {reason} ({sensors})."
+    },
+    "unknown_sensor": {
+      "message": "Capteur inconnu."
+    },
+    "tamper_bypass_not_allowed": {
+      "message": "Inhiber ou rétablir un capteur de sabotage nécessite le droit d'inhiber le sabotage, ou un administrateur Home Assistant."
+    },
+    "sensor_not_bypassable": {
+      "message": "Ce capteur ne peut pas être inhibé."
+    },
+    "invalid_config": {
+      "message": "Configuration invalide : {error}"
+    },
+    "no_channels": {
+      "message": "Aucun canal de notification n'est configuré."
+    },
+    "no_sirens": {
+      "message": "Aucune sirène n'est configurée."
+    },
+    "alarm_active": {
+      "message": "Une alarme est active."
+    },
+    "mode_not_enabled": {
+      "message": "Le mode {mode} n'est pas activé."
+    },
+    "panel_blocked": {
+      "message": "Le clavier {panel} est bloqué."
+    },
+    "panel_not_allowed": {
+      "message": "Le clavier {panel} n'a pas le droit de faire cela."
+    },
+    "unknown_panel": {
+      "message": "Ce n'est pas un clavier enregistré."
+    },
+    "user_not_registered": {
+      "message": "Votre compte Home Assistant n'est pas enregistré dans Vigil ; il ne peut donc pas commander l'alarme."
+    },
+    "no_admin_code": {
+      "message": "Ce clavier n'a pas de code installateur. Définissez-en un dans l'onglet Claviers, ou déverrouillez-le à cet endroit."
+    },
+    "bypass_not_allowed": {
+      "message": "Inhiber ou rétablir des capteurs nécessite le droit d'inhiber, accordé à cet utilisateur dans Vigil, ou un administrateur Home Assistant."
+    },
+    "practice_needs_disarmed": {
+      "message": "Le mode d'entraînement ne peut démarrer que lorsque l'alarme est désactivée."
+    },
+    "walktest_needs_disarmed": {
+      "message": "Le test de parcours ne peut démarrer que lorsque l'alarme est désactivée."
+    },
+    "walktest_no_sensors": {
+      "message": "Il n'y a aucun capteur d'intrusion à parcourir."
+    }
+  },
+  "services": {
+    "arm": {
+      "name": "Activer",
+      "description": "Active l'alarme dans un mode, avec le nom du point de commande.",
+      "fields": {
+        "mode": {
+          "name": "Mode",
+          "description": "Maison, absent, nuit, vacances ou personnalisé."
+        },
+        "code": {
+          "name": "Code",
+          "description": "Code d'un utilisateur. Inutile pour les administrateurs Home Assistant dans l'interface."
+        },
+        "source": {
+          "name": "Source",
+          "description": "Nom du point de commande, par exemple un clavier. Il apparaît dans le journal et indique qui a modifié l'alarme."
+        },
+        "bypass_open": {
+          "name": "Inhiber ce qui bloque",
+          "description": "Inhibe les capteurs qui empêchent l'activation (par exemple un contact de sabotage ouvert), puis active. Nécessite le droit d'inhiber ; ne s'applique jamais aux capteurs d'incendie ou de gaz."
+        }
+      }
+    },
+    "disarm": {
+      "name": "Désactiver",
+      "description": "Désactive l'alarme, avec le nom du point de commande.",
+      "fields": {
+        "code": {
+          "name": "Code",
+          "description": "Code d'un utilisateur. Inutile pour les administrateurs Home Assistant dans l'interface."
+        },
+        "source": {
+          "name": "Source",
+          "description": "Nom du point de commande, par exemple un clavier. Il apparaît dans le journal et indique qui a modifié l'alarme."
+        }
+      }
+    },
+    "bypass": {
+      "name": "Inhiber un capteur",
+      "description": "Ignorer temporairement un capteur jusqu'à la désactivation de l'alarme.",
+      "fields": {
+        "sensor": {
+          "name": "Capteur",
+          "description": "L'entité du capteur."
+        },
+        "code": {
+          "name": "Code",
+          "description": "Code d'un utilisateur. Inutile pour les administrateurs Home Assistant dans l'interface."
+        },
+        "source": {
+          "name": "Source",
+          "description": "Nom du point de commande, par exemple un clavier. Il apparaît dans le journal et indique qui a modifié l'alarme."
+        }
+      }
+    },
+    "unbypass": {
+      "name": "Arrêter l'inhibition du capteur",
+      "description": "Surveiller de nouveau un capteur inhibé.",
+      "fields": {
+        "sensor": {
+          "name": "Capteur",
+          "description": "L'entité du capteur."
+        },
+        "code": {
+          "name": "Code",
+          "description": "Code d'un utilisateur. Inutile pour les administrateurs Home Assistant dans l'interface."
+        },
+        "source": {
+          "name": "Source",
+          "description": "Nom du point de commande, par exemple un clavier. Il apparaît dans le journal et indique qui a modifié l'alarme."
+        }
+      }
+    },
+    "test_notification": {
+      "name": "Notification de test",
+      "description": "Envoie un message de test aux canaux de notification.",
+      "fields": {
+        "channel": {
+          "name": "Canal",
+          "description": "Nom d'un canal ; vide = tous."
+        }
+      }
+    },
+    "test_siren": {
+      "name": "Tester la sirène",
+      "description": "Fait sonner brièvement la sirène pour vérifier qu'elle réagit. Impossible pendant une alarme.",
+      "fields": {
+        "siren": {
+          "name": "Sirène",
+          "description": "Nom d'une sirène ; vide = toutes."
+        },
+        "duration": {
+          "name": "Durée",
+          "description": "Secondes."
+        }
+      }
+    },
+    "silence": {
+      "name": "Couper la sirène",
+      "description": "Arrête les sirènes ; l'alarme reste active.",
+      "fields": {
+        "code": {
+          "name": "Code",
+          "description": "Code d'un utilisateur. Inutile pour les administrateurs Home Assistant dans l'interface."
+        },
+        "source": {
+          "name": "Source",
+          "description": "Nom du point de commande, par exemple un clavier. Il apparaît dans le journal et indique qui a modifié l'alarme."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Acquitter l'alarme",
+      "description": "Confirme que vous avez vu l'alarme ; cela annule les messages d'escalade.",
+      "fields": {
+        "code": {
+          "name": "Code",
+          "description": "Code d'un utilisateur. Inutile pour les administrateurs Home Assistant dans l'interface."
+        },
+        "source": {
+          "name": "Source",
+          "description": "Nom du point de commande, par exemple un clavier. Il apparaît dans le journal et indique qui a modifié l'alarme."
+        }
+      }
+    },
+    "check_code": {
+      "name": "Vérifier un code",
+      "description": "Vérifie si un code est valide. Ne change rien. Un code erroné compte pour le verrouillage.",
+      "fields": {
+        "code": {
+          "name": "Code",
+          "description": "Le code à vérifier."
+        },
+        "source": {
+          "name": "Source",
+          "description": "Nom du point de commande, par exemple un clavier."
+        }
+      }
+    },
+    "unlock_panel": {
+      "name": "Déverrouiller le clavier",
+      "description": "Déverrouille la liste des capteurs ou les pages d'informations d'un clavier enregistré. Ne désactive jamais l'alarme.",
+      "fields": {
+        "code": {
+          "name": "Code",
+          "description": "Un code utilisateur Vigil ou le code installateur de ce clavier pour la liste des capteurs ; le code installateur pour les pages d'informations."
+        },
+        "scope": {
+          "name": "Portée",
+          "description": "sensors : la liste des capteurs (un code utilisateur ou le code installateur). info : les pages d'informations (code installateur uniquement)."
+        },
+        "source": {
+          "name": "Source",
+          "description": "L'identifiant du clavier."
+        }
+      }
+    }
+  },
+  "issues": {
+    "sensor_unreachable": {
+      "title": "Capteur injoignable : {name}",
+      "description": "Vigil Alarm ne peut pas joindre le capteur {name}. Vérifiez l'appareil (pile, portée, alimentation). L'activation peut être refusée tant qu'il n'est pas revenu. Ce message disparaît de lui-même."
+    },
+    "battery_low": {
+      "title": "Pile faible : {name}",
+      "description": "La pile de {name} est faible. Remplacez-la. Ce message disparaît de lui-même lorsque la pile est de nouveau en ordre."
+    },
+    "battery_low_level": {
+      "title": "Pile faible : {name} ({level} %)",
+      "description": "La pile de {name} est à {level} %. Remplacez-la. Ce message disparaît de lui-même lorsque la pile est de nouveau en ordre."
+    },
+    "siren_unavailable": {
+      "title": "Sirène indisponible : {name}",
+      "description": "La sirène {name} est injoignable ; elle ne sonnera donc pas lors d'une alarme. Vérifiez l'appareil. Ce message disparaît de lui-même."
+    },
+    "siren_on_battery": {
+      "title": "Sirène sur batterie : {name}",
+      "description": "La sirène {name} n'est plus alimentée par le secteur et fonctionne sur sa batterie. Vérifiez l'alimentation. Ce message disparaît de lui-même."
+    },
+    "selftest_overdue": {
+      "title": "Sirène non testée depuis {days} jours",
+      "description": "La sirène n'a pas été testée depuis {days} jours. Utilisez « Tester la sirène » dans le panneau Vigil Alarm, ou l'action vigil_alarm.test_siren. Ce message disparaît lorsque vous avez fait le test."
+    },
+    "selftest_channel_missing": {
+      "title": "Canal de notification en panne : {name}",
+      "description": "Le service notify du canal {name} n'existe plus ; il ne peut donc pas envoyer de messages. Vérifiez le canal dans le panneau Vigil Alarm. Ce message disparaît de lui-même."
+    },
+    "heartbeat_failing": {
+      "title": "Signal de vie impossible à envoyer",
+      "description": "Vigil Alarm n'a pas pu joindre l'adresse du signal de vie plusieurs fois de suite ({reason}). Un service de surveillance qui attend ce signal le signalera. Vérifiez l'adresse dans les réglages du panneau Vigil Alarm ainsi que votre connexion Internet. Ce message disparaît de lui-même lorsque le signal de vie refonctionne."
+    },
+    "panel_offline": {
+      "title": "Clavier injoignable : {name}",
+      "description": "Vigil Alarm n'a pas pu joindre le clavier {name} pendant dix minutes. Vérifiez l'alimentation et le wifi du clavier. L'alarme elle-même continue de fonctionner. Ce message disparaît de lui-même lorsque le clavier est de retour."
+    }
+  }
+}

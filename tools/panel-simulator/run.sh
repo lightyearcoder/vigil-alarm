@@ -2,7 +2,7 @@
 # Render the panel screens on a PC, without a panel: builds the firmware screen for a "host" device with a memory
 # display and takes a picture of every scene in scenes.py.
 #
-#   tools/panel-simulator/run.sh [output folder] [--lang nl|en] [--size 480x480]
+#   tools/panel-simulator/run.sh [output folder] [--lang nl|en|de|fr|it|es] [--size 480x480]
 #
 # Needs: esphome (pip install esphome; or set ESPHOME=/path/to/esphome), g++, gcc, make, git and python3 with Pillow.
 # The first run downloads LVGL (the version ESPHome uses, 9.5.0) and compiles it: a few minutes. Later runs are fast.

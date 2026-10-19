@@ -29,6 +29,22 @@ int main(){
   assert(is_unlock_action(UNLOCK)&&is_unlock_action(INFO)&&!is_unlock_action(DISARM));
   assert(truthy("on")&&!truthy("False")&&std::isnan(parse_number("None"))&&parse_number("3.5")==3.5);
   assert(parse_language("nl")==NL && parse_language("en")==EN && parse_language("")==EN);
+  assert(parse_language("de")==DE && parse_language("de-AT")==DE && parse_language("fr")==FR && parse_language("it")==IT && parse_language("es")==ES && parse_language("pt")==EN);
+  // every language has every text, and the texts of the new languages are used
+  { Context keep = ctx;
+    for (int l = 0; l < LANGUAGE_COUNT; l++) { ctx.lang = l; for (const Text &t : TEXTS) assert(tr(t.key) == t.text[l] && !tr(t.key).empty()); }
+    ctx.lang = DE; assert(tr("disarmed") == "Unscharf" && tr("force") == "Ueberbruecken und scharf schalten");
+    ctx.lang = FR; assert(tr("disarm") == "Desactiver");
+    ctx.lang = IT; assert(tr("blocked") == "Bloccato");
+    ctx.lang = ES; assert(tr("arming") == "Activando");
+    // what Home Assistant answers is recognised in any language and shown in the language of the panel
+    ctx.lang = DE; assert(localize_error("Ungültiger Code.") == "Ungueltiger Code");
+    ctx.lang = ES; assert(localize_error("Code invalid ... Invalid code.") == "Codigo no valido");
+    ctx.lang = FR; assert(localize_error("Zu viele falsche Codes. Versuche es in 7 Min. erneut.") == "Trop de codes errones. Reessayez dans 7 min");
+    ctx.lang = IT; assert(parse_refusal("Scharfschalten abgelehnt: sensor_open (Tuer).").text == "Impossibile inserire: Tuer e aperto");
+    ctx.lang = DE; assert(parse_refusal("Activation refusée : sensor_unavailable (Porte, Cuisine).").text == "Scharfschalten nicht moeglich: Porte, Cuisine antwortet nicht");
+    ctx.lang = EN; assert(parse_refusal("Activación rechazada: not_disarmed ().").forceable == false);
+    ctx = keep; }
   ctx.ha_connected=false; assert(state_title()=="No connection");
   ctx.ha_connected=true; ctx.state="pending"; assert(keypad_route(false,0)==0 && keypad_route(true,DISARM)==0 && show_disarm());
   ctx.state="triggered"; assert(keypad_route(false,0)==0 && keypad_route(true,DISARM)==0 && show_disarm());

@@ -251,8 +251,13 @@ Actions in the lists are icon buttons (edit, copy, delete, test); hover for the 
 | **Settings** | Modes, exit delays, entry delay, alarm duration, how long to wait for slow sensors after a restart of Home Assistant (seconds, default 120), the screen of the panels (seconds until the screen goes dark, default 30, and whether it may also go dark during an alarm, default no), battery limit, code required to arm, minimum code length (4 to 12 characters, default 4; applies to new and changed codes, existing codes keep working), days to keep the log (default 90), and the self-test: reminder interval (default 30 days, 0 = off), seconds the siren sounds (1 to 5, default 2), sounding by itself, and the hours it may do so, and the heartbeat address and its interval in minutes (default 5). |
 | **About** | A "new" badge after an update, version, links to the user guide and GitHub, release notes (newest first) and a button that copies the details for a bug report. |
 
-The language of the **notification texts** follows the Home Assistant system language (Settings →
-System → General). The panel follows your own profile language (English and Dutch).
+Vigil speaks **English, Dutch, German, French, Italian and Spanish**; every other language shows English. The
+language of the **notification texts** follows the Home Assistant system language (Settings → System → General).
+The admin panel and the Vigil card follow your own profile language. A touch panel or tablet has the language you
+choose for it under *Panels* (a new panel starts with the language of your account). The translations of German,
+French, Italian and Spanish were written by Claude (an AI) and are not checked by a native speaker: please report
+a clumsy or wrong text as an issue. A touch panel (ESPHome) needs the 0.5.6 firmware to speak the new languages;
+older firmware shows English for them.
 
 ## Practice mode and walk test
 

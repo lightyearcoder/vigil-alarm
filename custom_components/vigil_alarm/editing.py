@@ -15,6 +15,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from .items import Item, items_of
+from .languages import LANGUAGES, TAMPER_WORD, language_of
 from .const import (
     CONF_MIN_CODE_LENGTH,
     CONF_BLOCKED,
@@ -237,7 +238,7 @@ def plan_companion(
     tamper = parent_data.get(CONF_TAMPER_ENTITY)
     if not tamper:
         return None
-    word = "sabotage" if str(hass.config.language).startswith("nl") else "tamper"
+    word = TAMPER_WORD[language_of(hass.config.language)]
     title = f"{parent_name} ({word})"
     existing = companion_id(entry, parent_id)
     if any(
@@ -454,7 +455,7 @@ async def _panel(
         elif any(o.data.get(CONF_HA_USER) == ha_user for o in others):
             errors[CONF_HA_USER] = "ha_user_in_use"
     language = raw.get(CONF_LANGUAGE) or ""
-    if language not in ("", "nl", "en"):
+    if language not in ("", *LANGUAGES):
         errors[CONF_LANGUAGE] = "unknown_choice"
     data: dict[str, Any] = {
         CONF_PANEL_ID: panel_id,

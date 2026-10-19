@@ -7,8 +7,8 @@ and show is set in Vigil (tab *Panels*) and the panel reads that from its **prof
 Made for ESPHome 2026.9 (the only version it was checked with: `esphome config` and the simulator ran on 2026.9.1; older versions were not tried, so 2026.9 is the minimum we can name). The hardware file is for the **Guition ESP32-S3-4848S040** (480x480).
 Other displays work with another hardware file, see below.
 
-> **Status (0.5.5):** the logic and the way the panel works with Home Assistant were tested on a real
-> Guition 4848 panel (0.4.0). The new look of 0.4.1 (ring, tabs, icons) *Bypass and arm* of 0.5.0 and the 0.5.4 additions (buttons for *Vacation* and *Custom*, the last alarm under the state) and 0.5.5 (a permanently bypassed sensor under the state) are validated with `esphome config`
+> **Status (0.5.6):** the logic and the way the panel works with Home Assistant were tested on a real
+> Guition 4848 panel (0.4.0). The new look of 0.4.1 (ring, tabs, icons) *Bypass and arm* of 0.5.0 and the 0.5.4 additions (buttons for *Vacation* and *Custom*, the last alarm under the state) 0.5.5 (a permanently bypassed sensor under the state) and 0.5.6 (German, French, Italian and Spanish texts) are validated with `esphome config`
 > and drawn on a computer by LVGL (see `tools/panel-simulator/`), but has not yet run on a real panel:
 > please report what you see, also on other hardware.
 
@@ -62,7 +62,7 @@ For a second panel copy the example file again, with another `name`.
   version, panel id and profile version. Never the Wi-Fi password.
 - **Not linked / Blocked**: a panel that is not in the register shows *Not linked*; a blocked panel
   shows *Blocked* and does nothing.
-- The language is the one set for the panel in Vigil.
+- The language is the one set for the panel in Vigil: Dutch, English, German, French, Italian or Spanish (from firmware 0.5.6; accents are left out on the screen).
 - The screen goes dark after the time set in Vigil (*Settings*, *Panel screen*, default 30 seconds) and lights up on touch and when the alarm changes. It only goes dark in a steady state: alarm off or fully armed. While the alarm counts down (arming, entry delay) it never goes dark. During an alarm it stays on, unless you let it go dark in the same settings. Was a half typed code, the list or the info still open, then the panel first returns to the main page after that time (you see it), and the screen goes dark after the same time again.
 
 ### Codes
@@ -140,9 +140,11 @@ ESPHome downloads when you compile, so the first compile needs internet access.
 
 ## Another language
 
-All texts are in `vigil_alarm/vigil_panel.h`, one line per text with a column per language. Add a
-column to `TEXTS` and make `parse_language` return it. Use plain ASCII: the built-in fonts have no
-accented letters.
+The panel speaks Dutch, English, German, French, Italian and Spanish. All texts are in
+`vigil_alarm/vigil_panel.h`, one line per text with a column per language (in the order of `enum Language`).
+To add a language: add a column to `TEXTS` and to `ERROR_ROWS` (the phrases the panel recognises in what Vigil
+answers), a value to the enum and a line to `parse_language`, and add the language to Vigil (`languages.py`).
+Use plain ASCII on the screen: the built-in fonts have no accented letters.
 
 ## What the panel reads from Vigil
 

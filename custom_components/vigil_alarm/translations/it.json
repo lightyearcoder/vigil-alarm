@@ -1,0 +1,569 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vigil Alarm",
+        "description": "Impostazioni dell'allarme. Sensori, gruppi e utenti vengono aggiunti in seguito.",
+        "data": {
+          "name": "Nome",
+          "modes": "Modalità attive",
+          "exit_delay_home": "Ritardo di uscita: casa",
+          "exit_delay_away": "Ritardo di uscita: fuori casa",
+          "exit_delay_night": "Ritardo di uscita: notte",
+          "exit_delay_vacation": "Ritardo di uscita: vacanza",
+          "exit_delay_custom": "Ritardo di uscita: personalizzato",
+          "default_entry_delay": "Ritardo d'ingresso predefinito",
+          "trigger_time": "Durata dell'allarme (0 = fino al disinserimento)",
+          "abort_seconds": "Finestra di annullamento dopo la sirena (secondi, 0 = disattivata)",
+          "chime_entity": "Campanello: cosa suona (facoltativo)",
+          "chime_seconds": "Il campanello suona per (secondi)",
+          "code_arm_required": "Richiedi un codice per inserire",
+          "min_code_length": "Lunghezza minima del codice",
+          "battery_threshold": "Batteria scarica a o sotto",
+          "lock_tries_1": "Codici errati prima del primo blocco",
+          "lock_wait_1": "Il primo blocco dura (minuti)",
+          "lock_tries_2": "Poi codici errati prima del secondo blocco",
+          "lock_wait_2": "Il secondo blocco dura (minuti)",
+          "lock_tries_3": "Poi codici errati prima del terzo blocco",
+          "lock_wait_3": "Il terzo blocco dura (minuti)",
+          "lock_tries_4": "Poi codici errati prima del blocco permanente",
+          "startup_wait_seconds": "Attendi i sensori dopo un riavvio (secondi)",
+          "screen_off_seconds": "Schermo spento dopo (secondi)",
+          "screen_off_on_alarm": "Lascia spegnere lo schermo durante un allarme",
+          "log_retention_days": "Giorni di conservazione del registro eventi",
+          "backup_versions": "Versioni della configurazione da conservare (backup)",
+          "selftest_interval_days": "Giorni tra i promemoria del test della sirena (0 = disattivato)",
+          "selftest_siren_seconds": "Secondi in cui la sirena suona durante un test",
+          "selftest_auto": "Fai suonare la sirena da sola per il test",
+          "selftest_window_start": "Ora più anticipata per il test",
+          "selftest_window_end": "Ora più tarda per il test",
+          "heartbeat_url": "Indirizzo heartbeat (facoltativo)",
+          "heartbeat_interval_minutes": "Minuti tra gli heartbeat"
+        }
+      },
+      "reconfigure": {
+        "title": "Vigil Alarm",
+        "description": "Impostazioni dell'allarme. Sensori, gruppi e utenti vengono aggiunti in seguito.\n\n{error}",
+        "data": {
+          "name": "Nome",
+          "modes": "Modalità attive",
+          "exit_delay_home": "Ritardo di uscita: casa",
+          "exit_delay_away": "Ritardo di uscita: fuori casa",
+          "exit_delay_night": "Ritardo di uscita: notte",
+          "exit_delay_vacation": "Ritardo di uscita: vacanza",
+          "exit_delay_custom": "Ritardo di uscita: personalizzato",
+          "default_entry_delay": "Ritardo d'ingresso predefinito",
+          "trigger_time": "Durata dell'allarme (0 = fino al disinserimento)",
+          "abort_seconds": "Finestra di annullamento dopo la sirena (secondi, 0 = disattivata)",
+          "chime_entity": "Campanello: cosa suona (facoltativo)",
+          "chime_seconds": "Il campanello suona per (secondi)",
+          "code_arm_required": "Richiedi un codice per inserire",
+          "min_code_length": "Lunghezza minima del codice",
+          "battery_threshold": "Batteria scarica a o sotto",
+          "lock_tries_1": "Codici errati prima del primo blocco",
+          "lock_wait_1": "Il primo blocco dura (minuti)",
+          "lock_tries_2": "Poi codici errati prima del secondo blocco",
+          "lock_wait_2": "Il secondo blocco dura (minuti)",
+          "lock_tries_3": "Poi codici errati prima del terzo blocco",
+          "lock_wait_3": "Il terzo blocco dura (minuti)",
+          "lock_tries_4": "Poi codici errati prima del blocco permanente",
+          "startup_wait_seconds": "Attendi i sensori dopo un riavvio (secondi)",
+          "screen_off_seconds": "Schermo spento dopo (secondi)",
+          "screen_off_on_alarm": "Lascia spegnere lo schermo durante un allarme",
+          "log_retention_days": "Giorni di conservazione del registro eventi",
+          "backup_versions": "Versioni della configurazione da conservare (backup)",
+          "selftest_interval_days": "Giorni tra i promemoria del test della sirena (0 = disattivato)",
+          "selftest_siren_seconds": "Secondi in cui la sirena suona durante un test",
+          "selftest_auto": "Fai suonare la sirena da sola per il test",
+          "selftest_window_start": "Ora più anticipata per il test",
+          "selftest_window_end": "Ora più tarda per il test",
+          "heartbeat_url": "Indirizzo heartbeat (facoltativo)",
+          "heartbeat_interval_minutes": "Minuti tra gli heartbeat"
+        }
+      }
+    },
+    "error": {
+      "no_modes": "Attiva almeno una modalità.",
+      "invalid_config": "Le impostazioni non sono coerenti con i sensori: {error}",
+      "heartbeat_url_invalid": "Non è un indirizzo web (deve iniziare con http:// o https://)."
+    },
+    "abort": {
+      "already_configured": "Vigil Alarm è già configurato.",
+      "reconfigure_successful": "Salvato."
+    }
+  },
+  "selector": {
+    "mode": {
+      "options": {
+        "home": "Casa",
+        "away": "Fuori casa",
+        "night": "Notte",
+        "vacation": "Vacanza",
+        "custom": "Personalizzato"
+      }
+    }
+  },
+  "entity": {
+    "event": {
+      "alarm_events": {
+        "name": "Eventi dell'allarme",
+        "state_attributes": {
+          "event_type": {
+            "name": "Tipo di evento",
+            "state": {
+              "armed": "Inserito",
+              "arming_started": "Inserimento avviato",
+              "arm_refused": "Inserimento rifiutato",
+              "disarmed": "Disinserito",
+              "pending_started": "Ritardo d'ingresso avviato",
+              "triggered": "Allarme scattato",
+              "trigger_cause_changed": "Causa dell'allarme cambiata",
+              "trigger_ended": "Allarme terminato",
+              "sensor_faulted": "Guasto del sensore",
+              "sensor_unconfirmed": "Attivazione non confermata",
+              "sensor_unconfirmed_escalated": "Attivazione non confermata intensificata",
+              "sensor_bypassed": "Sensore escluso",
+              "sensor_bypassed_at_arm": "Sensore escluso all'inserimento",
+              "sensor_unbypassed": "Esclusione del sensore rimossa",
+              "bypass_refused": "Esclusione rifiutata",
+              "supervision_lost": "Sensore perso",
+              "supervision_restored": "Sensore di nuovo disponibile",
+              "technical_alarm_started": "Allarme tecnico avviato",
+              "technical_alarm_ended": "Allarme tecnico terminato",
+              "state_restore_failed": "Stato salvato non ripristinato",
+              "notification_failed": "Notifica non riuscita",
+              "siren_started": "Sirena avviata",
+              "siren_stopped": "Sirena fermata",
+              "siren_failed": "Sirena in errore",
+              "siren_unavailable": "Sirena non raggiungibile",
+              "siren_available": "Sirena di nuovo raggiungibile",
+              "siren_power_lost": "Sirena senza alimentazione di rete",
+              "siren_power_restored": "Sirena di nuovo alimentata dalla rete",
+              "battery_low": "Batteria scarica",
+              "battery_ok": "Batteria di nuovo in ordine",
+              "alarm_silenced": "Allarme silenziato",
+              "alarm_acknowledged": "Allarme preso in carico",
+              "code_rejected": "Codice rifiutato",
+              "code_locked": "Codici bloccati dopo troppi codici errati",
+              "code_locked_permanent": "Codici bloccati definitivamente dopo troppi codici errati",
+              "startup_settled": "Avvio completato (in attesa dei sensori)",
+              "selftest_checked": "Autocontrollo eseguito",
+              "selftest_reminder": "Promemoria di test inviato",
+              "selftest_siren_tested": "Sirena testata",
+              "practice_started": "Modalità di prova attiva",
+              "practice_ended": "Modalità di prova disattivata",
+              "alarm_cancelled": "Allarme annullato (falso allarme)",
+              "duress_used": "Codice di coercizione usato",
+              "alarm_sensor_seen": "Sensore aperto durante l'allarme (non contava)",
+              "alarm_memory_cleared": "Memoria dell'allarme cancellata",
+              "chime": "Campanello",
+              "walktest_started": "Test di percorso avviato",
+              "walktest_finished": "Test di percorso terminato",
+              "panel_refused": "Richiesta del pannello rifiutata",
+              "user_refused": "Richiesta dell'utente rifiutata",
+              "panel_unlocked": "Pannello sbloccato",
+              "panel_lock_cleared": "Blocco del pannello rimosso",
+              "panel_offline": "Pannello non raggiungibile",
+              "panel_online": "Pannello di nuovo raggiungibile"
+            }
+          }
+        }
+      }
+    },
+    "sensor": {
+      "sensor_status": {
+        "name": "Stato",
+        "state": {
+          "closed": "Chiuso",
+          "open": "Aperto",
+          "unavailable": "Non raggiungibile",
+          "bypassed": "Escluso",
+          "bypassed_at_arm": "Escluso all'inserimento",
+          "waiting": "In attesa di chiusura"
+        }
+      },
+      "last_event": {
+        "name": "Ultimo evento",
+        "state": {
+          "armed": "Inserito",
+          "arming_started": "Inserimento avviato",
+          "arm_refused": "Inserimento rifiutato",
+          "disarmed": "Disinserito",
+          "pending_started": "Ritardo d'ingresso avviato",
+          "triggered": "Allarme scattato",
+          "trigger_cause_changed": "Causa dell'allarme cambiata",
+          "trigger_ended": "Allarme terminato",
+          "sensor_faulted": "Guasto del sensore",
+          "sensor_unconfirmed": "Attivazione non confermata",
+          "sensor_unconfirmed_escalated": "Attivazione non confermata intensificata",
+          "sensor_bypassed": "Sensore escluso",
+          "sensor_bypassed_at_arm": "Sensore escluso all'inserimento",
+          "sensor_unbypassed": "Esclusione del sensore rimossa",
+          "bypass_refused": "Esclusione rifiutata",
+          "supervision_lost": "Sensore perso",
+          "supervision_restored": "Sensore di nuovo disponibile",
+          "technical_alarm_started": "Allarme tecnico avviato",
+          "technical_alarm_ended": "Allarme tecnico terminato",
+          "state_restore_failed": "Stato salvato non ripristinato",
+          "notification_failed": "Notifica non riuscita",
+          "siren_started": "Sirena avviata",
+          "siren_stopped": "Sirena fermata",
+          "siren_failed": "Sirena in errore",
+          "siren_unavailable": "Sirena non raggiungibile",
+          "siren_available": "Sirena di nuovo raggiungibile",
+          "siren_power_lost": "Sirena senza alimentazione di rete",
+          "siren_power_restored": "Sirena di nuovo alimentata dalla rete",
+          "battery_low": "Batteria scarica",
+          "battery_ok": "Batteria di nuovo in ordine",
+          "alarm_silenced": "Allarme silenziato",
+          "alarm_acknowledged": "Allarme preso in carico",
+          "code_rejected": "Codice rifiutato",
+          "code_locked": "Codici bloccati dopo troppi codici errati",
+          "code_locked_permanent": "Codici bloccati definitivamente dopo troppi codici errati",
+          "startup_settled": "Avvio completato (in attesa dei sensori)",
+          "selftest_checked": "Autocontrollo eseguito",
+          "selftest_reminder": "Promemoria di test inviato",
+          "selftest_siren_tested": "Sirena testata",
+          "practice_started": "Modalità di prova attiva",
+          "practice_ended": "Modalità di prova disattivata",
+          "alarm_cancelled": "Allarme annullato (falso allarme)",
+          "duress_used": "Codice di coercizione usato",
+          "alarm_sensor_seen": "Sensore aperto durante l'allarme (non contava)",
+          "alarm_memory_cleared": "Memoria dell'allarme cancellata",
+          "chime": "Campanello",
+          "walktest_started": "Test di percorso avviato",
+          "walktest_finished": "Test di percorso terminato",
+          "panel_refused": "Richiesta del pannello rifiutata",
+          "user_refused": "Richiesta dell'utente rifiutata",
+          "panel_unlocked": "Pannello sbloccato",
+          "panel_lock_cleared": "Blocco del pannello rimosso",
+          "panel_offline": "Pannello non raggiungibile",
+          "panel_online": "Pannello di nuovo raggiungibile"
+        }
+      },
+      "panel_profile": {
+        "name": "Profilo"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Esclusione"
+      }
+    },
+    "binary_sensor": {
+      "active_intrusion": {
+        "name": "Allarme intrusione"
+      },
+      "active_fire": {
+        "name": "Allarme incendio"
+      },
+      "active_gas": {
+        "name": "Allarme gas"
+      },
+      "active_tamper": {
+        "name": "Allarme manomissione"
+      },
+      "technical_alarm": {
+        "name": "Allarme acqua"
+      },
+      "active_alarm24": {
+        "name": "Allarme 24 ore"
+      }
+    },
+    "alarm_control_panel": {
+      "alarm": {
+        "state_attributes": {
+          "cause": {
+            "name": "Causa",
+            "state": {
+              "intrusion": "Intrusione",
+              "fire": "Incendio",
+              "gas": "Gas",
+              "tamper": "Manomissione",
+              "fault": "Guasto del sensore"
+            }
+          },
+          "refuse_reason": {
+            "name": "Rifiutato perché",
+            "state": {
+              "not_disarmed": "Non disinserito",
+              "alarm_condition": "È presente una condizione di allarme",
+              "sensor_unavailable": "Un sensore non è raggiungibile",
+              "sensor_open": "Un sensore è aperto"
+            }
+          }
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "code_required": {
+      "message": "È richiesto un codice."
+    },
+    "code_locked_permanent": {
+      "message": "Troppi codici errati. Bloccato finché un amministratore non lo sblocca in Vigil."
+    },
+    "code_locked": {
+      "message": "Troppi codici errati. Riprova tra {minutes} min."
+    },
+    "invalid_code": {
+      "message": "Codice non valido."
+    },
+    "not_ready": {
+      "message": "L'allarme si sta ancora avviando."
+    },
+    "mode_not_allowed": {
+      "message": "{user} non può inserire nella modalità {mode}."
+    },
+    "arm_refused": {
+      "message": "Inserimento rifiutato: {reason} ({sensors})."
+    },
+    "unknown_sensor": {
+      "message": "Sensore sconosciuto."
+    },
+    "tamper_bypass_not_allowed": {
+      "message": "Per escludere o ripristinare un sensore di manomissione serve il diritto di escludere la manomissione, oppure un amministratore di Home Assistant."
+    },
+    "sensor_not_bypassable": {
+      "message": "Questo sensore non può essere escluso."
+    },
+    "invalid_config": {
+      "message": "Configurazione non valida: {error}"
+    },
+    "no_channels": {
+      "message": "Nessun canale di notifica configurato."
+    },
+    "no_sirens": {
+      "message": "Nessuna sirena configurata."
+    },
+    "alarm_active": {
+      "message": "Un allarme è attivo."
+    },
+    "mode_not_enabled": {
+      "message": "La modalità {mode} non è attiva."
+    },
+    "panel_blocked": {
+      "message": "Il pannello {panel} è bloccato."
+    },
+    "panel_not_allowed": {
+      "message": "Il pannello {panel} non può farlo."
+    },
+    "unknown_panel": {
+      "message": "Questo non è un pannello registrato."
+    },
+    "user_not_registered": {
+      "message": "Il tuo account Home Assistant non è registrato in Vigil, quindi non può comandare l'allarme."
+    },
+    "no_admin_code": {
+      "message": "Questo pannello non ha un codice installatore. Impostane uno nella scheda Pannelli, oppure sbloccalo lì."
+    },
+    "bypass_not_allowed": {
+      "message": "Per escludere o ripristinare i sensori serve il diritto di esclusione, assegnato a questo utente in Vigil, oppure un amministratore di Home Assistant."
+    },
+    "practice_needs_disarmed": {
+      "message": "La modalità di prova può partire solo quando l'allarme è disinserito."
+    },
+    "walktest_needs_disarmed": {
+      "message": "Il test di percorso può partire solo quando l'allarme è disinserito."
+    },
+    "walktest_no_sensors": {
+      "message": "Non ci sono sensori di intrusione da percorrere."
+    }
+  },
+  "services": {
+    "arm": {
+      "name": "Inserisci",
+      "description": "Inserisce l'allarme in una modalità, con il nome del punto di comando.",
+      "fields": {
+        "mode": {
+          "name": "Modalità",
+          "description": "Casa, fuori casa, notte, vacanza o personalizzato."
+        },
+        "code": {
+          "name": "Codice",
+          "description": "Codice di un utente. Non necessario per gli amministratori di Home Assistant nell'interfaccia."
+        },
+        "source": {
+          "name": "Origine",
+          "description": "Nome del punto di comando, per esempio un pannello. Compare nel registro e indica chi ha cambiato l'allarme."
+        },
+        "bypass_open": {
+          "name": "Escludi ciò che lo impedisce",
+          "description": "Esclude i sensori che impediscono l'inserimento (per esempio un contatto antimanomissione aperto) e poi inserisce. Richiede il diritto di esclusione; non vale mai per i sensori di incendio o gas."
+        }
+      }
+    },
+    "disarm": {
+      "name": "Disinserisci",
+      "description": "Disinserisce l'allarme, con il nome del punto di comando.",
+      "fields": {
+        "code": {
+          "name": "Codice",
+          "description": "Codice di un utente. Non necessario per gli amministratori di Home Assistant nell'interfaccia."
+        },
+        "source": {
+          "name": "Origine",
+          "description": "Nome del punto di comando, per esempio un pannello. Compare nel registro e indica chi ha cambiato l'allarme."
+        }
+      }
+    },
+    "bypass": {
+      "name": "Escludi sensore",
+      "description": "Ignora temporaneamente un sensore finché l'allarme non viene disinserito.",
+      "fields": {
+        "sensor": {
+          "name": "Sensore",
+          "description": "L'entità del sensore."
+        },
+        "code": {
+          "name": "Codice",
+          "description": "Codice di un utente. Non necessario per gli amministratori di Home Assistant nell'interfaccia."
+        },
+        "source": {
+          "name": "Origine",
+          "description": "Nome del punto di comando, per esempio un pannello. Compare nel registro e indica chi ha cambiato l'allarme."
+        }
+      }
+    },
+    "unbypass": {
+      "name": "Interrompi l'esclusione del sensore",
+      "description": "Torna a monitorare un sensore escluso.",
+      "fields": {
+        "sensor": {
+          "name": "Sensore",
+          "description": "L'entità del sensore."
+        },
+        "code": {
+          "name": "Codice",
+          "description": "Codice di un utente. Non necessario per gli amministratori di Home Assistant nell'interfaccia."
+        },
+        "source": {
+          "name": "Origine",
+          "description": "Nome del punto di comando, per esempio un pannello. Compare nel registro e indica chi ha cambiato l'allarme."
+        }
+      }
+    },
+    "test_notification": {
+      "name": "Notifica di prova",
+      "description": "Invia un messaggio di prova ai canali di notifica.",
+      "fields": {
+        "channel": {
+          "name": "Canale",
+          "description": "Nome di un canale; vuoto = tutti."
+        }
+      }
+    },
+    "test_siren": {
+      "name": "Prova la sirena",
+      "description": "Fa suonare brevemente la sirena per verificare che risponda. Non possibile durante un allarme.",
+      "fields": {
+        "siren": {
+          "name": "Sirena",
+          "description": "Nome di una sirena; vuoto = tutte."
+        },
+        "duration": {
+          "name": "Durata",
+          "description": "Secondi."
+        }
+      }
+    },
+    "silence": {
+      "name": "Silenzia la sirena",
+      "description": "Ferma le sirene; l'allarme resta attivo.",
+      "fields": {
+        "code": {
+          "name": "Codice",
+          "description": "Codice di un utente. Non necessario per gli amministratori di Home Assistant nell'interfaccia."
+        },
+        "source": {
+          "name": "Origine",
+          "description": "Nome del punto di comando, per esempio un pannello. Compare nel registro e indica chi ha cambiato l'allarme."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Prendi in carico l'allarme",
+      "description": "Conferma di aver visto l'allarme; annulla i messaggi di escalation.",
+      "fields": {
+        "code": {
+          "name": "Codice",
+          "description": "Codice di un utente. Non necessario per gli amministratori di Home Assistant nell'interfaccia."
+        },
+        "source": {
+          "name": "Origine",
+          "description": "Nome del punto di comando, per esempio un pannello. Compare nel registro e indica chi ha cambiato l'allarme."
+        }
+      }
+    },
+    "check_code": {
+      "name": "Verifica il codice",
+      "description": "Verifica se un codice è valido. Non cambia nulla. Un codice errato conta per il blocco.",
+      "fields": {
+        "code": {
+          "name": "Codice",
+          "description": "Il codice da verificare."
+        },
+        "source": {
+          "name": "Origine",
+          "description": "Nome del punto di comando, per esempio un pannello."
+        }
+      }
+    },
+    "unlock_panel": {
+      "name": "Sblocca il pannello",
+      "description": "Sblocca l'elenco dei sensori o le pagine informative di un pannello registrato. Non disinserisce mai l'allarme.",
+      "fields": {
+        "code": {
+          "name": "Codice",
+          "description": "Un codice utente Vigil o il codice installatore di questo pannello per l'elenco dei sensori; il codice installatore per le pagine informative."
+        },
+        "scope": {
+          "name": "Ambito",
+          "description": "sensors: l'elenco dei sensori (un codice utente o il codice installatore). info: le pagine informative (solo il codice installatore)."
+        },
+        "source": {
+          "name": "Origine",
+          "description": "L'id del pannello."
+        }
+      }
+    }
+  },
+  "issues": {
+    "sensor_unreachable": {
+      "title": "Sensore non raggiungibile: {name}",
+      "description": "Vigil Alarm non riesce a raggiungere il sensore {name}. Controlla il dispositivo (batteria, portata, alimentazione). L'inserimento può essere rifiutato finché non torna disponibile. Questo messaggio scompare da solo."
+    },
+    "battery_low": {
+      "title": "Batteria scarica: {name}",
+      "description": "La batteria di {name} è scarica. Sostituiscila. Questo messaggio scompare da solo quando la batteria è di nuovo a posto."
+    },
+    "battery_low_level": {
+      "title": "Batteria scarica: {name} ({level}%)",
+      "description": "La batteria di {name} è al {level}%. Sostituiscila. Questo messaggio scompare da solo quando la batteria è di nuovo a posto."
+    },
+    "siren_unavailable": {
+      "title": "Sirena non disponibile: {name}",
+      "description": "La sirena {name} non è raggiungibile e quindi non suonerà durante un allarme. Controlla il dispositivo. Questo messaggio scompare da solo."
+    },
+    "siren_on_battery": {
+      "title": "Sirena a batteria: {name}",
+      "description": "La sirena {name} ha perso l'alimentazione di rete e funziona a batteria. Controlla l'alimentazione. Questo messaggio scompare da solo."
+    },
+    "selftest_overdue": {
+      "title": "Sirena non testata da {days} giorni",
+      "description": "La sirena non viene testata da {days} giorni. Usa «Prova la sirena» nel pannello Vigil Alarm, oppure l'azione vigil_alarm.test_siren. Questo messaggio scompare quando hai fatto il test."
+    },
+    "selftest_channel_missing": {
+      "title": "Canale di notifica non funzionante: {name}",
+      "description": "Il servizio notify del canale {name} non esiste più, quindi non può inviare messaggi. Controlla il canale nel pannello Vigil Alarm. Questo messaggio scompare da solo."
+    },
+    "heartbeat_failing": {
+      "title": "Impossibile inviare l'heartbeat",
+      "description": "Vigil Alarm non è riuscito a raggiungere più volte di seguito l'indirizzo dell'heartbeat ({reason}). Un servizio di monitoraggio che lo attende lo segnalerà. Controlla l'indirizzo nelle impostazioni del pannello Vigil Alarm e la tua connessione a Internet. Questo messaggio scompare da solo quando l'heartbeat torna a funzionare."
+    },
+    "panel_offline": {
+      "title": "Pannello non raggiungibile: {name}",
+      "description": "Vigil Alarm non è riuscito a raggiungere il pannello {name} per dieci minuti. Controlla l'alimentazione e il wifi del pannello. L'allarme stesso continua a funzionare. Questo messaggio scompare da solo quando il pannello torna disponibile."
+    }
+  }
+}

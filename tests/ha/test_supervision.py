@@ -236,14 +236,15 @@ async def test_an_unreachable_sensor_is_a_repair_and_missing_settings_are_not(ha
     assert _issues(hass) == {}
 
 
-def test_every_repair_has_a_text_in_both_languages():
+def test_every_repair_has_a_text_in_every_language():
     import json
     from pathlib import Path
 
+    from custom_components.vigil_alarm.languages import LANGUAGES
     from custom_components.vigil_alarm.repairs import _PROBLEM_KEY
 
     keys = {*_PROBLEM_KEY.values(), "sensor_unreachable", "battery_low_level"}
-    for lang in ("en", "nl"):
+    for lang in LANGUAGES:
         data = json.loads((Path(__file__).parents[2] / f"custom_components/vigil_alarm/translations/{lang}.json").read_text("utf-8"))
         assert keys <= set(data["issues"]), lang
         assert all(v["title"] and v["description"] for v in data["issues"].values())

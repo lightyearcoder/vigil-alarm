@@ -22,7 +22,7 @@ substitutions:
   # How long the screen stays on without touch, until Vigil has told the panel (setting "Screen off after" in Vigil).
   backlight_timeout_seconds: "30"
   # The version of this firmware, reported to Vigil.
-  firmware_version: "0.5.5"
+  firmware_version: "0.5.6"
   # The width of the cards and buttons: the screen minus a margin on both sides.
   content_w: ${ screen_width | int - 24 }
   # The sizes follow the screen: the ring is a bit over a quarter of the shortest side, the keys fill the keypad.

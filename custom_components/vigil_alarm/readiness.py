@@ -31,6 +31,7 @@ from .const import (
 )
 from .editing import notify_services
 from .items import Item, items_of, new_id, save_stored, stored, stored_items
+from .languages import GROUP_NAMES, language_of
 
 MAX_NAMES = 3
 PHONE_PREFIX = "mobile_app_"
@@ -125,9 +126,7 @@ def async_readiness(hass: HomeAssistant, entry: ConfigEntry) -> list[dict[str, A
 
 
 def _group_names(language: str) -> dict[str, str]:
-    if str(language).startswith("nl"):
-        return {"contacts": "Buitenschil", "motion": "Binnen"}
-    return {"contacts": "Perimeter", "motion": "Interior"}
+    return GROUP_NAMES[language_of(language)]
 
 
 def async_create_default_groups(hass: HomeAssistant, entry: ConfigEntry) -> list[str]:

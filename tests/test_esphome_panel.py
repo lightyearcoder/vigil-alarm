@@ -46,7 +46,7 @@ def test_every_language_has_every_text():
     for line in table.splitlines():
         if line.strip().startswith("{\"") and "{\"" in line.split(", {", 1)[-1]:
             texts = line.split(", {", 1)[1].rsplit("}", 2)[0]
-            assert texts.count('"') == 4, f"two texts expected: {line}"
+            assert texts.count('"') == 12, f"six texts expected (nl, en, de, fr, it, es): {line}"
             assert '""' not in texts, f"empty text: {line}"
     assert all(ord(c) < 128 for c in table), "the built-in fonts only have plain ASCII letters"
 
@@ -188,17 +188,25 @@ def test_the_error_phrases_of_the_panel_and_the_card_match_vigils_own_texts():
     import json
     import re
 
-    header = (FIRMWARE_DIR / "vigil_panel.h").read_text()
-    card = (ROOT / "custom_components/vigil_alarm/frontend/vigil-card.js").read_text()
-    rows = re.findall(r'\{"([^"]+)", "([^"]+)", "(err_[a-z_]+)"\}', header)
-    card_rows = re.findall(r'\["([^"]+)", "([^"]+)", "(err_[a-z_]+)"\]', card)
-    assert rows and rows == card_rows  # the same table in both
-    en = " ".join(v["message"] for v in json.loads((ROOT / "custom_components/vigil_alarm/translations/en.json").read_text())["exceptions"].values())
-    nl = " ".join(v["message"] for v in json.loads((ROOT / "custom_components/vigil_alarm/translations/nl.json").read_text())["exceptions"].values())
-    for english, dutch, key in rows:
-        assert english in en, english
-        assert dutch in nl, dutch
-        assert f'"{key}"' in header and f"{key}:" in card
+    header = (FIRMWARE_DIR / "vigil_panel.h").read_text(encoding="utf-8")
+    card = (ROOT / "custom_components/vigil_alarm/frontend/vigil-card.js").read_text(encoding="utf-8")
+    rows = re.findall(r'\{\{([^}]*)\}, "(err_[a-z_]+)"\}', header)
+    card_rows = re.findall(r'\[\[([^\]]*)\], "(err_[a-z_]+)"\]', card)
+    assert len(rows) == len(card_rows) == 10
+
+    def phrases(row):
+        return re.findall(r'"((?:[^"\\]|\\.)*)"', row[0])
+
+    texts = {}
+    for lang in ("en", "nl", "de", "fr", "it", "es"):
+        data = json.loads((ROOT / f"custom_components/vigil_alarm/translations/{lang}.json").read_text(encoding="utf-8"))
+        texts[lang] = " ".join(v["message"] for v in data["exceptions"].values())
+    for fw, cd in zip(rows, card_rows):
+        nl, en, *others = phrases(fw)  # the firmware follows enum Language: nl, en, de, fr, it, es
+        assert [en, nl, *others] == phrases(cd), (en, "the same table in both")  # the card: en, nl, de, fr, it, es
+        assert fw[-1] == cd[-1]
+        for lang, phrase in zip(("en", "nl", "de", "fr", "it", "es"), [en, nl, *others]):
+            assert phrase in texts[lang], (lang, phrase)
 
 
 def test_every_icon_the_panel_draws_is_in_the_icon_font():

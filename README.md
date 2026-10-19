@@ -41,6 +41,8 @@
   during a restart is still raised.
 - **Admin panel** in the sidebar (administrators only) to set up sensors, groups, users,
   notifications and sirens in clear tables, with live status.
+- **Six languages:** English, Dutch, German, French, Italian and Spanish, in the admin panel, the card, the
+  touch panel, the notifications and the Home Assistant screens. Other languages fall back to English.
 - **Built for automations:** every decision is published as an event, so lights, speech,
   cameras and anything else are *your* automations. Ready-made [blueprints](#blueprints) and an
   [example dashboard](#example-dashboard) are included.

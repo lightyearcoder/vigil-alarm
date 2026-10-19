@@ -1,0 +1,569 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vigil Alarm",
+        "description": "Einstellungen der Alarmanlage. Sensoren, Gruppen und Benutzer werden danach hinzugefügt.",
+        "data": {
+          "name": "Name",
+          "modes": "Aktivierte Modi",
+          "exit_delay_home": "Verlassverzögerung: Zuhause",
+          "exit_delay_away": "Verlassverzögerung: Abwesend",
+          "exit_delay_night": "Verlassverzögerung: Nacht",
+          "exit_delay_vacation": "Verlassverzögerung: Urlaub",
+          "exit_delay_custom": "Verlassverzögerung: Benutzerdefiniert",
+          "default_entry_delay": "Standard-Eingangsverzögerung",
+          "trigger_time": "Alarmdauer (0 = bis zum Unscharfschalten)",
+          "abort_seconds": "Abbruchfenster nach der Sirene (Sekunden, 0 = aus)",
+          "chime_entity": "Türgong: was ertönt (optional)",
+          "chime_seconds": "Türgong ertönt (Sekunden)",
+          "code_arm_required": "Code zum Scharfschalten verlangen",
+          "min_code_length": "Minimale Codelänge",
+          "battery_threshold": "Batterie schwach bei oder unter",
+          "lock_tries_1": "Falsche Codes vor der ersten Sperre",
+          "lock_wait_1": "Erste Sperre dauert (Minuten)",
+          "lock_tries_2": "Danach falsche Codes vor der zweiten Sperre",
+          "lock_wait_2": "Zweite Sperre dauert (Minuten)",
+          "lock_tries_3": "Danach falsche Codes vor der dritten Sperre",
+          "lock_wait_3": "Dritte Sperre dauert (Minuten)",
+          "lock_tries_4": "Danach falsche Codes vor der dauerhaften Sperre",
+          "startup_wait_seconds": "Auf Sensoren warten nach einem Neustart (Sekunden)",
+          "screen_off_seconds": "Bildschirm aus nach (Sekunden)",
+          "screen_off_on_alarm": "Bildschirm bei einem Alarm dunkel werden lassen",
+          "log_retention_days": "Tage, die das Ereignisprotokoll aufbewahrt wird",
+          "backup_versions": "Aufzubewahrende Versionen der Konfiguration (Backups)",
+          "selftest_interval_days": "Tage zwischen Erinnerungen an den Sirenentest (0 = aus)",
+          "selftest_siren_seconds": "Sekunden, die die Sirene beim Test ertönt",
+          "selftest_auto": "Sirene für den Test selbstständig ertönen lassen",
+          "selftest_window_start": "Früheste Uhrzeit für den Test",
+          "selftest_window_end": "Späteste Uhrzeit für den Test",
+          "heartbeat_url": "Heartbeat-Adresse (optional)",
+          "heartbeat_interval_minutes": "Minuten zwischen Heartbeats"
+        }
+      },
+      "reconfigure": {
+        "title": "Vigil Alarm",
+        "description": "Einstellungen der Alarmanlage. Sensoren, Gruppen und Benutzer werden danach hinzugefügt.\n\n{error}",
+        "data": {
+          "name": "Name",
+          "modes": "Aktivierte Modi",
+          "exit_delay_home": "Verlassverzögerung: Zuhause",
+          "exit_delay_away": "Verlassverzögerung: Abwesend",
+          "exit_delay_night": "Verlassverzögerung: Nacht",
+          "exit_delay_vacation": "Verlassverzögerung: Urlaub",
+          "exit_delay_custom": "Verlassverzögerung: Benutzerdefiniert",
+          "default_entry_delay": "Standard-Eingangsverzögerung",
+          "trigger_time": "Alarmdauer (0 = bis zum Unscharfschalten)",
+          "abort_seconds": "Abbruchfenster nach der Sirene (Sekunden, 0 = aus)",
+          "chime_entity": "Türgong: was ertönt (optional)",
+          "chime_seconds": "Türgong ertönt (Sekunden)",
+          "code_arm_required": "Code zum Scharfschalten verlangen",
+          "min_code_length": "Minimale Codelänge",
+          "battery_threshold": "Batterie schwach bei oder unter",
+          "lock_tries_1": "Falsche Codes vor der ersten Sperre",
+          "lock_wait_1": "Erste Sperre dauert (Minuten)",
+          "lock_tries_2": "Danach falsche Codes vor der zweiten Sperre",
+          "lock_wait_2": "Zweite Sperre dauert (Minuten)",
+          "lock_tries_3": "Danach falsche Codes vor der dritten Sperre",
+          "lock_wait_3": "Dritte Sperre dauert (Minuten)",
+          "lock_tries_4": "Danach falsche Codes vor der dauerhaften Sperre",
+          "startup_wait_seconds": "Auf Sensoren warten nach einem Neustart (Sekunden)",
+          "screen_off_seconds": "Bildschirm aus nach (Sekunden)",
+          "screen_off_on_alarm": "Bildschirm bei einem Alarm dunkel werden lassen",
+          "log_retention_days": "Tage, die das Ereignisprotokoll aufbewahrt wird",
+          "backup_versions": "Aufzubewahrende Versionen der Konfiguration (Backups)",
+          "selftest_interval_days": "Tage zwischen Erinnerungen an den Sirenentest (0 = aus)",
+          "selftest_siren_seconds": "Sekunden, die die Sirene beim Test ertönt",
+          "selftest_auto": "Sirene für den Test selbstständig ertönen lassen",
+          "selftest_window_start": "Früheste Uhrzeit für den Test",
+          "selftest_window_end": "Späteste Uhrzeit für den Test",
+          "heartbeat_url": "Heartbeat-Adresse (optional)",
+          "heartbeat_interval_minutes": "Minuten zwischen Heartbeats"
+        }
+      }
+    },
+    "error": {
+      "no_modes": "Aktiviere mindestens einen Modus.",
+      "invalid_config": "Die Einstellungen passen nicht zu den Sensoren: {error}",
+      "heartbeat_url_invalid": "Das ist keine Webadresse (sie muss mit http:// oder https:// beginnen)."
+    },
+    "abort": {
+      "already_configured": "Vigil Alarm ist bereits eingerichtet.",
+      "reconfigure_successful": "Gespeichert."
+    }
+  },
+  "selector": {
+    "mode": {
+      "options": {
+        "home": "Zuhause",
+        "away": "Abwesend",
+        "night": "Nacht",
+        "vacation": "Urlaub",
+        "custom": "Benutzerdefiniert"
+      }
+    }
+  },
+  "entity": {
+    "event": {
+      "alarm_events": {
+        "name": "Alarmereignisse",
+        "state_attributes": {
+          "event_type": {
+            "name": "Ereignistyp",
+            "state": {
+              "armed": "Scharf",
+              "arming_started": "Scharfschaltung gestartet",
+              "arm_refused": "Scharfschaltung abgelehnt",
+              "disarmed": "Unscharf",
+              "pending_started": "Eingangsverzögerung gestartet",
+              "triggered": "Alarm ausgelöst",
+              "trigger_cause_changed": "Alarmursache geändert",
+              "trigger_ended": "Alarm beendet",
+              "sensor_faulted": "Sensorstörung",
+              "sensor_unconfirmed": "Unbestätigte Auslösung",
+              "sensor_unconfirmed_escalated": "Unbestätigte Auslösung eskaliert",
+              "sensor_bypassed": "Sensor überbrückt",
+              "sensor_bypassed_at_arm": "Sensor beim Scharfschalten überbrückt",
+              "sensor_unbypassed": "Überbrückung des Sensors aufgehoben",
+              "bypass_refused": "Überbrückung abgelehnt",
+              "supervision_lost": "Sensor ausgefallen",
+              "supervision_restored": "Sensor wieder da",
+              "technical_alarm_started": "Technischer Alarm gestartet",
+              "technical_alarm_ended": "Technischer Alarm beendet",
+              "state_restore_failed": "Gespeicherter Zustand nicht wiederhergestellt",
+              "notification_failed": "Benachrichtigung fehlgeschlagen",
+              "siren_started": "Sirene gestartet",
+              "siren_stopped": "Sirene gestoppt",
+              "siren_failed": "Sirene fehlgeschlagen",
+              "siren_unavailable": "Sirene nicht erreichbar",
+              "siren_available": "Sirene wieder erreichbar",
+              "siren_power_lost": "Sirene hat Netzstrom verloren",
+              "siren_power_restored": "Sirene wieder am Netzstrom",
+              "battery_low": "Batterie schwach",
+              "battery_ok": "Batterie wieder in Ordnung",
+              "alarm_silenced": "Alarm stummgeschaltet",
+              "alarm_acknowledged": "Alarm quittiert",
+              "code_rejected": "Code abgelehnt",
+              "code_locked": "Codes nach zu vielen falschen Codes gesperrt",
+              "code_locked_permanent": "Codes nach zu vielen falschen Codes dauerhaft gesperrt",
+              "startup_settled": "Start abgeschlossen (warte auf Sensoren)",
+              "selftest_checked": "Selbstprüfung durchgeführt",
+              "selftest_reminder": "Testerinnerung gesendet",
+              "selftest_siren_tested": "Sirene getestet",
+              "practice_started": "Übungsmodus an",
+              "practice_ended": "Übungsmodus aus",
+              "alarm_cancelled": "Alarm abgebrochen (Fehlalarm)",
+              "duress_used": "Zwangscode benutzt",
+              "alarm_sensor_seen": "Sensor während des Alarms geöffnet (zählte nicht)",
+              "alarm_memory_cleared": "Alarmspeicher gelöscht",
+              "chime": "Türgong",
+              "walktest_started": "Begehungstest gestartet",
+              "walktest_finished": "Begehungstest beendet",
+              "panel_refused": "Aufruf des Bedienteils abgelehnt",
+              "user_refused": "Aufruf des Benutzers abgelehnt",
+              "panel_unlocked": "Bedienteil entsperrt",
+              "panel_lock_cleared": "Sperre des Bedienteils aufgehoben",
+              "panel_offline": "Bedienteil nicht erreichbar",
+              "panel_online": "Bedienteil wieder erreichbar"
+            }
+          }
+        }
+      }
+    },
+    "sensor": {
+      "sensor_status": {
+        "name": "Status",
+        "state": {
+          "closed": "Geschlossen",
+          "open": "Offen",
+          "unavailable": "Nicht erreichbar",
+          "bypassed": "Überbrückt",
+          "bypassed_at_arm": "Beim Scharfschalten überbrückt",
+          "waiting": "Wartet bis geschlossen"
+        }
+      },
+      "last_event": {
+        "name": "Letztes Ereignis",
+        "state": {
+          "armed": "Scharf",
+          "arming_started": "Scharfschaltung gestartet",
+          "arm_refused": "Scharfschaltung abgelehnt",
+          "disarmed": "Unscharf",
+          "pending_started": "Eingangsverzögerung gestartet",
+          "triggered": "Alarm ausgelöst",
+          "trigger_cause_changed": "Alarmursache geändert",
+          "trigger_ended": "Alarm beendet",
+          "sensor_faulted": "Sensorstörung",
+          "sensor_unconfirmed": "Unbestätigte Auslösung",
+          "sensor_unconfirmed_escalated": "Unbestätigte Auslösung eskaliert",
+          "sensor_bypassed": "Sensor überbrückt",
+          "sensor_bypassed_at_arm": "Sensor beim Scharfschalten überbrückt",
+          "sensor_unbypassed": "Überbrückung des Sensors aufgehoben",
+          "bypass_refused": "Überbrückung abgelehnt",
+          "supervision_lost": "Sensor ausgefallen",
+          "supervision_restored": "Sensor wieder da",
+          "technical_alarm_started": "Technischer Alarm gestartet",
+          "technical_alarm_ended": "Technischer Alarm beendet",
+          "state_restore_failed": "Gespeicherter Zustand nicht wiederhergestellt",
+          "notification_failed": "Benachrichtigung fehlgeschlagen",
+          "siren_started": "Sirene gestartet",
+          "siren_stopped": "Sirene gestoppt",
+          "siren_failed": "Sirene fehlgeschlagen",
+          "siren_unavailable": "Sirene nicht erreichbar",
+          "siren_available": "Sirene wieder erreichbar",
+          "siren_power_lost": "Sirene hat Netzstrom verloren",
+          "siren_power_restored": "Sirene wieder am Netzstrom",
+          "battery_low": "Batterie schwach",
+          "battery_ok": "Batterie wieder in Ordnung",
+          "alarm_silenced": "Alarm stummgeschaltet",
+          "alarm_acknowledged": "Alarm quittiert",
+          "code_rejected": "Code abgelehnt",
+          "code_locked": "Codes nach zu vielen falschen Codes gesperrt",
+          "code_locked_permanent": "Codes nach zu vielen falschen Codes dauerhaft gesperrt",
+          "startup_settled": "Start abgeschlossen (warte auf Sensoren)",
+          "selftest_checked": "Selbstprüfung durchgeführt",
+          "selftest_reminder": "Testerinnerung gesendet",
+          "selftest_siren_tested": "Sirene getestet",
+          "practice_started": "Übungsmodus an",
+          "practice_ended": "Übungsmodus aus",
+          "alarm_cancelled": "Alarm abgebrochen (Fehlalarm)",
+          "duress_used": "Zwangscode benutzt",
+          "alarm_sensor_seen": "Sensor während des Alarms geöffnet (zählte nicht)",
+          "alarm_memory_cleared": "Alarmspeicher gelöscht",
+          "chime": "Türgong",
+          "walktest_started": "Begehungstest gestartet",
+          "walktest_finished": "Begehungstest beendet",
+          "panel_refused": "Aufruf des Bedienteils abgelehnt",
+          "user_refused": "Aufruf des Benutzers abgelehnt",
+          "panel_unlocked": "Bedienteil entsperrt",
+          "panel_lock_cleared": "Sperre des Bedienteils aufgehoben",
+          "panel_offline": "Bedienteil nicht erreichbar",
+          "panel_online": "Bedienteil wieder erreichbar"
+        }
+      },
+      "panel_profile": {
+        "name": "Profil"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Überbrückung"
+      }
+    },
+    "binary_sensor": {
+      "active_intrusion": {
+        "name": "Einbruchalarm"
+      },
+      "active_fire": {
+        "name": "Brandalarm"
+      },
+      "active_gas": {
+        "name": "Gasalarm"
+      },
+      "active_tamper": {
+        "name": "Sabotagealarm"
+      },
+      "technical_alarm": {
+        "name": "Wasseralarm"
+      },
+      "active_alarm24": {
+        "name": "24-Stunden-Alarm"
+      }
+    },
+    "alarm_control_panel": {
+      "alarm": {
+        "state_attributes": {
+          "cause": {
+            "name": "Ursache",
+            "state": {
+              "intrusion": "Einbruch",
+              "fire": "Brand",
+              "gas": "Gas",
+              "tamper": "Sabotage",
+              "fault": "Sensorstörung"
+            }
+          },
+          "refuse_reason": {
+            "name": "Abgelehnt, weil",
+            "state": {
+              "not_disarmed": "Nicht unscharf",
+              "alarm_condition": "Ein Alarmzustand liegt vor",
+              "sensor_unavailable": "Ein Sensor ist nicht erreichbar",
+              "sensor_open": "Ein Sensor ist offen"
+            }
+          }
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "code_required": {
+      "message": "Ein Code ist erforderlich."
+    },
+    "code_locked_permanent": {
+      "message": "Zu viele falsche Codes. Gesperrt, bis ein Administrator in Vigil entsperrt."
+    },
+    "code_locked": {
+      "message": "Zu viele falsche Codes. Versuche es in {minutes} Min. erneut."
+    },
+    "invalid_code": {
+      "message": "Ungültiger Code."
+    },
+    "not_ready": {
+      "message": "Die Alarmanlage startet noch."
+    },
+    "mode_not_allowed": {
+      "message": "{user} darf im Modus {mode} nicht scharfschalten."
+    },
+    "arm_refused": {
+      "message": "Scharfschalten abgelehnt: {reason} ({sensors})."
+    },
+    "unknown_sensor": {
+      "message": "Unbekannter Sensor."
+    },
+    "tamper_bypass_not_allowed": {
+      "message": "Zum Überbrücken oder Wiederherstellen eines Sabotagesensors ist das Recht „Sabotage überbrücken“ oder ein Home-Assistant-Administrator nötig."
+    },
+    "sensor_not_bypassable": {
+      "message": "Dieser Sensor kann nicht überbrückt werden."
+    },
+    "invalid_config": {
+      "message": "Ungültige Konfiguration: {error}"
+    },
+    "no_channels": {
+      "message": "Es ist kein Benachrichtigungskanal eingerichtet."
+    },
+    "no_sirens": {
+      "message": "Es ist keine Sirene eingerichtet."
+    },
+    "alarm_active": {
+      "message": "Ein Alarm ist aktiv."
+    },
+    "mode_not_enabled": {
+      "message": "Modus {mode} ist nicht aktiviert."
+    },
+    "panel_blocked": {
+      "message": "Das Bedienteil {panel} ist gesperrt."
+    },
+    "panel_not_allowed": {
+      "message": "Das Bedienteil {panel} darf das nicht."
+    },
+    "unknown_panel": {
+      "message": "Das ist kein registriertes Bedienteil."
+    },
+    "user_not_registered": {
+      "message": "Dein Home-Assistant-Konto ist in Vigil nicht registriert und darf die Alarmanlage deshalb nicht bedienen."
+    },
+    "no_admin_code": {
+      "message": "Dieses Bedienteil hat keinen Installateurcode. Lege einen im Tab „Bedienteile“ fest oder entsperre es dort."
+    },
+    "bypass_not_allowed": {
+      "message": "Zum Überbrücken oder Wiederherstellen von Sensoren ist das Überbrückungsrecht (in Vigil für diesen Benutzer vergeben) oder ein Home-Assistant-Administrator nötig."
+    },
+    "practice_needs_disarmed": {
+      "message": "Der Übungsmodus kann nur starten, solange die Alarmanlage unscharf ist."
+    },
+    "walktest_needs_disarmed": {
+      "message": "Der Begehungstest kann nur starten, solange die Alarmanlage unscharf ist."
+    },
+    "walktest_no_sensors": {
+      "message": "Es gibt keine Einbruchsensoren zum Abgehen."
+    }
+  },
+  "services": {
+    "arm": {
+      "name": "Scharfschalten",
+      "description": "Schaltet die Alarmanlage in einem Modus scharf, mit dem Namen der Bedienstelle.",
+      "fields": {
+        "mode": {
+          "name": "Modus",
+          "description": "Zuhause, abwesend, Nacht, Urlaub oder benutzerdefiniert."
+        },
+        "code": {
+          "name": "Code",
+          "description": "Code eines Benutzers. Für Home-Assistant-Administratoren in der Oberfläche nicht nötig."
+        },
+        "source": {
+          "name": "Quelle",
+          "description": "Name der Bedienstelle, zum Beispiel ein Bedienteil. Er erscheint im Protokoll und dort, wo steht, wer die Alarmanlage geändert hat."
+        },
+        "bypass_open": {
+          "name": "Überbrücken, was es verhindert",
+          "description": "Überbrückt die Sensoren, die das Scharfschalten verhindern (zum Beispiel einen offenen Sabotagekontakt) und schaltet dann scharf. Erfordert das Überbrückungsrecht; gilt nie für Brand- oder Gassensoren."
+        }
+      }
+    },
+    "disarm": {
+      "name": "Unscharfschalten",
+      "description": "Schaltet die Alarmanlage unscharf, mit dem Namen der Bedienstelle.",
+      "fields": {
+        "code": {
+          "name": "Code",
+          "description": "Code eines Benutzers. Für Home-Assistant-Administratoren in der Oberfläche nicht nötig."
+        },
+        "source": {
+          "name": "Quelle",
+          "description": "Name der Bedienstelle, zum Beispiel ein Bedienteil. Er erscheint im Protokoll und dort, wo steht, wer die Alarmanlage geändert hat."
+        }
+      }
+    },
+    "bypass": {
+      "name": "Sensor überbrücken",
+      "description": "Einen Sensor vorübergehend ignorieren, bis die Alarmanlage unscharf geschaltet wird.",
+      "fields": {
+        "sensor": {
+          "name": "Sensor",
+          "description": "Die Sensor-Entität des Sensors."
+        },
+        "code": {
+          "name": "Code",
+          "description": "Code eines Benutzers. Für Home-Assistant-Administratoren in der Oberfläche nicht nötig."
+        },
+        "source": {
+          "name": "Quelle",
+          "description": "Name der Bedienstelle, zum Beispiel ein Bedienteil. Er erscheint im Protokoll und dort, wo steht, wer die Alarmanlage geändert hat."
+        }
+      }
+    },
+    "unbypass": {
+      "name": "Überbrückung des Sensors beenden",
+      "description": "Einen überbrückten Sensor wieder überwachen.",
+      "fields": {
+        "sensor": {
+          "name": "Sensor",
+          "description": "Die Sensor-Entität des Sensors."
+        },
+        "code": {
+          "name": "Code",
+          "description": "Code eines Benutzers. Für Home-Assistant-Administratoren in der Oberfläche nicht nötig."
+        },
+        "source": {
+          "name": "Quelle",
+          "description": "Name der Bedienstelle, zum Beispiel ein Bedienteil. Er erscheint im Protokoll und dort, wo steht, wer die Alarmanlage geändert hat."
+        }
+      }
+    },
+    "test_notification": {
+      "name": "Testbenachrichtigung",
+      "description": "Sendet eine Testnachricht an die Benachrichtigungskanäle.",
+      "fields": {
+        "channel": {
+          "name": "Kanal",
+          "description": "Name eines Kanals; leer = alle."
+        }
+      }
+    },
+    "test_siren": {
+      "name": "Sirene testen",
+      "description": "Lässt die Sirene kurz ertönen, um zu prüfen, ob sie reagiert. Während eines Alarms nicht möglich.",
+      "fields": {
+        "siren": {
+          "name": "Sirene",
+          "description": "Name einer Sirene; leer = alle."
+        },
+        "duration": {
+          "name": "Dauer",
+          "description": "Sekunden."
+        }
+      }
+    },
+    "silence": {
+      "name": "Sirene stummschalten",
+      "description": "Stoppt die Sirenen; der Alarm bleibt aktiv.",
+      "fields": {
+        "code": {
+          "name": "Code",
+          "description": "Code eines Benutzers. Für Home-Assistant-Administratoren in der Oberfläche nicht nötig."
+        },
+        "source": {
+          "name": "Quelle",
+          "description": "Name der Bedienstelle, zum Beispiel ein Bedienteil. Er erscheint im Protokoll und dort, wo steht, wer die Alarmanlage geändert hat."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Alarm quittieren",
+      "description": "Bestätigt, dass du den Alarm gesehen hast; das bricht Eskalationsnachrichten ab.",
+      "fields": {
+        "code": {
+          "name": "Code",
+          "description": "Code eines Benutzers. Für Home-Assistant-Administratoren in der Oberfläche nicht nötig."
+        },
+        "source": {
+          "name": "Quelle",
+          "description": "Name der Bedienstelle, zum Beispiel ein Bedienteil. Er erscheint im Protokoll und dort, wo steht, wer die Alarmanlage geändert hat."
+        }
+      }
+    },
+    "check_code": {
+      "name": "Code prüfen",
+      "description": "Prüft, ob ein Code gültig ist. Ändert nichts. Ein falscher Code zählt für die Sperre mit.",
+      "fields": {
+        "code": {
+          "name": "Code",
+          "description": "Der zu prüfende Code."
+        },
+        "source": {
+          "name": "Quelle",
+          "description": "Name der Bedienstelle, zum Beispiel ein Bedienteil."
+        }
+      }
+    },
+    "unlock_panel": {
+      "name": "Bedienteil entsperren",
+      "description": "Entsperrt die Sensorliste oder die Infoseiten eines registrierten Bedienteils. Schaltet die Alarmanlage nie unscharf.",
+      "fields": {
+        "code": {
+          "name": "Code",
+          "description": "Ein Vigil-Benutzercode oder der Installateurcode dieses Bedienteils für die Sensorliste; der Installateurcode für die Infoseiten."
+        },
+        "scope": {
+          "name": "Bereich",
+          "description": "sensors: die Sensorliste (ein Benutzercode oder der Installateurcode). info: die Infoseiten (nur der Installateurcode)."
+        },
+        "source": {
+          "name": "Quelle",
+          "description": "Die ID des Bedienteils."
+        }
+      }
+    }
+  },
+  "issues": {
+    "sensor_unreachable": {
+      "title": "Sensor nicht erreichbar: {name}",
+      "description": "Vigil Alarm erreicht den Sensor {name} nicht. Prüfe das Gerät (Batterie, Reichweite, Strom). Das Scharfschalten kann abgelehnt werden, bis er wieder da ist. Diese Meldung verschwindet von selbst."
+    },
+    "battery_low": {
+      "title": "Batterie schwach: {name}",
+      "description": "Die Batterie von {name} ist schwach. Wechsle sie aus. Diese Meldung verschwindet von selbst, wenn die Batterie wieder in Ordnung ist."
+    },
+    "battery_low_level": {
+      "title": "Batterie schwach: {name} ({level}%)",
+      "description": "Die Batterie von {name} steht bei {level}%. Wechsle sie aus. Diese Meldung verschwindet von selbst, wenn die Batterie wieder in Ordnung ist."
+    },
+    "siren_unavailable": {
+      "title": "Sirene nicht verfügbar: {name}",
+      "description": "Die Sirene {name} ist nicht erreichbar und ertönt daher bei einem Alarm nicht. Prüfe das Gerät. Diese Meldung verschwindet von selbst."
+    },
+    "siren_on_battery": {
+      "title": "Sirene im Akkubetrieb: {name}",
+      "description": "Die Sirene {name} hat den Netzstrom verloren und läuft mit ihrem Akku. Prüfe die Stromversorgung. Diese Meldung verschwindet von selbst."
+    },
+    "selftest_overdue": {
+      "title": "Sirene seit {days} Tagen nicht getestet",
+      "description": "Die Sirene wurde seit {days} Tagen nicht getestet. Verwende „Sirene testen“ im Vigil-Alarm-Panel oder die Aktion vigil_alarm.test_siren. Diese Meldung verschwindet, sobald du getestet hast."
+    },
+    "selftest_channel_missing": {
+      "title": "Benachrichtigungskanal funktioniert nicht: {name}",
+      "description": "Der Notify-Dienst des Kanals {name} existiert nicht mehr und kann daher keine Nachrichten senden. Prüfe den Kanal im Vigil-Alarm-Panel. Diese Meldung verschwindet von selbst."
+    },
+    "heartbeat_failing": {
+      "title": "Heartbeat kann nicht gesendet werden",
+      "description": "Vigil Alarm konnte die Heartbeat-Adresse mehrmals hintereinander nicht erreichen ({reason}). Ein Überwachungsdienst, der den Heartbeat erwartet, meldet das. Prüfe die Adresse unter Einstellungen im Vigil-Alarm-Panel und deine Internetverbindung. Diese Meldung verschwindet von selbst, wenn der Heartbeat wieder funktioniert."
+    },
+    "panel_offline": {
+      "title": "Bedienteil nicht erreichbar: {name}",
+      "description": "Vigil Alarm konnte das Bedienteil {name} zehn Minuten lang nicht erreichen. Prüfe Strom und WLAN des Bedienteils. Die Alarmanlage selbst funktioniert weiter. Diese Meldung verschwindet von selbst, wenn das Bedienteil wieder da ist."
+    }
+  }
+}

@@ -4,8 +4,9 @@
 // The YAML (vigil-panel.yaml) only holds the layout and the wiring; everything that decides
 // what the panel shows is here.
 //
-// Adding a language: add a column to TEXTS and an entry to LANGUAGES. Keep the texts to plain
-// ASCII, the built-in LVGL fonts do not contain accented letters.
+// Adding a language: add a column to TEXTS (and to ERROR_ROWS), an entry to Language and a line in
+// parse_language. Keep the texts to plain ASCII, the built-in LVGL fonts do not contain accented letters
+// (so Ueberbruecken, Desactive, Senal).
 #pragma once
 
 #include <algorithm>
@@ -20,7 +21,7 @@ namespace vigil {
 
 // ----------------------------------------------------------------------------------- texts
 
-enum Language { NL = 0, EN = 1, LANGUAGE_COUNT = 2 };
+enum Language { NL = 0, EN = 1, DE = 2, FR = 3, IT = 4, ES = 5, LANGUAGE_COUNT = 6 };
 
 struct Text {
   const char *key;
@@ -28,113 +29,120 @@ struct Text {
 };
 
 static const Text TEXTS[] = {
-    {"disarmed", {"Uitgeschakeld", "Disarmed"}},
-    {"armed_home", {"Thuis", "Home"}},
-    {"armed_away", {"Weg", "Away"}},
-    {"armed_night", {"Nacht", "Night"}},
-    {"armed_vacation", {"Vakantie", "Vacation"}},
-    {"armed_custom_bypass", {"Aangepast", "Custom"}},
-    {"arming", {"Inschakelen", "Arming"}},
-    {"pending", {"Binnenkomst", "Entry"}},
-    {"triggered", {"ALARM", "ALARM"}},
-    {"offline", {"Geen verbinding", "No connection"}},
-    {"home", {"Thuis", "Home"}},
-    {"away", {"Weg", "Away"}},
-    {"night", {"Nacht", "Night"}},
-    {"vacation", {"Vakantie", "Vacation"}},
-    {"custom", {"Aangepast", "Custom"}},
-    {"disarm", {"Uitschakelen", "Disarm"}},
-    {"arm_home", {"Thuis inschakelen", "Arm home"}},
-    {"arm_away", {"Weg inschakelen", "Arm away"}},
-    {"arm_night", {"Nacht inschakelen", "Arm night"}},
-    {"arm_vacation", {"Vakantie inschakelen", "Arm vacation"}},
-    {"arm_custom", {"Aangepast inschakelen", "Arm custom"}},
-    {"last_alarm", {"Laatste alarm: ", "Last alarm: "}},
-    {"bypassed_now", {"Omzeild: ", "Bypassed: "}},
-    {"bypass", {"Omzeilen", "Bypass"}},
-    {"force", {"Omzeilen en inschakelen", "Bypass and arm"}},
-    {"force_title", {"Omzeilen en inschakelen: ", "Bypass and arm: "}},
-    {"refuse_alarm_condition", {"Inschakelen kan niet: %s staat open", "Cannot arm: %s is open"}},
-    {"refuse_sensor_unavailable", {"Inschakelen kan niet: %s reageert niet", "Cannot arm: %s does not respond"}},
-    {"refuse_sensor_open", {"Inschakelen kan niet: %s staat open", "Cannot arm: %s is open"}},
-    {"refuse_not_disarmed", {"Het alarm staat al aan", "The alarm is already on"}},
-    {"unbypass", {"Herstellen", "Restore"}},
-    {"bypass_title", {"Omzeilen: ", "Bypass: "}},
-    {"unbypass_title", {"Herstellen: ", "Restore: "}},
-    {"unlock_title", {"Sensoren bekijken", "View sensors"}},
-    {"admin_code", {"Installateurscode", "Installer code"}},
-    {"hint_user", {"Voer uw gebruikerscode in", "Enter your user code"}},
-    {"hint_admin", {"Voer de installateurscode in", "Enter the installer code"}},
-    {"sensors", {"Sensoren", "Sensors"}},
-    {"sensors_open", {"open", "open"}},
-    {"all_closed", {"Alles dicht", "All closed"}},
-    {"open", {"Open: ", "Open: "}},
-    {"problems", {"Storingen: ", "Problems: "}},
-    {"leave_now", {"Verlaat nu het huis", "Leave the house now"}},
-    {"enter_now", {"Schakel uit met uw code", "Disarm with your code"}},
-    {"seconds_short", {" s", " s"}},
-    {"by", {"Door ", "By "}},
-    {"by_unknown", {"Door: onbekend", "By: unknown"}},
-    {"via", {"Via ", "Via "}},
-    {"no_sensors", {"Geen sensoren", "No sensors"}},
-    {"info", {"Paneelinfo", "Panel info"}},
-    {"info_title", {"Paneelinfo bekijken", "View panel info"}},
-    {"connected", {"Verbonden met Home Assistant", "Connected to Home Assistant"}},
-    {"not_connected", {"Niet verbonden", "Not connected"}},
-    {"signal", {"Wifi-signaal: ", "Wi-Fi signal: "}},
-    {"uptime", {"Aan sinds: ", "Uptime: "}},
-    {"minutes", {" min", " min"}},
-    {"firmware", {"Firmware: ", "Firmware: "}},
-    {"panel_id", {"Paneel: ", "Panel: "}},
-    {"profile", {"Profiel: ", "Profile: "}},
-    {"n_open", {" open", " open"}},
-    {"blocked", {"Geblokkeerd", "Blocked"}},
-    {"blocked_sub", {"Dit paneel is geblokkeerd in Vigil", "This panel is blocked in Vigil"}},
-    {"not_linked", {"Niet gekoppeld", "Not linked"}},
-    {"not_linked_sub", {"Voeg dit paneel toe in Vigil (paneel-id: ", "Add this panel in Vigil (panel id: "}},
-    {"not_linked_entity", {"Of controleer of deze sensor bestaat: ", "Or check that this sensor exists: "}},
-    {"old_profile", {"Update de firmware of Vigil", "Update the firmware or Vigil"}},
-    {"no_admin_code", {"Stel eerst een installateurscode in Vigil in", "Set an installer code in Vigil first"}},
-    {"page", {"Pagina ", "Page "}},
+    {"disarmed", {"Uitgeschakeld", "Disarmed", "Unscharf", "Desactive", "Disinserito", "Desactivada"}},
+    {"armed_home", {"Thuis", "Home", "Zuhause", "Maison", "Casa", "En casa"}},
+    {"armed_away", {"Weg", "Away", "Abwesend", "Absent", "Fuori casa", "Fuera"}},
+    {"armed_night", {"Nacht", "Night", "Nacht", "Nuit", "Notte", "Noche"}},
+    {"armed_vacation", {"Vakantie", "Vacation", "Urlaub", "Vacances", "Vacanza", "Vacaciones"}},
+    {"armed_custom_bypass", {"Aangepast", "Custom", "Eigener", "Sur mesure", "Su misura", "A medida"}},
+    {"arming", {"Inschakelen", "Arming", "Wird scharf", "Activation", "Inserimento", "Activando"}},
+    {"pending", {"Binnenkomst", "Entry", "Eintritt", "Entree", "Ingresso", "Entrada"}},
+    {"triggered", {"ALARM", "ALARM", "ALARM", "ALARME", "ALLARME", "ALARMA"}},
+    {"offline", {"Geen verbinding", "No connection", "Keine Verbindung", "Pas de connexion", "Nessuna connessione", "Sin conexion"}},
+    {"home", {"Thuis", "Home", "Zuhause", "Maison", "Casa", "En casa"}},
+    {"away", {"Weg", "Away", "Abwesend", "Absent", "Fuori casa", "Fuera"}},
+    {"night", {"Nacht", "Night", "Nacht", "Nuit", "Notte", "Noche"}},
+    {"vacation", {"Vakantie", "Vacation", "Urlaub", "Vacances", "Vacanza", "Vacaciones"}},
+    {"custom", {"Aangepast", "Custom", "Eigener", "Sur mesure", "Su misura", "A medida"}},
+    {"disarm", {"Uitschakelen", "Disarm", "Unscharf schalten", "Desactiver", "Disinserisci", "Desactivar"}},
+    {"arm_home", {"Thuis inschakelen", "Arm home", "Zuhause scharf", "Activer Maison", "Inserisci Casa", "Activar En casa"}},
+    {"arm_away", {"Weg inschakelen", "Arm away", "Abwesend scharf", "Activer Absent", "Inserisci Fuori casa", "Activar Fuera"}},
+    {"arm_night", {"Nacht inschakelen", "Arm night", "Nacht scharf", "Activer Nuit", "Inserisci Notte", "Activar Noche"}},
+    {"arm_vacation", {"Vakantie inschakelen", "Arm vacation", "Urlaub scharf", "Activer Vacances", "Inserisci Vacanza", "Activar Vacaciones"}},
+    {"arm_custom", {"Aangepast inschakelen", "Arm custom", "Eigener scharf", "Activer sur mesure", "Inserisci su misura", "Activar a medida"}},
+    {"last_alarm", {"Laatste alarm: ", "Last alarm: ", "Letzter Alarm: ", "Derniere alarme : ", "Ultimo allarme: ", "Ultima alarma: "}},
+    {"bypassed_now", {"Omzeild: ", "Bypassed: ", "Ueberbrueckt: ", "Inhibe : ", "Escluso: ", "Anulado: "}},
+    {"bypass", {"Omzeilen", "Bypass", "Ueberbruecken", "Inhiber", "Escludi", "Anular"}},
+    {"force", {"Omzeilen en inschakelen", "Bypass and arm", "Ueberbruecken und scharf schalten", "Inhiber et activer", "Escludi e inserisci", "Anular y activar"}},
+    {"force_title", {"Omzeilen en inschakelen: ", "Bypass and arm: ", "Ueberbruecken und scharf schalten: ", "Inhiber et activer : ", "Escludi e inserisci: ", "Anular y activar: "}},
+    {"refuse_alarm_condition", {"Inschakelen kan niet: %s staat open", "Cannot arm: %s is open", "Scharfschalten nicht moeglich: %s ist offen", "Activation impossible : %s est ouvert", "Impossibile inserire: %s e aperto", "No se puede activar: %s esta abierto"}},
+    {"refuse_sensor_unavailable", {"Inschakelen kan niet: %s reageert niet", "Cannot arm: %s does not respond", "Scharfschalten nicht moeglich: %s antwortet nicht", "Activation impossible : %s ne repond pas", "Impossibile inserire: %s non risponde", "No se puede activar: %s no responde"}},
+    {"refuse_sensor_open", {"Inschakelen kan niet: %s staat open", "Cannot arm: %s is open", "Scharfschalten nicht moeglich: %s ist offen", "Activation impossible : %s est ouvert", "Impossibile inserire: %s e aperto", "No se puede activar: %s esta abierto"}},
+    {"refuse_not_disarmed", {"Het alarm staat al aan", "The alarm is already on", "Die Alarmanlage ist bereits scharf", "L'alarme est deja activee", "L'allarme e gia inserito", "La alarma ya esta activada"}},
+    {"unbypass", {"Herstellen", "Restore", "Wiederherstellen", "Retablir", "Ripristina", "Restablecer"}},
+    {"bypass_title", {"Omzeilen: ", "Bypass: ", "Ueberbruecken: ", "Inhiber : ", "Escludi: ", "Anular: "}},
+    {"unbypass_title", {"Herstellen: ", "Restore: ", "Wiederherstellen: ", "Retablir : ", "Ripristina: ", "Restablecer: "}},
+    {"unlock_title", {"Sensoren bekijken", "View sensors", "Sensoren ansehen", "Voir les capteurs", "Vedi sensori", "Ver sensores"}},
+    {"admin_code", {"Installateurscode", "Installer code", "Installateurcode", "Code installateur", "Codice installatore", "Codigo de instalador"}},
+    {"hint_user", {"Voer uw gebruikerscode in", "Enter your user code", "Benutzercode eingeben", "Saisissez votre code utilisateur", "Inserisci il tuo codice utente", "Introduce tu codigo de usuario"}},
+    {"hint_admin", {"Voer de installateurscode in", "Enter the installer code", "Installateurcode eingeben", "Saisissez le code installateur", "Inserisci il codice installatore", "Introduce el codigo de instalador"}},
+    {"sensors", {"Sensoren", "Sensors", "Sensoren", "Capteurs", "Sensori", "Sensores"}},
+    {"sensors_open", {"open", "open", "offen", "ouvert", "aperto", "abierto"}},
+    {"all_closed", {"Alles dicht", "All closed", "Alles geschlossen", "Tout est ferme", "Tutto chiuso", "Todo cerrado"}},
+    {"open", {"Open: ", "Open: ", "Offen: ", "Ouvert : ", "Aperto: ", "Abierto: "}},
+    {"problems", {"Storingen: ", "Problems: ", "Stoerungen: ", "Defauts : ", "Guasti: ", "Averias: "}},
+    {"leave_now", {"Verlaat nu het huis", "Leave the house now", "Haus jetzt verlassen", "Quittez la maison maintenant", "Esci di casa adesso", "Sal de casa ahora"}},
+    {"enter_now", {"Schakel uit met uw code", "Disarm with your code", "Mit Code unscharf schalten", "Desactivez avec votre code", "Disinserisci con il tuo codice", "Desactiva con tu codigo"}},
+    {"seconds_short", {" s", " s", " s", " s", " s", " s"}},
+    {"by", {"Door ", "By ", "Durch ", "Par ", "Da ", "Por "}},
+    {"by_unknown", {"Door: onbekend", "By: unknown", "Durch: unbekannt", "Par : inconnu", "Da: sconosciuto", "Por: desconocido"}},
+    {"via", {"Via ", "Via ", "Ueber ", "Via ", "Tramite ", "Mediante "}},
+    {"no_sensors", {"Geen sensoren", "No sensors", "Keine Sensoren", "Aucun capteur", "Nessun sensore", "Sin sensores"}},
+    {"info", {"Paneelinfo", "Panel info", "Bedienteil-Info", "Infos du clavier", "Info pannello", "Info del panel"}},
+    {"info_title", {"Paneelinfo bekijken", "View panel info", "Bedienteil-Info ansehen", "Voir les infos du clavier", "Vedi info pannello", "Ver info del panel"}},
+    {"connected", {"Verbonden met Home Assistant", "Connected to Home Assistant", "Mit Home Assistant verbunden", "Connecte a Home Assistant", "Connesso a Home Assistant", "Conectado a Home Assistant"}},
+    {"not_connected", {"Niet verbonden", "Not connected", "Nicht verbunden", "Non connecte", "Non connesso", "No conectado"}},
+    {"signal", {"Wifi-signaal: ", "Wi-Fi signal: ", "WLAN-Signal: ", "Signal Wi-Fi : ", "Segnale Wi-Fi: ", "Senal Wi-Fi: "}},
+    {"uptime", {"Aan sinds: ", "Uptime: ", "Laufzeit: ", "Actif depuis : ", "Acceso da: ", "Encendido desde: "}},
+    {"minutes", {" min", " min", " Min", " min", " min", " min"}},
+    {"firmware", {"Firmware: ", "Firmware: ", "Firmware: ", "Firmware : ", "Firmware: ", "Firmware: "}},
+    {"panel_id", {"Paneel: ", "Panel: ", "Bedienteil: ", "Clavier : ", "Pannello: ", "Panel: "}},
+    {"profile", {"Profiel: ", "Profile: ", "Profil: ", "Profil : ", "Profilo: ", "Perfil: "}},
+    {"n_open", {" open", " open", " offen", " ouverts", " aperti", " abiertos"}},
+    {"blocked", {"Geblokkeerd", "Blocked", "Gesperrt", "Bloque", "Bloccato", "Bloqueado"}},
+    {"blocked_sub", {"Dit paneel is geblokkeerd in Vigil", "This panel is blocked in Vigil", "Dieses Bedienteil ist in Vigil gesperrt", "Ce clavier est bloque dans Vigil", "Questo pannello e bloccato in Vigil", "Este panel esta bloqueado en Vigil"}},
+    {"not_linked", {"Niet gekoppeld", "Not linked", "Nicht verknuepft", "Non associe", "Non collegato", "Sin vincular"}},
+    {"not_linked_sub", {"Voeg dit paneel toe in Vigil (paneel-id: ", "Add this panel in Vigil (panel id: ", "Bedienteil in Vigil hinzufuegen (Bedienteil-ID: ", "Ajoutez ce clavier dans Vigil (ID du clavier : ", "Aggiungi questo pannello in Vigil (ID pannello: ", "Anade este panel en Vigil (ID del panel: "}},
+    {"not_linked_entity", {"Of controleer of deze sensor bestaat: ", "Or check that this sensor exists: ", "Oder pruefen, ob dieser Sensor existiert: ", "Ou verifiez que ce capteur existe : ", "Oppure verifica che questo sensore esista: ", "O comprueba que este sensor existe: "}},
+    {"old_profile", {"Update de firmware of Vigil", "Update the firmware or Vigil", "Firmware oder Vigil aktualisieren", "Mettez a jour le firmware ou Vigil", "Aggiorna il firmware o Vigil", "Actualiza el firmware o Vigil"}},
+    {"no_admin_code", {"Stel eerst een installateurscode in Vigil in", "Set an installer code in Vigil first", "Lege zuerst in Vigil einen Installateurcode fest", "Definissez d'abord un code installateur dans Vigil", "Imposta prima un codice installatore in Vigil", "Define primero un codigo de instalador en Vigil"}},
+    {"page", {"Pagina ", "Page ", "Seite ", "Page ", "Pagina ", "Pagina "}},
     // what Vigil answers when a code or an action is refused (see localize_error)
-    {"err_invalid_code", {"Ongeldige code", "Invalid code"}},
-    {"err_code_required", {"Voer een code in", "A code is required"}},
-    {"err_locked_pre", {"Te veel foute codes. Probeer het over ", "Too many wrong codes. Try again in "}},
-    {"err_locked_post", {" min opnieuw", " min"}},
-    {"err_locked", {"Te veel foute codes. Even wachten", "Too many wrong codes. Wait a moment"}},
-    {"err_locked_permanent", {"Te veel foute codes. Vergrendeld totdat een beheerder dit in Vigil opheft", "Too many wrong codes. Locked until an administrator unlocks it in Vigil"}},
-    {"err_bypass_tamper", {"U mag sabotage niet omzeilen of terugzetten", "You may not bypass or restore tamper"}},
-    {"err_bypass", {"U mag sensoren niet omzeilen of terugzetten", "You may not bypass or restore sensors"}},
-    {"err_blocked", {"Dit paneel is geblokkeerd", "This panel is blocked"}},
-    {"err_not_allowed", {"Dit paneel mag dit niet", "This panel may not do this"}},
-    {"err_no_installer_code", {"Stel eerst een installateurscode in Vigil in", "Set an installer code in Vigil first"}},
-    {"err_not_bypassable", {"Deze sensor kan niet worden omzeild", "This sensor cannot be bypassed"}},
+    {"err_invalid_code", {"Ongeldige code", "Invalid code", "Ungueltiger Code", "Code invalide", "Codice non valido", "Codigo no valido"}},
+    {"err_code_required", {"Voer een code in", "A code is required", "Code erforderlich", "Un code est requis", "E richiesto un codice", "Se necesita un codigo"}},
+    {"err_locked_pre", {"Te veel foute codes. Probeer het over ", "Too many wrong codes. Try again in ", "Zu viele falsche Codes. Erneut versuchen in ", "Trop de codes errones. Reessayez dans ", "Troppi codici errati. Riprova tra ", "Demasiados codigos erroneos. Intentalo de nuevo en "}},
+    {"err_locked_post", {" min opnieuw", " min", " Min", " min", " min", " min"}},
+    {"err_locked", {"Te veel foute codes. Even wachten", "Too many wrong codes. Wait a moment", "Zu viele falsche Codes. Bitte kurz warten", "Trop de codes errones. Patientez un instant", "Troppi codici errati. Attendi un momento", "Demasiados codigos erroneos. Espera un momento"}},
+    {"err_locked_permanent", {"Te veel foute codes. Vergrendeld totdat een beheerder dit in Vigil opheft", "Too many wrong codes. Locked until an administrator unlocks it in Vigil", "Zu viele falsche Codes. Gesperrt, bis ein Administrator in Vigil entsperrt", "Trop de codes errones. Verrouille jusqu'a ce qu'un administrateur le deverrouille dans Vigil", "Troppi codici errati. Bloccato finche un amministratore non lo sblocca in Vigil", "Demasiados codigos erroneos. Bloqueado hasta que un administrador lo desbloquee en Vigil"}},
+    {"err_bypass_tamper", {"U mag sabotage niet omzeilen of terugzetten", "You may not bypass or restore tamper", "Sabotage darf nicht ueberbrueckt oder wiederhergestellt werden", "Vous ne pouvez pas inhiber ou retablir le sabotage", "Non puoi escludere o ripristinare la manomissione", "No puedes anular ni restablecer el sabotaje"}},
+    {"err_bypass", {"U mag sensoren niet omzeilen of terugzetten", "You may not bypass or restore sensors", "Sensoren duerfen nicht ueberbrueckt oder wiederhergestellt werden", "Vous ne pouvez pas inhiber ou retablir les capteurs", "Non puoi escludere o ripristinare i sensori", "No puedes anular ni restablecer sensores"}},
+    {"err_blocked", {"Dit paneel is geblokkeerd", "This panel is blocked", "Dieses Bedienteil ist gesperrt", "Ce clavier est bloque", "Questo pannello e bloccato", "Este panel esta bloqueado"}},
+    {"err_not_allowed", {"Dit paneel mag dit niet", "This panel may not do this", "Dieses Bedienteil darf das nicht", "Ce clavier n'a pas le droit de faire cela", "Questo pannello non puo farlo", "Este panel no puede hacer esto"}},
+    {"err_no_installer_code", {"Stel eerst een installateurscode in Vigil in", "Set an installer code in Vigil first", "Lege zuerst in Vigil einen Installateurcode fest", "Definissez d'abord un code installateur dans Vigil", "Imposta prima un codice installatore in Vigil", "Define primero un codigo de instalador en Vigil"}},
+    {"err_not_bypassable", {"Deze sensor kan niet worden omzeild", "This sensor cannot be bypassed", "Dieser Sensor kann nicht ueberbrueckt werden", "Ce capteur ne peut pas etre inhibe", "Questo sensore non puo essere escluso", "Este sensor no se puede anular"}},
     // sensor states
-    {"st_closed", {"dicht", "closed"}},
-    {"st_open", {"open", "open"}},
-    {"st_waiting", {"wacht", "waiting"}},
-    {"st_bypassed", {"omzeild", "bypassed"}},
-    {"st_bypassed_at_arm", {"omzeild bij inschakelen", "bypassed at arming"}},
-    {"st_unavailable", {"storing", "fault"}},
+    {"st_closed", {"dicht", "closed", "geschlossen", "ferme", "chiuso", "cerrado"}},
+    {"st_open", {"open", "open", "offen", "ouvert", "aperto", "abierto"}},
+    {"st_waiting", {"wacht", "waiting", "wartet", "en attente", "in attesa", "en espera"}},
+    {"st_bypassed", {"omzeild", "bypassed", "ueberbrueckt", "inhibe", "escluso", "anulado"}},
+    {"st_bypassed_at_arm", {"omzeild bij inschakelen", "bypassed at arming", "beim Scharfschalten ueberbrueckt", "inhibe a l'activation", "escluso all'inserimento", "anulado al activar"}},
+    {"st_unavailable", {"storing", "fault", "Stoerung", "defaut", "guasto", "averia"}},
     // causes of an alarm
-    {"cause_intrusion", {"Inbraak", "Intrusion"}},
-    {"cause_fire", {"Brand", "Fire"}},
-    {"cause_gas", {"Gas", "Gas"}},
-    {"cause_tamper", {"Sabotage", "Tamper"}},
-    {"cause_alarm24", {"24-uursalarm", "24-hour alarm"}},
-    {"cause_silent24", {"Stil alarm", "Silent alarm"}},
-    {"cause_water", {"Water", "Water"}},
-    {"cause_fault", {"Sensorstoring", "Sensor fault"}},
+    {"cause_intrusion", {"Inbraak", "Intrusion", "Einbruch", "Intrusion", "Intrusione", "Intrusion"}},
+    {"cause_fire", {"Brand", "Fire", "Feuer", "Incendie", "Incendio", "Incendio"}},
+    {"cause_gas", {"Gas", "Gas", "Gas", "Gaz", "Gas", "Gas"}},
+    {"cause_tamper", {"Sabotage", "Tamper", "Sabotage", "Sabotage", "Manomissione", "Sabotaje"}},
+    {"cause_alarm24", {"24-uursalarm", "24-hour alarm", "24-Stunden-Alarm", "Alarme 24 h", "Allarme 24 ore", "Alarma 24 h"}},
+    {"cause_silent24", {"Stil alarm", "Silent alarm", "Stiller Alarm", "Alarme silencieuse", "Allarme silenzioso", "Alarma silenciosa"}},
+    {"cause_water", {"Water", "Water", "Wasser", "Eau", "Acqua", "Agua"}},
+    {"cause_fault", {"Sensorstoring", "Sensor fault", "Sensorstoerung", "Defaut de capteur", "Guasto sensore", "Averia de sensor"}},
     // codes
-    {"nav_alarm", {"Alarm", "Alarm"}},
-    {"nav_info", {"Info", "Info"}},
-    {"code_hint", {"Code", "Code"}},
+    {"nav_alarm", {"Alarm", "Alarm", "Alarm", "Alarme", "Allarme", "Alarma"}},
+    {"nav_info", {"Info", "Info", "Info", "Infos", "Info", "Info"}},
+    {"code_hint", {"Code", "Code", "Code", "Code", "Codice", "Codigo"}},
 };
 
 // The version of the profile this firmware understands (PROFILE_VERSION in Vigil) and of this firmware.
 constexpr int PROFILE_VERSION = 1;
 
-inline int parse_language(const std::string &s) { return s.rfind("nl", 0) == 0 ? NL : EN; }
+// "nl", "de", "fr", "it" or "es" (also "de-AT" and the like); everything else is English.
+inline int parse_language(const std::string &s) {
+  static const char *const codes[] = {"nl", "en", "de", "fr", "it", "es"};  // in the order of enum Language
+  for (int i = 0; i < LANGUAGE_COUNT; i++) {
+    if (s.rfind(codes[i], 0) == 0) return i;
+  }
+  return EN;
+}
 
 // -------------------------------------------------------------------------------- the state
 
@@ -200,28 +208,28 @@ inline std::string tr(const char *key) {
 }
 
 // Home Assistant answers a refused action with a text in ITS language (often English), while the panel speaks
-// the language of the panel. Texts Vigil is known to send, in English and in Dutch, are replaced by the same
-// text in the panel's language; anything else is shown as it came. The phrases must keep matching the
-// `exceptions` in translations/en.json and nl.json (a test checks that). The order matters: the first row
-// that fits wins.
+// the language of the panel. Texts Vigil is known to send, in any of the six languages, are replaced by the same
+// text in the panel's language; anything else is shown as it came. The phrases (in the order of enum Language:
+// nl, en, de, fr, it, es) must keep matching the `exceptions` in translations/*.json (a test checks that), and
+// are the same as in the card. They are matched against what Home Assistant sends (UTF-8), so they may contain
+// accents. The order matters: the first row that fits wins.
 struct ErrorRow {
-  const char *en;
-  const char *nl;
+  const char *phrase[LANGUAGE_COUNT];
   const char *key;
 };
 
 inline const ErrorRow *error_rows(size_t &count) {
   static const ErrorRow rows[] = {
-      {"until an administrator", "totdat een beheerder", "err_locked_permanent"},
-      {"Too many wrong codes", "Te veel foute codes", "err_locked"},
-      {"Invalid code", "Ongeldige code", "err_invalid_code"},
-      {"A code is required", "Een code is vereist", "err_code_required"},
-      {"right to bypass tamper", "recht om sabotage te omzeilen", "err_bypass_tamper"},
-      {"right to bypass", "recht om te omzeilen", "err_bypass"},
-      {"is blocked", "is geblokkeerd", "err_blocked"},
-      {"may not do this", "mag dit niet", "err_not_allowed"},
-      {"no installer code", "geen installateurscode", "err_no_installer_code"},
-      {"cannot be bypassed", "kan niet worden omzeild", "err_not_bypassable"},
+      {{"totdat een beheerder", "until an administrator", "bis ein Administrator", "jusqu'à ce qu'un administrateur", "finché un amministratore", "hasta que un administrador"}, "err_locked_permanent"},
+      {{"Te veel foute codes", "Too many wrong codes", "Zu viele falsche Codes", "Trop de codes erronés", "Troppi codici errati", "Demasiados códigos erróneos"}, "err_locked"},
+      {{"Ongeldige code", "Invalid code", "Ungültiger Code", "Code invalide", "Codice non valido", "Código no válido"}, "err_invalid_code"},
+      {{"Een code is vereist", "A code is required", "Ein Code ist erforderlich", "Un code est requis", "È richiesto un codice", "Se necesita un código"}, "err_code_required"},
+      {{"recht om sabotage te omzeilen", "right to bypass tamper", "Sabotage überbrücken", "droit d'inhiber le sabotage", "diritto di escludere la manomissione", "derecho de anular sabotaje"}, "err_bypass_tamper"},
+      {{"recht om te omzeilen", "right to bypass", "Überbrückungsrecht", "droit d'inhiber", "diritto di esclusione", "derecho de anular"}, "err_bypass"},
+      {{"is geblokkeerd", "is blocked", "ist gesperrt", "est bloqué", "è bloccato", "está bloqueado"}, "err_blocked"},
+      {{"mag dit niet", "may not do this", "darf das nicht", "n'a pas le droit de faire cela", "non può farlo", "no puede hacer esto"}, "err_not_allowed"},
+      {{"geen installateurscode", "no installer code", "keinen Installateurcode", "pas de code installateur", "non ha un codice installatore", "no tiene código de instalador"}, "err_no_installer_code"},
+      {{"kan niet worden omzeild", "cannot be bypassed", "kann nicht überbrückt werden", "ne peut pas être inhibé", "non può essere escluso", "no se puede anular"}, "err_not_bypassable"},
   };
   count = sizeof(rows) / sizeof(rows[0]);
   return rows;
@@ -233,7 +241,9 @@ inline std::string localize_error(const std::string &raw) {
   size_t count = 0;
   const ErrorRow *rows = error_rows(count);
   for (size_t i = 0; i < count; i++) {
-    if (raw.find(rows[i].en) == std::string::npos && raw.find(rows[i].nl) == std::string::npos) continue;
+    bool found = false;
+    for (int l = 0; l < LANGUAGE_COUNT && !found; l++) found = raw.find(rows[i].phrase[l]) != std::string::npos;
+    if (!found) continue;
     std::string key = rows[i].key;
     if (key != "err_locked") return tr(rows[i].key);
     // "Try again in 5 min": the number of minutes is the first number in the text
@@ -245,7 +255,7 @@ inline std::string localize_error(const std::string &raw) {
   return raw;
 }
 
-// "Arming refused: alarm_condition (Front door)." (or the Dutch text): the same in the panel's language, and
+// "Arming refused: alarm_condition (Front door)." (or the same text in another language): the same in the panel's language, and
 // whether bypassing the sensor could help. An empty text means: this is not a refusal of that kind.
 struct Refusal {
   std::string text;
@@ -254,11 +264,14 @@ struct Refusal {
 
 inline Refusal parse_refusal(const std::string &raw) {
   Refusal out;
-  size_t at = raw.find("Arming refused: ");
-  size_t skip = 16;
-  if (at == std::string::npos) {
-    at = raw.find("Inschakelen geweigerd: ");
-    skip = 23;
+  // the start of the refusal text in each language (translations/*.json, arm_refused)
+  static const char *const starts[] = {"Arming refused: ", "Inschakelen geweigerd: ", "Scharfschalten abgelehnt: ",
+                                       "Activation refusée : ", "Inserimento rifiutato: ", "Activación rechazada: "};
+  size_t at = std::string::npos, skip = 0;
+  for (const char *start : starts) {
+    at = raw.find(start);
+    skip = std::strlen(start);
+    if (at != std::string::npos) break;
   }
   if (at == std::string::npos) return out;
   size_t from = at + skip;

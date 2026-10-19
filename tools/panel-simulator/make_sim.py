@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Make the folder the panel simulator is built from.
 
-  make_sim.py <firmware folder> <work folder> [--lang nl|en] [--size 480x480]
+  make_sim.py <firmware folder> <work folder> [--lang nl|en|de|fr|it|es] [--size 480x480]
 
 The firmware folder is esphome/vigil_alarm of this repository. The work folder gets a copy of it with the two
 parts of the hardware swapped out (the real clock and wifi are not there on a PC), plus `sim.yaml`: an ESPHome
@@ -43,7 +43,7 @@ panel = panel.replace("time:\n  - platform: homeassistant\n    id: ha_time", "ti
 panel = re.sub(r"api\.connected:\n\s+state_subscription_only: true", "lambda: 'return true;'", panel)
 (dest / "vigil-panel.yaml").write_text(panel)
 
-lang = "vigil::NL" if a.lang == "nl" else "vigil::EN"
+lang = "vigil::" + (a.lang.upper() if a.lang in ("nl", "en", "de", "fr", "it", "es") else "EN")
 steps = []
 for i, (name, view, extra, action, digits, err) in enumerate(scenes.SCENES, 1):
     code = (scenes.BASE % {"lang": lang}) + "\nc.now = (double) ::time(nullptr);\n" + extra

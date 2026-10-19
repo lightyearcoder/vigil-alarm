@@ -29,6 +29,7 @@ from .const import (
     SUBENTRY_SENSOR_GROUP,
 )
 from .items import OPTION_KEY, new_id, stored
+from .languages import GROUP_NAMES, language_of
 from .messages import mode_name
 
 ENTRY_VERSION = 3
@@ -36,9 +37,9 @@ ENTRY_VERSION = 3
 
 def default_groups(language: str, modes: list[str]) -> dict[str, dict[str, Any]]:
     """The two groups a new installation starts with: doors and windows, and motion."""
-    nl = language.startswith("nl")
-    perimeter = ("Buitenschil" if nl else "Perimeter", [m for m in modes])
-    interior = ("Binnen" if nl else "Interior", [m for m in modes if m == "away"])
+    names = GROUP_NAMES[language_of(language)]
+    perimeter = (names["contacts"], [m for m in modes])
+    interior = (names["motion"], [m for m in modes if m == "away"])
     groups: dict[str, dict[str, Any]] = {}
     for (title, group_modes), suggest in ((perimeter, "contacts"), (interior, "motion")):
         if not group_modes:

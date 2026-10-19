@@ -90,3 +90,95 @@ def test_the_card_keypad_can_be_used_with_a_real_keyboard():
     for needle in ("this._ui.keypad", "INPUT|TEXTAREA|SELECT", "Backspace", '"Enter"', '"Escape"', "ev.ctrlKey"):
         assert needle in handler, needle
     assert js.count("    _key(") == 0
+
+
+def _card_source() -> str:
+    from pathlib import Path
+
+    return (Path(__file__).parent.parent / "custom_components" / "vigil_alarm" / "frontend" / "vigil-card.js").read_text(encoding="utf-8")
+
+
+def test_the_card_has_every_text_in_every_language():
+    import re
+
+    from custom_components.vigil_alarm.languages import LANGUAGES
+
+    js = _card_source()
+    start = js.index("const TEXTS = {")
+    block = js[start:js.index("const PROFILE_VERSION")]
+    keys = {}
+    for lang in LANGUAGES:
+        m = re.search(rf"\n    {lang}: \{{\n(.*?)\n    \}},", block, re.S)
+        assert m, lang
+        keys[lang] = re.findall(r"(?:^|,)\s*(\w+): \"", m.group(1), re.M)
+        assert len(keys[lang]) == len(set(keys[lang])), lang
+    for lang in LANGUAGES:
+        assert set(keys[lang]) == set(keys["en"]), (lang, set(keys[lang]) ^ set(keys["en"]))
+    for lang in LANGUAGES:  # {n} and {s} placeholders survive
+        m = re.search(rf"\n    {lang}: \{{\n(.*?)\n    \}},", block, re.S).group(1)
+        assert "{n}" in m and "{s}" in m, lang
+
+
+def test_the_card_error_phrases_occur_in_the_translations_of_each_language():
+    """The card recognises Home Assistant's own error text by phrase, so each phrase must be in that language's file."""
+    import json
+    import re
+    from pathlib import Path
+
+    from custom_components.vigil_alarm.languages import LANGUAGES
+
+    js = _card_source()
+    rows = re.findall(r"\[\[((?:\"[^\"]+\",? ?)+)\], \"(err_\w+)\"\]", js)
+    assert len(rows) == 10
+    order = ("en", "nl", "de", "fr", "it", "es")
+    assert set(order) == set(LANGUAGES)
+    texts = {}
+    for lang in order:
+        data = json.loads((Path(__file__).parent.parent / "custom_components/vigil_alarm/translations" / f"{lang}.json").read_text(encoding="utf-8"))
+        texts[lang] = " ".join(v["message"] for v in data["exceptions"].values())
+    for phrases, key in rows:
+        items = re.findall(r"\"([^\"]+)\"", phrases)
+        assert len(items) == 6, key
+        for lang, phrase in zip(order, items):
+            assert phrase in texts[lang], (key, lang, phrase)
+    for lang, phrase in zip(order, ("Arming refused", "Inschakelen geweigerd", "Scharfschalten abgelehnt", "Activation refusée", "Inserimento rifiutato", "Activación rechazada")):
+        assert phrase in texts[lang], (lang, phrase)
+
+
+def test_the_admin_panel_has_every_text_in_every_language():
+    """Same keys and the same {placeholders} in all six languages; a missing text would show as `undefined`."""
+    import json
+    import shutil
+    import subprocess
+
+    import pytest
+
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("node is not installed")
+    script = r"""
+const fs = require("fs");
+const s = fs.readFileSync(process.argv[1], "utf8");
+const i = s.indexOf("const TXT = {");
+const end = s.indexOf("\n};\n", i);
+const T = eval("(" + s.slice(i + 12, end + 2) + ")");
+const leaves = (o, p = "", out = {}) => { for (const [k, v] of Object.entries(o)) { const q = p ? p + "." + k : k; if (v && typeof v === "object") leaves(v, q, out); else out[q] = v; } return out; };
+const ph = (t) => (String(t).match(/\{\w+\}/g) || []).sort().join(",");
+const en = leaves(T.en), problems = [];
+for (const lang of ["nl", "de", "fr", "it", "es"]) {
+  const x = leaves(T[lang]);
+  for (const k of Object.keys(en)) {
+    if (!(k in x)) problems.push(lang + " missing " + k);
+    else if (typeof x[k] !== "string" || (en[k].trim() && !x[k].trim())) problems.push(lang + " empty " + k);
+    else if (ph(x[k]) !== ph(en[k])) problems.push(lang + " placeholders " + k);
+  }
+  for (const k of Object.keys(x)) if (!(k in en)) problems.push(lang + " extra " + k);
+}
+console.log(JSON.stringify({ languages: Object.keys(T), count: Object.keys(en).length, problems }));
+"""
+    path = pathlib.Path(__file__).parent.parent / "custom_components" / "vigil_alarm" / "frontend" / "vigil-panel.js"
+    out = subprocess.run([node, "-e", script, str(path)], capture_output=True, text=True, check=True).stdout
+    result = json.loads(out)
+    assert sorted(result["languages"]) == sorted(["nl", "en", "de", "fr", "it", "es"])
+    assert result["count"] > 600
+    assert result["problems"] == [], result["problems"][:10]

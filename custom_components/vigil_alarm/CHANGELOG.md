@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.6
+
+- **Four new languages: German, French, Italian and Spanish** (next to English and Dutch), everywhere: the admin panel, the Vigil card, the touch panel, the notification and error texts, the Home Assistant screens (setup, options, entities, repairs) and the default sensor group names (for example *Außenhaut* / *Innenraum*). Admin panel and card follow your Home Assistant profile language; notifications follow the system language; a touch panel or tablet has the language chosen for it under *Panels* (the field now offers all six). Any other language still shows English.
+- **The translations were written by Claude and are not checked by a native speaker.** Please report a clumsy or wrong text as an issue.
+- **Touch panel:** the new languages need firmware 0.5.6. The texts are plain ASCII, like the Dutch ones (no accents on the screen: *Ueberbruecken*, *Desactive*). A panel with older firmware shows English for the new languages and keeps working. Firmware version 0.5.6; minimum ESPHome version unchanged.
+- Tests: every language must have every text with the same placeholders (translations, messages, card, panel), and the phrases the card and the panel use to recognise Vigil's answers must be in the translations of every language.
+
 ## 0.5.5
 
 - **The tamper entity also works for the 24-hour types.** The field *Tamper entity* (the tamper signal of the same device) is now there for *24 hours audible* and *24 hours silent* sensors too, not only for intrusion, fire, gas and water.
