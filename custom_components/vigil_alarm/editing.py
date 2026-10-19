@@ -44,6 +44,7 @@ from .const import (
     CONF_DURESS_HASH,
     CONF_DURESS_SALT,
     CONF_CHIME,
+    CONF_PERMANENT_BYPASS,
     CONF_DELAY,
     CONF_ENTRY_DELAY,
     CONF_GAS_TYPE,
@@ -172,6 +173,10 @@ def _sensor(entry: ConfigEntry, sub: Item | None, name: str, raw: dict[str, Any]
         data.pop(CONF_CHIME, None)  # the chime is for doors and windows (intrusion sensors)
     else:
         data[CONF_CHIME] = True
+    if data.get(CONF_CLS) in ("fire", "gas") or not data.get(CONF_PERMANENT_BYPASS):
+        data.pop(CONF_PERMANENT_BYPASS, None)  # life safety sensors cannot be bypassed at all
+    else:
+        data[CONF_PERMANENT_BYPASS] = True
     if data.get(CONF_ENTRY_DELAY) in (None, ""):
         data.pop(CONF_ENTRY_DELAY, None)
     else:
@@ -358,10 +363,11 @@ def _notification(
 
 
 def notify_services(hass: HomeAssistant) -> list[str]:
-    return sorted(
-        n for n in hass.services.async_services_for_domain("notify")
-        if n != "send_message"  # entity based, no service name to call
-    )
+    """What a channel can send to: the notify services by name (`mobile_app_phone`, a YAML notify group) and the
+    notify entities by entity id (`notify.family`, a notify group made as a helper). A name never has a dot, an
+    entity id always has."""
+    services = (n for n in hass.services.async_services_for_domain("notify") if n != "send_message")
+    return sorted(services) + sorted(hass.states.async_entity_ids("notify"))
 
 
 def _siren(entry: ConfigEntry, sub: Item | None, name: str, raw: dict[str, Any]) -> dict[str, Any]:

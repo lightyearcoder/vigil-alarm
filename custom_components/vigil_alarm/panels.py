@@ -191,6 +191,7 @@ class PanelRegistry:
             "open_sensors_text": "",
             "faults_text": "",
             "last_alarm_text": "",
+            "bypassed_text": "",
             "sensors": "",
         }
         if visible:
@@ -199,6 +200,7 @@ class PanelRegistry:
             profile["faults_text"] = ", ".join(snap["faults"])
             profile["sensors"] = snap["panel_sensors"]
             profile["last_alarm_text"] = self._last_alarm_text(profile["language"])
+            profile["bypassed_text"] = ", ".join(snap["bypassed_sensors"])
         return profile
 
     def _last_alarm_text(self, language: str) -> str:

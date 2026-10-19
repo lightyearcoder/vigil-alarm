@@ -175,3 +175,18 @@ async def test_a_lockout_is_reported_on_the_fault_channels(hass):
         with pytest.raises(ServiceValidationError):
             await _vigil(hass, "disarm", code="0000", source="panel garage")
     assert _messages(calls) == ["Too many wrong codes at panel garage: locked for 5 minutes"]
+
+
+async def test_a_notify_entity_such_as_a_notify_group_can_be_a_channel(hass):
+    """Release 0.5.5: a notify entity (for example a notify group made as a helper) is offered and receives the
+    message through `notify.send_message`, with a title and a message only."""
+    from custom_components.vigil_alarm.editing import notify_services
+
+    calls = async_mock_service(hass, "notify", "send_message")
+    hass.states.async_set("notify.family", "unknown")
+    await _house(hass, channel(sid="grp", name="Family", service="notify.family", priority=True))
+    assert "notify.family" in notify_services(hass)  # offered next to the services, by entity id
+    await _call(hass, "alarm_arm_home", code="1234")
+    assert [c.data["message"] for c in calls] == ["Armed (home) by Anna"]
+    assert calls[0].data["entity_id"] == "notify.family" and calls[0].data["title"] == "Vigil Alarm"
+    assert "data" not in calls[0].data  # no app specific data for an entity

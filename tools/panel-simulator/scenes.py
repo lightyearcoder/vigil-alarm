@@ -72,4 +72,6 @@ SCENES = [
     ("armed-vacation", "main", 'c.state = "armed_vacation"; c.mode = "vacation"; c.changed_by = "Anna";', 0, "", ""),
     ("armed-custom", "main", 'c.state = "armed_custom_bypass"; c.mode = "custom"; c.changed_by = "Anna";', 0, "", ""),
     ("triggered-alarm24", "main", 'c.state = "triggered"; c.mode = "away"; c.cause = "alarm24"; c.cause_sensor = "Paniekknop";', 0, "", ""),
+    # Release 0.5.5: disarmed, but a sensor is still bypassed for good.
+    ("disarmed-permanent-bypass", "main", 'c.last_alarm = "14:03 Voordeur > Gang"; c.bypassed = "Raam zolder";', 0, "", ""),
 ]

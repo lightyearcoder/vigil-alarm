@@ -175,7 +175,7 @@ class Engine:
         self._timers.clear()
         resume: list[Sensor] = []
         for zid, rt in self._rt.items():
-            if rt.manual_bypass:
+            if rt.manual_bypass and not self.config.sensors[zid].permanent_bypass:
                 rt.manual_bypass = False
                 self._emit("sensor_unbypassed", sensor=zid, reason="disarm", user=user)
                 resume.append(self.config.sensors[zid])

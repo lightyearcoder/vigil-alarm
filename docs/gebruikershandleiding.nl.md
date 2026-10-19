@@ -88,7 +88,7 @@ opnieuw; de alarmstand blijft behouden.
 3. **Voeg een gebruiker toe** (tabblad *Gebruikers*): een naam en een code. Zonder gebruikers is er
    helemaal geen code nodig. Een gebruiker kan beperkt worden tot bepaalde modi. Omzeilen is een recht dat je een gebruiker geeft (*Mag sensoren omzeilen*): zonder dat recht kan een gebruiker een sensor niet omzeilen en ook niet terugzetten, ook niet met een goede code. Wie een sensor mag omzeilen, mag hem ook terugzetten. Een sabotagesensor vraagt daarnaast het recht *Mag sabotage omzeilen*, voor omzeilen en voor terugzetten. Gebruikers die al bestonden houden het recht tot je het uitvinkt.
 4. **Voeg een melding toe** (tabblad *Meldingen*): kies een `notify`-dienst en de soorten berichten
-   die hij krijgt. Met een *vertraging* stuurt het kanaal alarmberichten pas als het alarm na die
+   die hij krijgt. Je kunt een `notify`-dienst kiezen of een notify-entiteit (bijvoorbeeld een *notify-groep* die je maakt onder *Instellingen → Apparaten & diensten → Helpers → Groep*, te zien als `notify.gezin`). Een notify-entiteit krijgt alleen een titel en een bericht: geen app-specifieke gegevens, dus geen kritieke melding op een telefoon (kies daarvoor een `mobile_app_…`-dienst). Met een *vertraging* stuurt het kanaal alarmberichten pas als het alarm na die
    tijd nog actief is: dat is een escalatiekanaal voor een tweede persoon of apparaat.
 5. **Optioneel: een bevestigingsregel** (tabblad *Bevestigingsregels*): kies de directe
    inbraaksensoren, hoeveel er moeten aanslaan en binnen welk tijdvenster.
@@ -151,6 +151,8 @@ en het kan nooit voor een brand- of gassensor. In je eigen automatiseringen is h
 Omzeilen laat één sensor buiten beschouwing tot het alarm wordt uitgeschakeld (of tot je het
 omzeilen opheft).
 
+**Permanent omzeilen.** Vink bij een sensor *Omzeiling blijft staan na uitschakelen (permanent)* aan (niet mogelijk bij brand- en gassensoren) en een handmatige omzeiling van die sensor blijft staan nadat het alarm is uitgeschakeld, ook na een herstart van Home Assistant, tot iemand hem met de hand herstelt. Handig voor een sensor die al een tijd stuk is. De sensor blijft in de lijst staan als *omzeild*, het tabblad *Overzicht* heeft een kaart **Permanent omzeild** met een knop *Herstellen*, en de Vigil-kaart en het aanraakpaneel tonen onder *Uitgeschakeld* de regel *Omzeild: Stuk raam*, zodat je hem niet vergeet; in het logboek staat `sensor_bypassed` bij het begin en `sensor_unbypassed` (reden *manual*) bij het einde. Zonder vinkje verandert er niets: de omzeiling vervalt bij het uitschakelen.
+
 - In het paneel en op het dashboard: de schakelaar **Omzeilen** van de sensor (alleen beheerders).
 - Met een actie: `vigil_alarm.bypass` en `vigil_alarm.unbypass` met de sensor-entiteit en, voor mensen die geen
   beheerder zijn, een code. Die code is alleen nodig als ook inschakelen een code vraagt
@@ -165,6 +167,10 @@ omzeilen opheft).
 Het paneel en de Vigil-kaart hebben één stijl. De toestand is een **ring met een icoon** in de kleur van de toestand: groen als alles uit en dicht is, amber als er iets open staat of tijdens het inschakelen, oranje tijdens de aankomstvertraging, blauw, koraal en violet voor thuis, weg en nacht, rood bij alarm (met een rood kader om het scherm), grijs zonder verbinding. Tijdens de uitloop- en aankomstvertraging is de ring het **aftellen**: de seconden in het midden, de ring loopt leeg; bij nul is het alarm ingeschakeld. Onder de ring staan de knoppen voor de modi die dit paneel mag gebruiken, of één grote knop *Uitschakelen* als het alarm aan staat. Onderaan staan de tabs *Alarm*, *Sensoren* (met het aantal open sensoren) en *Info*; het toetsenpaneel heeft geen tabs.
 
 ![De andere pagina's: toetsenpaneel, sensoren, info, ingeschakeld weg](images/touch-panel-pages-nl.png)
+
+Als *Vakantie* en *Aangepast* aan staan, zijn er tot vijf modeknoppen in één rij (de tekst wordt kleiner), en toont Uitgeschakeld het laatste alarm onder de status:
+
+![Vijf modeknoppen met het laatste alarm, ingeschakeld vakantie, ingeschakeld aangepast, een 24-uursalarm](images/touch-panel-modes-nl.png)
 
 
 Met het ESPHome-paneel (Guition 4848) schakel je in en uit en omzeil je sensoren zonder telefoon.

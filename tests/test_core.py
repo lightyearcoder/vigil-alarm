@@ -185,6 +185,18 @@ def test_the_new_modes_exist_in_a_config_and_unknown_modes_are_still_refused():
     assert set(config.modes) == {"vacation", "custom"}
 
 
+def test_permanent_bypass_is_config_that_round_trips_and_is_refused_for_life_safety():
+    data = _with(sensors={"a": {"cls": "intrusion", "modes": ["away"], "permanent_bypass": True}, "t": {"cls": "tamper"}}, rules={})
+    config = Config.from_dict(data)
+    assert config.sensors["a"].permanent_bypass and not config.sensors["t"].permanent_bypass
+    assert Config.from_dict(config.to_dict()).to_dict() == config.to_dict()
+    for cls in ("fire", "gas"):
+        with pytest.raises(ConfigError, match="cannot be bypassed"):
+            Config.from_dict(_with(sensors={"x": {"cls": cls, "permanent_bypass": True}}, rules={}))
+    with pytest.raises(ConfigError, match="true or false"):
+        Config.from_dict(_with(sensors={"x": {"cls": "tamper", "permanent_bypass": "yes"}}, rules={}))
+
+
 def test_snapshot_exposes_technical_alarms():
     engine = Engine(Config.from_dict(HOUSE))
     engine.set_sensor("water_bath", "open")

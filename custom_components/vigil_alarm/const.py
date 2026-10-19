@@ -123,6 +123,7 @@ CONF_MAY_BYPASS = "may_bypass"  # a user may bypass sensors; users saved before 
 CONF_MAY_BYPASS_TAMPER = "may_bypass_tamper"
 CONF_DURESS_HASH = "duress_hash"  # a second code per user: disarms like the normal one, and tells the channels quietly
 CONF_DURESS_SALT = "duress_salt"
+CONF_PERMANENT_BYPASS = "permanent_bypass"  # on a sensor: a manual bypass stays after disarming
 CONF_CHIME = "chime"  # on a sensor: sound the chime when it opens while the alarm is off
 
 # The window after the siren starts in which a valid code means "false alarm" (0 = off), and the chime.

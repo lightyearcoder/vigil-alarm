@@ -221,6 +221,17 @@ class Notifier:
     def _send(self, channel: Channel, message: str, category: str) -> None:
         self.hass.async_create_task(self._async_send(channel, message, category))
 
+    async def _async_call(self, channel: Channel, data: dict[str, Any]) -> None:
+        """Send through a notify service, or to a notify entity (a value with a dot is an entity id, for example a
+        notify group made as a helper). An entity takes a title and a message only: no app specific data."""
+        if "." in channel.service:
+            payload = {"entity_id": channel.service, "message": data["message"]}
+            if data.get("title"):
+                payload["title"] = data["title"]
+            await self.hass.services.async_call("notify", "send_message", payload, blocking=True)
+        else:
+            await self.hass.services.async_call("notify", channel.service, data, blocking=True)
+
     async def _async_send(self, channel: Channel, message: str, category: str) -> None:
         data: dict[str, Any] = {"title": text(self._lang(), "title"), "message": message}
         if channel.priority and category in ("alarm", "duress"):
@@ -231,7 +242,7 @@ class Notifier:
                 "priority": "high",
             }
         try:
-            await self.hass.services.async_call("notify", channel.service, data, blocking=True)
+            await self._async_call(channel, data)
         except Exception as err:  # noqa: BLE001 - any failing service must not break the alarm
             _LOGGER.error("Notification via notify.%s failed: %s", channel.service, err)
             self.manager.publish("notification_failed", channel=channel.name, error=str(err))
@@ -252,7 +263,7 @@ class Notifier:
                 data["data"] = {"tag": "vigil_selftest", "actions": [{"action": "VIGIL_TEST_SIREN", "title": text(lang, "selftest_action")}]}
             sent += 1
             try:
-                await self.hass.services.async_call("notify", channel.service, data, blocking=True)
+                await self._async_call(channel, data)
             except Exception as err:  # noqa: BLE001
                 _LOGGER.error("Notification via notify.%s failed: %s", channel.service, err)
                 self.manager.publish("notification_failed", channel=channel.name, error=str(err))

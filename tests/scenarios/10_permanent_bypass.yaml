@@ -1,0 +1,62 @@
+# Release 0.5.5: a sensor with permanent_bypass keeps a manual bypass after disarming, until it is restored by hand.
+configs:
+  perm:
+    version: 1
+    default_entry_delay: 30
+    modes:
+      away: {exit_delay: 60}
+    sensors:
+      broken_window:
+        cls: intrusion
+        type: instant
+        modes: [away]
+        permanent_bypass: true
+      front_door:
+        cls: intrusion
+        type: instant
+        modes: [away]
+scenarios:
+  - name: a_permanent_bypass_survives_disarming_and_the_sensor_stays_ignored
+    config: perm
+    steps:
+      - {t: 0, bypass: broken_window, user: anna}
+      - {t: 1, arm: away}
+      - {t: 61, expect: {state: armed_away, sensor_status: {broken_window: bypassed}}}
+      - {t: 70, sensor: broken_window, value: open}
+      - {t: 71, expect: {state: armed_away}}
+      - {t: 80, disarm: anna}
+      - {t: 81, expect: {state: disarmed, sensor_status: {broken_window: bypassed}}}
+      - {t: 90, arm: away}
+      - {t: 150, expect: {state: armed_away, sensor_status: {broken_window: bypassed}}}
+    events_ignore: [sensor_faulted]
+    events:
+      - {t: 0, type: sensor_bypassed, sensor: broken_window, user: anna}
+      - {t: 1, type: arming_started}
+      - {t: 61, type: armed}
+      - {t: 80, type: disarmed}
+      - {t: 90, type: arming_started}
+      - {t: 150, type: armed}
+
+  - name: a_permanent_bypass_ends_when_it_is_restored_by_hand
+    config: perm
+    steps:
+      - {t: 0, bypass: broken_window, user: anna}
+      - {t: 10, unbypass: broken_window, user: anna}
+      - {t: 11, expect: {sensor_status: {broken_window: closed}}}
+    events:
+      - {t: 0, type: sensor_bypassed}
+      - {t: 10, type: sensor_unbypassed, reason: manual}
+
+  - name: an_ordinary_sensor_still_loses_its_bypass_at_disarm
+    config: perm
+    steps:
+      - {t: 0, bypass: front_door}
+      - {t: 1, arm: away}
+      - {t: 70, disarm: anna}
+      - {t: 71, expect: {sensor_status: {front_door: closed}}}
+    events:
+      - {t: 0, type: sensor_bypassed}
+      - {t: 1, type: arming_started}
+      - {t: 61, type: armed}
+      - {t: 70, type: sensor_unbypassed, reason: disarm}
+      - {t: 70, type: disarmed}

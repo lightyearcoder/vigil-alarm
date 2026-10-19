@@ -50,6 +50,7 @@ static const Text TEXTS[] = {
     {"arm_vacation", {"Vakantie inschakelen", "Arm vacation"}},
     {"arm_custom", {"Aangepast inschakelen", "Arm custom"}},
     {"last_alarm", {"Laatste alarm: ", "Last alarm: "}},
+    {"bypassed_now", {"Omzeild: ", "Bypassed: "}},
     {"bypass", {"Omzeilen", "Bypass"}},
     {"force", {"Omzeilen en inschakelen", "Bypass and arm"}},
     {"force_title", {"Omzeilen en inschakelen: ", "Bypass and arm: "}},
@@ -173,6 +174,7 @@ struct Context {
   std::string changed_via;  // the panel or device it was done on
   std::string cause;
   std::string cause_sensor;
+  std::string bypassed;    // names of the sensors that are bypassed now (when disarmed: a permanent bypass), empty if none
   std::string last_alarm;  // the alarm memory in one line ("14:03 Front door > Hall"), empty if there is none
   std::string open_now;   // names of the sensors that are open at all
   std::string open_mode;  // names of the sensors that are open in the current mode
@@ -597,6 +599,7 @@ inline std::string state_sub(double /*now: the ring shows the countdown*/) {
     if (open > 0) add_line(out, tr("open") + std::to_string(open));
     else add_line(out, tr("all_closed"));
     if (details_visible() && !ctx.last_alarm.empty()) add_line(out, tr("last_alarm") + ctx.last_alarm);
+    if (details_visible() && !ctx.bypassed.empty()) add_line(out, tr("bypassed_now") + ctx.bypassed);
     if (!ctx.faults.empty()) add_line(out, tr("problems") + ctx.faults);
     else if (ctx.faults_total > 0 || ctx.problems > 0) add_line(out, tr("problems") + std::to_string(ctx.faults_total > 0 ? ctx.faults_total : ctx.problems));
   } else if (is_armed_state(s)) {

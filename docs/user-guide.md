@@ -87,8 +87,8 @@ the alarm state is kept.
    - Optionally add a battery sensor; Vigil then warns when it runs low.
 3. **Add a user** (tab *Users*): a name and a code. Without any user, no code is needed at all.
    A user can be limited to certain modes. Bypassing a sensor is a right you give to a user (*May bypass sensors*): without it a user can neither bypass nor restore a sensor, even with a right code. Whoever may bypass a sensor may also restore it. A tamper sensor needs the extra right *May bypass tamper*, for bypassing and for restoring. Users saved before this right existed keep it until you untick it.
-4. **Add a notification** (tab *Notifications*): pick a `notify` service and the kinds of
-   message it should get. With a *delay* the channel only sends alarm messages when the alarm is
+4. **Add a notification** (tab *Notifications*): pick a `notify` service or a notify entity (for example a *notify group* made under *Settings → Devices & services → Helpers → Group*, shown as `notify.family`) and the kinds of
+   message it should get. A notify entity gets a title and a message only: no app specific data, so no critical alert on a phone (choose a `mobile_app_…` service for that). With a *delay* the channel only sends alarm messages when the alarm is
    still active after that time: that is an escalation channel for a second person or device.
 5. **Optional: a confirmation rule** (tab *Confirmation rules*): choose the instant intrusion
    sensors, how many must trigger, and in what time window.
@@ -148,6 +148,8 @@ sensor), and it is never possible for a fire or gas sensor. In your own automati
 
 Bypass leaves one sensor out until the alarm is switched off (or until you un-bypass it).
 
+**Permanent bypass.** Tick *Keep the bypass after disarming (permanent)* on a sensor (not available for fire and gas sensors) and a manual bypass of that sensor stays after the alarm is disarmed, also through a restart of Home Assistant, until someone restores it by hand. Handy for a sensor that has been broken for some time. The sensor stays in the list as *bypassed*, the *Overview* tab has a card **Permanently bypassed** with a *Restore* button, and the Vigil card and the touch panel show *Bypassed: Broken window* under *Disarmed*, so it is not forgotten; the log has `sensor_bypassed` when it starts and `sensor_unbypassed` (reason *manual*) when it ends. Without the tick nothing changes: the bypass ends at disarming.
+
 - In the panel and dashboard: the **Bypass** switch of the sensor (administrators only).
 - By action: `vigil_alarm.bypass` and `vigil_alarm.unbypass` with the sensor entity and, for people who are
   not administrators, a code. That code is only needed if arming needs one too (the setting
@@ -162,6 +164,10 @@ Bypass leaves one sensor out until the alarm is switched off (or until you un-by
 The panel and the Vigil card share one look. The state is a **ring with an icon** in the colour of the state: green when disarmed and everything is closed, amber when something is open or while arming, orange during the entry delay, blue, coral, violet, teal and pink for home, away, night, vacation and custom, red for an alarm (with a red frame around the screen), grey without a connection. During the exit and entry delay the ring is the **countdown**: the seconds in the middle, the ring running down to empty; when it reaches zero the alarm is on. Under the ring you see the buttons for the modes this panel may use, or one big *Disarm* button when the alarm is on. At the bottom are the tabs *Alarm*, *Sensors* (with the number of open sensors) and *Info*; the keypad has no tabs.
 
 ![The other pages: keypad, sensors, info, armed away](images/touch-panel-pages-en.png)
+
+With *Vacation* and *Custom* switched on there are up to five mode buttons in one row (the text gets smaller), and Disarmed shows the last alarm under the state:
+
+![Five mode buttons with the last alarm, armed vacation, armed custom, a 24-hour alarm](images/touch-panel-modes-en.png)
 
 
 With the ESPHome panel (Guition 4848) you arm, disarm and bypass sensors without a phone. It reads

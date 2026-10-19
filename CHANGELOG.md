@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.5
+
+- **The tamper entity also works for the 24-hour types.** The field *Tamper entity* (the tamper signal of the same device) is now there for *24 hours audible* and *24 hours silent* sensors too, not only for intrusion, fire, gas and water.
+- **Permanent bypass per sensor.** A new tick on a sensor, *Keep the bypass after disarming (permanent)* (not for fire and gas): a manual bypass of that sensor then stays after disarming, also through a restart, until it is restored by hand. For a sensor that has been broken for a while. Without the tick nothing changes. A sensor that is permanently bypassed is shown on the *Overview* tab in a card *Permanently bypassed* (with *Restore*), and the Vigil card and the touch panel show *Bypassed: …* under *Disarmed*, so it is not forgotten. Config key `permanent_bypass`.
+- **Notify groups and other notify entities as a channel.** The list under *Notifications* only offered `notify` services. It now also offers notify entities by entity id, such as a notify group made as a helper (`notify.family`); they are sent through `notify.send_message`. A notify entity gets a title and a message only, so the critical-alert format of the *Priority* option is not used for it. The form says so in a note under *Notify service* and *High priority*.
+- **Screenshots of the new touch panel screens** (five mode buttons, the last alarm, Vacation, Custom and the 24-hour alarm) in the English and Dutch handbook and in the ESPHome README.
+- **Touch panel:** under *Disarmed* the panel shows *Bypassed: Attic window* when a sensor is still bypassed (when it may show sensor names). New panel profile attribute `bypassed_text`. Firmware version 0.5.5: **flash the panels to get the line**; a panel with older firmware keeps working without it. Minimum ESPHome version unchanged (2026.9).
+
 ## 0.5.4
 
 - **Two extra modes: Vacation and Custom.** Switch them on under *Settings → Modes* (the wizard has them too). Each has its own exit delay (60 and 30 seconds by default) and its sensors: put a sensor group in *Vacation* or *Custom* like in any other mode. The alarm entity offers *Arm vacation* and *Arm custom bypass* (the name Home Assistant gives to Custom; its state reads `armed_custom_bypass`), the service `vigil_alarm.arm` takes `vacation` and `custom`, the Vigil card and the touch panel have buttons and their own colours (teal and pink), users and panels can be limited to them like to the other modes, and the blueprints *Arm at a set time* and *Arm when everyone leaves* offer them. Existing installations are unchanged: both modes are off until you switch them on.

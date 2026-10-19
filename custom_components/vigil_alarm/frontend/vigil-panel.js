@@ -66,6 +66,7 @@ const TXT = {
     summary: { always: "{cls}, altijd actief", instant: "direct", delayed: "vertraagd ({s} s)", follower: "volger", and: "en", watching: "{type}, bewaakt in {modes}", nowhere: "{type}, bewaakt in geen enkele modus" },
     whatsNew: "nieuw", batteryLow: "laag", batteryOk: "ok",
     copySuffix: " (kopie)",
+    permBypass: { title: "Permanent omzeild", intro: "Deze sensoren staan omzeild en bewaken niet, ook niet na het uitschakelen. Herstel ze zodra ze gerepareerd zijn:", restore: "Herstellen", restored: "Hersteld" },
     memory: { title: "Laatste alarm", running: "Het alarm loopt nog.", endedBy: "Uitgeschakeld om {time} door {who}.", cancelled: "Geannuleerd als vals alarm.", cause: "Oorzaak", first: "Eerste sensor", path: "Route door het huis", pathIntro: "Elke sensor die openging vanaf het begin van het alarm tot het uitschakelen, in volgorde. Ook sensoren die in deze modus niet meetelden of omzeild waren staan erbij: samen laten ze zien waar iemand is geweest.", time: "Tijd", sensor: "Sensor", room: "Ruimte", counted: "Telde mee", notCounted: "Telde niet mee", times: "{n}× geopend", clear: "Alarmgeheugen wissen", cleared: "Alarmgeheugen gewist", noRoom: "geen ruimte ingesteld", empty: "Geen sensor geopend (alleen de eerste melding).", steps: "{n} stappen", more: "Alleen de eerste {n} stappen worden bewaard." },
     practice: { chip: "Oefenmodus", title: "Oefenen en testen", text: "Oefenmodus: het alarm werkt als altijd (aftellen, afgaan, de panelen tonen het) maar er klinkt geen sirene en er gaat geen melding uit. Alles staat in het logboek, gemarkeerd als oefening. Het stopt na 30 minuten, of zodra je uitschakelt.", start: "Start oefenmodus", stop: "Stop oefenmodus", left: "Nog {n} min.", needsOff: "Schakel het alarm eerst uit.",
       walk: "Looptest: loop met het alarm uit langs de deuren, ramen en bewegingsmelders; elke sensor die reageert wordt afgevinkt. Alleen inbraaksensoren doen mee (brand-, gas-, water- en sabotagesensoren staan altijd aan en hebben hun eigen test).", walkStart: "Start looptest", walkTitle: "Looptest", walkRunning: "Open elke deur of raam en loop langs elke bewegingsmelder. {n} van {total} gezien.", walkStop: "Stop de test", walkDone: "Klaar: {seen} van {total} gezien.", walkAgain: "Opnieuw", walkMissing: "Niet gezien", walkReason: { no_response: "reageerde niet", unavailable: "is niet beschikbaar" }, walkSeen: "Gezien", walkNone: "Alle sensoren hebben gereageerd.", walkLast: "Laatste looptest: {seen} van {total} gezien ({time}).", close: "Sluiten" },
@@ -132,7 +133,7 @@ const TXT = {
     condition: "{n} binnen {s} s",
     fields: {
       name: "Naam", entity_id: "Entiteit (binary sensor)", cls: "Klasse", type: "Type", sensor_groups: "Sensorgroepen", at_arm_open: "Als open bij einde uitlooptijd",
-      entry_delay: "Inlooptijd (leeg = standaard)", gas_type: "Soort gas", on_unavailable: "Als de sensor onbereikbaar wordt", battery_entity: "Batterijsensor", tamper_entity: "Sabotage-entiteit (optioneel)", chime: "Deurbel: laat een geluid horen als deze sensor opengaat terwijl het alarm uit is", duress_code: "Dwangcode (optioneel)",
+      entry_delay: "Inlooptijd (leeg = standaard)", gas_type: "Soort gas", on_unavailable: "Als de sensor onbereikbaar wordt", battery_entity: "Batterijsensor", tamper_entity: "Sabotage-entiteit (optioneel)", chime: "Deurbel: laat een geluid horen als deze sensor opengaat terwijl het alarm uit is", permanent_bypass: "Omzeiling blijft staan na uitschakelen (permanent)", duress_code: "Dwangcode (optioneel)",
       "sensor_group.modes": "Actief in modi", suggest_for: "Voorstellen voor nieuwe sensoren",
       sensors: "Sensoren", required: "Benodigde sensoren", window: "Tijdvenster", escalate: "Melden als onbevestigd",
       code: "Code", tags: "Tags (komma-gescheiden)", allowed_modes: "Mag bedienen in modi (leeg = alle)", may_bypass: "Mag sensoren omzeilen", may_bypass_tamper: "Mag sabotage omzeilen",
@@ -151,6 +152,7 @@ const TXT = {
     moreInfo: "Meer uitleg",
     help: {
       duress_code: "Een tweede code voor als iemand je dwingt het alarm uit te zetten. Hij zet het alarm gewoon uit en er is niets aan te zien: de sirene blijft stil. Ondertussen gaat er een stille melding naar de kanalen met de soort melding Dwang. Moet anders zijn dan alle andere codes.",
+      permanent_bypass: "Omzeil je deze sensor met de hand, dan blijft hij omzeild ook nadat het alarm is uitgeschakeld, tot je hem zelf herstelt. Handig voor een sensor die al een tijd stuk is. Zonder dit vinkje vervalt de omzeiling bij het uitschakelen. Brand- en gassensoren kunnen nooit worden omzeild.",
       chime: "Gaat de sensor open terwijl het alarm uit staat, dan klinkt er kort een geluid via wat je bij de instellingen hebt gekozen. Geen alarm, geen melding, niets in het logboek. Is het alarm aan, dan gebeurt er niets.",
       abort_seconds: "Wie binnen zoveel seconden nadat de sirene is afgegaan een geldige code invoert, heeft een vals alarm veroorzaakt: de sirene stopt en er gaat een melding 'geannuleerd' uit. 0 zet dit uit. Geldt niet voor brand, gas en sabotage.",
       chime_entity: "Een sirene, schakelaar, lamp, knop of script dat een geluid laat horen. Leeg laten kan ook: de gebeurtenis Deurbel staat dan nog wel op de gebeurtenis-entiteit, voor een eigen automatisering (bijvoorbeeld een bericht op een speaker).",
@@ -171,6 +173,8 @@ const TXT = {
       removeCode: "Code verwijderen", removeDuress: "Dwangcode verwijderen",
       tags: "Tags hebben geen functie: bedien het alarm met een code.",
       categories: "Kies welke berichten dit kanaal krijgt.",
+      service: "Een notify-dienst (zoals mobile_app_telefoon of een groep uit YAML) of een notify-entiteit (zoals notify.gezin, een notify-groep die je als helper hebt gemaakt). Een notify-entiteit krijgt alleen een titel en een bericht: de kritieke melding van Hoge prioriteit werkt daar niet mee en de knop op het testbericht van de zelfcontrole ook niet. Wil je dat voor een telefoon, kies dan zijn eigen mobile_app_…-dienst.",
+      priority: "Alleen voor telefoons met de Home Assistant-app (een mobile_app_…-dienst): een alarm wordt dan een kritieke melding op iOS en een melding met hoge prioriteit op Android. Bij een notify-entiteit of een andere dienst doet dit niets.",
       delay: "Alleen voor alarmen: eerst wachten, bijvoorbeeld om alleen na een tijd een tweede apparaat te melden.",
       profiles: "Toon en volume per oorzaak (optioneel)",
       preset: "Vult toon, volume en duur in voor een bekende sirene. Kies eerst bij \"Sirene\" de aan/uit-entiteit, dan zoekt Vigil de andere entiteiten van hetzelfde apparaat erbij. Alles blijft aanpasbaar.",
@@ -290,6 +294,7 @@ const TXT = {
     summary: { always: "{cls}, always on", instant: "instant", delayed: "delayed ({s} s)", follower: "follower", and: "and", watching: "{type}, watching in {modes}", nowhere: "{type}, not watching in any mode" },
     whatsNew: "new", batteryLow: "low", batteryOk: "ok",
     copySuffix: " (copy)",
+    permBypass: { title: "Permanently bypassed", intro: "These sensors are bypassed and not watching, also after disarming. Restore them as soon as they are repaired:", restore: "Restore", restored: "Restored" },
     memory: { title: "Last alarm", running: "The alarm is still going.", endedBy: "Disarmed at {time} by {who}.", cancelled: "Cancelled as a false alarm.", cause: "Cause", first: "First sensor", path: "Path through the house", pathIntro: "Every sensor that opened from the start of the alarm until it was disarmed, in order. Sensors that did not count in this mode, or were bypassed, are included: together they show where someone has been.", time: "Time", sensor: "Sensor", room: "Room", counted: "Counted", notCounted: "Did not count", times: "opened {n}×", clear: "Clear alarm memory", cleared: "Alarm memory cleared", noRoom: "no room set", empty: "No sensor opened (only the first report).", steps: "{n} steps", more: "Only the first {n} steps are kept." },
     practice: { chip: "Practice mode", title: "Practice and test", text: "Practice mode: the alarm works as always (it counts down, it triggers, the panels show it) but no siren sounds and no message goes out. Everything is in the log, marked as practice. It stops after 30 minutes, or as soon as you disarm.", start: "Start practice mode", stop: "Stop practice mode", left: "{n} min left.", needsOff: "Switch the alarm off first.",
       walk: "Walk test: with the alarm off, walk along the doors, windows and motion sensors; every sensor that reacts is ticked off. Only intrusion sensors take part (fire, gas, water and tamper sensors are always on and have their own test).", walkStart: "Start walk test", walkTitle: "Walk test", walkRunning: "Open each door or window and walk past each motion sensor. {n} of {total} seen.", walkStop: "Stop the test", walkDone: "Done: {seen} of {total} seen.", walkAgain: "Again", walkMissing: "Not seen", walkReason: { no_response: "did not react", unavailable: "is unavailable" }, walkSeen: "Seen", walkNone: "All sensors reacted.", walkLast: "Last walk test: {seen} of {total} seen ({time}).", close: "Close" },
@@ -356,7 +361,7 @@ const TXT = {
     condition: "{n} within {s} s",
     fields: {
       name: "Name", entity_id: "Entity (binary sensor)", cls: "Class", type: "Type", sensor_groups: "Sensor groups", at_arm_open: "If open when exit delay ends",
-      entry_delay: "Entry delay (empty = default)", gas_type: "Type of gas", on_unavailable: "When the sensor becomes unreachable", battery_entity: "Battery sensor", tamper_entity: "Tamper entity (optional)", chime: "Chime: sound when this sensor opens while the alarm is off", duress_code: "Duress code (optional)",
+      entry_delay: "Entry delay (empty = default)", gas_type: "Type of gas", on_unavailable: "When the sensor becomes unreachable", battery_entity: "Battery sensor", tamper_entity: "Tamper entity (optional)", chime: "Chime: sound when this sensor opens while the alarm is off", permanent_bypass: "Keep the bypass after disarming (permanent)", duress_code: "Duress code (optional)",
       "sensor_group.modes": "Active in modes", suggest_for: "Suggest for new sensors",
       sensors: "Sensors", required: "Sensors needed", window: "Time window", escalate: "Report when unconfirmed",
       code: "Code", tags: "Tags (comma separated)", allowed_modes: "May operate in modes (empty = all)", may_bypass: "May bypass sensors", may_bypass_tamper: "May bypass tamper",
@@ -375,6 +380,7 @@ const TXT = {
     moreInfo: "More information",
     help: {
       duress_code: "A second code for when someone forces you to switch the alarm off. It switches the alarm off as usual and nothing shows: the siren stays quiet. Meanwhile a silent message goes to the channels with the kind of message Duress. It must differ from every other code.",
+      permanent_bypass: "If you bypass this sensor by hand, it stays bypassed after the alarm is disarmed, until you restore it yourself. Handy for a sensor that has been broken for a while. Without this tick the bypass ends at disarming. Fire and gas sensors can never be bypassed.",
       chime: "When the sensor opens while the alarm is off, a short sound plays through what you chose in the settings. No alarm, no message, nothing in the log. When the alarm is on, nothing happens.",
       abort_seconds: "Whoever enters a valid code within this many seconds after the siren went off has caused a false alarm: the siren stops and a 'cancelled' message goes out. 0 switches this off. Does not apply to fire, gas and tamper.",
       chime_entity: "A siren, switch, light, button or script that makes a sound. You can leave it empty: the Chime event is still on the event entity, for an automation of your own (for example a message on a speaker).",
@@ -395,6 +401,8 @@ const TXT = {
       removeCode: "Remove code", removeDuress: "Remove duress code",
       tags: "Tags have no function: operate the alarm with a code.",
       categories: "Choose which messages this channel receives.",
+      service: "A notify service (such as mobile_app_phone or a group from YAML) or a notify entity (such as notify.family, a notify group you made as a helper). A notify entity gets a title and a message only: the critical alert of High priority does not work with it, and neither does the button on the self-check test message. For that on a phone, choose its own mobile_app_… service.",
+      priority: "Only for phones with the Home Assistant app (a mobile_app_… service): an alarm is then sent as a critical alert on iOS and with high priority on Android. For a notify entity or another service this does nothing.",
       delay: "Alarms only: wait first, for example to notify a second device only after a while.",
       profiles: "Tone and volume per cause (optional)",
       preset: "Fills in tone, volume and duration for a known siren. Pick the on/off entity under \"Siren\" first and Vigil looks for the other entities of the same device. Everything stays editable.",
@@ -1012,6 +1020,18 @@ class VigilPanel extends HTMLElement {
   }
 
   // ---- the last alarm and the path through the house
+  _permBypassCard() {
+    const t = this.t.permBypass;
+    const list = (this._live && this._live.permanent_bypassed) || [];
+    if (!list.length) return null;
+    return el("div", { class: "card" }, el("h2", { text: t.title }), el("p", { class: "muted", text: t.intro }),
+      el("ul", { class: "plain" }, list.map((r) => el("li", {},
+        el("strong", { text: r.name }), " ",
+        r.entity_id ? el("button", { class: "btn", text: t.restore, onclick: async () => {
+          try { await this._hass.callService("vigil_alarm", "unbypass", { sensor: r.entity_id }); this._toast(t.restored); }
+          catch (err) { this._toast(String((err && err.message) || err)); }
+        } }) : null))));
+  }
   _memoryCard() {
     const t = this.t.memory;
     const m = this._live && this._live.alarm_memory;
@@ -1238,6 +1258,7 @@ class VigilPanel extends HTMLElement {
           el("h2", { text: t.tabs[k] }), el("div", { class: "stat", text: String(this._shown(k).length) })))),
       this._wizardCard(),
       this._newSensorsCard(),
+      this._permBypassCard(),
       this._memoryCard(),
       this._practiceCard(),
       this._whyCard(),
@@ -1303,7 +1324,7 @@ class VigilPanel extends HTMLElement {
       ];
       case "notification": return [
         [C.name, (i) => i.title],
-        [C.service, (i) => `notify.${i.data.service}`],
+        [C.service, (i) => String(i.data.service).includes(".") ? i.data.service : `notify.${i.data.service}`],
         [C.categories, (i) => this._optList("categories", i.data.categories)],
         [C.delay, (i) => (i.data.delay ? `${i.data.delay} s` : t.immediately)],
       ];
@@ -2100,7 +2121,7 @@ class VigilPanel extends HTMLElement {
         if (state[key] && !services.includes(state[key])) services.push(state[key]);
         const select = el("select", { onchange: (e) => { state[key] = e.target.value; } },
           el("option", { value: "", text: "—" }),
-          services.map((s) => el("option", { value: s, selected: state[key] === s, text: `notify.${s}` })));
+          services.map((s) => el("option", { value: s, selected: state[key] === s, text: s.includes(".") ? s : `notify.${s}` })));
         return wrap(select);
       }
       case "entity": {

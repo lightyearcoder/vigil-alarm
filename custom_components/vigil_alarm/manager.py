@@ -32,6 +32,7 @@ from .const import (
     CONF_ABORT_SECONDS,
     CONF_AT_ARM_OPEN,
     CONF_CHIME,
+    CONF_PERMANENT_BYPASS,
     CONF_CHIME_ENTITY,
     CONF_CHIME_SECONDS,
     DEFAULT_ABORT_SECONDS,
@@ -123,6 +124,8 @@ def build_config(entry: ConfigEntry, extra: dict[str, Item] | None = None) -> Co
                 body["at_arm_open"] = d.get(CONF_AT_ARM_OPEN, "bypass")
                 if d.get(CONF_ENTRY_DELAY) is not None:
                     body["entry_delay"] = d[CONF_ENTRY_DELAY]
+            if d.get(CONF_PERMANENT_BYPASS) and d[CONF_CLS] not in ("fire", "gas"):
+                body["permanent_bypass"] = True
             if d[CONF_CLS] == "gas":
                 body["gas_type"] = d.get(CONF_GAS_TYPE, "other")
             body = {k: v for k, v in body.items() if v is not None}

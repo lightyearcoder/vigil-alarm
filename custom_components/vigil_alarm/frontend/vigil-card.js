@@ -25,7 +25,7 @@
       bypass: "Omzeilen", unbypass: "Herstellen", bypass_title: "Omzeilen: ", unbypass_title: "Herstellen: ",
       unlock_title: "Sensoren bekijken", admin_code: "Installateurscode", hint_user: "Voer uw gebruikerscode in", hint_admin: "Voer de installateurscode in", sensors: "Sensoren", sensors_open: "open",
       all_closed: "Alles dicht", open: "Open: ", problems: "Storingen: ", leave_in: "Verlaat het huis: ",
-      enter_in: "Schakel uit binnen: ", by: "Door ", by_unknown: "Door: onbekend", via: "Via ", practice: "Oefenmodus: geen sirene, geen meldingen", last_alarm: "Laatste alarm: ", false_alarm: " (vals alarm)", no_sensors: "Geen sensoren", back: "Terug", cancel: "Annuleren",
+      enter_in: "Schakel uit binnen: ", by: "Door ", by_unknown: "Door: onbekend", via: "Via ", practice: "Oefenmodus: geen sirene, geen meldingen", last_alarm: "Laatste alarm: ", bypassed_now: "Omzeild: ", false_alarm: " (vals alarm)", no_sensors: "Geen sensoren", back: "Terug", cancel: "Annuleren",
       blocked: "Geblokkeerd", blocked_sub: "Dit paneel is geblokkeerd in Vigil",
       refuse_alarm_condition: "Inschakelen kan niet: {s} staat open", refuse_sensor_unavailable: "Inschakelen kan niet: {s} reageert niet", refuse_sensor_open: "Inschakelen kan niet: {s} staat open", refuse_not_disarmed: "Het alarm staat al aan", force: "Omzeilen en inschakelen",
       not_linked: "Niet gekoppeld",
@@ -46,7 +46,7 @@
       bypass: "Bypass", unbypass: "Restore", bypass_title: "Bypass: ", unbypass_title: "Restore: ",
       unlock_title: "View sensors", admin_code: "Installer code", hint_user: "Enter your user code", hint_admin: "Enter the installer code", sensors: "Sensors", sensors_open: "open",
       all_closed: "All closed", open: "Open: ", problems: "Problems: ", leave_in: "Leave within: ",
-      enter_in: "Disarm within: ", by: "By ", by_unknown: "By: unknown", via: "Via ", practice: "Practice mode: no siren, no messages", last_alarm: "Last alarm: ", false_alarm: " (false alarm)", no_sensors: "No sensors", back: "Back", cancel: "Cancel",
+      enter_in: "Disarm within: ", by: "By ", by_unknown: "By: unknown", via: "Via ", practice: "Practice mode: no siren, no messages", last_alarm: "Last alarm: ", bypassed_now: "Bypassed: ", false_alarm: " (false alarm)", no_sensors: "No sensors", back: "Back", cancel: "Cancel",
       blocked: "Blocked", blocked_sub: "This panel is blocked in Vigil",
       refuse_alarm_condition: "Cannot arm: {s} is open", refuse_sensor_unavailable: "Cannot arm: {s} does not respond", refuse_sensor_open: "Cannot arm: {s} is open", refuse_not_disarmed: "The alarm is already on", force: "Bypass and arm",
       not_linked: "Not linked",
@@ -301,6 +301,9 @@
         if (Number(p.open_count) > 0) add(this.tr("open") + p.open_count);
         else add(this.tr("all_closed"));
         if (this._detailsVisible()) add(this._lastAlarm(at));
+        // Disarmed and still bypassed: that is a permanent bypass, which must not be forgotten.
+        const left_out = Array.isArray(at.bypassed_sensors) ? at.bypassed_sensors.map(clean).filter(Boolean) : [];
+        if (left_out.length && this._detailsVisible()) add(this.tr("bypassed_now") + left_out.join(", "));
         if (clean(p.faults_text)) add(this.tr("problems") + clean(p.faults_text));
         else if (Number(p.faults_count) > 0 || Number(p.problems_count) > 0) {
           add(this.tr("problems") + (Number(p.faults_count) > 0 ? p.faults_count : p.problems_count));

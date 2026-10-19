@@ -46,6 +46,7 @@ from .const import (
     DEFAULT_ABORT_SECONDS,
     ABORT_SECONDS_RANGE,
     CONF_CHIME,
+    CONF_PERMANENT_BYPASS,
     CONF_CHIME_ENTITY,
     CONF_CHIME_SECONDS,
     DEFAULT_CHIME_SECONDS,
@@ -154,8 +155,9 @@ def form_schema(modes: list[str]) -> dict[str, list[dict[str, Any]]]:
             _f("gas_type", "select", options=list(GAS_TYPES), default="other", show_if={"cls": ["gas"]}),
             _f("on_unavailable", "select", options=["default", *ON_UNAVAILABLE], default="default"),
             _f(CONF_BATTERY_ENTITY, "entity", domains=["sensor", "binary_sensor"]),
-            _f(CONF_TAMPER_ENTITY, "entity", domains=["binary_sensor"], show_if={"cls": ["intrusion", "fire", "gas", "water"]}),
+            _f(CONF_TAMPER_ENTITY, "entity", domains=["binary_sensor"], show_if={"cls": ["intrusion", "fire", "gas", "water", "alarm24", "silent24"]}),
             _f("chime", "boolean", default=False, show_if=intrusion),
+            _f(CONF_PERMANENT_BYPASS, "boolean", default=False, show_if={"cls": ["intrusion", "tamper", "water", "alarm24", "silent24"]}),
         ],
         "sensor_group": [
             _f("name", "text", required=True),
@@ -331,6 +333,12 @@ def _live(entry: ConfigEntry) -> dict[str, Any] | None:
         "practice_until": manager.practice.until,
         "walktest": manager.walktest.status(),
         "alarm_memory": manager.alarmmemory.view(),
+        # Sensors that are left out for good (permanent bypass): the Overview names them so they are not forgotten.
+        "permanent_bypassed": [
+            {"id": z, "name": manager._sensor_name.get(z, z), "entity_id": manager._sensor_entity.get(z)}
+            for z, sensor in manager.config.sensors.items()
+            if sensor.permanent_bypass and manager.engine.is_bypassed(z)
+        ],
         # Per mode what would stop arming now (only while disarmed; the panel shows it as "why can't I arm?").
         "blockers": {m: b for m in manager.config.modes if (b := manager.arm_blockers(m, sync=False))} if manager.engine.state == "disarmed" else {},
     }

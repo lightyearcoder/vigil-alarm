@@ -117,6 +117,8 @@ int main(){
   ctx.state="disarmed"; assert(keypad_route(true, ARM_CUSTOM)==0);
   ctx.last_alarm="14:03 Front door > Hall"; assert(state_sub(0).find("Last alarm: 14:03 Front door > Hall")!=std::string::npos);
   ctx.last_alarm=""; assert(state_sub(0).find("Last alarm")==std::string::npos);
+  ctx.bypassed="Broken window"; assert(state_sub(0).find("Bypassed: Broken window")!=std::string::npos);
+  ctx.bypassed=""; assert(state_sub(0).find("Bypassed")==std::string::npos);
   ctx.state="triggered"; ctx.cause="alarm24"; assert(cause_text()=="24-hour alarm"); ctx.cause="silent24"; assert(cause_text()=="Silent alarm");
   std::cout << "ok\n";
 }

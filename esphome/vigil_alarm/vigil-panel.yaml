@@ -22,7 +22,7 @@ substitutions:
   # How long the screen stays on without touch, until Vigil has told the panel (setting "Screen off after" in Vigil).
   backlight_timeout_seconds: "30"
   # The version of this firmware, reported to Vigil.
-  firmware_version: "0.5.4"
+  firmware_version: "0.5.5"
   # The width of the cards and buttons: the screen minus a margin on both sides.
   content_w: ${ screen_width | int - 24 }
   # The sizes follow the screen: the ring is a bit over a quarter of the shortest side, the keys fill the keypad.
@@ -286,6 +286,15 @@ text_sensor:
     on_value:
       then:
         - lambda: vigil::ctx.open_now = vigil::clean(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_bypassed
+    entity_id: ${profile_entity}
+    attribute: bypassed_text
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.bypassed = vigil::clean(x);
         - script.execute: refresh_ui
   - platform: homeassistant
     id: ha_profile_last_alarm

@@ -48,6 +48,7 @@ class Sensor:
     on_unavailable: str = "block"
     gas_type: str | None = None
     rule: str | None = None
+    permanent_bypass: bool = False  # a manual bypass stays after disarming, until it is restored by hand
 
     @property
     def always_on(self) -> bool:
@@ -133,6 +134,8 @@ class Config:
                     )
             if z.gas_type:
                 entry["gas_type"] = z.gas_type
+            if z.permanent_bypass:
+                entry["permanent_bypass"] = True
             entry["on_unavailable"] = z.on_unavailable
             sensors[z.id] = entry
         out: dict[str, Any] = {
@@ -226,6 +229,11 @@ def _parse_sensors(
                 raise ConfigError(f"sensor {zid}: unknown gas_type {gas_type!r}")
         elif gas_type is not None:
             raise ConfigError(f"sensor {zid}: gas_type is only valid for class gas")
+        permanent_bypass = body.get("permanent_bypass", False)
+        if not isinstance(permanent_bypass, bool):
+            raise ConfigError(f"sensor {zid}: permanent_bypass must be true or false")
+        if permanent_bypass and cls in ("fire", "gas"):
+            raise ConfigError(f"sensor {zid}: fire and gas sensors cannot be bypassed (permanent_bypass)")
         entry_delay = body.get("entry_delay")
         if isinstance(entry_delay, Mapping):
             for m, v in entry_delay.items():
@@ -245,6 +253,7 @@ def _parse_sensors(
             on_unavailable=on_unavailable,
             gas_type=gas_type,
             rule=sensor_rule.get(zid),
+            permanent_bypass=permanent_bypass,
         )
     return sensors
 
