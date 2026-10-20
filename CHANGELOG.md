@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.6
+
+- **Panel identity: a key for every ESPHome panel.** The `source` of a call is plain text, so a call that only *says* it comes from a registered panel (for example from another Home Assistant account) was accepted as that panel. Now you can give an ESPHome panel a **key**: the key button in *Panels* makes one, shows it once (Vigil keeps only a SHA-256 digest of it) and a new key replaces the old one at once. The panel sends the key with every call (`panel_key` in the device file, from `secrets.yaml`; firmware 0.6.6), and Vigil refuses and logs every call in the name of that panel without the right key (`panel_refused`, reason `key`), on all services that take a `source`. Events `panel_key_created` and `panel_key_removed` are in the log. The key does not protect against someone who can read your ESPHome configuration or has administrator rights; use the encryption of the ESPHome API too.
+- **A panel without a key works exactly as before** (nothing changes on update, panels do not have to be flashed), and *Ready for use?* has a new advice per panel without a key. Tablets and phones are told apart by their Home Assistant user and have no key. Calls that name no panel (automations, scripts, the dashboard) are not touched.
+- **New texts in six languages** (the key dialog, the *Key set* / *No key* badge, the advice, the error), the guides in all six languages explain the key, and `esphome/README.md` has the step.
+- **Tested:** 8 new tests for the key (shown once, only a digest kept, every service checked, other callers untouched, new key replaces the old, editing keeps it, tablets have none) and a firmware check that every call carries `key`.
+
 ## 0.6.5
 
 - **The *Self-test* card shows what the last start of each siren came to:** *confirmed on*, *command sent, the siren does not confirm* or *failed*, with the time, and a reminder to test by ear when a siren cannot confirm. Until now this was only in the log (`verified`). (Kept until Home Assistant restarts.)

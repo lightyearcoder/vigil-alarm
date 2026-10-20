@@ -384,7 +384,7 @@ async def test_what_the_panel_reports_about_itself_is_shown(hass):
     status = entry.runtime_data.panels.status()[0]
     assert status["reported"] == {"hardware": "guition-4848", "capabilities": "touch,screen",
                                   "firmware": "0.4.0", "profile_supported": "1"}
-    assert entry.runtime_data.panels.problems() == []
+    assert [p["code"] for p in entry.runtime_data.panels.problems()] == ["panel_no_key"]  # only: it has no key yet
 
 
 async def test_firmware_that_does_not_understand_the_profile_is_reported(hass):
@@ -404,7 +404,7 @@ async def test_firmware_that_does_not_understand_the_profile_is_reported(hass):
 async def test_a_panel_that_reports_nothing_and_a_blocked_one_are_not_a_firmware_problem(hass):
     _esphome(hass)
     entry = await _house(hass, panel_item(), panel_item(pid="hall", name="Hall", sid="p2", blocked=True))
-    assert entry.runtime_data.panels.problems() == []
+    assert [p["code"] for p in entry.runtime_data.panels.problems()] == ["panel_no_key"]
 
 
 async def test_the_profile_entity_has_an_id_that_follows_the_panel_id_not_the_name(hass):

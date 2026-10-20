@@ -41,6 +41,13 @@ An update of Vigil can bring a new `vigil_alarm/` folder; your own device files 
    switch on **Allow the device to perform Home Assistant actions**. Without it the buttons do nothing.
 5. In Vigil open the tab **Panels → Add panel**. Use the device name as *panel id* and set what the
    panel may do. Until you do, the panel says **Not linked** and shows the panel id it expects.
+6. **Give the panel a key** (recommended). In *Panels* press the key button of the panel: Vigil shows a key **once**
+   (and keeps only a digest of it). Put it in your `secrets.yaml` as `vigil_panel_garage_key` (the panel id with underscores and `_key`; the key dialog shows the line), remove the `#` before
+   `panel_key` in your device file and install the panel again. From then on the panel sends the key with every call,
+   and Vigil refuses any call in the name of this panel without it: a call that only *says* it comes from the panel
+   (the `source` is plain text) no longer works, for example from another Home Assistant account. A new key replaces
+   the old one at once; install the panel again with it. The panel does not need to be flashed before you make a key:
+   a panel without a key works as before, but *Ready for use?* advises you to give it one.
 
 For a second panel copy the example file again, with another `name`.
 

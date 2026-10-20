@@ -163,6 +163,8 @@
               "user_refused": "Gebruikersoproep geweigerd",
               "panel_unlocked": "Paneel ontgrendeld",
               "panel_lock_cleared": "Blokkade van paneel opgeheven",
+              "panel_key_created": "Paneelsleutel gemaakt",
+              "panel_key_removed": "Paneelsleutel verwijderd",
               "panel_offline": "Paneel niet bereikbaar",
               "panel_online": "Paneel weer bereikbaar"
             }
@@ -237,6 +239,8 @@
           "user_refused": "Gebruikersoproep geweigerd",
           "panel_unlocked": "Paneel ontgrendeld",
           "panel_lock_cleared": "Blokkade van paneel opgeheven",
+          "panel_key_created": "Paneelsleutel gemaakt",
+          "panel_key_removed": "Paneelsleutel verwijderd",
           "panel_offline": "Paneel niet bereikbaar",
           "panel_online": "Paneel weer bereikbaar"
         }
@@ -374,6 +378,9 @@
     },
     "partition_not_allowed": {
       "message": "{user} mag partitie {partition} niet gebruiken."
+    },
+    "panel_key_wrong": {
+      "message": "Het paneel {panel} stuurde zijn sleutel niet mee, of de verkeerde."
     }
   },
   "services": {
@@ -392,6 +399,10 @@
         "source": {
           "name": "Bron",
           "description": "Naam van het bedienpunt, bijvoorbeeld een paneel. Komt in het logboek en bij wie het alarm wijzigde."
+        },
+        "key": {
+          "name": "Paneelsleutel",
+          "description": "De sleutel van een ESPHome-paneel, als het er een heeft (zie het tabblad Panelen). Een paneel met sleutel moet die bij elke aanroep meesturen; een aanroep die het paneel noemt zonder sleutel wordt geweigerd."
         },
         "bypass_open": {
           "name": "Omzeil wat het tegenhoudt",
@@ -415,6 +426,10 @@
           "name": "Bron",
           "description": "Naam van het bedienpunt, bijvoorbeeld een paneel. Komt in het logboek en bij wie het alarm wijzigde."
         },
+        "key": {
+          "name": "Paneelsleutel",
+          "description": "De sleutel van een ESPHome-paneel, als het er een heeft (zie het tabblad Panelen). Een paneel met sleutel moet die bij elke aanroep meesturen; een aanroep die het paneel noemt zonder sleutel wordt geweigerd."
+        },
         "partition": {
           "name": "Partitie",
           "description": "Welke partitie: het id, \"main\" voor de eerste, of \"all\" voor alle. Leeg: de eerste partitie."
@@ -436,6 +451,10 @@
         "source": {
           "name": "Bron",
           "description": "Naam van het bedienpunt, bijvoorbeeld een paneel. Komt in het logboek en bij wie het alarm wijzigde."
+        },
+        "key": {
+          "name": "Paneelsleutel",
+          "description": "De sleutel van een ESPHome-paneel, als het er een heeft (zie het tabblad Panelen). Een paneel met sleutel moet die bij elke aanroep meesturen; een aanroep die het paneel noemt zonder sleutel wordt geweigerd."
         }
       }
     },
@@ -454,6 +473,10 @@
         "source": {
           "name": "Bron",
           "description": "Naam van het bedienpunt, bijvoorbeeld een paneel. Komt in het logboek en bij wie het alarm wijzigde."
+        },
+        "key": {
+          "name": "Paneelsleutel",
+          "description": "De sleutel van een ESPHome-paneel, als het er een heeft (zie het tabblad Panelen). Een paneel met sleutel moet die bij elke aanroep meesturen; een aanroep die het paneel noemt zonder sleutel wordt geweigerd."
         }
       }
     },
@@ -492,6 +515,10 @@
         "source": {
           "name": "Bron",
           "description": "Naam van het bedienpunt, bijvoorbeeld een paneel. Komt in het logboek en bij wie het alarm wijzigde."
+        },
+        "key": {
+          "name": "Paneelsleutel",
+          "description": "De sleutel van een ESPHome-paneel, als het er een heeft (zie het tabblad Panelen). Een paneel met sleutel moet die bij elke aanroep meesturen; een aanroep die het paneel noemt zonder sleutel wordt geweigerd."
         }
       }
     },
@@ -506,6 +533,10 @@
         "source": {
           "name": "Bron",
           "description": "Naam van het bedienpunt, bijvoorbeeld een paneel. Komt in het logboek en bij wie het alarm wijzigde."
+        },
+        "key": {
+          "name": "Paneelsleutel",
+          "description": "De sleutel van een ESPHome-paneel, als het er een heeft (zie het tabblad Panelen). Een paneel met sleutel moet die bij elke aanroep meesturen; een aanroep die het paneel noemt zonder sleutel wordt geweigerd."
         }
       }
     },
@@ -520,6 +551,10 @@
         "source": {
           "name": "Bron",
           "description": "Naam van het bedieningspunt, bijvoorbeeld een paneel."
+        },
+        "key": {
+          "name": "Paneelsleutel",
+          "description": "De sleutel van een ESPHome-paneel, als het er een heeft (zie het tabblad Panelen). Een paneel met sleutel moet die bij elke aanroep meesturen; een aanroep die het paneel noemt zonder sleutel wordt geweigerd."
         }
       }
     },
@@ -538,6 +573,10 @@
         "source": {
           "name": "Bron",
           "description": "Het id van het paneel."
+        },
+        "key": {
+          "name": "Paneelsleutel",
+          "description": "De sleutel van een ESPHome-paneel, als het er een heeft (zie het tabblad Panelen). Een paneel met sleutel moet die bij elke aanroep meesturen; een aanroep die het paneel noemt zonder sleutel wordt geweigerd."
         }
       }
     },
@@ -548,6 +587,10 @@
         "source": {
           "name": "Source",
           "description": "De id van het paneel."
+        },
+        "key": {
+          "name": "Paneelsleutel",
+          "description": "De sleutel van een ESPHome-paneel, als het er een heeft (zie het tabblad Panelen). Een paneel met sleutel moet die bij elke aanroep meesturen; een aanroep die het paneel noemt zonder sleutel wordt geweigerd."
         },
         "partition": {
           "name": "Partition",

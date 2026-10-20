@@ -114,7 +114,8 @@ export default {
       "battery_missing": "{n} sensors have no battery sensor, so you will not hear when a battery runs low: {names}.",
       "tamper_unlinked": "{n} sensors have a tamper contact on the same device that is not connected to anything: {names}.",
       "panel_firmware": "The firmware of panel {name} understands profile version {seen}, Vigil uses version {wanted}. Update the firmware of the panel.",
-      "arm_without_code": "A user has a code, but arming needs no code (Settings), so anyone who can reach the alarm on a panel, in Home Assistant or through a service can arm it. Disarming always needs a code."
+      "arm_without_code": "A user has a code, but arming needs no code (Settings), so anyone who can reach the alarm on a panel, in Home Assistant or through a service can arm it. Disarming always needs a code.",
+      "panel_no_key": "Panel {name} has no key, so a call that only says it comes from this panel is accepted. Make a key under Panels."
     }
   },
   "heartbeat": {
@@ -516,7 +517,23 @@ export default {
     "noBypass": "no bypass",
     "noSilence": "no silencing",
     "hint": "Unlocking and clearing the lock can only be done here, not as a Home Assistant action.",
-    "refused": "This is not possible."
+    "refused": "This is not possible.",
+    "keyBtn": "Panel key",
+    "keyTitle": "Panel key",
+    "keyYes": "Key set",
+    "keyNo": "No key",
+    "keyIntro": "A panel with a key sends it with every call. Vigil then refuses any call in the name of this panel without it: the panel's name alone is only text and anyone who can call Home Assistant could use it.",
+    "keyHave": "This panel has a key.",
+    "keyNone": "This panel has no key yet: calls in its name are accepted without proof.",
+    "keyReplaceWarn": "A new key replaces the old one at once; install the panel again with the new key.",
+    "keyMake": "Make a key",
+    "keyReplace": "Make a new key",
+    "keyRemove": "Remove the key",
+    "keyShown": "This is the key. It is shown only now; Vigil keeps just a digest of it. Put this line in secrets.yaml:",
+    "keyDevice": "Then, in the device file of the panel, remove the # before panel_key: !secret {id}_key, and install the panel again.",
+    "keyCopy": "Copy",
+    "keyCopied": "Copied",
+    "keyRemoved": "The key is removed; calls in the name of this panel are no longer checked."
   },
   "yes": "yes",
   "no": "no",

@@ -52,6 +52,7 @@ from .const import (
     CHIME_SECONDS_RANGE,
     CHIME_DOMAINS,
     CONF_DURESS_HASH,
+    CONF_KEY_HASH,
     CONF_DURESS_SALT,
     CONF_SCREEN_OFF_SECONDS,
     CONF_PARTITION_RETURN_SECONDS,
@@ -301,6 +302,7 @@ def _public(sub: Item) -> dict[str, Any]:
     data = dict(sub.data)
     has_code = bool(data.pop(CONF_CODE_HASH, None))
     has_duress = bool(data.pop(CONF_DURESS_HASH, None))
+    has_key = bool(data.pop(CONF_KEY_HASH, None))
     data.pop(CONF_CODE_SALT, None)
     data.pop(CONF_DURESS_SALT, None)
     data.pop("code_numeric", None)
@@ -309,6 +311,8 @@ def _public(sub: Item) -> dict[str, Any]:
     out = {"id": sub.subentry_id, "title": sub.title, "data": data}
     if sub.subentry_type in (SUBENTRY_USER, SUBENTRY_PANEL):
         out["has_code"] = has_code
+        if sub.subentry_type == SUBENTRY_PANEL:
+            out["has_key"] = has_key
         if sub.subentry_type == SUBENTRY_USER:
             out["has_duress"] = has_duress
     return out
@@ -701,6 +705,32 @@ def ws_panel_clear_lock(hass: HomeAssistant, connection: websocket_api.ActiveCon
         connection.send_error(msg["id"], "not_found", "Unknown panel")
         return
     connection.send_result(msg["id"], {"ok": True, "was_locked": entry.runtime_data.panels.clear_lock(item, by=connection.user.name)})
+
+
+@websocket_api.websocket_command(
+    {vol.Required("type"): "vigil_alarm/panel_key", vol.Required("subentry_id"): str, vol.Required("action"): vol.In(["create", "remove"])}
+)
+@websocket_api.require_admin
+@callback
+def ws_panel_key(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Make (or replace) the key of an ESPHome panel, or take it away. The key is shown once, here: Vigil keeps
+    only a digest. Never an action: any user could call one."""
+    entry = _entry_for(hass)
+    if entry is None or getattr(entry, "runtime_data", None) is None:
+        _no_entry(connection, msg)
+        return
+    item = _panel_item(entry, msg["subentry_id"])
+    if item is None:
+        connection.send_error(msg["id"], "not_found", "Unknown panel")
+        return
+    registry = entry.runtime_data.panels
+    try:
+        if msg["action"] == "create":
+            connection.send_result(msg["id"], {"ok": True, "key": registry.create_key(item, by=connection.user.name), "panel_id": item.data["panel_id"]})
+        else:
+            connection.send_result(msg["id"], {"ok": True, "was_set": registry.remove_key(item, by=connection.user.name)})
+    except Exception as err:  # a tablet has no key
+        connection.send_error(msg["id"], "refused", str(err))
 
 
 @websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/dashboard"})
@@ -1190,7 +1220,7 @@ def ws_arm_check(hass: HomeAssistant, connection: websocket_api.ActiveConnection
 
 @callback
 def async_register_commands(hass: HomeAssistant) -> None:
-    for command in (ws_get, ws_about, ws_tablet, ws_discover, ws_new_sensors_dismiss, ws_alarm_memory_clear, ws_practice, ws_walktest, ws_discover_report, ws_readiness, ws_log, ws_log_export, ws_selftest, ws_heartbeat, ws_panel_unlock, ws_panel_clear_lock, ws_dashboard, ws_add_phone, ws_create_default_groups, ws_subscribe, ws_save, ws_save_many, ws_delete, ws_save_settings, ws_siren_preset, ws_backups, ws_backup_restore, ws_export, ws_import, ws_arm_check):
+    for command in (ws_get, ws_about, ws_tablet, ws_discover, ws_new_sensors_dismiss, ws_alarm_memory_clear, ws_practice, ws_walktest, ws_discover_report, ws_readiness, ws_log, ws_log_export, ws_selftest, ws_heartbeat, ws_panel_unlock, ws_panel_clear_lock, ws_panel_key, ws_dashboard, ws_add_phone, ws_create_default_groups, ws_subscribe, ws_save, ws_save_many, ws_delete, ws_save_settings, ws_siren_preset, ws_backups, ws_backup_restore, ws_export, ws_import, ws_arm_check):
         websocket_api.async_register_command(hass, command)
 
 

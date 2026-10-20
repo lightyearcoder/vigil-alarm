@@ -163,6 +163,8 @@
               "user_refused": "Appel de l'utilisateur refusé",
               "panel_unlocked": "Clavier déverrouillé",
               "panel_lock_cleared": "Verrouillage du clavier levé",
+              "panel_key_created": "Clé du clavier créée",
+              "panel_key_removed": "Clé du clavier supprimée",
               "panel_offline": "Clavier injoignable",
               "panel_online": "Clavier de nouveau joignable"
             }
@@ -237,6 +239,8 @@
           "user_refused": "Appel de l'utilisateur refusé",
           "panel_unlocked": "Clavier déverrouillé",
           "panel_lock_cleared": "Verrouillage du clavier levé",
+          "panel_key_created": "Clé du clavier créée",
+          "panel_key_removed": "Clé du clavier supprimée",
           "panel_offline": "Clavier injoignable",
           "panel_online": "Clavier de nouveau joignable"
         }
@@ -374,6 +378,9 @@
     },
     "partition_not_allowed": {
       "message": "{user} n'a pas le droit d'utiliser la partition {partition}."
+    },
+    "panel_key_wrong": {
+      "message": "Le clavier {panel} n'a pas envoyé sa clé, ou a envoyé la mauvaise."
     }
   },
   "services": {
@@ -392,6 +399,10 @@
         "source": {
           "name": "Source",
           "description": "Nom du point de commande, par exemple un clavier. Il apparaît dans le journal et indique qui a modifié l'alarme."
+        },
+        "key": {
+          "name": "Clé du clavier",
+          "description": "La clé d'un clavier ESPHome, s'il en a une (voir l'onglet Claviers). Un clavier qui a une clé doit l'envoyer à chaque appel ; un appel qui nomme le clavier sans la clé est refusé."
         },
         "bypass_open": {
           "name": "Inhiber ce qui bloque",
@@ -415,6 +426,10 @@
           "name": "Source",
           "description": "Nom du point de commande, par exemple un clavier. Il apparaît dans le journal et indique qui a modifié l'alarme."
         },
+        "key": {
+          "name": "Clé du clavier",
+          "description": "La clé d'un clavier ESPHome, s'il en a une (voir l'onglet Claviers). Un clavier qui a une clé doit l'envoyer à chaque appel ; un appel qui nomme le clavier sans la clé est refusé."
+        },
         "partition": {
           "name": "Partition",
           "description": "Quelle partition : son identifiant, \"main\" pour la première ou \"all\" pour toutes. Vide : la première partition."
@@ -436,6 +451,10 @@
         "source": {
           "name": "Source",
           "description": "Nom du point de commande, par exemple un clavier. Il apparaît dans le journal et indique qui a modifié l'alarme."
+        },
+        "key": {
+          "name": "Clé du clavier",
+          "description": "La clé d'un clavier ESPHome, s'il en a une (voir l'onglet Claviers). Un clavier qui a une clé doit l'envoyer à chaque appel ; un appel qui nomme le clavier sans la clé est refusé."
         }
       }
     },
@@ -454,6 +473,10 @@
         "source": {
           "name": "Source",
           "description": "Nom du point de commande, par exemple un clavier. Il apparaît dans le journal et indique qui a modifié l'alarme."
+        },
+        "key": {
+          "name": "Clé du clavier",
+          "description": "La clé d'un clavier ESPHome, s'il en a une (voir l'onglet Claviers). Un clavier qui a une clé doit l'envoyer à chaque appel ; un appel qui nomme le clavier sans la clé est refusé."
         }
       }
     },
@@ -492,6 +515,10 @@
         "source": {
           "name": "Source",
           "description": "Nom du point de commande, par exemple un clavier. Il apparaît dans le journal et indique qui a modifié l'alarme."
+        },
+        "key": {
+          "name": "Clé du clavier",
+          "description": "La clé d'un clavier ESPHome, s'il en a une (voir l'onglet Claviers). Un clavier qui a une clé doit l'envoyer à chaque appel ; un appel qui nomme le clavier sans la clé est refusé."
         }
       }
     },
@@ -506,6 +533,10 @@
         "source": {
           "name": "Source",
           "description": "Nom du point de commande, par exemple un clavier. Il apparaît dans le journal et indique qui a modifié l'alarme."
+        },
+        "key": {
+          "name": "Clé du clavier",
+          "description": "La clé d'un clavier ESPHome, s'il en a une (voir l'onglet Claviers). Un clavier qui a une clé doit l'envoyer à chaque appel ; un appel qui nomme le clavier sans la clé est refusé."
         }
       }
     },
@@ -520,6 +551,10 @@
         "source": {
           "name": "Source",
           "description": "Nom du point de commande, par exemple un clavier."
+        },
+        "key": {
+          "name": "Clé du clavier",
+          "description": "La clé d'un clavier ESPHome, s'il en a une (voir l'onglet Claviers). Un clavier qui a une clé doit l'envoyer à chaque appel ; un appel qui nomme le clavier sans la clé est refusé."
         }
       }
     },
@@ -538,6 +573,10 @@
         "source": {
           "name": "Source",
           "description": "L'identifiant du clavier."
+        },
+        "key": {
+          "name": "Clé du clavier",
+          "description": "La clé d'un clavier ESPHome, s'il en a une (voir l'onglet Claviers). Un clavier qui a une clé doit l'envoyer à chaque appel ; un appel qui nomme le clavier sans la clé est refusé."
         }
       }
     },
@@ -548,6 +587,10 @@
         "source": {
           "name": "Source",
           "description": "L'identifiant du panneau."
+        },
+        "key": {
+          "name": "Clé du clavier",
+          "description": "La clé d'un clavier ESPHome, s'il en a une (voir l'onglet Claviers). Un clavier qui a une clé doit l'envoyer à chaque appel ; un appel qui nomme le clavier sans la clé est refusé."
         },
         "partition": {
           "name": "Partition",

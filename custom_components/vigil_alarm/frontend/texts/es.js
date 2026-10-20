@@ -114,7 +114,8 @@ export default {
       "battery_missing": "{n} sensores no tienen sensor de batería, así que no te enterarás cuando una batería se agote: {names}.",
       "tamper_unlinked": "{n} sensores tienen un contacto de sabotaje en el mismo dispositivo que no está conectado a nada: {names}.",
       "panel_firmware": "El firmware del panel {name} entiende la versión de perfil {seen}, Vigil usa la versión {wanted}. Actualiza el firmware del panel.",
-      "arm_without_code": "Un usuario tiene un código, pero activar no pide código (Ajustes): cualquiera que pueda llegar a la alarma en un panel, en Home Assistant o mediante un servicio puede activarla. Desactivar siempre pide un código."
+      "arm_without_code": "Un usuario tiene un código, pero activar no pide código (Ajustes): cualquiera que pueda llegar a la alarma en un panel, en Home Assistant o mediante un servicio puede activarla. Desactivar siempre pide un código.",
+      "panel_no_key": "El panel {name} no tiene clave, así que se acepta una llamada que solo dice venir de este panel. Crea una clave en la pestaña Paneles."
     }
   },
   "heartbeat": {
@@ -516,7 +517,23 @@ export default {
     "noBypass": "sin anular",
     "noSilence": "sin silenciar",
     "hint": "Desbloquear y quitar el bloqueo solo se puede hacer aquí, no como acción de Home Assistant.",
-    "refused": "Esto no es posible."
+    "refused": "Esto no es posible.",
+    "keyBtn": "Clave del panel",
+    "keyTitle": "Clave del panel",
+    "keyYes": "Clave definida",
+    "keyNo": "Sin clave",
+    "keyIntro": "Un panel con clave la envía en cada llamada. Vigil rechaza entonces toda llamada en nombre de este panel sin la clave: el nombre solo es texto y cualquiera que pueda llamar a Home Assistant podría usarlo.",
+    "keyHave": "Este panel tiene una clave.",
+    "keyNone": "Este panel aún no tiene clave: las llamadas en su nombre se aceptan sin prueba.",
+    "keyReplaceWarn": "Una clave nueva sustituye a la anterior de inmediato; instala de nuevo el panel con la clave nueva.",
+    "keyMake": "Crear una clave",
+    "keyReplace": "Crear una clave nueva",
+    "keyRemove": "Eliminar la clave",
+    "keyShown": "Esta es la clave. Solo se muestra ahora; Vigil guarda solo una huella de ella. Pon esta línea en secrets.yaml:",
+    "keyDevice": "Después, en el archivo del dispositivo del panel, quita el # delante de panel_key: !secret {id}_key y vuelve a instalar el panel.",
+    "keyCopy": "Copiar",
+    "keyCopied": "Copiado",
+    "keyRemoved": "La clave se ha eliminado; las llamadas en nombre de este panel ya no se comprueban."
   },
   "yes": "sí",
   "no": "no",

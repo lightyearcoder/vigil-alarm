@@ -15,6 +15,11 @@ arm:
       required: false
       selector:
         text:
+    key:
+      required: false
+      selector:
+        text:
+          type: password
     bypass_open:
       required: false
       default: false
@@ -39,6 +44,11 @@ disarm:
       required: false
       selector:
         text:
+    key:
+      required: false
+      selector:
+        text:
+          type: password
 bypass:
   fields:
     sensor:
@@ -55,6 +65,11 @@ bypass:
       required: false
       selector:
         text:
+    key:
+      required: false
+      selector:
+        text:
+          type: password
 unbypass:
   fields:
     sensor:
@@ -71,6 +86,11 @@ unbypass:
       required: false
       selector:
         text:
+    key:
+      required: false
+      selector:
+        text:
+          type: password
 test_notification:
   fields:
     channel:
@@ -102,6 +122,11 @@ silence:
       required: false
       selector:
         text:
+    key:
+      required: false
+      selector:
+        text:
+          type: password
 acknowledge:
   fields:
     code:
@@ -113,6 +138,11 @@ acknowledge:
       required: false
       selector:
         text:
+    key:
+      required: false
+      selector:
+        text:
+          type: password
 check_code:
   fields:
     code:
@@ -124,6 +154,11 @@ check_code:
       required: false
       selector:
         text:
+    key:
+      required: false
+      selector:
+        text:
+          type: password
 unlock_panel:
   fields:
     code:
@@ -143,18 +178,33 @@ unlock_panel:
       required: true
       selector:
         text:
+    key:
+      required: false
+      selector:
+        text:
+          type: password
 clear_alarm_memory:
   fields:
     source:
       required: false
       selector:
         text:
+    key:
+      required: false
+      selector:
+        text:
+          type: password
 select_partition:
   fields:
     source:
       required: true
       selector:
         text:
+    key:
+      required: false
+      selector:
+        text:
+          type: password
     partition:
       required: true
       selector:

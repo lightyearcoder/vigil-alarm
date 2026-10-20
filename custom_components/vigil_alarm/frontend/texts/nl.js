@@ -114,7 +114,8 @@ export default {
       "battery_missing": "{n} sensoren hebben geen batterijsensor, dus je hoort niet als de batterij leeg raakt: {names}.",
       "tamper_unlinked": "{n} sensoren hebben een sabotagesensor op hetzelfde apparaat die nergens aan gekoppeld is: {names}.",
       "panel_firmware": "De firmware van paneel {name} begrijpt profielversie {seen}, Vigil gebruikt versie {wanted}. Werk de firmware van het paneel bij.",
-      "arm_without_code": "Een gebruiker heeft een code, maar inschakelen vraagt geen code (Instellingen), dus iedereen die bij het alarm kan op een paneel, in Home Assistant of via een service kan het inschakelen. Uitschakelen vraagt altijd een code."
+      "arm_without_code": "Een gebruiker heeft een code, maar inschakelen vraagt geen code (Instellingen), dus iedereen die bij het alarm kan op een paneel, in Home Assistant of via een service kan het inschakelen. Uitschakelen vraagt altijd een code.",
+      "panel_no_key": "Paneel {name} heeft geen sleutel, dus een aanroep die alleen zegt van dit paneel te komen wordt geaccepteerd. Maak een sleutel onder Panelen."
     }
   },
   "heartbeat": {
@@ -516,7 +517,23 @@ export default {
     "noBypass": "niet omzeilen",
     "noSilence": "niet dempen",
     "hint": "Ontgrendelen en blokkade opheffen kunnen alleen hier, niet als Home Assistant-actie.",
-    "refused": "Dit kan niet."
+    "refused": "Dit kan niet.",
+    "keyBtn": "Paneelsleutel",
+    "keyTitle": "Paneelsleutel",
+    "keyYes": "Sleutel ingesteld",
+    "keyNo": "Geen sleutel",
+    "keyIntro": "Een paneel met sleutel stuurt die bij elke aanroep mee. Vigil weigert dan elke aanroep in naam van dit paneel zonder sleutel: de naam van het paneel is alleen tekst en kan door iedereen die Home Assistant kan aanroepen worden gebruikt.",
+    "keyHave": "Dit paneel heeft een sleutel.",
+    "keyNone": "Dit paneel heeft nog geen sleutel: aanroepen in zijn naam worden zonder bewijs geaccepteerd.",
+    "keyReplaceWarn": "Een nieuwe sleutel vervangt de oude meteen; installeer het paneel opnieuw met de nieuwe sleutel.",
+    "keyMake": "Sleutel maken",
+    "keyReplace": "Nieuwe sleutel maken",
+    "keyRemove": "Sleutel verwijderen",
+    "keyShown": "Dit is de sleutel. Hij wordt alleen nu getoond; Vigil bewaart alleen een samenvatting ervan. Zet deze regel in secrets.yaml:",
+    "keyDevice": "Haal daarna in het apparaatbestand van het paneel de # weg voor panel_key: !secret {id}_key en installeer het paneel opnieuw.",
+    "keyCopy": "Kopiëren",
+    "keyCopied": "Gekopieerd",
+    "keyRemoved": "De sleutel is verwijderd; aanroepen in naam van dit paneel worden niet meer gecontroleerd."
   },
   "yes": "ja",
   "no": "nee",

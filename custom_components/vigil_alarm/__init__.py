@@ -44,6 +44,7 @@ SERVICE_SCHEMA = vol.Schema(
         vol.Required(ATTR_SENSOR): cv.entity_id,
         vol.Optional("code"): cv.string,
         vol.Optional("source"): cv.string,
+        vol.Optional("key"): cv.string,
     }
 )
 
@@ -53,7 +54,13 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Register the services (once, not per config entry)."""
 
+    def _verify_key(call: ServiceCall) -> None:
+        """A panel that has a key proves itself with it on every call (see `PanelRegistry.verify_key`)."""
+        for entry in hass.config_entries.async_loaded_entries(DOMAIN):
+            entry.runtime_data.panels.verify_key(call.data.get("source"), call.data.get("key"), call.context.user_id)
+
     async def _handle(call: ServiceCall, *, bypass: bool) -> None:
+        _verify_key(call)
         # Calls from the UI carry a user; automations and scripts do not.
         sensor_entity = call.data[ATTR_SENSOR]
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
@@ -75,6 +82,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         await _handle(call, bypass=False)
 
     async def _control(call: ServiceCall, action: str) -> None:
+        _verify_key(call)
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
             manager: VigilManager = entry.runtime_data
             is_admin = await manager.async_is_admin(call.context)
@@ -89,11 +97,12 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     async def acknowledge(call: ServiceCall) -> None:
         await _control(call, "async_acknowledge")
 
-    code_schema = vol.Schema({vol.Optional("code"): cv.string, vol.Optional("source"): cv.string})
+    code_schema = vol.Schema({vol.Optional("code"): cv.string, vol.Optional("source"): cv.string, vol.Optional("key"): cv.string})
     hass.services.async_register(DOMAIN, SERVICE_SILENCE, silence, schema=code_schema)
     hass.services.async_register(DOMAIN, SERVICE_ACKNOWLEDGE, acknowledge, schema=code_schema)
 
     async def arm(call: ServiceCall) -> None:
+        _verify_key(call)
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
             await entry.runtime_data.async_arm(
                 call.data["mode"], call.data.get("code"), call.data.get("source"), call.context.user_id,
@@ -101,6 +110,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             )
 
     async def disarm(call: ServiceCall) -> None:
+        _verify_key(call)
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
             await entry.runtime_data.async_disarm(call.data.get("code"), call.data.get("source"), call.context.user_id,
                 partition=call.data.get("partition"),
@@ -113,6 +123,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             vol.Required("mode"): vol.In(list(MODES)),
             vol.Optional("code"): cv.string,
             vol.Optional("source"): cv.string,
+            vol.Optional("key"): cv.string,
             vol.Optional("bypass_open", default=False): cv.boolean,
             vol.Optional("partition"): cv.string,  # the id of a partition, or "all"; none: the first partition
         }),
@@ -123,6 +134,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     )
 
     async def check_code(call: ServiceCall) -> None:
+        _verify_key(call)
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
             await entry.runtime_data.async_check_code(call.data.get("code"), call.data.get("source"), call.context.user_id)
 
@@ -130,6 +142,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.services.async_register(DOMAIN, SERVICE_CHECK_CODE, check_code, schema=code_schema)
 
     async def unlock_panel(call: ServiceCall) -> None:
+        _verify_key(call)
         found = False
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
             source = await entry.runtime_data._operator(call.data["source"], call.context.user_id, "unlock_panel")
@@ -146,12 +159,14 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         schema=vol.Schema({
             vol.Required("code"): cv.string,
             vol.Required("source"): cv.string,
+            vol.Optional("key"): cv.string,
             # "sensors": the sensor list, a user code or the installer code; "info": the information pages, the installer code
             vol.Optional("scope", default="info"): vol.In(["sensors", "info"]),
         }),
     )
 
     async def select_partition(call: ServiceCall) -> None:
+        _verify_key(call)
         found = False
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
             if entry.runtime_data.panels.get(call.data["source"]):
@@ -164,7 +179,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     # (its profile) and nothing else: arming and disarming still name the partition and need a code.
     hass.services.async_register(
         DOMAIN, SERVICE_SELECT_PARTITION, select_partition,
-        schema=vol.Schema({vol.Required("source"): cv.string, vol.Required("partition"): cv.string}),
+        schema=vol.Schema({vol.Required("source"): cv.string, vol.Required("partition"): cv.string, vol.Optional("key"): cv.string}),
     )
 
     async def test_notification(call: ServiceCall) -> None:
@@ -201,10 +216,11 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         schema=vol.Schema({vol.Optional("channel"): cv.string}),
     )
     async def clear_alarm_memory(call: ServiceCall) -> None:
+        _verify_key(call)
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
             await entry.runtime_data.async_clear_alarm_memory(call.data.get("source"))
 
-    hass.services.async_register(DOMAIN, "clear_alarm_memory", clear_alarm_memory, schema=vol.Schema({vol.Optional("source"): cv.string}))
+    hass.services.async_register(DOMAIN, "clear_alarm_memory", clear_alarm_memory, schema=vol.Schema({vol.Optional("source"): cv.string, vol.Optional("key"): cv.string}))
     hass.services.async_register(DOMAIN, SERVICE_BYPASS, bypass, schema=SERVICE_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_UNBYPASS, unbypass, schema=SERVICE_SCHEMA)
     async_register_commands(hass)

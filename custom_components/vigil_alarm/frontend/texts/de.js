@@ -114,7 +114,8 @@ export default {
       "battery_missing": "{n} Sensoren haben keinen Batteriesensor, daher erfährst du nicht, wenn eine Batterie schwach wird: {names}.",
       "tamper_unlinked": "{n} Sensoren haben am selben Gerät einen Sabotagekontakt, der mit nichts verbunden ist: {names}.",
       "panel_firmware": "Die Firmware von Bedienteil {name} versteht Profilversion {seen}, Vigil verwendet Version {wanted}. Aktualisiere die Firmware des Bedienteils.",
-      "arm_without_code": "Ein Benutzer hat einen Code, aber zum Scharfschalten ist kein Code nötig (Einstellungen). Jeder, der die Alarmanlage an einem Bedienteil, in Home Assistant oder über einen Dienst erreicht, kann sie also scharfschalten. Zum Unscharfschalten ist immer ein Code nötig."
+      "arm_without_code": "Ein Benutzer hat einen Code, aber zum Scharfschalten ist kein Code nötig (Einstellungen). Jeder, der die Alarmanlage an einem Bedienteil, in Home Assistant oder über einen Dienst erreicht, kann sie also scharfschalten. Zum Unscharfschalten ist immer ein Code nötig.",
+      "panel_no_key": "Bedienteil {name} hat keinen Schlüssel, daher wird ein Aufruf akzeptiert, der nur behauptet, von diesem Bedienteil zu kommen. Erstelle einen Schlüssel unter Bedienteile."
     }
   },
   "heartbeat": {
@@ -516,7 +517,23 @@ export default {
     "noBypass": "kein Überbrücken",
     "noSilence": "kein Stummschalten",
     "hint": "Entsperren und Aufheben der Sperre ist nur hier möglich, nicht als Home-Assistant-Aktion.",
-    "refused": "Das ist nicht möglich."
+    "refused": "Das ist nicht möglich.",
+    "keyBtn": "Bedienteil-Schlüssel",
+    "keyTitle": "Bedienteil-Schlüssel",
+    "keyYes": "Schlüssel gesetzt",
+    "keyNo": "Kein Schlüssel",
+    "keyIntro": "Ein Bedienteil mit Schlüssel sendet ihn bei jedem Aufruf mit. Vigil lehnt dann jeden Aufruf im Namen dieses Bedienteils ohne Schlüssel ab: Der Name allein ist nur Text, und jeder, der Home Assistant aufrufen kann, könnte ihn verwenden.",
+    "keyHave": "Dieses Bedienteil hat einen Schlüssel.",
+    "keyNone": "Dieses Bedienteil hat noch keinen Schlüssel: Aufrufe in seinem Namen werden ohne Nachweis akzeptiert.",
+    "keyReplaceWarn": "Ein neuer Schlüssel ersetzt den alten sofort; installiere das Bedienteil erneut mit dem neuen Schlüssel.",
+    "keyMake": "Schlüssel erstellen",
+    "keyReplace": "Neuen Schlüssel erstellen",
+    "keyRemove": "Schlüssel entfernen",
+    "keyShown": "Das ist der Schlüssel. Er wird nur jetzt angezeigt; Vigil speichert nur eine Prüfsumme davon. Trage diese Zeile in secrets.yaml ein:",
+    "keyDevice": "Entferne dann in der Gerätedatei des Bedienteils das # vor panel_key: !secret {id}_key und installiere das Bedienteil erneut.",
+    "keyCopy": "Kopieren",
+    "keyCopied": "Kopiert",
+    "keyRemoved": "Der Schlüssel ist entfernt; Aufrufe im Namen dieses Bedienteils werden nicht mehr geprüft."
   },
   "yes": "ja",
   "no": "nein",

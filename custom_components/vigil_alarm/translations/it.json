@@ -163,6 +163,8 @@
               "user_refused": "Richiesta dell'utente rifiutata",
               "panel_unlocked": "Pannello sbloccato",
               "panel_lock_cleared": "Blocco del pannello rimosso",
+              "panel_key_created": "Chiave del pannello creata",
+              "panel_key_removed": "Chiave del pannello rimossa",
               "panel_offline": "Pannello non raggiungibile",
               "panel_online": "Pannello di nuovo raggiungibile"
             }
@@ -237,6 +239,8 @@
           "user_refused": "Richiesta dell'utente rifiutata",
           "panel_unlocked": "Pannello sbloccato",
           "panel_lock_cleared": "Blocco del pannello rimosso",
+          "panel_key_created": "Chiave del pannello creata",
+          "panel_key_removed": "Chiave del pannello rimossa",
           "panel_offline": "Pannello non raggiungibile",
           "panel_online": "Pannello di nuovo raggiungibile"
         }
@@ -374,6 +378,9 @@
     },
     "partition_not_allowed": {
       "message": "{user} non può usare la partizione {partition}."
+    },
+    "panel_key_wrong": {
+      "message": "Il pannello {panel} non ha inviato la sua chiave, o ne ha inviata una sbagliata."
     }
   },
   "services": {
@@ -392,6 +399,10 @@
         "source": {
           "name": "Origine",
           "description": "Nome del punto di comando, per esempio un pannello. Compare nel registro e indica chi ha cambiato l'allarme."
+        },
+        "key": {
+          "name": "Chiave del pannello",
+          "description": "La chiave di un pannello ESPHome, se ne ha una (vedi la scheda Pannelli). Un pannello con chiave deve inviarla a ogni chiamata; una chiamata che nomina il pannello senza la chiave viene rifiutata."
         },
         "bypass_open": {
           "name": "Escludi ciò che lo impedisce",
@@ -415,6 +426,10 @@
           "name": "Origine",
           "description": "Nome del punto di comando, per esempio un pannello. Compare nel registro e indica chi ha cambiato l'allarme."
         },
+        "key": {
+          "name": "Chiave del pannello",
+          "description": "La chiave di un pannello ESPHome, se ne ha una (vedi la scheda Pannelli). Un pannello con chiave deve inviarla a ogni chiamata; una chiamata che nomina il pannello senza la chiave viene rifiutata."
+        },
         "partition": {
           "name": "Partizione",
           "description": "Quale partizione: il suo id, \"main\" per la prima o \"all\" per tutte. Vuoto: la prima partizione."
@@ -436,6 +451,10 @@
         "source": {
           "name": "Origine",
           "description": "Nome del punto di comando, per esempio un pannello. Compare nel registro e indica chi ha cambiato l'allarme."
+        },
+        "key": {
+          "name": "Chiave del pannello",
+          "description": "La chiave di un pannello ESPHome, se ne ha una (vedi la scheda Pannelli). Un pannello con chiave deve inviarla a ogni chiamata; una chiamata che nomina il pannello senza la chiave viene rifiutata."
         }
       }
     },
@@ -454,6 +473,10 @@
         "source": {
           "name": "Origine",
           "description": "Nome del punto di comando, per esempio un pannello. Compare nel registro e indica chi ha cambiato l'allarme."
+        },
+        "key": {
+          "name": "Chiave del pannello",
+          "description": "La chiave di un pannello ESPHome, se ne ha una (vedi la scheda Pannelli). Un pannello con chiave deve inviarla a ogni chiamata; una chiamata che nomina il pannello senza la chiave viene rifiutata."
         }
       }
     },
@@ -492,6 +515,10 @@
         "source": {
           "name": "Origine",
           "description": "Nome del punto di comando, per esempio un pannello. Compare nel registro e indica chi ha cambiato l'allarme."
+        },
+        "key": {
+          "name": "Chiave del pannello",
+          "description": "La chiave di un pannello ESPHome, se ne ha una (vedi la scheda Pannelli). Un pannello con chiave deve inviarla a ogni chiamata; una chiamata che nomina il pannello senza la chiave viene rifiutata."
         }
       }
     },
@@ -506,6 +533,10 @@
         "source": {
           "name": "Origine",
           "description": "Nome del punto di comando, per esempio un pannello. Compare nel registro e indica chi ha cambiato l'allarme."
+        },
+        "key": {
+          "name": "Chiave del pannello",
+          "description": "La chiave di un pannello ESPHome, se ne ha una (vedi la scheda Pannelli). Un pannello con chiave deve inviarla a ogni chiamata; una chiamata che nomina il pannello senza la chiave viene rifiutata."
         }
       }
     },
@@ -520,6 +551,10 @@
         "source": {
           "name": "Origine",
           "description": "Nome del punto di comando, per esempio un pannello."
+        },
+        "key": {
+          "name": "Chiave del pannello",
+          "description": "La chiave di un pannello ESPHome, se ne ha una (vedi la scheda Pannelli). Un pannello con chiave deve inviarla a ogni chiamata; una chiamata che nomina il pannello senza la chiave viene rifiutata."
         }
       }
     },
@@ -538,6 +573,10 @@
         "source": {
           "name": "Origine",
           "description": "L'id del pannello."
+        },
+        "key": {
+          "name": "Chiave del pannello",
+          "description": "La chiave di un pannello ESPHome, se ne ha una (vedi la scheda Pannelli). Un pannello con chiave deve inviarla a ogni chiamata; una chiamata che nomina il pannello senza la chiave viene rifiutata."
         }
       }
     },
@@ -548,6 +587,10 @@
         "source": {
           "name": "Source",
           "description": "L'id del pannello."
+        },
+        "key": {
+          "name": "Chiave del pannello",
+          "description": "La chiave di un pannello ESPHome, se ne ha una (vedi la scheda Pannelli). Un pannello con chiave deve inviarla a ogni chiamata; una chiamata che nomina il pannello senza la chiave viene rifiutata."
         },
         "partition": {
           "name": "Partition",

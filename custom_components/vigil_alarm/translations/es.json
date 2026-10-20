@@ -163,6 +163,8 @@
               "user_refused": "Llamada del usuario rechazada",
               "panel_unlocked": "Panel desbloqueado",
               "panel_lock_cleared": "Bloqueo del panel retirado",
+              "panel_key_created": "Clave del panel creada",
+              "panel_key_removed": "Clave del panel eliminada",
               "panel_offline": "Panel no accesible",
               "panel_online": "Panel de nuevo accesible"
             }
@@ -237,6 +239,8 @@
           "user_refused": "Llamada del usuario rechazada",
           "panel_unlocked": "Panel desbloqueado",
           "panel_lock_cleared": "Bloqueo del panel retirado",
+          "panel_key_created": "Clave del panel creada",
+          "panel_key_removed": "Clave del panel eliminada",
           "panel_offline": "Panel no accesible",
           "panel_online": "Panel de nuevo accesible"
         }
@@ -374,6 +378,9 @@
     },
     "partition_not_allowed": {
       "message": "{user} no puede usar la partición {partition}."
+    },
+    "panel_key_wrong": {
+      "message": "El panel {panel} no envió su clave, o envió una incorrecta."
     }
   },
   "services": {
@@ -392,6 +399,10 @@
         "source": {
           "name": "Origen",
           "description": "Nombre del punto de control, por ejemplo un panel. Aparece en el registro e indica quién cambió la alarma."
+        },
+        "key": {
+          "name": "Clave del panel",
+          "description": "La clave de un panel ESPHome, si tiene una (véase la pestaña Paneles). Un panel con clave debe enviarla en cada llamada; una llamada que nombra el panel sin la clave se rechaza."
         },
         "bypass_open": {
           "name": "Anular lo que lo impide",
@@ -415,6 +426,10 @@
           "name": "Origen",
           "description": "Nombre del punto de control, por ejemplo un panel. Aparece en el registro e indica quién cambió la alarma."
         },
+        "key": {
+          "name": "Clave del panel",
+          "description": "La clave de un panel ESPHome, si tiene una (véase la pestaña Paneles). Un panel con clave debe enviarla en cada llamada; una llamada que nombra el panel sin la clave se rechaza."
+        },
         "partition": {
           "name": "Partición",
           "description": "Qué partición: su id, \"main\" para la primera o \"all\" para todas. Vacío: la primera partición."
@@ -436,6 +451,10 @@
         "source": {
           "name": "Origen",
           "description": "Nombre del punto de control, por ejemplo un panel. Aparece en el registro e indica quién cambió la alarma."
+        },
+        "key": {
+          "name": "Clave del panel",
+          "description": "La clave de un panel ESPHome, si tiene una (véase la pestaña Paneles). Un panel con clave debe enviarla en cada llamada; una llamada que nombra el panel sin la clave se rechaza."
         }
       }
     },
@@ -454,6 +473,10 @@
         "source": {
           "name": "Origen",
           "description": "Nombre del punto de control, por ejemplo un panel. Aparece en el registro e indica quién cambió la alarma."
+        },
+        "key": {
+          "name": "Clave del panel",
+          "description": "La clave de un panel ESPHome, si tiene una (véase la pestaña Paneles). Un panel con clave debe enviarla en cada llamada; una llamada que nombra el panel sin la clave se rechaza."
         }
       }
     },
@@ -492,6 +515,10 @@
         "source": {
           "name": "Origen",
           "description": "Nombre del punto de control, por ejemplo un panel. Aparece en el registro e indica quién cambió la alarma."
+        },
+        "key": {
+          "name": "Clave del panel",
+          "description": "La clave de un panel ESPHome, si tiene una (véase la pestaña Paneles). Un panel con clave debe enviarla en cada llamada; una llamada que nombra el panel sin la clave se rechaza."
         }
       }
     },
@@ -506,6 +533,10 @@
         "source": {
           "name": "Origen",
           "description": "Nombre del punto de control, por ejemplo un panel. Aparece en el registro e indica quién cambió la alarma."
+        },
+        "key": {
+          "name": "Clave del panel",
+          "description": "La clave de un panel ESPHome, si tiene una (véase la pestaña Paneles). Un panel con clave debe enviarla en cada llamada; una llamada que nombra el panel sin la clave se rechaza."
         }
       }
     },
@@ -520,6 +551,10 @@
         "source": {
           "name": "Origen",
           "description": "Nombre del punto de control, por ejemplo un panel."
+        },
+        "key": {
+          "name": "Clave del panel",
+          "description": "La clave de un panel ESPHome, si tiene una (véase la pestaña Paneles). Un panel con clave debe enviarla en cada llamada; una llamada que nombra el panel sin la clave se rechaza."
         }
       }
     },
@@ -538,6 +573,10 @@
         "source": {
           "name": "Origen",
           "description": "El id del panel."
+        },
+        "key": {
+          "name": "Clave del panel",
+          "description": "La clave de un panel ESPHome, si tiene una (véase la pestaña Paneles). Un panel con clave debe enviarla en cada llamada; una llamada que nombra el panel sin la clave se rechaza."
         }
       }
     },
@@ -548,6 +587,10 @@
         "source": {
           "name": "Source",
           "description": "El id del panel."
+        },
+        "key": {
+          "name": "Clave del panel",
+          "description": "La clave de un panel ESPHome, si tiene una (véase la pestaña Paneles). Un panel con clave debe enviarla en cada llamada; una llamada que nombra el panel sin la clave se rechaza."
         },
         "partition": {
           "name": "Partition",

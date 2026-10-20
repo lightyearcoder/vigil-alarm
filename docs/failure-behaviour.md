@@ -36,6 +36,13 @@ Dutch: [wat Vigil doet bij storingen](failure-behaviour.nl.md).
 |---|---|
 | The settings (entry delay, siren time) are **changed while the entry delay runs** | The delay that was running keeps its end; the new values apply from the next one. |
 
+## Calls in the name of a panel
+
+| Situation | What Vigil does |
+|---|---|
+| A call names an ESPHome panel that has a **key**, without the key or with a wrong one | Refused and logged (`panel_refused`, reason `key`), whoever makes it. Calls that name no panel, other panels and tablets are not affected. |
+| A panel has **no key** | Calls in its name are accepted as before, and *Ready for use?* advises you to make a key. |
+
 ## Commands
 
 | Situation | What Vigil does |

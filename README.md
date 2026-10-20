@@ -162,9 +162,10 @@ actions:
 | `code_locked` | wrong codes lock that control point in steps (default: 3 wrong codes = 5 minutes, then 2 more = 15 minutes, then 2 more = 60 minutes), also over a restart; every registered panel has its own timer and everything else shares one (`timer` is `other`); also sent to the fault channels | `source`, `action`, `timer`, `minutes` |
 | `startup_settled` | Home Assistant had just started and Vigil waited for slow sensors (MQTT, Zigbee): all sensors are there, or the wait (setting *Wait for sensors after a restart*, default 120 s) is over. Only now are sensors that are still gone reported as lost. Not a notification | `waited`, `unavailable`, `sensors` |
 | `code_locked_permanent` | the last step: after the final wrong codes (default 1) the panel stays locked until an administrator uses *Clear lock*; also sent to the fault channels. The shared timer `other` never locks for good | `source`, `action`, `timer` |
-| `panel_refused` | A registered panel tried something its profile does not allow (or is blocked) | `source`, `panel`, `action`, `reason` |
+| `panel_refused` | A registered panel tried something its profile does not allow (or is blocked, or called without its key: reason `key`) | `source`, `panel`, `action`, `reason` |
 | `user_refused` | A Home Assistant account that is not registered tried to operate the alarm, with *only registered users* on | `user`, `source`, `action` |
 | `panel_unlocked` / `panel_lock_cleared` | A panel was unlocked (installer code, or an administrator in the panel) / its stored lockout was lifted | `source`, `panel`, `by` |
+| `panel_key_created` / `panel_key_removed` | The key of an ESPHome panel was made (or replaced) / taken away | `source`, `panel`, `by` |
 | `panel_offline` / `panel_online` | A panel has been out of reach for 10 minutes (also a Repair and a message to the fault channels) / is back | `source`, `panel`, `minutes` |
 | `selftest_checked` | The quiet daily check ran (it never changes `last_event`) | `result` (`ok` or `problems`), `problems` |
 | `selftest_reminder` | A reminder to test the siren was sent | `number` (1 or 2) |

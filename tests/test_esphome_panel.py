@@ -255,3 +255,13 @@ def test_the_panel_and_the_card_can_bypass_and_arm_after_a_refusal():
     assert "bypass_open:" in yaml and "id: btn_force" in yaml and "parse_refusal(message)" in yaml
     assert "bypass_open: true" in card and 'data-act="force"' in card
     assert "bypass_open:" in services
+
+
+def test_every_call_the_panel_makes_to_vigil_carries_its_key():
+    """The panel sends `key: ${panel_key}` next to `source` in every Home Assistant action, and the key is empty
+    (nothing sent) until the device file sets it; the example shows how, commented out so it still builds."""
+    yaml = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    assert yaml.count("source: ${name}") == yaml.count("key: ${panel_key}") >= 6
+    assert 'panel_key: ""' in yaml
+    example = (ROOT / "esphome" / "example-garage.yaml").read_text()
+    assert "# panel_key: !secret vigil_panel_garage_key" in example

@@ -15,6 +15,9 @@ substitutions:
   name: vigil-panel-garage      # the panel id in Vigil: lower case letters, digits and dashes
   friendly_name: Vigil panel garage
   # backlight_timeout_seconds: "60"   # only until Vigil has told the panel (setting in Vigil)
+  # The key of this panel: make it in Vigil (Panels, the key button of this panel) and put it in secrets.yaml. The panel
+  # sends it with every call, and Vigil refuses calls in the name of this panel without it.
+  # panel_key: !secret vigil_panel_garage_key   # remove the # once you have made the key and put it in secrets.yaml
 
 esphome:
   name: ${name}

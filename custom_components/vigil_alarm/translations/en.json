@@ -163,6 +163,8 @@
               "user_refused": "User call refused",
               "panel_unlocked": "Panel unlocked",
               "panel_lock_cleared": "Panel lock cleared",
+              "panel_key_created": "Panel key created",
+              "panel_key_removed": "Panel key removed",
               "panel_offline": "Panel not reachable",
               "panel_online": "Panel reachable again"
             }
@@ -237,6 +239,8 @@
           "user_refused": "User call refused",
           "panel_unlocked": "Panel unlocked",
           "panel_lock_cleared": "Panel lock cleared",
+          "panel_key_created": "Panel key created",
+          "panel_key_removed": "Panel key removed",
           "panel_offline": "Panel not reachable",
           "panel_online": "Panel reachable again"
         }
@@ -374,6 +378,9 @@
     },
     "partition_not_allowed": {
       "message": "{user} may not use partition {partition}."
+    },
+    "panel_key_wrong": {
+      "message": "The panel {panel} did not send its key, or sent the wrong one."
     }
   },
   "services": {
@@ -392,6 +399,10 @@
         "source": {
           "name": "Source",
           "description": "Name of the control point, for example a panel. It appears in the log and in who changed the alarm."
+        },
+        "key": {
+          "name": "Panel key",
+          "description": "The key of an ESPHome panel, if it has one (see the Panels tab). A panel that has a key must send it with every call; a call that names the panel without it is refused."
         },
         "bypass_open": {
           "name": "Bypass what stops it",
@@ -415,6 +426,10 @@
           "name": "Source",
           "description": "Name of the control point, for example a panel. It appears in the log and in who changed the alarm."
         },
+        "key": {
+          "name": "Panel key",
+          "description": "The key of an ESPHome panel, if it has one (see the Panels tab). A panel that has a key must send it with every call; a call that names the panel without it is refused."
+        },
         "partition": {
           "name": "Partition",
           "description": "Which partition: its id, \"main\" for the first one, or \"all\" for all of them. Empty: the first partition."
@@ -436,6 +451,10 @@
         "source": {
           "name": "Source",
           "description": "Name of the control point, for example a panel. It appears in the log and in who changed the alarm."
+        },
+        "key": {
+          "name": "Panel key",
+          "description": "The key of an ESPHome panel, if it has one (see the Panels tab). A panel that has a key must send it with every call; a call that names the panel without it is refused."
         }
       }
     },
@@ -454,6 +473,10 @@
         "source": {
           "name": "Source",
           "description": "Name of the control point, for example a panel. It appears in the log and in who changed the alarm."
+        },
+        "key": {
+          "name": "Panel key",
+          "description": "The key of an ESPHome panel, if it has one (see the Panels tab). A panel that has a key must send it with every call; a call that names the panel without it is refused."
         }
       }
     },
@@ -492,6 +515,10 @@
         "source": {
           "name": "Source",
           "description": "Name of the control point, for example a panel. It appears in the log and in who changed the alarm."
+        },
+        "key": {
+          "name": "Panel key",
+          "description": "The key of an ESPHome panel, if it has one (see the Panels tab). A panel that has a key must send it with every call; a call that names the panel without it is refused."
         }
       }
     },
@@ -506,6 +533,10 @@
         "source": {
           "name": "Source",
           "description": "Name of the control point, for example a panel. It appears in the log and in who changed the alarm."
+        },
+        "key": {
+          "name": "Panel key",
+          "description": "The key of an ESPHome panel, if it has one (see the Panels tab). A panel that has a key must send it with every call; a call that names the panel without it is refused."
         }
       }
     },
@@ -520,6 +551,10 @@
         "source": {
           "name": "Source",
           "description": "Name of the control point, for example a panel."
+        },
+        "key": {
+          "name": "Panel key",
+          "description": "The key of an ESPHome panel, if it has one (see the Panels tab). A panel that has a key must send it with every call; a call that names the panel without it is refused."
         }
       }
     },
@@ -538,6 +573,10 @@
         "source": {
           "name": "Source",
           "description": "The id of the panel."
+        },
+        "key": {
+          "name": "Panel key",
+          "description": "The key of an ESPHome panel, if it has one (see the Panels tab). A panel that has a key must send it with every call; a call that names the panel without it is refused."
         }
       }
     },
@@ -548,6 +587,10 @@
         "source": {
           "name": "Source",
           "description": "The id of the panel."
+        },
+        "key": {
+          "name": "Panel key",
+          "description": "The key of an ESPHome panel, if it has one (see the Panels tab). A panel that has a key must send it with every call; a call that names the panel without it is refused."
         },
         "partition": {
           "name": "Partition",

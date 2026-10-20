@@ -163,6 +163,8 @@
               "user_refused": "Aufruf des Benutzers abgelehnt",
               "panel_unlocked": "Bedienteil entsperrt",
               "panel_lock_cleared": "Sperre des Bedienteils aufgehoben",
+              "panel_key_created": "Bedienteil-Schlüssel erstellt",
+              "panel_key_removed": "Bedienteil-Schlüssel entfernt",
               "panel_offline": "Bedienteil nicht erreichbar",
               "panel_online": "Bedienteil wieder erreichbar"
             }
@@ -237,6 +239,8 @@
           "user_refused": "Aufruf des Benutzers abgelehnt",
           "panel_unlocked": "Bedienteil entsperrt",
           "panel_lock_cleared": "Sperre des Bedienteils aufgehoben",
+          "panel_key_created": "Bedienteil-Schlüssel erstellt",
+          "panel_key_removed": "Bedienteil-Schlüssel entfernt",
           "panel_offline": "Bedienteil nicht erreichbar",
           "panel_online": "Bedienteil wieder erreichbar"
         }
@@ -374,6 +378,9 @@
     },
     "partition_not_allowed": {
       "message": "{user} darf die Partition {partition} nicht verwenden."
+    },
+    "panel_key_wrong": {
+      "message": "Das Bedienteil {panel} hat seinen Schlüssel nicht gesendet oder den falschen."
     }
   },
   "services": {
@@ -392,6 +399,10 @@
         "source": {
           "name": "Quelle",
           "description": "Name der Bedienstelle, zum Beispiel ein Bedienteil. Er erscheint im Protokoll und dort, wo steht, wer die Alarmanlage geändert hat."
+        },
+        "key": {
+          "name": "Bedienteil-Schlüssel",
+          "description": "Der Schlüssel eines ESPHome-Bedienteils, falls es einen hat (siehe Reiter Bedienteile). Ein Bedienteil mit Schlüssel muss ihn bei jedem Aufruf mitsenden; ein Aufruf, der das Bedienteil nennt, aber keinen Schlüssel hat, wird abgelehnt."
         },
         "bypass_open": {
           "name": "Überbrücken, was es verhindert",
@@ -415,6 +426,10 @@
           "name": "Quelle",
           "description": "Name der Bedienstelle, zum Beispiel ein Bedienteil. Er erscheint im Protokoll und dort, wo steht, wer die Alarmanlage geändert hat."
         },
+        "key": {
+          "name": "Bedienteil-Schlüssel",
+          "description": "Der Schlüssel eines ESPHome-Bedienteils, falls es einen hat (siehe Reiter Bedienteile). Ein Bedienteil mit Schlüssel muss ihn bei jedem Aufruf mitsenden; ein Aufruf, der das Bedienteil nennt, aber keinen Schlüssel hat, wird abgelehnt."
+        },
         "partition": {
           "name": "Partition",
           "description": "Welche Partition: ihre ID, \"main\" für die erste oder \"all\" für alle. Leer: die erste Partition."
@@ -436,6 +451,10 @@
         "source": {
           "name": "Quelle",
           "description": "Name der Bedienstelle, zum Beispiel ein Bedienteil. Er erscheint im Protokoll und dort, wo steht, wer die Alarmanlage geändert hat."
+        },
+        "key": {
+          "name": "Bedienteil-Schlüssel",
+          "description": "Der Schlüssel eines ESPHome-Bedienteils, falls es einen hat (siehe Reiter Bedienteile). Ein Bedienteil mit Schlüssel muss ihn bei jedem Aufruf mitsenden; ein Aufruf, der das Bedienteil nennt, aber keinen Schlüssel hat, wird abgelehnt."
         }
       }
     },
@@ -454,6 +473,10 @@
         "source": {
           "name": "Quelle",
           "description": "Name der Bedienstelle, zum Beispiel ein Bedienteil. Er erscheint im Protokoll und dort, wo steht, wer die Alarmanlage geändert hat."
+        },
+        "key": {
+          "name": "Bedienteil-Schlüssel",
+          "description": "Der Schlüssel eines ESPHome-Bedienteils, falls es einen hat (siehe Reiter Bedienteile). Ein Bedienteil mit Schlüssel muss ihn bei jedem Aufruf mitsenden; ein Aufruf, der das Bedienteil nennt, aber keinen Schlüssel hat, wird abgelehnt."
         }
       }
     },
@@ -492,6 +515,10 @@
         "source": {
           "name": "Quelle",
           "description": "Name der Bedienstelle, zum Beispiel ein Bedienteil. Er erscheint im Protokoll und dort, wo steht, wer die Alarmanlage geändert hat."
+        },
+        "key": {
+          "name": "Bedienteil-Schlüssel",
+          "description": "Der Schlüssel eines ESPHome-Bedienteils, falls es einen hat (siehe Reiter Bedienteile). Ein Bedienteil mit Schlüssel muss ihn bei jedem Aufruf mitsenden; ein Aufruf, der das Bedienteil nennt, aber keinen Schlüssel hat, wird abgelehnt."
         }
       }
     },
@@ -506,6 +533,10 @@
         "source": {
           "name": "Quelle",
           "description": "Name der Bedienstelle, zum Beispiel ein Bedienteil. Er erscheint im Protokoll und dort, wo steht, wer die Alarmanlage geändert hat."
+        },
+        "key": {
+          "name": "Bedienteil-Schlüssel",
+          "description": "Der Schlüssel eines ESPHome-Bedienteils, falls es einen hat (siehe Reiter Bedienteile). Ein Bedienteil mit Schlüssel muss ihn bei jedem Aufruf mitsenden; ein Aufruf, der das Bedienteil nennt, aber keinen Schlüssel hat, wird abgelehnt."
         }
       }
     },
@@ -520,6 +551,10 @@
         "source": {
           "name": "Quelle",
           "description": "Name der Bedienstelle, zum Beispiel ein Bedienteil."
+        },
+        "key": {
+          "name": "Bedienteil-Schlüssel",
+          "description": "Der Schlüssel eines ESPHome-Bedienteils, falls es einen hat (siehe Reiter Bedienteile). Ein Bedienteil mit Schlüssel muss ihn bei jedem Aufruf mitsenden; ein Aufruf, der das Bedienteil nennt, aber keinen Schlüssel hat, wird abgelehnt."
         }
       }
     },
@@ -538,6 +573,10 @@
         "source": {
           "name": "Quelle",
           "description": "Die ID des Bedienteils."
+        },
+        "key": {
+          "name": "Bedienteil-Schlüssel",
+          "description": "Der Schlüssel eines ESPHome-Bedienteils, falls es einen hat (siehe Reiter Bedienteile). Ein Bedienteil mit Schlüssel muss ihn bei jedem Aufruf mitsenden; ein Aufruf, der das Bedienteil nennt, aber keinen Schlüssel hat, wird abgelehnt."
         }
       }
     },
@@ -548,6 +587,10 @@
         "source": {
           "name": "Source",
           "description": "Die ID des Panels."
+        },
+        "key": {
+          "name": "Bedienteil-Schlüssel",
+          "description": "Der Schlüssel eines ESPHome-Bedienteils, falls es einen hat (siehe Reiter Bedienteile). Ein Bedienteil mit Schlüssel muss ihn bei jedem Aufruf mitsenden; ein Aufruf, der das Bedienteil nennt, aber keinen Schlüssel hat, wird abgelehnt."
         },
         "partition": {
           "name": "Partition",

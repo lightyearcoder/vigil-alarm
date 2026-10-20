@@ -12,15 +12,19 @@
 # Nothing about what the panel may do is set here. The panel is added in Vigil (Panels), with the
 # ESPHome device name as panel id, and reads its profile from the sensor Vigil makes for it: which
 # modes there are, whether it may disarm or bypass, whether it may show the sensors, the language.
-# The device name is also the source shown in the history: "Anna (vigil-panel-garage)".
+# The device name is also the source shown in the history: "Anna (vigil-panel-garage)". The `panel_key` (see
+# below) proves that a call comes from this device; the name alone is only text.
 
 substitutions:
   # The profile sensor Vigil makes for this panel: the panel id (the device name) with underscores.
   profile_entity: sensor.${ name | replace("-", "_") }_profile
   # How long the screen stays on without touch, until Vigil has told the panel (setting "Screen off after" in Vigil).
   backlight_timeout_seconds: "30"
+  # The key of this panel, sent with every call so Vigil knows the call really comes from this device (the panel
+  # key made under Panels in Vigil). Set it in your device file, from secrets.yaml. Empty: no key is sent.
+  panel_key: ""
   # The version of this firmware, reported to Vigil.
-  firmware_version: "0.6.0"
+  firmware_version: "0.6.6"
   # The width of the cards and buttons: the screen minus a margin on both sides.
   content_w: ${ screen_width | int - 24 }
   # The sizes follow the screen: the ring is a bit over a quarter of the shortest side, the keys fill the keypad.
@@ -778,6 +782,7 @@ script:
                 action: vigil_alarm.select_partition
                 data:
                   source: ${name}
+                  key: ${panel_key}
                   partition: !lambda 'return partition;'
 
   # The tabs at the bottom: the active one has the colour of the state, the keypad has none, the sensors tab has the
@@ -1095,6 +1100,7 @@ script:
                   mode: !lambda |-
                     return std::string(vigil::arm_mode_name(id(pending_action)));
                   source: ${name}
+                  key: ${panel_key}
                   code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
                   bypass_open: !lambda 'return std::string(vigil::ctx.force ? "true" : "false");'
                   partition: !lambda 'return vigil::sel_id();'
@@ -1112,6 +1118,7 @@ script:
                 action: vigil_alarm.disarm
                 data:
                   source: ${name}
+                  key: ${panel_key}
                   partition: !lambda 'return vigil::sel_id();'
                   code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
                 on_success:
@@ -1128,6 +1135,7 @@ script:
                 action: vigil_alarm.unlock_panel
                 data:
                   source: ${name}
+                  key: ${panel_key}
                   scope: !lambda 'return id(pending_action) == vigil::INFO ? "info" : "sensors";'
                   code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
                 on_success:
@@ -1145,6 +1153,7 @@ script:
                 data:
                   sensor: !lambda 'return id(pending_entity);'
                   source: ${name}
+                  key: ${panel_key}
                   code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
                 on_success:
                   - script.execute: action_done
@@ -1161,6 +1170,7 @@ script:
                 data:
                   sensor: !lambda 'return id(pending_entity);'
                   source: ${name}
+                  key: ${panel_key}
                   code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
                 on_success:
                   - script.execute: action_done

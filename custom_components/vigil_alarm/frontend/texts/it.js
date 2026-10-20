@@ -114,7 +114,8 @@ export default {
       "battery_missing": "{n} sensori non hanno un sensore della batteria, quindi non saprai quando una batteria è scarica: {names}.",
       "tamper_unlinked": "{n} sensori hanno un contatto antimanomissione sullo stesso dispositivo che non è collegato a nulla: {names}.",
       "panel_firmware": "Il firmware del pannello {name} capisce la versione di profilo {seen}, Vigil usa la versione {wanted}. Aggiorna il firmware del pannello.",
-      "arm_without_code": "Un utente ha un codice, ma l'inserimento non richiede un codice (Impostazioni): chiunque possa raggiungere l'allarme su un pannello, in Home Assistant o tramite un servizio può quindi inserirlo. La disattivazione richiede sempre un codice."
+      "arm_without_code": "Un utente ha un codice, ma l'inserimento non richiede un codice (Impostazioni): chiunque possa raggiungere l'allarme su un pannello, in Home Assistant o tramite un servizio può quindi inserirlo. La disattivazione richiede sempre un codice.",
+      "panel_no_key": "Il pannello {name} non ha una chiave, quindi una chiamata che dice solo di venire da questo pannello viene accettata. Crea una chiave nella scheda Pannelli."
     }
   },
   "heartbeat": {
@@ -516,7 +517,23 @@ export default {
     "noBypass": "nessuna esclusione",
     "noSilence": "nessun silenziamento",
     "hint": "Sbloccare e rimuovere il blocco si può fare solo qui, non come azione di Home Assistant.",
-    "refused": "Non è possibile."
+    "refused": "Non è possibile.",
+    "keyBtn": "Chiave del pannello",
+    "keyTitle": "Chiave del pannello",
+    "keyYes": "Chiave impostata",
+    "keyNo": "Nessuna chiave",
+    "keyIntro": "Un pannello con una chiave la invia a ogni chiamata. Vigil rifiuta allora ogni chiamata a nome di questo pannello senza la chiave: il nome da solo è solo testo e chiunque possa chiamare Home Assistant potrebbe usarlo.",
+    "keyHave": "Questo pannello ha una chiave.",
+    "keyNone": "Questo pannello non ha ancora una chiave: le chiamate a suo nome vengono accettate senza prova.",
+    "keyReplaceWarn": "Una nuova chiave sostituisce subito la vecchia; reinstalla il pannello con la nuova chiave.",
+    "keyMake": "Crea una chiave",
+    "keyReplace": "Crea una nuova chiave",
+    "keyRemove": "Rimuovi la chiave",
+    "keyShown": "Questa è la chiave. Viene mostrata solo ora; Vigil ne conserva solo un'impronta. Metti questa riga in secrets.yaml:",
+    "keyDevice": "Poi, nel file del dispositivo del pannello, togli il # davanti a panel_key: !secret {id}_key e reinstalla il pannello.",
+    "keyCopy": "Copia",
+    "keyCopied": "Copiato",
+    "keyRemoved": "La chiave è stata rimossa; le chiamate a nome di questo pannello non vengono più controllate."
   },
   "yes": "sì",
   "no": "no",

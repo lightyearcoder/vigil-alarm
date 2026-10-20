@@ -36,6 +36,13 @@ English: [what Vigil does when something goes wrong](failure-behaviour.md).
 |---|---|
 | De instellingen (ingangsvertraging, sirenetijd) worden **gewijzigd terwijl de ingangsvertraging loopt** | De lopende vertraging behoudt haar einde; de nieuwe waarden gelden vanaf de volgende. |
 
+## Aanroepen in naam van een paneel
+
+| Situatie | Wat Vigil doet |
+|---|---|
+| Een aanroep noemt een ESPHome-paneel dat een **sleutel** heeft, zonder sleutel of met een verkeerde | Geweigerd en gelogd (`panel_refused`, reden `key`), wie hem ook doet. Aanroepen zonder paneelnaam, andere panelen en tablets worden niet geraakt. |
+| Een paneel heeft **geen sleutel** | Aanroepen in zijn naam worden geaccepteerd zoals voorheen, en *Klaar voor gebruik?* adviseert een sleutel te maken. |
+
 ## Commando's
 
 | Situatie | Wat Vigil doet |

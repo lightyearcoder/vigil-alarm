@@ -36,6 +36,7 @@ const ICONS = {
   eye: ["M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z", "M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"],
   reset: ["M3 12a9 9 0 1 0 3-6.7", "M3 4v5h5"],
   tablet: ["M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z", "M12 18h.01"],
+  key: ["M21 2l-2 2", "M15.5 7.5l3 3L22 7l-3-3", "M11.4 11.6a5.5 5.5 0 1 1-7.8 7.8 5.5 5.5 0 0 1 7.8-7.8Z", "M11.4 11.6 15.5 7.5"],
   file: ["M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2Z", "M14 2v6h6"],
 };
 
@@ -123,6 +124,7 @@ td .sub { display: block; color: var(--secondary-text-color, #727272); font-size
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
 .grid > .card { margin-bottom: 0; }
 .grid.ptiles { margin-bottom: 12px; }
+.keybox { width: 100%; box-sizing: border-box; font-family: monospace; font-size: 13px; padding: 8px; border: 1px solid var(--divider-color, #ccc); border-radius: 8px; background: var(--secondary-background-color, #f4f4f4); color: var(--primary-text-color, #000); resize: none; }
 .stat { font-size: 26px; font-weight: 500; overflow-wrap: anywhere; }
 .muted { color: var(--secondary-text-color, #727272); font-size: 13px; }
 .about th { text-align: left; font-weight: 500; width: 40%; padding: 4px 8px 4px 0; color: var(--secondary-text-color, #727272); }
@@ -1034,6 +1036,7 @@ class VigilPanel extends HTMLElement {
     else if (live.connected === null) out.push(badge("warn", P.notFound));
     else if (live.connected) out.push(badge("ok", P.connected));
     else out.push(badge(live.offline ? "bad" : "warn", live.offline ? P.offline : P.noConnection));
+    if (!item.data.ha_user && !item.data.blocked) out.push(badge(item.has_key ? "ok" : "warn", item.has_key ? P.keyYes : P.keyNo));
     if (live && live.unlocked) out.push(badge("", P.unlocked));
     if (live && live.locked_permanent) out.push(badge("bad", P.lockedPermanent));
     else if (live && live.locked_for > 0) out.push(badge("warn", fill(P.locked, { s: Math.ceil(live.locked_for) })));
@@ -1069,6 +1072,7 @@ class VigilPanel extends HTMLElement {
             el("td", { class: "actions" },
               canTest ? iconButton("play", t.testBtn, "", () => this._test(kind, item)) : null,
               kind === "panel" ? iconButton("unlock", t.panel.unlock, "", () => this._panelAction(item, "vigil_alarm/panel_unlock", fill(t.panel.unlockedDone, { s: item.data.unlock_seconds || 60 }))) : null,
+              kind === "panel" && !item.data.ha_user ? iconButton("key", t.panel.keyBtn, "", () => this._openKey(item)) : null,
               kind === "panel" ? iconButton("reset", t.panel.clear, "", () => this._panelAction(item, "vigil_alarm/panel_clear_lock", t.panel.cleared)) : null,
               iconButton("edit", t.editBtn, "", () => this._openForm(kind, item)),
               kind === "user" || item.primary ? null : iconButton("copy", t.dup, "", () => this._openForm(kind, item, true)),
@@ -1421,6 +1425,45 @@ class VigilPanel extends HTMLElement {
         el("div", { class: "foot" }, el("button", { class: "btn primary", text: this.t.close, onclick: close }))));
     document.addEventListener("keydown", onKey);
     layer.append(overlay);
+  }
+
+  // The key of an ESPHome panel: made here, shown once, and only a digest is kept.
+  _openKey(item) {
+    const P = this.t.panel;
+    const body = el("div");
+    let makeBtn = null, removeBtn = null;
+    const showKey = (res) => {
+      const id = String(res.panel_id).replace(/-/g, "_");
+      const line = `${id}_key: "${res.key}"`;
+      const box = el("textarea", { class: "keybox", readonly: "", rows: "2", spellcheck: "false" });
+      box.value = line;
+      // Once the key is shown, the buttons that would make another one (and so cancel this one) go away.
+      if (makeBtn) makeBtn.hidden = true;
+      if (removeBtn) removeBtn.hidden = true;
+      body.replaceChildren(
+        el("p", { class: "muted", text: P.keyShown }),
+        box,
+        el("p", { class: "muted", text: fill(P.keyDevice, { id }) }),
+        el("button", { class: "btn", text: P.keyCopy, onclick: async () => {
+          try { await navigator.clipboard.writeText(line); this._toast(P.keyCopied); } catch (e) { box.select(); }
+        } }));
+    };
+    const make = async () => {
+      const res = await this._call({ type: "vigil_alarm/panel_key", subentry_id: item.id, action: "create" });
+      if (!res || !res.ok) { this._toast(P.refused); return; }
+      showKey(res);
+      this._load();  // the table behind the dialog shows "Key set"; not awaited, the dialog stays as it is
+    };
+    body.append(el("p", { text: P.keyIntro }), el("p", { class: "muted", text: item.has_key ? P.keyHave + " " + P.keyReplaceWarn : P.keyNone }));
+    this._dialog(P.keyTitle + ": " + item.title, [body], (close) => {
+      removeBtn = item.has_key ? el("button", { class: "btn danger", text: P.keyRemove, onclick: async () => {
+        const res = await this._call({ type: "vigil_alarm/panel_key", subentry_id: item.id, action: "remove" });
+        if (!res || !res.ok) { this._toast(P.refused); return; }
+        close(); this._toast(P.keyRemoved); await this._load();
+      } }) : null;
+      makeBtn = el("button", { class: "btn primary", text: item.has_key ? P.keyReplace : P.keyMake, onclick: make });
+      return [el("button", { class: "btn", text: this.t.close, onclick: close }), removeBtn, makeBtn];
+    });
   }
 
   _confirmDelete(item) {

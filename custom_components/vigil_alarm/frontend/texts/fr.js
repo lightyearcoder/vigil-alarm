@@ -114,7 +114,8 @@ export default {
       "battery_missing": "{n} capteurs n'ont pas de capteur de batterie, vous ne saurez donc pas quand une batterie est faible : {names}.",
       "tamper_unlinked": "{n} capteurs ont un contact de sabotage sur le même appareil qui n'est relié à rien : {names}.",
       "panel_firmware": "Le firmware du clavier {name} comprend la version de profil {seen}, Vigil utilise la version {wanted}. Mettez à jour le firmware du clavier.",
-      "arm_without_code": "Un utilisateur a un code, mais l'activation n'en demande pas (Paramètres) : toute personne qui peut atteindre l'alarme sur un clavier, dans Home Assistant ou par un service peut donc l'activer. La désactivation demande toujours un code."
+      "arm_without_code": "Un utilisateur a un code, mais l'activation n'en demande pas (Paramètres) : toute personne qui peut atteindre l'alarme sur un clavier, dans Home Assistant ou par un service peut donc l'activer. La désactivation demande toujours un code.",
+      "panel_no_key": "Le clavier {name} n'a pas de clé : un appel qui prétend seulement venir de ce clavier est accepté. Créez une clé sous Claviers."
     }
   },
   "heartbeat": {
@@ -516,7 +517,23 @@ export default {
     "noBypass": "pas d'inhibition",
     "noSilence": "pas de mise en sourdine",
     "hint": "Déverrouiller et lever le verrouillage ne peut se faire qu'ici, pas comme action Home Assistant.",
-    "refused": "Ce n'est pas possible."
+    "refused": "Ce n'est pas possible.",
+    "keyBtn": "Clé du clavier",
+    "keyTitle": "Clé du clavier",
+    "keyYes": "Clé définie",
+    "keyNo": "Pas de clé",
+    "keyIntro": "Un clavier avec une clé l'envoie à chaque appel. Vigil refuse alors tout appel au nom de ce clavier sans la clé : le nom seul n'est que du texte, et toute personne pouvant appeler Home Assistant pourrait l'utiliser.",
+    "keyHave": "Ce clavier a une clé.",
+    "keyNone": "Ce clavier n'a pas encore de clé : les appels en son nom sont acceptés sans preuve.",
+    "keyReplaceWarn": "Une nouvelle clé remplace l'ancienne immédiatement ; réinstallez le clavier avec la nouvelle clé.",
+    "keyMake": "Créer une clé",
+    "keyReplace": "Créer une nouvelle clé",
+    "keyRemove": "Supprimer la clé",
+    "keyShown": "Voici la clé. Elle n'est affichée que maintenant ; Vigil n'en garde qu'une empreinte. Mettez cette ligne dans secrets.yaml :",
+    "keyDevice": "Ensuite, dans le fichier de l'appareil du clavier, retirez le # devant panel_key: !secret {id}_key et réinstallez le clavier.",
+    "keyCopy": "Copier",
+    "keyCopied": "Copié",
+    "keyRemoved": "La clé est supprimée ; les appels au nom de ce clavier ne sont plus vérifiés."
   },
   "yes": "oui",
   "no": "non",

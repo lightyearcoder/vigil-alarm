@@ -13,6 +13,9 @@ is a hint for the screen, not security: the names of the sensors are simply not 
 
 from __future__ import annotations
 
+import hashlib
+import hmac
+import secrets
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
@@ -29,6 +32,7 @@ from .const import (
     MODES,
     MODE_BITS,
     CONF_BLOCKED,
+    CONF_KEY_HASH,
     CONF_CAN_BYPASS,
     CONF_CAN_DISARM,
     CONF_CAN_SILENCE,
@@ -55,7 +59,7 @@ from .const import (
 )
 from .vigil_core import aggregate
 from .credentials import code_matches, find_user_by_code
-from .items import Item, items_of
+from .items import Item, items_of, save_stored, stored_items
 from .languages import FALSE_ALARM, language_of
 
 if TYPE_CHECKING:
@@ -364,6 +368,56 @@ class PanelRegistry:
             translation_placeholders={"panel": panel.title, "action": action},
         )
 
+    # ------------------------------------------------------------------- key
+    @staticmethod
+    def _key_digest(key: str) -> str:
+        return hashlib.sha256(key.encode()).hexdigest()
+
+    def has_key(self, panel: Item) -> bool:
+        return bool(panel.data.get(CONF_KEY_HASH))
+
+    def verify_key(self, source: str | None, key: str | None, user_id: str | None) -> None:
+        """A registered ESPHome panel that has a key must send it with every call. A call that names such a panel
+        without the right key is refused (and logged): `source` is only text, the key is what proves the call
+        comes from the device. A tablet is told apart by its Home Assistant user and needs none; a panel without a
+        key is treated as before."""
+        panel = self.get(source)
+        if panel is None or not panel.data.get(CONF_KEY_HASH) or self.for_user(user_id):
+            return
+        if key and hmac.compare_digest(self._key_digest(key), panel.data[CONF_KEY_HASH]):
+            return
+        self.manager.publish("panel_refused", source=source, panel=panel.title, action="call", reason="key")
+        raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="panel_key_wrong", translation_placeholders={"panel": panel.title},
+        )
+
+    def create_key(self, panel: Item, by: str | None = None) -> str:
+        """A new key for an ESPHome panel (the old one stops working at once). Returned once; only its digest is kept."""
+        if panel.data.get(CONF_HA_USER):
+            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="panel_not_allowed",
+                                         translation_placeholders={"panel": panel.title, "action": "key"})
+        key = secrets.token_hex(16)
+        self._store_key(panel, self._key_digest(key))
+        self.manager.publish("panel_key_created", source=panel.data[CONF_PANEL_ID], panel=panel.title, **({"by": by} if by else {}))
+        return key
+
+    def remove_key(self, panel: Item, by: str | None = None) -> bool:
+        if not panel.data.get(CONF_KEY_HASH):
+            return False
+        self._store_key(panel, None)
+        self.manager.publish("panel_key_removed", source=panel.data[CONF_PANEL_ID], panel=panel.title, **({"by": by} if by else {}))
+        return True
+
+    def _store_key(self, panel: Item, digest: str | None) -> None:
+        working = stored_items(self.manager.entry)
+        data = dict(working[panel.subentry_id]["data"])
+        if digest:
+            data[CONF_KEY_HASH] = digest
+        else:
+            data.pop(CONF_KEY_HASH, None)
+        working[panel.subentry_id] = {**working[panel.subentry_id], "data": data}
+        save_stored(self.hass, self.manager.entry, working)
+
     # ---------------------------------------------------------------- unlocking
     @callback
     def _changed(self) -> None:
@@ -494,13 +548,15 @@ class PanelRegistry:
         return out
 
     def problems(self) -> list[dict[str, str]]:
-        """Things to put right on a panel: firmware that does not understand this profile.
+        """Things to put right on a panel: no key yet, or firmware that does not understand this profile.
         Only for panels that report; a panel that does not report is a connection matter."""
         found = []
         for panel in self.items():
             if panel.data.get(CONF_HA_USER) or panel.data.get(CONF_BLOCKED):
                 continue
             pid = panel.data[CONF_PANEL_ID]
+            if not self.has_key(panel):
+                found.append({"code": "panel_no_key", "name": panel.title})
             seen = self.reported(pid)
             if not seen:
                 continue

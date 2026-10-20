@@ -21,6 +21,7 @@ from .const import (
     CONF_BLOCKED,
     CONF_WATCH,
     CONF_HA_USER,
+    CONF_KEY_HASH,
     CONF_CAN_BYPASS,
     CONF_CAN_DISARM,
     CONF_CAN_SILENCE,
@@ -586,6 +587,8 @@ async def _panel(
     }
     if ha_user:
         data[CONF_HA_USER] = ha_user
+    elif sub and sub.data.get(CONF_KEY_HASH):
+        data[CONF_KEY_HASH] = sub.data[CONF_KEY_HASH]  # the key is made and removed with its own buttons, not in this form
     try:
         _partitions_filter(entry, raw, data)
     except EditError as err:

@@ -203,6 +203,8 @@ EVENT_TYPES = [
     "user_refused",
     "panel_unlocked",
     "panel_lock_cleared",
+    "panel_key_created",
+    "panel_key_removed",
     "panel_offline",
     "panel_online",
 ]
@@ -216,6 +218,7 @@ CONF_CAN_SILENCE = "can_silence"
 CONF_SENSOR_LIST = "sensor_list"
 CONF_UNLOCK_SECONDS = "unlock_seconds"
 CONF_BLOCKED = "blocked"
+CONF_KEY_HASH = "key_hash"  # of the key an ESPHome panel sends with every call (never the key itself)
 CONF_WATCH = "watch"  # tell the administrators when this panel drops out; a register entry without it is watched
 CONF_HA_USER = "ha_user"  # a tablet: the Home Assistant user it is logged in as
 SENSOR_LIST_CHOICES = ("always", "code", "never")
