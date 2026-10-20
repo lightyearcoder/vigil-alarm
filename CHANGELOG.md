@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.7
+
+- **A documentation site.** The guides are now also a website with search, a language switch (English, Dutch, German, French, Italian, Spanish) and a front page. It is made with Starlight from the same files as before: `docs/`, `esphome/README.md` and this changelog stay the one source and the site is generated from them (`site/`, `npm run build`), so nothing is written twice. Pages that do not exist in a language show the English one.
+- **Publishing:** the workflow `.github/workflows/docs.yml` builds the site and puts it on GitHub Pages when `docs/` changes. Once, in the repository settings under *Pages*, set the source to *GitHub Actions*. The site address is set in `site/astro.config.mjs`.
+- **No change to the integration, the panel or the ESPHome firmware:** panels do not have to be flashed (the firmware stays at 0.6.6).
+- **Tested:** the site builds (49 pages), has no broken internal links, and the existing tests still pass.
+
 ## 0.6.6
 
 - **Panel identity: a key for every ESPHome panel.** The `source` of a call is plain text, so a call that only *says* it comes from a registered panel (for example from another Home Assistant account) was accepted as that panel. Now you can give an ESPHome panel a **key**: the key button in *Panels* makes one, shows it once (Vigil keeps only a SHA-256 digest of it) and a new key replaces the old one at once. The panel sends the key with every call (`panel_key` in the device file, from `secrets.yaml`; firmware 0.6.6), and Vigil refuses and logs every call in the name of that panel without the right key (`panel_refused`, reason `key`), on all services that take a `source`. Events `panel_key_created` and `panel_key_removed` are in the log. The key does not protect against someone who can read your ESPHome configuration or has administrator rights; use the encryption of the ESPHome API too.

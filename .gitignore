@@ -4,3 +4,12 @@ __pycache__/
 .venv/
 .idea/
 .vscode/
+
+# Documentatiesite (Starlight): gegenereerd uit docs/
+site/node_modules/
+site/dist/
+site/.astro/
+site/src/content/docs/
+site/public/images/
+site/public/favicon.png
+site/src/assets/logo.png

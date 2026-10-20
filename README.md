@@ -92,6 +92,8 @@ The full manual is in the **[user guide](docs/user-guide.md)**
 
 To install on Home Assistant OS with virtual test sensors and a full test plan, see the **[installation and testing guide](docs/installation-and-testing.md)** (Dutch: [installatie en testen](docs/installation-and-testing.nl.md)). What the alarm does when Home Assistant restarts or something fails is in **[what Vigil does when something goes wrong](docs/failure-behaviour.md)** (Dutch: [wat Vigil doet bij storingen](docs/failure-behaviour.nl.md)).
 
+The same guides are also a searchable website in six languages (made with Starlight from `docs/`, see `site/README.md`; published on GitHub Pages by `.github/workflows/docs.yml`).
+
 ## Blueprints
 
 Import a blueprint with the button, then **Settings → Automations → Create automation → Use
