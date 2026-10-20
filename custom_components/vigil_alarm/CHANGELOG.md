@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.1
+
+- **Guides in German, French, Italian and Spanish for the tablet and for troubleshooting** (`tablet.de.md`, `.fr.md`, `.it.md`, `.es.md` and `troubleshooting.de.md`, `.fr.md`, `.it.md`, `.es.md`), translated by Claude, next to the user guides that came with 0.6.0. The README links to all of them.
+- **The *About* tab links the user guide in the language of the panel** (German, French, Italian, Spanish, Dutch or English) and, next to it, the guide in English (or in Dutch when the panel is in English).
+
 ## 0.6.0
 
 - **Users and panels: the *Partitions* choice now sits just above the modes**, and the modes you can tick (*May operate in modes*, *May arm in modes*) are those of the partitions chosen (none chosen: those of all partitions). Un-ticking a partition removes the modes only that partition had.

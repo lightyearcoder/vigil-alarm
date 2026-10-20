@@ -88,7 +88,7 @@ Assistant 2026.3.
 
 The full manual is in the **[user guide](docs/user-guide.md)**
 (Dutch: **[gebruikershandleiding](docs/user-guide.nl.md)**, German: **[Benutzerhandbuch](docs/user-guide.de.md)**, French: **[guide](docs/user-guide.fr.md)**, Italian: **[guida](docs/user-guide.it.md)**, Spanish: **[guía](docs/user-guide.es.md)**). If the alarm does not do what you expect, see
-**[tablet guide](docs/tablet.md)** (Dutch: [tabletgids](docs/tablet.nl.md)), **[troubleshooting](docs/troubleshooting.md)** (Dutch: [problemen oplossen](docs/problemen-oplossen.nl.md)).
+**[tablet guide](docs/tablet.md)** (Dutch: [tabletgids](docs/tablet.nl.md), [Deutsch](docs/tablet.de.md), [Français](docs/tablet.fr.md), [Italiano](docs/tablet.it.md), [Español](docs/tablet.es.md)), **[troubleshooting](docs/troubleshooting.md)** (Dutch: [problemen oplossen](docs/problemen-oplossen.nl.md), [Deutsch](docs/troubleshooting.de.md), [Français](docs/troubleshooting.fr.md), [Italiano](docs/troubleshooting.it.md), [Español](docs/troubleshooting.es.md)).
 
 ## Blueprints
 

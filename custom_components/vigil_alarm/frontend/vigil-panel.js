@@ -505,7 +505,7 @@ const TXT = {
       "author": "Autor",
       "links": "Links",
       "manual": "Anleitung",
-      "manualOther": "Anleitung (Nederlands)",
+      "manualOther": "Anleitung (English)",
       "repository": "GitHub-Projekt",
       "releases": "Releases auf GitHub",
       "issues": "Problem melden oder Idee teilen",
@@ -1357,7 +1357,7 @@ const TXT = {
       "author": "Auteur",
       "links": "Liens",
       "manual": "Guide d'utilisation",
-      "manualOther": "Guide d'utilisation (Nederlands)",
+      "manualOther": "Guide d'utilisation (English)",
       "repository": "Projet GitHub",
       "releases": "Versions sur GitHub",
       "issues": "Signaler un problème ou partager une idée",
@@ -2209,7 +2209,7 @@ const TXT = {
       "author": "Autore",
       "links": "Link",
       "manual": "Guida",
-      "manualOther": "Guida (Nederlands)",
+      "manualOther": "Guida (English)",
       "repository": "Progetto GitHub",
       "releases": "Release su GitHub",
       "issues": "Segnala un problema o condividi un'idea",
@@ -3061,7 +3061,7 @@ const TXT = {
       "author": "Autor",
       "links": "Enlaces",
       "manual": "Guía de uso",
-      "manualOther": "Guía de uso (Nederlands)",
+      "manualOther": "Guía de uso (English)",
       "repository": "Proyecto en GitHub",
       "releases": "Versiones en GitHub",
       "issues": "Informar de un problema o compartir una idea",
@@ -5184,8 +5184,11 @@ class VigilPanel extends HTMLElement {
     if (info.failed) return el("div", { class: "card empty" }, t.loadFailed);
     const link = (href, text) => el("a", { href, target: "_blank", rel: "noopener noreferrer", text });
     const row = (label, value) => el("tr", {}, el("th", { text: label }), el("td", {}, value));
-    const nl = (this._hass.language || "en").startsWith("nl");
+    const lang = (this._hass.language || "en").slice(0, 2);
+    const nl = lang === "nl";
     const L = info.links;
+    const own = L["manual_" + lang] ? lang : "en";  // the guide in the language of the panel, English if there is none
+    const other = own === "en" ? "nl" : "en";
     const counts = Object.entries((info.system && info.system.counts) || {})
       .map(([kind, n]) => `${t.tabs[kind] || kind}: ${n}`).join(", ");
     const report = [
@@ -5207,8 +5210,8 @@ class VigilPanel extends HTMLElement {
           el("ul", {}, r.items.map((item) => el("li", { text: item })))))
       : [el("p", { class: "note", text: a.noNotes })];
     const links = [
-      ["book", nl ? L.manual_nl : L.manual_en, a.manual],
-      ["book", nl ? L.manual_en : L.manual_nl, a.manualOther],
+      ["book", L["manual_" + own], a.manual],
+      ["book", L["manual_" + other], a.manualOther],
       ["github", L.repository, a.repository],
       ["tablet", L.panel_docs, a.panelDocs],
       ["tag", L.releases, a.releases],
