@@ -84,16 +84,22 @@ def _codes_in_editing() -> set[str]:
     return codes - {"invalid_config", "unknown_kind"}  # the last cannot happen: the panel only sends known kinds
 
 
+def _panel_source() -> str:
+    """The panel script and its texts (one file per language), as one string."""
+    frontend = ROOT / "frontend"
+    return "\n".join(p.read_text(encoding="utf-8") for p in [frontend / "vigil-panel.js", *sorted((frontend / "texts").glob("*.js"))])
+
+
 def test_every_error_code_in_editing_has_a_text_in_the_panel():
     codes = _codes_in_editing()
     assert {"no_sensor_group", "unknown_sensor_group", "no_modes", "name_in_use", "no_credential",
             "service_not_found", "sensor_not_instant"} <= codes, codes
-    js = (ROOT / "frontend/vigil-panel.js").read_text()
-    missing = {c for c in codes if f"{c}:" not in js}
+    js = _panel_source()
+    missing = {c for c in codes if f"{c}:" not in js and f'"{c}":' not in js}
     assert not missing, f"the panel has no text for {missing}"
     panel_codes = _panel_only_codes()
     assert {"sensor_in_rule", "sensor_group_in_use"} <= panel_codes, panel_codes
-    missing = {c for c in panel_codes if f"{c}:" not in js}
+    missing = {c for c in panel_codes if f"{c}:" not in js and f'"{c}":' not in js}
     assert not missing, f"the panel has no text for {missing}"
 
 

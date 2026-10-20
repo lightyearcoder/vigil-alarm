@@ -128,6 +128,7 @@ _EVENT_LABELS = _event_labels()
 _VERSION = json.loads((Path(__file__).parent / "manifest.json").read_text(encoding="utf-8"))["version"]
 PANEL_URL = "vigil_alarm"
 STATIC_URL = "/vigil_alarm_static/vigil-panel.js"
+TEXTS_URL = "/vigil_alarm_static/texts"  # the panel texts, one file per language (imported by vigil-panel.js)
 CARD_URL = "/vigil_alarm_static/vigil-card.js"  # the card for a dashboard, loaded for every user
 LOGO_URL = "/vigil_alarm_static/logo.png"
 # The names the panel uses, and the subentry types they are stored under.
@@ -1201,8 +1202,9 @@ def _asset_version(version: str) -> str:
     the version number stays the same, and a browser would keep showing the old script; with the fingerprint in
     the address every change of a file is a new address."""
     digest = hashlib.sha1()
-    for name in ("vigil-panel.js", "vigil-card.js"):
-        digest.update((Path(__file__).parent / "frontend" / name).read_bytes())
+    frontend_dir = Path(__file__).parent / "frontend"
+    for path in (frontend_dir / "vigil-panel.js", frontend_dir / "vigil-card.js", *sorted((frontend_dir / "texts").glob("*.js"))):
+        digest.update(path.read_bytes())
     return f"{version}-{digest.hexdigest()[:8]}"
 
 
@@ -1215,6 +1217,7 @@ async def async_register_panel(hass: HomeAssistant, version: str) -> None:
         await hass.http.async_register_static_paths(
             [
                 StaticPathConfig(STATIC_URL, str(path), cache_headers=False),
+                StaticPathConfig(TEXTS_URL, str(Path(__file__).parent / "frontend" / "texts"), cache_headers=False),
                 StaticPathConfig(CARD_URL, str(Path(__file__).parent / "frontend" / "vigil-card.js"), cache_headers=False),
                 StaticPathConfig(LOGO_URL, str(Path(__file__).parent / "brand" / "icon@2x.png"), cache_headers=True),
             ]

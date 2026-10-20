@@ -180,10 +180,12 @@ def test_the_admin_panel_has_every_text_in_every_language():
         pytest.skip("node is not installed")
     script = r"""
 const fs = require("fs");
-const s = fs.readFileSync(process.argv[1], "utf8");
-const i = s.indexOf("const TXT = {");
-const end = s.indexOf("\n};\n", i);
-const T = eval("(" + s.slice(i + 12, end + 2) + ")");
+const dir = process.argv[1];
+const T = {};
+for (const lang of ["nl", "en", "de", "fr", "it", "es"]) {
+  const s = fs.readFileSync(dir + "/texts/" + lang + ".js", "utf8");
+  T[lang] = eval("(" + s.slice(s.indexOf("export default") + 14).replace(/;\s*$/, "") + ")");
+}
 const leaves = (o, p = "", out = {}) => { for (const [k, v] of Object.entries(o)) { const q = p ? p + "." + k : k; if (v && typeof v === "object") leaves(v, q, out); else out[q] = v; } return out; };
 const ph = (t) => (String(t).match(/\{\w+\}/g) || []).sort().join(",");
 const en = leaves(T.en), problems = [];
@@ -198,9 +200,40 @@ for (const lang of ["nl", "de", "fr", "it", "es"]) {
 }
 console.log(JSON.stringify({ languages: Object.keys(T), count: Object.keys(en).length, problems }));
 """
-    path = pathlib.Path(__file__).parent.parent / "custom_components" / "vigil_alarm" / "frontend" / "vigil-panel.js"
+    path = pathlib.Path(__file__).parent.parent / "custom_components" / "vigil_alarm" / "frontend"
     out = subprocess.run([node, "-e", script, str(path)], capture_output=True, text=True, check=True).stdout
     result = json.loads(out)
     assert sorted(result["languages"]) == sorted(["nl", "en", "de", "fr", "it", "es"])
     assert result["count"] > 600
     assert result["problems"] == [], result["problems"][:10]
+
+
+def test_the_panel_texts_are_one_file_per_language_and_are_served():
+    """The panel imports its texts from texts/<language>.js; each of the six exists, is a plain default export,
+    is served from the address the panel imports from, and is part of the fingerprint of the script address."""
+    import re
+
+    from custom_components.vigil_alarm import panel as panel_module
+
+    frontend = pathlib.Path(__file__).parent.parent / "custom_components" / "vigil_alarm" / "frontend"
+    js = (frontend / "vigil-panel.js").read_text(encoding="utf-8")
+    languages = re.search(r"const LANGUAGES = \[([^\]]+)\]", js).group(1)
+    languages = re.findall(r'"(\w+)"', languages)
+    assert sorted(languages) == ["de", "en", "es", "fr", "it", "nl"]
+    assert sorted(p.stem for p in (frontend / "texts").glob("*.js")) == sorted(languages)
+    for lang in languages:
+        text = (frontend / "texts" / f"{lang}.js").read_text(encoding="utf-8")
+        assert "export default {" in text and text.rstrip().endswith("};"), lang
+    assert f"`{panel_module.TEXTS_URL}/" in js  # the address the panel imports from is the one that is served
+    assert "FINGERPRINT" in js  # and it carries the same ?v= as the panel itself
+    digest_before = panel_module._asset_version("x")
+    assert digest_before == panel_module._asset_version("x") and digest_before.startswith("x-")
+
+
+def test_the_panel_script_has_no_texts_of_its_own():
+    """All wording lives in texts/; the script only has the loader (a text added to the script would be missed by
+    the translation check)."""
+    frontend = pathlib.Path(__file__).parent.parent / "custom_components" / "vigil_alarm" / "frontend"
+    js = (frontend / "vigil-panel.js").read_text(encoding="utf-8")
+    assert js.count("const TXT =") == 1 and "Object.fromEntries" in js
+    assert len(js.splitlines()) < 2500

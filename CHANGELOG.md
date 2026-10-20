@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.3
+
+- **The admin panel is split up:** the texts of the panel are no longer in `vigil-panel.js` (which went from 5800 to 1900 lines) but in one file per language, `frontend/texts/en.js`, `nl.js`, `de.js`, `fr.js`, `it.js` and `es.js`. The panel loads them itself, with the same version fingerprint as the script, so an update never mixes old texts with a new panel. No change in what you see. All six files have the same layout (one text per line), so a text is easy to compare between languages.
+- **More tests for the panel:** the check that every text exists in all six languages now reads the language files, and new checks make sure that each language has its file, that the files are served from the address the panel loads them from and that they are part of the script's version fingerprint.
+
 ## 0.6.2
 
 - **The guides show the screenshots in their own language.** The user guides and tablet guides in German, French, Italian and Spanish now show the touch panel and the Vigil card in that language (before: English). The card pictures show the tablet layout in two columns.
