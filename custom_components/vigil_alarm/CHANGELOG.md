@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.4
+
+- **Failure scenarios are tested, and written down.** 17 new tests (`tests/ha/test_failure_scenarios.py`) run the whole installation through a restart during the exit delay, the entry delay and the alarm, a restart that took longer than a delay or the siren time, a door opened while Home Assistant was down, sensors that drop out, flap or report twice, commands that arrive twice, and a phone and siren that both fail. The new page `docs/failure-behaviour.md` (Dutch: `failure-behaviour.nl.md`) lists what Vigil does in each case and what it cannot do (no alarm while Home Assistant is down).
+- **After a restart the alarm still knows who armed it.** The user (`changed_by`) and the panel or device (`changed_via`) of the last arming or disarming were lost at a restart of Home Assistant; they are now saved with the state. Found by the new tests.
+
 ## 0.6.3
 
 - **The admin panel is split up:** the texts of the panel are no longer in `vigil-panel.js` (which went from 5800 to 1900 lines) but in one file per language, `frontend/texts/en.js`, `nl.js`, `de.js`, `fr.js`, `it.js` and `es.js`. The panel loads them itself, with the same version fingerprint as the script, so an update never mixes old texts with a new panel. No change in what you see. All six files have the same layout (one text per line), so a text is easy to compare between languages.

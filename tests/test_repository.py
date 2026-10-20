@@ -11,7 +11,8 @@ ROOT = pathlib.Path(__file__).parents[1]
 DOCS = [ROOT / "README.md", ROOT / "docs" / "user-guide.md", ROOT / "docs" / "user-guide.nl.md",
         *(ROOT / "docs" / f"{name}.{lang}.md" for name in ("user-guide", "tablet", "troubleshooting") for lang in ("de", "fr", "it", "es")),
         ROOT / "docs" / "installation-and-testing.md", ROOT / "docs" / "installation-and-testing.nl.md",
-        ROOT / "docs" / "tablet.md", ROOT / "docs" / "tablet.nl.md"]
+        ROOT / "docs" / "tablet.md", ROOT / "docs" / "tablet.nl.md",
+        ROOT / "docs" / "failure-behaviour.md", ROOT / "docs" / "failure-behaviour.nl.md"]
 OWNER_REPO = "lightyearcoder/vigil-alarm"
 
 

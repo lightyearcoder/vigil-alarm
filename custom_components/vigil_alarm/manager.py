@@ -537,6 +537,7 @@ class VigilManager:
             return
         # Since 0.6.0 {"partitions": {id: state}}; before, the state of the one engine itself.
         states = saved["partitions"] if isinstance(saved.get("partitions"), dict) else {PRIMARY_PARTITION: saved}
+        self.changed_by, self.changed_via = saved.get("changed_by"), saved.get("changed_via")
         for pid, part in self.partitions.items():
             state = states.get(pid)
             if not state:
@@ -550,7 +551,11 @@ class VigilManager:
 
     @callback
     def _data_to_save(self) -> dict[str, Any]:
-        return {"partitions": {pid: p.engine.export_state() for pid, p in self.partitions.items()}}
+        return {
+            "partitions": {pid: p.engine.export_state() for pid, p in self.partitions.items()},
+            "changed_by": self.changed_by,  # who armed or disarmed last: still known after a restart
+            "changed_via": self.changed_via,
+        }
 
     # ----------------------------------------------------------- engine I/O
 
