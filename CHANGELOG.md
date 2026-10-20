@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.8
+
+- **More sensors are recognised when you add sensors from your devices.** Besides the kinds Vigil already knew, the list now also offers `heat` sensors (as *fire*), `moving` sensors (as *intrusion*, in the group for motion sensors) and `safety` sensors (as *alarm24*, always on). Locks, `vibration` and `sound` sensors are still not proposed on purpose (an unlocked lock is not an intrusion and the other two give a lot of false alarms); they can be added by hand. The anonymous list for testers includes the new kinds. The guides (all six languages) and the test plan (English and Dutch) name the new kinds.
+- **Tested:** the discovery test checks the three new kinds and that locks and vibration sensors are not offered.
+
 ## 0.6.7
 
 - **A documentation site.** The guides are now also a website with search, a language switch (English, Dutch, German, French, Italian, Spanish) and a front page. It is made with Starlight from the same files as before: `docs/`, `esphome/README.md` and this changelog stay the one source and the site is generated from them (`site/`, `npm run build`), so nothing is written twice. Pages that do not exist in a language show the English one.

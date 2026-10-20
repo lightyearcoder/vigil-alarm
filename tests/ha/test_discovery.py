@@ -38,6 +38,11 @@ async def test_discovery_groups_battery_and_tamper_per_device(hass, hass_ws_clie
     _add(hass, other, "binary_sensor", "kitchen_leak", None, "moisture")
     _add(hass, other, "binary_sensor", "lonely_tamper", None, "tamper")
     _add(hass, other, "binary_sensor", "ignored", None, "light")
+    _add(hass, other, "binary_sensor", "boiler_heat", None, "heat")
+    _add(hass, other, "binary_sensor", "radar", None, "moving")
+    _add(hass, other, "binary_sensor", "panic_button", None, "safety")
+    _add(hass, other, "binary_sensor", "door_lock", None, "lock")
+    _add(hass, other, "binary_sensor", "shock", None, "vibration")
     res = await _ws(client, type="vigil_alarm/discover")
     assert res["success"]
     by_id = {c["entity_id"]: c for c in res["result"]["candidates"]}
@@ -50,6 +55,10 @@ async def test_discovery_groups_battery_and_tamper_per_device(hass, hass_ws_clie
     assert (pir_c["zone"], pir_c["entrance"], pir_c["battery_entity"]) == ("interior", False, None)
     assert by_id["binary_sensor.kitchen_leak"]["cls"] == "water"
     assert "binary_sensor.ignored" not in by_id
+    assert (by_id["binary_sensor.boiler_heat"]["cls"], by_id["binary_sensor.boiler_heat"]["zone"]) == ("fire", None)
+    assert (by_id["binary_sensor.radar"]["cls"], by_id["binary_sensor.radar"]["zone"]) == ("intrusion", "interior")
+    assert by_id["binary_sensor.panic_button"]["cls"] == "alarm24"
+    assert "binary_sensor.door_lock" not in by_id and "binary_sensor.shock" not in by_id  # not offered on purpose
     # a tamper contact that belongs to a listed sensor is not offered twice
     assert [t["entity_id"] for t in res["result"]["tamper_only"]] == ["binary_sensor.lonely_tamper"]
 

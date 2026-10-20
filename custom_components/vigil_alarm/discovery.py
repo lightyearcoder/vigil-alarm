@@ -34,11 +34,16 @@ PRIMARY: dict[str, tuple[str, str | None]] = {
     "motion": ("intrusion", "interior"),
     "occupancy": ("intrusion", "interior"),
     "presence": ("intrusion", "interior"),
+    "moving": ("intrusion", "interior"),
     "smoke": ("fire", None),
+    "heat": ("fire", None),
     "gas": ("gas", None),
     "carbon_monoxide": ("gas", None),
     "moisture": ("water", None),
+    "safety": ("alarm24", None),
 }
+# Not offered on purpose: "lock" (an unlocked lock is not an intrusion), "vibration" and "sound" (too noisy to
+# propose without being asked; they can still be added by hand).
 # Opening sensors are the ones people walk through; the panel offers "entrance" for them.
 ENTRANCE_CLASSES = {"door", "garage_door", "opening"}
 

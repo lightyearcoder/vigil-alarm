@@ -246,3 +246,10 @@ def test_every_version_field_says_the_same():
     pyproject = re.search(r'^version = "([^"]+)"', (ROOT / "pyproject.toml").read_text(), re.M).group(1)
     assert pyproject == manifest
     assert re.search(rf"^## {re.escape(manifest)}$", (ROOT / "CHANGELOG.md").read_text(), re.M)
+
+
+def test_the_two_copies_of_the_changelog_are_identical():
+    # One in the repository root and one inside the integration (HACS shows that one); they are kept by hand.
+    root = (ROOT / "CHANGELOG.md").read_text()
+    inside = (ROOT / "custom_components" / "vigil_alarm" / "CHANGELOG.md").read_text()
+    assert root == inside

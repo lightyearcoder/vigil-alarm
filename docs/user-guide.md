@@ -72,7 +72,7 @@ the alarm state is kept.
 
 1. **Check the partition** (tab *Partitions*, the first row is your house): modes, exit delays, default entry
    delay and alarm duration. Under *Settings* you check whether a code is needed to arm.
-2. **Add your sensors.** The quick way is *Sensors → Find sensors*: Vigil lists the door, window, motion, smoke, gas, water and tamper sensors that Home Assistant already knows, with the battery and tamper sensor of the same device. Tick the ones you want, change a name if you like, tick *Entrance* for doors you walk through (they get an entry delay) and add them in one go. Nothing is saved until you press the button at the bottom. Without sensor groups, press *Create default groups* first (Perimeter for doors and windows, Interior for motion). To add one by hand use *Sensors → Add sensor*:
+2. **Add your sensors.** The quick way is *Sensors → Find sensors*: Vigil lists the door, window, motion, smoke, heat, gas, water, safety and tamper sensors that Home Assistant already knows, with the battery and tamper sensor of the same device. Tick the ones you want, change a name if you like, tick *Entrance* for doors you walk through (they get an entry delay) and add them in one go. Nothing is saved until you press the button at the bottom. Without sensor groups, press *Create default groups* first (Perimeter for doors and windows, Interior for motion). To add one by hand use *Sensors → Add sensor*:
    - Name it ("Front door"). The name decides the entity names (`sensor.front_door_status`).
    - Pick the `binary_sensor`. For a door contact or motion sensor the panel suggests the right
      sensor group by itself.
