@@ -5,16 +5,21 @@
 <h1 align="center">Vigil Alarm</h1>
 
 <p align="center">
-  A modular alarm system for Home Assistant: modes, entry and exit delays, confirmation rules,
-  notifications, sirens, self-monitoring, and an admin panel to set it all up.
+  A modular alarm system for Home Assistant: partitions, wall panels, tablets and a clear log.
+  Modes, entry and exit delays, confirmation rules, notifications, sirens, self-monitoring,
+  and an admin panel to set it all up.
 </p>
 
 <p align="center">
-  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=lightyearcoder&repository=vigil-alarm&category=integration"><img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open in HACS"></a>
-  <a href="https://github.com/lightyearcoder/vigil-alarm/releases"><img src="https://img.shields.io/github/v/release/lightyearcoder/vigil-alarm?include_prereleases" alt="Release"></a>
+  <a href="https://github.com/lightyearcoder/vigil-alarm/releases"><img src="https://img.shields.io/github/v/release/lightyearcoder/vigil-alarm?include_prereleases&color=6897E6" alt="Release"></a>
   <a href="https://github.com/lightyearcoder/vigil-alarm/actions/workflows/tests.yml"><img src="https://img.shields.io/github/actions/workflow/status/lightyearcoder/vigil-alarm/tests.yml?branch=main&label=tests" alt="Tests"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue" alt="License"></a>
-  <img src="https://img.shields.io/badge/Home%20Assistant-2026.2.3%2B-41BDF5" alt="Home Assistant 2026.2.3 or newer">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-6897E6" alt="License"></a>
+  <img src="https://img.shields.io/badge/Home%20Assistant-2026.2.3%2B-6897E6" alt="Home Assistant 2026.2.3 or newer">
+  <a href="https://lightyearcoder.github.io/vigil-alarm/"><img src="https://img.shields.io/badge/docs-website-6897E6" alt="Documentation website"></a>
+</p>
+
+<p align="center">
+  <a href="https://lightyearcoder.github.io/vigil-alarm/"><b>Documentation website</b></a> in English, Dutch, German, French, Italian and Spanish
 </p>
 
 > **Not a certified alarm system.** Vigil Alarm is a home automation project. It does not meet
@@ -29,20 +34,28 @@
 - **Partitions:** the house and the garage as separate alarms, each with its own modes and delays, rights, sirens
   and channels; fire, gas and tamper stay for the whole house, plus an *All* entity.
 - **Sensors with a class:** intrusion (instant, delayed or follower), fire, gas, water and
-  tamper, and the 24-hour types (audible and silent). Fire, gas and the 24-hour types always watch; intrusion sensors watch in the modes of their
+  tamper, and the 24-hour types (audible and silent). *Find sensors* proposes the door, window, motion, smoke, heat, gas, water and
+  safety sensors that Home Assistant already knows, with their battery and tamper contact. Fire, gas and the 24-hour types always watch; intrusion sensors watch in the modes of their
   **sensor groups**, for example *Perimeter* (doors and windows) in every mode and *Interior*
   (motion) in Away only.
+- **Panels everywhere:** an **ESPHome touch panel** on the wall (Guition 4848, with an optional key per panel), a **tablet or phone** with the
+  Vigil card, and the admin panel in Home Assistant. Each panel only shows and may do what you allow it.
 - **Confirmation rules:** an alarm only follows when, say, two different motion sensors trigger
   within a minute. Handy against a false alarm from one PIR.
+- **Codes and safety:** a code per user, a lockout after wrong codes, a duress code, a cancel window for false alarms
+  and an **alarm memory** that remembers every sensor that opened during the last alarm.
 - **Notifications** through any `notify` service, per kind of message, with optional
   escalation to a second channel when nobody reacts.
 - **Sirens** (optional) with tone and volume per cause, a maximum duration, and a preset for
   the Sonoff SNZB-09P (Zigbee2MQTT).
-- **Self-monitoring:** unreachable sensors, low batteries, siren availability and mains power.
+- **Self-monitoring:** unreachable sensors, low batteries, siren availability and mains power, a **self-test**, a
+  **heartbeat**, and a *Ready for use?* card that names what is still missing. A **practice mode** and a **walk test**
+  let you try everything without a siren or messages.
 - **Survives restarts:** the alarm state and running timers are saved. An alarm that went off
-  during a restart is still raised.
+  during a restart is still raised. What Vigil does when something fails is
+  [written down and tested](docs/failure-behaviour.md).
 - **Admin panel** in the sidebar (administrators only) to set up sensors, groups, users,
-  notifications and sirens in clear tables, with live status.
+  notifications and sirens in clear tables, with live status, a log, backups, export and import.
 - **Six languages:** English, Dutch, German, French, Italian and Spanish, in the admin panel, the card, the
   touch panel, the notifications and the Home Assistant screens. Other languages fall back to English.
 - **Built for automations:** every decision is published as an event, so lights, speech,
@@ -51,6 +64,15 @@
 
 The core decides and publishes events; it never calls a device itself. Only the safety minimum
 (notifications and sirens) is built in.
+
+<p align="center">
+  <img src="docs/images/touch-panel-states-en.png" alt="The Vigil touch panel: disarmed, something open, arming and alarm" width="420">
+  <img src="docs/images/card-phone-states-en.png" alt="The Vigil card on a phone: the same four states" width="420">
+</p>
+
+<p align="center">
+  <img src="docs/images/panel-overview.png" alt="The Vigil admin panel: overview" width="760">
+</p>
 
 <p align="center">
   <img src="docs/images/panel-overview.png" alt="The Vigil admin panel: overview" width="760">
@@ -86,13 +108,13 @@ Assistant 2026.3.
    **notification** channel.
 3. Arm the alarm from the alarm panel card and open a door to see what happens.
 
-The full manual is in the **[user guide](docs/user-guide.md)**
+The full manual is on the **[documentation website](https://lightyearcoder.github.io/vigil-alarm)** (in your language), or in the **[user guide](docs/user-guide.md)**
 (Dutch: **[gebruikershandleiding](docs/user-guide.nl.md)**, German: **[Benutzerhandbuch](docs/user-guide.de.md)**, French: **[guide](docs/user-guide.fr.md)**, Italian: **[guida](docs/user-guide.it.md)**, Spanish: **[guía](docs/user-guide.es.md)**). If the alarm does not do what you expect, see
 **[tablet guide](docs/tablet.md)** (Dutch: [tabletgids](docs/tablet.nl.md), [Deutsch](docs/tablet.de.md), [Français](docs/tablet.fr.md), [Italiano](docs/tablet.it.md), [Español](docs/tablet.es.md)), **[troubleshooting](docs/troubleshooting.md)** (Dutch: [problemen oplossen](docs/troubleshooting.nl.md), [Deutsch](docs/troubleshooting.de.md), [Français](docs/troubleshooting.fr.md), [Italiano](docs/troubleshooting.it.md), [Español](docs/troubleshooting.es.md)).
 
 To install on Home Assistant OS with virtual test sensors and a full test plan, see the **[installation and testing guide](docs/installation-and-testing.md)** (Dutch: [installatie en testen](docs/installation-and-testing.nl.md)). What the alarm does when Home Assistant restarts or something fails is in **[what Vigil does when something goes wrong](docs/failure-behaviour.md)** (Dutch: [wat Vigil doet bij storingen](docs/failure-behaviour.nl.md)).
 
-The same guides are also a searchable website in six languages (made with Starlight from `docs/`, see `site/README.md`; published on GitHub Pages by `.github/workflows/docs.yml`).
+The same guides are also a **[searchable website](https://lightyearcoder.github.io/vigil-alarm/)** in six languages (made from `docs/` with Starlight, see `site/README.md`; published on GitHub Pages by `.github/workflows/docs.yml`).
 
 ## Blueprints
 

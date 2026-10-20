@@ -1,0 +1,11 @@
+/* The blue of the "Home" icon on the panel (#6897E6), which is also the blue of the logo. */
+:root {
+  --sl-color-accent-low: #17233a;
+  --sl-color-accent: #3f7fd8;
+  --sl-color-accent-high: #a9c8f7;
+}
+:root[data-theme="light"] {
+  --sl-color-accent-low: #d3e3fb;
+  --sl-color-accent: #2f6cc4;
+  --sl-color-accent-high: #1c4a8c;
+}

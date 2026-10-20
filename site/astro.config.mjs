@@ -12,6 +12,7 @@ export default defineConfig({
     starlight({
       title: "Vigil Alarm",
       favicon: "/favicon.png",
+      customCss: ["./src/styles/vigil.css"],
       logo: { src: "./src/assets/logo.png", alt: "Vigil Alarm" },
       description: "A modular alarm system for Home Assistant: partitions, panels, tablets and a clear log.",
       defaultLocale: "root",

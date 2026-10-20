@@ -7,10 +7,10 @@ and show is set in Vigil (tab *Panels*) and the panel reads that from its **prof
 Made for ESPHome 2026.9 (the only version it was checked with: `esphome config` and the simulator ran on 2026.9.1; older versions were not tried, so 2026.9 is the minimum we can name). The hardware file is for the **Guition ESP32-S3-4848S040** (480x480).
 Other displays work with another hardware file, see below.
 
-> **Status (0.6.0):** the logic and the way the panel works with Home Assistant were tested on a real
-> Guition 4848 panel (0.4.0). The new look of 0.4.1 (ring, tabs, icons) *Bypass and arm* of 0.5.0 and the 0.5.4 additions (buttons for *Vacation* and *Custom*, the last alarm under the state) 0.5.5 (a permanently bypassed sensor under the state) and 0.5.6 (German, French, Italian and Spanish texts) are validated with `esphome config`
-> and drawn on a computer by LVGL (see `tools/panel-simulator/`), but has not yet run on a real panel:
-> please report what you see, also on other hardware.
+> **Status:** the logic and the way the panel works with Home Assistant were tested on a real Guition 4848 panel,
+> including the panel key (0.6.6). The look of the screens (ring, tabs, icons, the buttons for *Vacation* and *Custom*, the
+> last alarm under the state and the six languages) is drawn on a computer by LVGL (see `tools/panel-simulator/`); the
+> colours of the real LCD differ a little. Please report what you see, also on other hardware.
 
 ## Folder structure
 
@@ -69,7 +69,8 @@ For a second panel copy the example file again, with another `name`.
 - **Sensors** (the *Sensors* tab, a button at the top chooses the partition, with the number of open sensors in a badge; not there if the list is set to *never*): the sensors with their state and a *Bypass* or *Restore* button (only if the panel may
   bypass). Fire and gas sensors have no button, they can never be bypassed.
 - **Info** (the *Info* tab, behind the installer code of the panel): connection, IP address, Wi-Fi signal, uptime, firmware
-  version, panel id and profile version. Never the Wi-Fi password.
+  version, panel id, profile version and whether a panel key is set (*Panel key: set* or *not set*, from `panel_key` in the
+  device file; never the key itself). Never the Wi-Fi password.
 - **Not linked / Blocked**: a panel that is not in the register shows *Not linked*; a blocked panel
   shows *Blocked* and does nothing.
 - The language is the one set for the panel in Vigil: Dutch, English, German, French, Italian or Spanish (from firmware 0.5.6; accents are left out on the screen).

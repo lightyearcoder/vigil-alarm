@@ -34,8 +34,9 @@ def test_the_current_version_has_release_notes():
     assert manifest["version"] in [n["version"] for n in notes]
 
 
-def test_the_links_point_at_the_repository():
-    assert all(url.startswith("https://github.com/lightyearcoder/vigil-alarm") for url in LINKS.values())
+def test_the_links_point_at_the_repository_or_its_documentation_site():
+    assert all(url.startswith(("https://github.com/lightyearcoder/vigil-alarm", "https://lightyearcoder.github.io/vigil-alarm/"))
+               for url in LINKS.values())
 
 
 async def test_the_about_command(hass, hass_ws_client):

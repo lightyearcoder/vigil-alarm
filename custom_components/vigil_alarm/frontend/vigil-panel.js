@@ -9,9 +9,12 @@
 // update never mixes an old text file with a new panel.
 const LANGUAGES = ["nl", "en", "de", "fr", "it", "es"];
 const FINGERPRINT = new URL(import.meta.url).search;
-const TXT = Object.fromEntries(await Promise.all(LANGUAGES.map(
-  async (lang) => [lang, (await import(`/vigil_alarm_static/texts/${lang}.js${FINGERPRINT}`)).default]
-)));
+// Not awaited at the top of the module: Home Assistant makes the element as soon as the script has loaded, and a
+// module that waits for its texts would not have defined it yet (the page stayed empty after a reload).
+const TXT = {};
+const TEXTS_READY = Promise.all(LANGUAGES.map(
+  async (lang) => { TXT[lang] = (await import(`/vigil_alarm_static/texts/${lang}.js${FINGERPRINT}`)).default; }
+));
 
 // "de-AT", "fr_CA", "es-419" ... -> one of the six languages; English for everything else.
 function panelLanguage(code) {
@@ -19,7 +22,6 @@ function panelLanguage(code) {
   return TXT[l] ? l : "en";
 }
 
-const GUIDE_LANGUAGES = { en: "English", nl: "Nederlands", de: "Deutsch", fr: "Français", it: "Italiano", es: "Español" };
 const LOGO_URL = "/vigil_alarm_static/logo.png";
 
 // Small stroke icons (24x24, Lucide style), drawn as SVG without innerHTML.
@@ -124,6 +126,15 @@ td .sub { display: block; color: var(--secondary-text-color, #727272); font-size
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
 .grid > .card { margin-bottom: 0; }
 .grid.ptiles { margin-bottom: 12px; }
+/* The partition tiles and the count tiles share one set of columns (one per kind), so they stay lined up. */
+.grid.cols8 { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+.grid.cols8 > .card { padding: 12px; }
+.grid.cols8 > .card h2 { font-size: 13px; overflow-wrap: anywhere; hyphens: auto; }
+.grid.cols8 > .ptile.single { grid-column: span 2; }
+.grid.cols8 .pstate { font-size: 15px; overflow-wrap: anywhere; }
+.grid.cols8 .ptile.single .pstate { font-size: 17px; }
+@media (max-width: 1180px) { .grid.cols8 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .grid.cols8 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .keybox { width: 100%; box-sizing: border-box; font-family: monospace; font-size: 13px; padding: 8px; border: 1px solid var(--divider-color, #ccc); border-radius: 8px; background: var(--secondary-background-color, #f4f4f4); color: var(--primary-text-color, #000); resize: none; }
 .stat { font-size: 26px; font-weight: 500; overflow-wrap: anywhere; }
 .muted { color: var(--secondary-text-color, #727272); font-size: 13px; }
@@ -223,6 +234,15 @@ class VigilPanel extends HTMLElement {
     this._unsub = null;
     this._narrow = false;
     this._root = null;
+    // The element can be made before this class is defined; what Home Assistant set on it by then are plain
+    // properties that would hide the setters below. Take them off and set them again.
+    for (const name of ["hass", "narrow", "panel", "route"]) {
+      if (Object.prototype.hasOwnProperty.call(this, name)) {
+        const value = this[name];
+        delete this[name];
+        this[name] = value;
+      }
+    }
   }
 
   // ---- properties set by Home Assistant
@@ -255,6 +275,7 @@ class VigilPanel extends HTMLElement {
 
   // ---- loading
   async _start() {
+    await TEXTS_READY;
     this.shadowRoot.innerHTML = "";
     this.shadowRoot.append(el("style", { text: CSS }));
     this._root = el("div");
@@ -891,7 +912,7 @@ class VigilPanel extends HTMLElement {
       el("div", { class: "brand" },
         el("img", { src: LOGO_URL, alt: "", width: "48", height: "48" }),
         el("div", {}, el("h2", { text: "Vigil Alarm" }), el("div", { class: "muted", text: t.alarm }))),
-      el("div", { class: "grid ptiles" },
+      el("div", { class: "grid cols8 ptiles" },
         ...(live && this._multiple() && live.partitions
           ? Object.values(live.partitions).map((p) => el("div", { class: `card ptile ${this._stateTone(p.state)}` },
               el("div", { class: "pname", text: p.name }),
@@ -900,7 +921,7 @@ class VigilPanel extends HTMLElement {
           : [el("div", { class: `card ptile single ${this._stateTone(live ? live.state : "")}` },
               el("div", { class: "pstate", text: live ? this._stateText(live) : t.none }),
               el("div", { class: "muted", text: live && live.mode ? (t.mode[live.mode] || live.mode) : "\u00a0" }))])),
-      el("div", { class: "grid" },
+      el("div", { class: "grid cols8" },
         ...KINDS.map((k) => el("div", { class: "card", style: "cursor:pointer", onclick: () => { this._tab = k; this._renderBody(); } },
           el("h2", { text: t.tabs[k] }), el("div", { class: "stat", text: String(this._shown(k).length) })))),
       this._wizardCard(),
@@ -1326,14 +1347,10 @@ class VigilPanel extends HTMLElement {
             r.note ? el("span", { class: "count", text: ` (${r.note})` }) : null),
           el("ul", {}, r.items.map((item) => el("li", { text: item })))))
       : [el("p", { class: "note", text: a.noNotes })];
+    // Three links: the guide on the documentation website (in the language of the panel), the project and the issues.
     const links = [
       ["book", L["manual_" + own], a.manual],
-      // the guide in every other language, so nobody has to look for it on GitHub
-      ...["en", "nl", "de", "fr", "it", "es"].filter((code) => code !== own && L["manual_" + code])
-        .map((code) => ["book", L["manual_" + code], `${a.manual} (${GUIDE_LANGUAGES[code]})`]),
       ["github", L.repository, a.repository],
-      ["tablet", L.panel_docs, a.panelDocs],
-      ["tag", L.releases, a.releases],
       ["alert", L.new_issue, a.issues],
     ];
     return el("div", {},
@@ -1431,19 +1448,23 @@ class VigilPanel extends HTMLElement {
   _openKey(item) {
     const P = this.t.panel;
     const body = el("div");
-    let makeBtn = null, removeBtn = null;
+    let makeBtn = null, removeBtn = null, shown = false, armed = false;
     const showKey = (res) => {
       const id = String(res.panel_id).replace(/-/g, "_");
       const line = `${id}_key: "${res.key}"`;
       const box = el("textarea", { class: "keybox", readonly: "", rows: "2", spellcheck: "false" });
       box.value = line;
-      // Once the key is shown, the buttons that would make another one (and so cancel this one) go away.
-      if (makeBtn) makeBtn.hidden = true;
+      // Once the key is shown, "New key" stays but needs a second press (it would cancel the key being copied), and
+      // "Remove key" goes away.
+      armed = false;
       if (removeBtn) removeBtn.hidden = true;
+      if (makeBtn) { makeBtn.textContent = P.keyReplace; makeBtn.classList.add("primary"); makeBtn.classList.remove("danger"); }
+      shown = true;
       body.replaceChildren(
         el("p", { class: "muted", text: P.keyShown }),
         box,
         el("p", { class: "muted", text: fill(P.keyDevice, { id }) }),
+        el("p", { class: "muted", text: P.keyAgain }),
         el("button", { class: "btn", text: P.keyCopy, onclick: async () => {
           try { await navigator.clipboard.writeText(line); this._toast(P.keyCopied); } catch (e) { box.select(); }
         } }));
@@ -1461,7 +1482,14 @@ class VigilPanel extends HTMLElement {
         if (!res || !res.ok) { this._toast(P.refused); return; }
         close(); this._toast(P.keyRemoved); await this._load();
       } }) : null;
-      makeBtn = el("button", { class: "btn primary", text: item.has_key ? P.keyReplace : P.keyMake, onclick: make });
+      makeBtn = el("button", { class: "btn primary", text: item.has_key ? P.keyReplace : P.keyMake, onclick: () => {
+        if (shown && !armed) {  // a key is on the screen: ask once more before it is replaced
+          armed = true;
+          makeBtn.textContent = P.keyReplaceConfirm; makeBtn.classList.remove("primary"); makeBtn.classList.add("danger");
+          return;
+        }
+        make();
+      } });
       return [el("button", { class: "btn", text: this.t.close, onclick: close }), removeBtn, makeBtn];
     });
   }

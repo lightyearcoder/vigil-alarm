@@ -13,6 +13,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+import re
+
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -265,3 +267,14 @@ def test_every_call_the_panel_makes_to_vigil_carries_its_key():
     assert 'panel_key: ""' in yaml
     example = (ROOT / "esphome" / "example-garage.yaml").read_text()
     assert "# panel_key: !secret vigil_panel_garage_key" in example
+
+
+def test_the_info_page_says_whether_a_panel_key_is_set_and_never_shows_it():
+    yaml = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    header = (FIRMWARE_DIR / "vigil_panel.h").read_text()
+    assert yaml.count("id: lbl_info_key") == 2  # the label is updated and is made on the page
+    assert 'std::string("${panel_key}").empty()' in yaml  # only whether it is empty is looked at
+    assert 'tr("panel_key") + (' in yaml and '+ "${panel_key}"' not in yaml
+    for key in ("panel_key", "key_set", "key_not_set"):
+        row = re.search(r'\{"%s", \{(.*)\}\},' % key, header)
+        assert row and len(re.findall(r'"[^"]*"', row.group(1))) == 6  # one text per language

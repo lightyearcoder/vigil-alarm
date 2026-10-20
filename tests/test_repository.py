@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import pathlib
 import re
+
+import pytest
 from urllib.parse import parse_qs, unquote, urlparse
 
 ROOT = pathlib.Path(__file__).parents[1]
@@ -92,7 +94,11 @@ def test_the_about_tab_links_a_guide_in_every_language():
     for lang in LANGUAGES:
         key = "manual_" + lang
         assert key in LINKS, lang
-        assert (ROOT / LINKS[key].split("/blob/main/")[1]).is_file(), lang
+        # the documentation website (GitHub Pages): English at the root, the others in a folder of their own
+        expected = "https://lightyearcoder.github.io/vigil-alarm/" + ("" if lang == "en" else lang + "/")
+        assert LINKS[key] == expected, lang
+    config = (ROOT / "site/astro.config.mjs").read_text()  # the site is built for exactly that address
+    assert 'site: "https://lightyearcoder.github.io"' in config and 'base: "/vigil-alarm"' in config
 
 
 def test_the_vigil_card_is_shipped_and_registered():
@@ -236,7 +242,7 @@ def test_the_panel_script_has_no_texts_of_its_own():
     the translation check)."""
     frontend = pathlib.Path(__file__).parent.parent / "custom_components" / "vigil_alarm" / "frontend"
     js = (frontend / "vigil-panel.js").read_text(encoding="utf-8")
-    assert js.count("const TXT =") == 1 and "Object.fromEntries" in js
+    assert js.count("const TXT = {};") == 1 and "TEXTS_READY" in js
     assert len(js.splitlines()) < 2500
 
 
@@ -253,3 +259,42 @@ def test_the_two_copies_of_the_changelog_are_identical():
     root = (ROOT / "CHANGELOG.md").read_text()
     inside = (ROOT / "custom_components" / "vigil_alarm" / "CHANGELOG.md").read_text()
     assert root == inside
+
+
+def test_the_logo_of_the_firmware_and_the_icons_are_the_same_logo():
+    pil = pytest.importorskip("PIL.Image")
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("make_logo", ROOT / "tools" / "make_logo.py")
+    make_logo = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(make_logo)
+    brand = ROOT / "custom_components" / "vigil_alarm" / "brand"
+    text = (ROOT / "esphome" / "vigil_alarm" / "vigil_logo.h").read_text()
+    start = text.index("LOGO_DATA[] = {") + len("LOGO_DATA[] = {")
+    data = text[start:text.index("};", start)]
+    assert data.split() == make_logo.header(pil.open(brand / "icon.png")).split()
+    # the middle of the left edge is the blue of the Home icon as it looks on the panel (#6897E6)
+    side = pil.open(brand / "icon.png").convert("RGBA").getpixel((20, 128))[:3]
+    assert all(abs(a - b) <= 3 for a, b in zip(side, (104, 151, 230)))
+    assert (brand / "icon.png").read_bytes() == (brand / "dark_icon.png").read_bytes()
+    assert (brand / "icon@2x.png").read_bytes() == (brand / "dark_icon@2x.png").read_bytes()
+
+
+def test_the_panel_script_is_usable_the_moment_it_has_loaded():
+    # Home Assistant makes the element as soon as the script's load event fires. A top-level await would delay
+    # customElements.define() and the panel stayed empty after a reload, so nothing may wait at the top.
+    for name in ("vigil-panel.js", "vigil-card.js"):
+        text = (ROOT / "custom_components/vigil_alarm/frontend" / name).read_text(encoding="utf-8")
+        top_level = [l for l in text.splitlines() if re.match(r"(await\b|(const|let|var)\s[^=]*=\s*await\b)", l)]
+        assert top_level == [], f"{name} waits at the top level: {top_level}"
+    panel = (ROOT / "custom_components/vigil_alarm/frontend/vigil-panel.js").read_text(encoding="utf-8")
+    assert "hasOwnProperty.call(this, name)" in panel  # properties set before the element was defined are set again
+
+
+def test_the_overview_tiles_have_one_column_per_kind():
+    # The partition tiles and the count tiles share the columns of .cols8, one per kind (one row on a wide screen).
+    js = (ROOT / "custom_components/vigil_alarm/frontend/vigil-panel.js").read_text(encoding="utf-8")
+    kinds = re.search(r"const KINDS = \[([^\]]*)\]", js).group(1)
+    assert len(re.findall(r'"[^"]+"', kinds)) == 8
+    assert "repeat(8, minmax(0, 1fr))" in js
+    assert js.count('class: "grid cols8') == 2  # the partition tiles and the count tiles

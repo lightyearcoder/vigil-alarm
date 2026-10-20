@@ -24,7 +24,7 @@ substitutions:
   # key made under Panels in Vigil). Set it in your device file, from secrets.yaml. Empty: no key is sent.
   panel_key: ""
   # The version of this firmware, reported to Vigil.
-  firmware_version: "0.6.6"
+  firmware_version: "0.6.9"
   # The width of the cards and buttons: the screen minus a margin on both sides.
   content_w: ${ screen_width | int - 24 }
   # The sizes follow the screen: the ring is a bit over a quarter of the shortest side, the keys fill the keypad.
@@ -873,6 +873,9 @@ script:
       - lvgl.label.update:
           id: lbl_info_profile
           text: !lambda 'return vigil::tr("profile") + std::to_string(vigil::ctx.profile_version);'
+      - lvgl.label.update:
+          id: lbl_info_key
+          text: !lambda 'return vigil::tr("panel_key") + (std::string("${panel_key}").empty() ? vigil::tr("key_not_set") : vigil::tr("key_set"));'
       - script.execute: refresh_ui
       - script.execute: refresh_sensors
 
@@ -2603,7 +2606,7 @@ lvgl:
             y: 14
         - obj:
             width: ${content_w}
-            height: 300
+            height: 338
             align: TOP_MID
             y: 62
             radius: 22
@@ -2664,3 +2667,10 @@ lvgl:
                   align: TOP_LEFT
                   x: 18
                   y: 246
+              - label:
+                  id: lbl_info_key
+                  text: ""
+                  text_color: 0x8A94A6
+                  align: TOP_LEFT
+                  x: 18
+                  y: 284

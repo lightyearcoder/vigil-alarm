@@ -14,17 +14,16 @@ from homeassistant.loader import async_get_integration
 from .const import DOMAIN
 
 REPOSITORY = "https://github.com/lightyearcoder/vigil-alarm"
+# The guide is the documentation website (GitHub Pages): English at the root, every other language in its folder.
+DOCS = "https://lightyearcoder.github.io/vigil-alarm"
 LINKS = {
     "repository": REPOSITORY,
-    "manual_nl": f"{REPOSITORY}/blob/main/docs/user-guide.nl.md",
-    "manual_en": f"{REPOSITORY}/blob/main/docs/user-guide.md",
-    "manual_de": f"{REPOSITORY}/blob/main/docs/user-guide.de.md",
-    "manual_fr": f"{REPOSITORY}/blob/main/docs/user-guide.fr.md",
-    "manual_it": f"{REPOSITORY}/blob/main/docs/user-guide.it.md",
-    "manual_es": f"{REPOSITORY}/blob/main/docs/user-guide.es.md",
-    "panel_docs": f"{REPOSITORY}/blob/main/esphome/README.md",
-    "releases": f"{REPOSITORY}/releases",
-    "issues": f"{REPOSITORY}/issues",
+    "manual_en": DOCS + "/",
+    "manual_nl": DOCS + "/nl/",
+    "manual_de": DOCS + "/de/",
+    "manual_fr": DOCS + "/fr/",
+    "manual_it": DOCS + "/it/",
+    "manual_es": DOCS + "/es/",
     "new_issue": f"{REPOSITORY}/issues/new/choose",
     "license": f"{REPOSITORY}/blob/main/LICENSE",
 }
