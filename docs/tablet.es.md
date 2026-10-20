@@ -19,9 +19,9 @@ Puedes manejar Vigil con una tableta que muestre un panel de control de Home Ass
 
 ## Qué hace la tarjeta
 
-![La tarjeta en un teléfono: no lista, teclado numérico, activando con cuenta atrás, alarma](images/card-phone-states-en.png)
+![La tarjeta en un teléfono: no lista, teclado numérico, activando con cuenta atrás, alarma](images/card-phone-states-es.png)
 
-![La tarjeta en una tableta: dos columnas, anillo y cuenta atrás a la izquierda, botones y teclado numérico a la derecha](images/card-tablet-states-en.png)
+![La tarjeta en una tableta: dos columnas, anillo y cuenta atrás a la izquierda, botones y teclado numérico a la derecha](images/card-tablet-states-es.png)
 
 Con un teclado (una tableta que lo tenga, o un ordenador) puedes teclear el código: dígitos, Retroceso para borrar, Intro para confirmar, Esc para cerrar el teclado numérico.
 

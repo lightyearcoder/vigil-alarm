@@ -19,9 +19,9 @@ Puoi usare Vigil con un tablet che mostra una dashboard di Home Assistant, al po
 
 ## Cosa fa la scheda
 
-![La scheda su un telefono: non pronto, tastierino, inserimento con conto alla rovescia, allarme](images/card-phone-states-en.png)
+![La scheda su un telefono: non pronto, tastierino, inserimento con conto alla rovescia, allarme](images/card-phone-states-it.png)
 
-![La scheda su un tablet: due colonne, anello e conto alla rovescia a sinistra, pulsanti e tastierino a destra](images/card-tablet-states-en.png)
+![La scheda su un tablet: due colonne, anello e conto alla rovescia a sinistra, pulsanti e tastierino a destra](images/card-tablet-states-it.png)
 
 Con una tastiera (un tablet che ne ha una, o un computer) puoi digitare il codice: cifre, Backspace per cancellare, Invio per confermare, Esc per chiudere il tastierino.
 

@@ -17,7 +17,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from . import VigilConfigEntry
-from .const import CONF_CODE_HASH, DOMAIN, PRIMARY_PARTITION
+from .const import DOMAIN, PRIMARY_PARTITION
 from .manager import SIGNAL_UPDATE, VigilManager
 
 _FEATURE = {

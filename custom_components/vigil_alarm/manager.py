@@ -8,10 +8,8 @@ publishes its events.
 from __future__ import annotations
 
 import logging
-import time
 from dataclasses import dataclass
 from functools import partial
-from collections.abc import Callable
 from datetime import datetime, timezone
 from typing import Any, Mapping
 
@@ -76,7 +74,6 @@ from .const import (
     STARTUP_GRACE,
     STORAGE_VERSION,
     SUBENTRY_RULE,
-    SUBENTRY_NOTIFICATION,
     SUBENTRY_USER,
     SUBENTRY_SENSOR,
     SUBENTRY_SENSOR_GROUP,

@@ -99,7 +99,7 @@ l'état de l'alarme est conservé.
 0. **Nouveau : l'assistant de configuration.** Quand la configuration est insuffisante, l'onglet *Aperçu* commence par la carte *Configurer Vigil*, et la carte *Prêt à l'emploi ?* a un bouton *Assistant de configuration*. L'assistant passe pas à pas par les modes, les capteurs, l'utilisateur (aussi créé à partir d'une personne Home Assistant), le canal de notification (un téléphone avec l'application en un clic), la sirène et le clavier, et se termine par *Prêt à l'emploi ?*. Chaque étape peut être ignorée, *Continuer plus tard* ferme l'assistant et la carte *Reprendre l'assistant* vous ramène là où vous en étiez. L'assistant utilise les mêmes formulaires que les onglets et n'enregistre rien avant votre confirmation.
 7. **Regardez *Prêt à l'emploi ?*** en haut de l'onglet *Aperçu*. Il nomme ce qui manque encore (un utilisateur avec un code, un canal de notification, un mode que rien ne surveille, des capteurs sans capteur de batterie) et a un bouton vers le bon endroit. Si vous n'avez pas encore de canal de notification et que Home Assistant connaît votre téléphone, un bouton l'ajoute et envoie un message de test.
 8. **Testez tout** avec les boutons *Test* et en activant l'alarme puis en ouvrant une porte. Utilisez le
-   [guide de test](installatie-en-testen.nl.md) (en néerlandais) pour un plan de test complet avec des capteurs virtuels.
+   [guide de test](installation-and-testing.md) (en anglais) pour un plan de test complet avec des capteurs virtuels.
 
 ### Sirènes
 
@@ -161,15 +161,15 @@ La neutralisation laisse un capteur de côté jusqu'à la désactivation de l'al
 
 ### Un clavier tactile
 
-![Les états du clavier tactile : désactivée, pas prête, activation, alarme](images/touch-panel-states-en.png)
+![Les états du clavier tactile : désactivée, pas prête, activation, alarme](images/touch-panel-states-fr.png)
 
 Le clavier et la carte Vigil partagent le même aspect. L'état est un **anneau avec une icône** de la couleur de l'état : vert quand l'alarme est désactivée et que tout est fermé, ambre quand quelque chose est ouvert ou pendant l'activation, orange pendant la temporisation d'entrée, bleu, corail, violet, turquoise et rose pour maison, absent, nuit, vacances et personnalisé, rouge pour une alarme (avec un cadre rouge autour de l'écran), gris sans connexion. Pendant les temporisations de sortie et d'entrée, l'anneau est le **compte à rebours** : les secondes au milieu, l'anneau se vidant jusqu'à zéro ; à zéro, l'alarme est active. Sous l'anneau, vous voyez les boutons des modes que ce clavier peut utiliser, ou un grand bouton *Désactiver* quand l'alarme est active. En bas se trouvent les onglets *Alarme*, *Capteurs* (avec le nombre de capteurs ouverts) et *Info* ; le pavé numérique n'a pas d'onglets.
 
-![Les autres pages : pavé numérique, capteurs, info, activée absent](images/touch-panel-pages-en.png)
+![Les autres pages : pavé numérique, capteurs, info, activée absent](images/touch-panel-pages-fr.png)
 
 Avec *Vacances* et *Personnalisé* activés, il y a jusqu'à cinq boutons de mode sur une ligne (le texte devient plus petit), et *Désactivée* affiche la dernière alarme sous l'état :
 
-![Cinq boutons de mode avec la dernière alarme, activée vacances, activée personnalisé, une alarme 24 h](images/touch-panel-modes-en.png)
+![Cinq boutons de mode avec la dernière alarme, activée vacances, activée personnalisé, une alarme 24 h](images/touch-panel-modes-fr.png)
 
 
 Avec le clavier ESPHome (Guition 4848), vous activez, désactivez et neutralisez des capteurs sans téléphone. Il lit

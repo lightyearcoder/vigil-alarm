@@ -13,7 +13,6 @@ is a hint for the screen, not security: the names of the sensors are simply not 
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
@@ -212,8 +211,8 @@ class PanelRegistry:
 
     def partitions_of(self, panel: Item) -> list[dict[str, Any]]:
         """What the panel may use: for each partition its name, its alarm entity and the modes it may arm."""
-        registry = er.async_get(self.hass)
         entry_id = self.manager.entry.entry_id
+        registry = er.async_get(self.hass)
         out = []
         for pid in self.allowed_partitions(panel):
             part = self.manager.partitions[pid]
@@ -239,7 +238,6 @@ class PanelRegistry:
         unlocked = self.unlocked(pid) and not blocked
         sensor_list = d.get(CONF_SENSOR_LIST, "code")
         visible = not blocked and (sensor_list == "always" or (sensor_list == "code" and unlocked))
-        registry = er.async_get(self.hass)
         shown = self.partitions_of(panel)
         default = self.default_partition(panel)
         chosen = self.selected(panel) if shown else default
@@ -336,7 +334,8 @@ class PanelRegistry:
             return ""
         when = dt_util.as_local(dt_util.utc_from_timestamp(view["started"])).strftime("%H:%M")
         names = [str(step["name"]) for step in view["path"] if step.get("name")]
-        text = when + (" " + " > ".join(names[-4:]) if names else (" " + str(view["sensor_name"]) if view.get("sensor_name") else ""))
+        where = f" {view['partition_name']}:" if view.get("partition_name") else ""  # only with more than one partition
+        text = when + where + (" " + " > ".join(names[-4:]) if names else (" " + str(view["sensor_name"]) if view.get("sensor_name") else ""))
         if view.get("cancelled"):
             text += f" ({FALSE_ALARM[language_of(language)]})"
         return text

@@ -99,7 +99,7 @@ el estado de la alarma se conserva.
 0. **Novedad: el asistente de configuración.** Cuando la configuración es insuficiente, la pestaña *Resumen* empieza con la tarjeta *Configurar Vigil*, y la tarjeta *¿Listo para usar?* tiene un botón *Asistente de configuración*. El asistente recorre paso a paso los modos, los sensores, el usuario (también creado a partir de una persona de Home Assistant), el canal de notificación (un teléfono con la app en un clic), la sirena y el teclado, y termina con *¿Listo para usar?*. Cada paso se puede omitir, *Continuar más tarde* cierra el asistente y la tarjeta *Reanudar el asistente* te devuelve donde estabas. El asistente usa los mismos formularios que las pestañas y no guarda nada hasta que lo confirmas.
 7. **Mira *¿Listo para usar?*** en la parte superior de la pestaña *Resumen*. Nombra lo que aún falta (un usuario con código, un canal de notificación, un modo que nada vigila, sensores sin sensor de batería) y tiene un botón al lugar correcto. Si aún no tienes un canal de notificación y Home Assistant conoce tu teléfono, un botón lo añade y envía un mensaje de prueba.
 8. **Prueba todo** con los botones *Probar* y activando la alarma y abriendo una puerta. Usa la
-   [guía de pruebas](installatie-en-testen.nl.md) (en neerlandés) para un plan de pruebas completo con sensores virtuales.
+   [guía de pruebas](installation-and-testing.md) (en inglés) para un plan de pruebas completo con sensores virtuales.
 
 ### Sirenas
 
@@ -161,15 +161,15 @@ La anulación deja un sensor aparte hasta que se desactive la alarma (o hasta qu
 
 ### Un teclado táctil
 
-![Los estados del teclado táctil: apagada, no lista, activando, alarma](images/touch-panel-states-en.png)
+![Los estados del teclado táctil: apagada, no lista, activando, alarma](images/touch-panel-states-es.png)
 
 El teclado y la tarjeta Vigil comparten el mismo aspecto. El estado es un **anillo con un icono** del color del estado: verde cuando la alarma está apagada y todo está cerrado, ámbar cuando algo está abierto o durante la activación, naranja durante el retardo de entrada, azul, coral, violeta, turquesa y rosa para en casa, fuera, noche, vacaciones y personalizado, rojo para una alarma (con un marco rojo alrededor de la pantalla), gris sin conexión. Durante los retardos de salida y de entrada el anillo es la **cuenta atrás**: los segundos en el centro, el anillo vaciándose hasta cero; a cero la alarma está activa. Bajo el anillo ves los botones de los modos que este teclado puede usar, o un botón grande *Desactivar* cuando la alarma está activa. Abajo están las pestañas *Alarma*, *Sensores* (con el número de sensores abiertos) e *Info*; el teclado numérico no tiene pestañas.
 
-![Las otras páginas: teclado numérico, sensores, info, activada fuera](images/touch-panel-pages-en.png)
+![Las otras páginas: teclado numérico, sensores, info, activada fuera](images/touch-panel-pages-es.png)
 
 Con *Vacaciones* y *Personalizado* activados hay hasta cinco botones de modo en una fila (el texto se hace más pequeño), y *Apagada* muestra la última alarma bajo el estado:
 
-![Cinco botones de modo con la última alarma, activada vacaciones, activada personalizado, una alarma 24 h](images/touch-panel-modes-en.png)
+![Cinco botones de modo con la última alarma, activada vacaciones, activada personalizado, una alarma 24 h](images/touch-panel-modes-es.png)
 
 
 Con el teclado ESPHome (Guition 4848) activas, desactivas y anulas sensores sin teléfono. Lee

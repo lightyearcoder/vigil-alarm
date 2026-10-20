@@ -12,7 +12,7 @@ const TXT = {
     about: {
       details: "Gegevens", aboutIntro: "Een modulair alarmsysteem voor Home Assistant.",
       version: "Versie", license: "Licentie", author: "Auteur", links: "Links",
-      manual: "Handleiding", manualOther: "Handleiding (English)", repository: "GitHub-project", releases: "Releases op GitHub",
+      manual: "Handleiding", repository: "GitHub-project", releases: "Releases op GitHub",
       issues: "Probleem melden of idee delen", panelDocs: "Aanraakpaneel (ESPHome)", licenseText: "Licentietekst",
       notes: "Release notes", notesOnlyEnglish: "De release notes zijn in het Engels.", noNotes: "Geen release notes gevonden.",
       system: "Systeem", haVersion: "Home Assistant", python: "Python", alarmState: "Alarmstatus", items: "Onderdelen",
@@ -256,7 +256,7 @@ const TXT = {
     about: {
       details: "Details", aboutIntro: "A modular alarm system for Home Assistant.",
       version: "Version", license: "License", author: "Author", links: "Links",
-      manual: "User guide", manualOther: "User guide (Nederlands)", repository: "GitHub project", releases: "Releases on GitHub",
+      manual: "User guide", repository: "GitHub project", releases: "Releases on GitHub",
       issues: "Report a problem or share an idea", panelDocs: "Touch panel (ESPHome)", licenseText: "License text",
       notes: "Release notes", notesOnlyEnglish: "", noNotes: "No release notes found.",
       system: "System", haVersion: "Home Assistant", python: "Python", alarmState: "Alarm state", items: "Items",
@@ -505,7 +505,6 @@ const TXT = {
       "author": "Autor",
       "links": "Links",
       "manual": "Anleitung",
-      "manualOther": "Anleitung (English)",
       "repository": "GitHub-Projekt",
       "releases": "Releases auf GitHub",
       "issues": "Problem melden oder Idee teilen",
@@ -1357,7 +1356,6 @@ const TXT = {
       "author": "Auteur",
       "links": "Liens",
       "manual": "Guide d'utilisation",
-      "manualOther": "Guide d'utilisation (English)",
       "repository": "Projet GitHub",
       "releases": "Versions sur GitHub",
       "issues": "Signaler un problème ou partager une idée",
@@ -2209,7 +2207,6 @@ const TXT = {
       "author": "Autore",
       "links": "Link",
       "manual": "Guida",
-      "manualOther": "Guida (English)",
       "repository": "Progetto GitHub",
       "releases": "Release su GitHub",
       "issues": "Segnala un problema o condividi un'idea",
@@ -3061,7 +3058,6 @@ const TXT = {
       "author": "Autor",
       "links": "Enlaces",
       "manual": "Guía de uso",
-      "manualOther": "Guía de uso (English)",
       "repository": "Proyecto en GitHub",
       "releases": "Versiones en GitHub",
       "issues": "Informar de un problema o compartir una idea",
@@ -3910,6 +3906,7 @@ function panelLanguage(code) {
   return TXT[l] ? l : "en";
 }
 
+const GUIDE_LANGUAGES = { en: "English", nl: "Nederlands", de: "Deutsch", fr: "Français", it: "Italiano", es: "Español" };
 const LOGO_URL = "/vigil_alarm_static/logo.png";
 
 // Small stroke icons (24x24, Lucide style), drawn as SVG without innerHTML.
@@ -4574,7 +4571,7 @@ class VigilPanel extends HTMLElement {
       this._toast(t.cleared);
     };
     return el("div", { class: "card" }, el("h2", { text: t.title }),
-      el("p", { class: m.recording ? "badge warn" : "muted", text: when(m.started) + " · " + cause + " · " + (m.sensor_name || "—") }),
+      el("p", { class: m.recording ? "badge warn" : "muted", text: when(m.started) + (m.partition_name ? " · " + m.partition_name : "") + " · " + cause + " · " + (m.sensor_name || "—") }),
       status ? el("p", { class: "muted", text: status }) : null,
       el("p", { class: "muted", text: t.pathIntro }),
       rows.length ? el("div", { class: "tablewrap" }, el("table", {},
@@ -5188,7 +5185,6 @@ class VigilPanel extends HTMLElement {
     const nl = lang === "nl";
     const L = info.links;
     const own = L["manual_" + lang] ? lang : "en";  // the guide in the language of the panel, English if there is none
-    const other = own === "en" ? "nl" : "en";
     const counts = Object.entries((info.system && info.system.counts) || {})
       .map(([kind, n]) => `${t.tabs[kind] || kind}: ${n}`).join(", ");
     const report = [
@@ -5211,7 +5207,9 @@ class VigilPanel extends HTMLElement {
       : [el("p", { class: "note", text: a.noNotes })];
     const links = [
       ["book", L["manual_" + own], a.manual],
-      ["book", L["manual_" + other], a.manualOther],
+      // the guide in every other language, so nobody has to look for it on GitHub
+      ...["en", "nl", "de", "fr", "it", "es"].filter((code) => code !== own && L["manual_" + code])
+        .map((code) => ["book", L["manual_" + code], `${a.manual} (${GUIDE_LANGUAGES[code]})`]),
       ["github", L.repository, a.repository],
       ["tablet", L.panel_docs, a.panelDocs],
       ["tag", L.releases, a.releases],

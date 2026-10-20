@@ -19,9 +19,9 @@ Du kannst Vigil mit einem Tablet bedienen, das ein Home-Assistant-Dashboard zeig
 
 ## Was die Karte tut
 
-![Die Karte auf einem Telefon: nicht bereit, Tastenfeld, Scharfschalten mit Countdown, Alarm](images/card-phone-states-en.png)
+![Die Karte auf einem Telefon: nicht bereit, Tastenfeld, Scharfschalten mit Countdown, Alarm](images/card-phone-states-de.png)
 
-![Die Karte auf einem Tablet: zwei Spalten, Ring und Countdown links, Tasten und Tastenfeld rechts](images/card-tablet-states-en.png)
+![Die Karte auf einem Tablet: zwei Spalten, Ring und Countdown links, Tasten und Tastenfeld rechts](images/card-tablet-states-de.png)
 
 Mit einer Tastatur (ein Tablet mit Tastatur oder ein Computer) kannst du den Code tippen: Ziffern, Rücktaste zum Löschen, Enter zum Bestätigen, Escape zum Schließen des Tastenfelds.
 

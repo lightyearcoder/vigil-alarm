@@ -500,7 +500,8 @@
       if (!m || !m.time) return "";
       const time = new Date(m.time * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
       const path = Array.isArray(m.path) ? m.path.map(clean).filter(Boolean).join(" → ") : "";
-      return this.tr("last_alarm") + time + (path ? " " + path : clean(m.sensor) ? " " + clean(m.sensor) : "") + (m.cancelled ? this.tr("false_alarm") : "");
+      const where = clean(m.partition) ? " " + clean(m.partition) + ":" : "";
+      return this.tr("last_alarm") + time + where + (path ? " " + path : clean(m.sensor) ? " " + clean(m.sensor) : "") + (m.cancelled ? this.tr("false_alarm") : "");
     }
     _modeButtons() {
       const p = this._p();

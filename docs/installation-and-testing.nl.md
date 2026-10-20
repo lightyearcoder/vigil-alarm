@@ -265,7 +265,7 @@ Per test dat iets anders uitpakt:
 
 ## 8. Als het niet werkt
 
-Voor een alarm dat iets anders doet dan je verwacht, zie [Mijn alarm doet niet wat ik verwacht](problemen-oplossen.nl.md).
+Voor een alarm dat iets anders doet dan je verwacht, zie [Mijn alarm doet niet wat ik verwacht](troubleshooting.nl.md).
 
 - **"Vigil Alarm" staat niet in de lijst:** controleer het pad `config/custom_components/vigil_alarm/manifest.json`, herstart volledig en ververs de browser. Kijk in het logboek naar `vigil`.
 - **De zijbalk toont geen "Vigil":** alleen beheerders zien hem. Ververs hard, herstart Home Assistant volledig en kijk in het logboek of `vigil` een fout meldt. Er is geen tweede manier om te configureren; blijft het paneel weg, stuur dan de logregel.

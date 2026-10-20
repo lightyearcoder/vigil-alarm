@@ -19,9 +19,9 @@ Vous pouvez utiliser Vigil avec une tablette qui affiche un tableau de bord Home
 
 ## Ce que fait la carte
 
-![La carte sur un téléphone : pas prête, pavé numérique, activation avec compte à rebours, alarme](images/card-phone-states-en.png)
+![La carte sur un téléphone : pas prête, pavé numérique, activation avec compte à rebours, alarme](images/card-phone-states-fr.png)
 
-![La carte sur une tablette : deux colonnes, anneau et compte à rebours à gauche, boutons et pavé numérique à droite](images/card-tablet-states-en.png)
+![La carte sur une tablette : deux colonnes, anneau et compte à rebours à gauche, boutons et pavé numérique à droite](images/card-tablet-states-fr.png)
 
 Avec un clavier (une tablette qui en a un, ou un ordinateur), vous pouvez saisir le code : chiffres, Retour arrière pour effacer, Entrée pour valider, Échap pour fermer le pavé numérique.
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.2
+
+- **The guides show the screenshots in their own language.** The user guides and tablet guides in German, French, Italian and Spanish now show the touch panel and the Vigil card in that language (before: English). The card pictures show the tablet layout in two columns.
+- **The test plan is in English** (`docs/installation-and-testing.md`); the Dutch version is now `installation-and-testing.nl.md`. The README links to both.
+- **The last alarm names the partition** when there is more than one: on the panel (*last alarm*), on the card and in the *Alarm memory* card of the admin panel, e.g. *Garage: Intrusion*.
+- **Cleanup:** unused imports and an unused variable removed from the integration code; no change in behaviour.
+
 ## 0.6.1
 
 - **Guides in German, French, Italian and Spanish for the tablet and for troubleshooting** (`tablet.de.md`, `.fr.md`, `.it.md`, `.es.md` and `troubleshooting.de.md`, `.fr.md`, `.it.md`, `.es.md`), translated by Claude, next to the user guides that came with 0.6.0. The README links to all of them.

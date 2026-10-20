@@ -96,7 +96,7 @@ opnieuw; de alarmstand blijft behouden.
 0. **Nieuw: de installatiewizard.** Is er nog niet genoeg ingesteld, dan staat bovenaan het tabblad *Overzicht* de kaart *Vigil instellen*, en op de kaart *Klaar voor gebruik?* de knop *Installatiewizard*. De wizard loopt stap voor stap langs de standen, de sensoren, de gebruiker (ook te maken van een Home Assistant-persoon), het meldingskanaal (een telefoon met de app in één klik), de sirene en het paneel, en sluit af met *Klaar voor gebruik?*. Elke stap is over te slaan, *Later verder* sluit de wizard en de kaart *Ga verder met de wizard* brengt je terug waar je was. De wizard gebruikt dezelfde formulieren als de tabbladen en slaat niets op zonder dat je dat bevestigt.
 7. **Kijk bij *Klaar voor gebruik?*** bovenaan het tabblad *Overzicht*. Daar staat wat er nog ontbreekt (een gebruiker met code, een meldingskanaal, een modus die niets bewaakt, sensoren zonder batterijsensor), met een knop naar de juiste plek. Heb je nog geen meldingskanaal en kent Home Assistant je telefoon, dan voegt één knop hem toe en stuurt een testmelding.
 8. **Test alles** met de knoppen *Test* en door in te schakelen en een deur te openen. Het
-   [testplan](installatie-en-testen.nl.md) heeft een volledige test met virtuele sensoren.
+   [testplan](installation-and-testing.nl.md) heeft een volledige test met virtuele sensoren.
 
 ### Sirenes
 
@@ -414,7 +414,7 @@ opnieuw aangemaakt.
 
 ## Als het niet werkt
 
-Zie ook **[Mijn alarm doet niet wat ik verwacht](problemen-oplossen.nl.md)**.
+Zie ook **[Mijn alarm doet niet wat ik verwacht](troubleshooting.nl.md)**.
 
 | Probleem | Wat te doen |
 |---|---|

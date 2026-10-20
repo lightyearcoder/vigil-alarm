@@ -90,6 +90,7 @@ class AlarmMemory:
                 "time": rec["started"],
                 "cause": rec.get("cause"),
                 "sensor": rec.get("sensor_name"),
+                "partition": rec.get("partition_name"),  # only with more than one partition
                 "recording": bool(rec.get("recording")),
                 "cancelled": bool(rec.get("cancelled")),
                 "steps": len(rec["path"]),
@@ -115,6 +116,7 @@ class AlarmMemory:
                 self.record.update(
                     started=now, cause=event.get("cause"), sensor=event.get("sensor"),
                     sensor_name=event.get("sensor_name"), recording=True, cancelled=False,
+                    partition=event.get("partition"), partition_name=event.get("partition_name"),
                 )
             self._save()
         elif kind == "disarmed":
@@ -126,6 +128,7 @@ class AlarmMemory:
     def _new(self, now: float, event: dict[str, Any]) -> dict[str, Any]:
         return {
             "started": now, "cause": None, "sensor": event.get("sensor"), "sensor_name": event.get("sensor_name"),
+            "partition": event.get("partition"), "partition_name": event.get("partition_name"),
             "recording": False, "cancelled": False, "ended": None, "ended_by": None, "path": [],
         }
 

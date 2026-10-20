@@ -9,7 +9,6 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
-from types import MappingProxyType
 from typing import Any, Mapping
 
 import voluptuous as vol
@@ -46,7 +45,6 @@ from .const import (
     CONF_ABORT_SECONDS,
     DEFAULT_ABORT_SECONDS,
     ABORT_SECONDS_RANGE,
-    CONF_CHIME,
     CONF_PERMANENT_BYPASS,
     CONF_CHIME_ENTITY,
     CONF_CHIME_SECONDS,

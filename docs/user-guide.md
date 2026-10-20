@@ -96,7 +96,7 @@ the alarm state is kept.
 0. **New: the setup wizard.** When not enough is set up yet, the *Overview* tab starts with the card *Set up Vigil*, and the card *Ready for use?* has a *Setup wizard* button. The wizard goes step by step through the modes, the sensors, the user (also made from a Home Assistant person), the notification channel (a phone with the app in one click), the siren and the panel, and ends with *Ready for use?*. Every step can be skipped, *Continue later* closes the wizard and the card *Continue the wizard* brings you back where you were. The wizard uses the same forms as the tabs and saves nothing until you confirm it.
 7. **Look at *Ready for use?*** at the top of the *Overview* tab. It names what is still missing (a user with a code, a notification channel, a mode that nothing watches, sensors without a battery sensor) and has a button to the right place. If you have no notification channel yet and Home Assistant knows your phone, one button adds it and sends a test message.
 8. **Test everything** with the *Test* buttons and by arming and opening a door. Use the
-   [test guide](installatie-en-testen.nl.md) (Dutch) for a full test plan with virtual sensors.
+   [test guide](installation-and-testing.md) for a full test plan with virtual sensors.
 
 ### Sirens
 

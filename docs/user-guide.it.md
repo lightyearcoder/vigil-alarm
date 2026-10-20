@@ -99,7 +99,7 @@ lo stato dell'allarme viene mantenuto.
 0. **Novità: la procedura guidata di configurazione.** Quando la configurazione è insufficiente, la scheda *Panoramica* comincia con la scheda *Configura Vigil*, e la scheda *Pronto all'uso?* ha un pulsante *Procedura guidata di configurazione*. La procedura passa passo per passo per modalità, sensori, utente (creato anche da una persona di Home Assistant), canale di notifica (un telefono con l'app in un clic), sirena e tastiera, e termina con *Pronto all'uso?*. Ogni passo si può saltare, *Continua più tardi* chiude la procedura e la scheda *Riprendi la procedura* ti riporta dov'eri. La procedura usa gli stessi moduli delle schede e non salva nulla prima della tua conferma.
 7. **Guarda *Pronto all'uso?*** in cima alla scheda *Panoramica*. Nomina ciò che ancora manca (un utente con un codice, un canale di notifica, una modalità che nulla sorveglia, sensori senza sensore di batteria) e ha un pulsante verso il punto giusto. Se non hai ancora un canale di notifica e Home Assistant conosce il tuo telefono, un pulsante lo aggiunge e invia un messaggio di prova.
 8. **Prova tutto** con i pulsanti *Test* e inserendo l'allarme e aprendo una porta. Usa la
-   [guida ai test](installatie-en-testen.nl.md) (in olandese) per un piano di prova completo con sensori virtuali.
+   [guida ai test](installation-and-testing.md) (in inglese) per un piano di prova completo con sensori virtuali.
 
 ### Sirene
 
@@ -161,15 +161,15 @@ L'esclusione mette da parte un sensore fino alla disattivazione dell'allarme (o 
 
 ### Una tastiera touch
 
-![Gli stati della tastiera touch: disattivato, non pronto, inserimento, allarme](images/touch-panel-states-en.png)
+![Gli stati della tastiera touch: disattivato, non pronto, inserimento, allarme](images/touch-panel-states-it.png)
 
 La tastiera e la scheda Vigil condividono lo stesso aspetto. Lo stato è un **anello con un'icona** del colore dello stato: verde quando l'allarme è disattivato e tutto è chiuso, ambra quando qualcosa è aperto o durante l'inserimento, arancione durante il ritardo d'ingresso, blu, corallo, viola, turchese e rosa per casa, fuori casa, notte, vacanza e personalizzato, rosso per un allarme (con una cornice rossa attorno allo schermo), grigio senza connessione. Durante i ritardi d'uscita e d'ingresso l'anello è il **conto alla rovescia**: i secondi al centro, l'anello che si svuota fino a zero; a zero l'allarme è attivo. Sotto l'anello vedi i pulsanti delle modalità che questa tastiera può usare, oppure un grande pulsante *Disattiva* quando l'allarme è attivo. In basso ci sono le schede *Allarme*, *Sensori* (con il numero di sensori aperti) e *Info*; il tastierino numerico non ha schede.
 
-![Le altre pagine: tastierino numerico, sensori, info, inserito fuori casa](images/touch-panel-pages-en.png)
+![Le altre pagine: tastierino numerico, sensori, info, inserito fuori casa](images/touch-panel-pages-it.png)
 
 Con *Vacanza* e *Personalizzato* attivati ci sono fino a cinque pulsanti di modalità in una riga (il testo diventa più piccolo), e *Disattivato* mostra l'ultimo allarme sotto lo stato:
 
-![Cinque pulsanti di modalità con l'ultimo allarme, inserito vacanza, inserito personalizzato, un allarme 24 h](images/touch-panel-modes-en.png)
+![Cinque pulsanti di modalità con l'ultimo allarme, inserito vacanza, inserito personalizzato, un allarme 24 h](images/touch-panel-modes-it.png)
 
 
 Con la tastiera ESPHome (Guition 4848) inserisci, disattivi ed escludi sensori senza telefono. Legge

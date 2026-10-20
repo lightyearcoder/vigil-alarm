@@ -595,3 +595,22 @@ async def test_a_tamper_sensor_can_be_given_a_partition_or_all(hass):
     assert edit_sensor(entry, None, "X", {**raw, "tamper_partition": "p_gar"})["partition"] == "p_gar"
     with pytest.raises(EditError):
         edit_sensor(entry, None, "X", {**raw, "tamper_partition": "nope"})
+
+
+async def test_the_last_alarm_says_in_which_partition_it_was(hass):
+    """0.6.2: with more than one partition the alarm memory names the partition, also in the line for the panel."""
+    entry, home, garage, everything = await house(hass)
+    manager = entry.runtime_data
+    await act(hass, garage, "alarm_arm_away", code="1234")
+    hass.states.async_set("binary_sensor.garage_door", "on")
+    await hass.async_block_till_done()
+    assert manager.alarmmemory.view()["partition_name"] == "Garage"
+    assert hass.states.get(home).attributes["last_alarm"]["partition"] == "Garage"
+
+
+async def test_the_last_alarm_names_no_partition_with_one_partition(hass, freezer):
+    from .test_alarm_features import _alarm_in_the_house
+
+    entry, manager = await _alarm_in_the_house(hass, freezer)
+    assert manager.alarmmemory.view()["partition_name"] is None
+    assert hass.states.get("alarm_control_panel.vigil_alarm").attributes["last_alarm"]["partition"] is None

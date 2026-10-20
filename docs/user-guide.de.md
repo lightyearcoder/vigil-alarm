@@ -99,7 +99,7 @@ der Alarmzustand bleibt erhalten.
 0. **Neu: der Einrichtungsassistent.** Wenn noch nicht genug eingerichtet ist, beginnt der Tab *Übersicht* mit der Karte *Vigil einrichten*, und die Karte *Einsatzbereit?* hat die Schaltfläche *Einrichtungsassistent*. Der Assistent führt Schritt für Schritt durch die Modi, die Sensoren, den Benutzer (auch aus einer Home-Assistant-Person erstellt), den Benachrichtigungskanal (ein Handy mit der App mit einem Klick), die Sirene und das Bedienteil und endet mit *Einsatzbereit?*. Jeder Schritt kann übersprungen werden, *Später weitermachen* schließt den Assistenten, und die Karte *Assistent fortsetzen* bringt dich dorthin zurück, wo du warst. Der Assistent benutzt dieselben Formulare wie die Tabs und speichert nichts, bis du bestätigst.
 7. **Sieh dir *Einsatzbereit?* an** oben im Tab *Übersicht*. Es nennt, was noch fehlt (ein Benutzer mit Code, ein Benachrichtigungskanal, ein Modus, den nichts überwacht, Sensoren ohne Batteriesensor) und hat eine Schaltfläche zur richtigen Stelle. Hast du noch keinen Benachrichtigungskanal und Home Assistant kennt dein Handy, fügt eine Schaltfläche ihn hinzu und sendet eine Testnachricht.
 8. **Teste alles** mit den *Test*-Schaltflächen und indem du die Anlage scharfschaltest und eine Tür öffnest. Nutze den
-   [Testleitfaden](installatie-en-testen.nl.md) (Niederländisch) für einen vollständigen Testplan mit virtuellen Sensoren.
+   [Testleitfaden](installation-and-testing.md) (Englisch) für einen vollständigen Testplan mit virtuellen Sensoren.
 
 ### Sirenen
 
@@ -161,15 +161,15 @@ Umgehen lässt einen Sensor aus, bis der Alarm ausgeschaltet wird (oder bis du d
 
 ### Ein Touch-Bedienteil
 
-![Die Zustände des Touch-Bedienteils: aus, nicht bereit, wird scharf, Alarm](images/touch-panel-states-en.png)
+![Die Zustände des Touch-Bedienteils: aus, nicht bereit, wird scharf, Alarm](images/touch-panel-states-de.png)
 
 Das Bedienteil und die Vigil-Karte haben dasselbe Aussehen. Der Zustand ist ein **Ring mit einem Symbol** in der Farbe des Zustands: grün, wenn aus und alles geschlossen ist, bernsteinfarben, wenn etwas offen ist oder beim Scharfschalten, orange während der Eingangsverzögerung, blau, korallenrot, violett, türkis und rosa für Zuhause, Abwesend, Nacht, Urlaub und Benutzerdefiniert, rot bei einem Alarm (mit einem roten Rahmen um den Bildschirm), grau ohne Verbindung. Während der Ausgangs- und Eingangsverzögerung ist der Ring der **Countdown**: die Sekunden in der Mitte, der Ring läuft bis auf leer herunter; bei null ist der Alarm an. Unter dem Ring siehst du die Schaltflächen für die Modi, die dieses Bedienteil nutzen darf, oder eine große Schaltfläche *Unscharf*, wenn der Alarm an ist. Unten sind die Tabs *Alarm*, *Sensoren* (mit der Zahl offener Sensoren) und *Info*; der Ziffernblock hat keine Tabs.
 
-![Die anderen Seiten: Ziffernblock, Sensoren, Info, scharf abwesend](images/touch-panel-pages-en.png)
+![Die anderen Seiten: Ziffernblock, Sensoren, Info, scharf abwesend](images/touch-panel-pages-de.png)
 
 Mit eingeschaltetem *Urlaub* und *Benutzerdefiniert* gibt es bis zu fünf Modus-Schaltflächen in einer Reihe (der Text wird kleiner), und *Aus* zeigt den letzten Alarm unter dem Zustand:
 
-![Fünf Modus-Schaltflächen mit dem letzten Alarm, scharf Urlaub, scharf benutzerdefiniert, ein 24-Stunden-Alarm](images/touch-panel-modes-en.png)
+![Fünf Modus-Schaltflächen mit dem letzten Alarm, scharf Urlaub, scharf benutzerdefiniert, ein 24-Stunden-Alarm](images/touch-panel-modes-de.png)
 
 
 Mit dem ESPHome-Bedienteil (Guition 4848) schaltest du ohne Handy scharf und unscharf und umgehst Sensoren. Es liest
