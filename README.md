@@ -26,6 +26,8 @@
 - **One alarm entity** (`alarm_control_panel`) with the modes *Home*, *Away* and *Night* (and, if you switch them on, *Vacation* and *Custom*), exit
   and entry delays per mode, and codes per user. It works with the standard alarm panel card,
   the tile card and the Companion app.
+- **Partitions:** the house and the garage as separate alarms, each with its own modes and delays, rights, sirens
+  and channels; fire, gas and tamper stay for the whole house, plus an *All* entity.
 - **Sensors with a class:** intrusion (instant, delayed or follower), fire, gas, water and
   tamper, and the 24-hour types (audible and silent). Fire, gas and the 24-hour types always watch; intrusion sensors watch in the modes of their
   **sensor groups**, for example *Perimeter* (doors and windows) in every mode and *Interior*
@@ -85,7 +87,7 @@ Assistant 2026.3.
 3. Arm the alarm from the alarm panel card and open a door to see what happens.
 
 The full manual is in the **[user guide](docs/user-guide.md)**
-(Dutch: **[gebruikershandleiding](docs/gebruikershandleiding.nl.md)**). If the alarm does not do what you expect, see
+(Dutch: **[gebruikershandleiding](docs/user-guide.nl.md)**, German: **[Benutzerhandbuch](docs/user-guide.de.md)**, French: **[guide](docs/user-guide.fr.md)**, Italian: **[guida](docs/user-guide.it.md)**, Spanish: **[guía](docs/user-guide.es.md)**). If the alarm does not do what you expect, see
 **[tablet guide](docs/tablet.md)** (Dutch: [tabletgids](docs/tablet.nl.md)), **[troubleshooting](docs/troubleshooting.md)** (Dutch: [problemen oplossen](docs/problemen-oplossen.nl.md)).
 
 ## Blueprints

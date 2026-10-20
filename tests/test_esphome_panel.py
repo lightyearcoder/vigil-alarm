@@ -54,7 +54,7 @@ def test_every_language_has_every_text():
 def test_every_service_the_panel_calls_exists():
     yaml = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
     services = (ROOT / "custom_components" / "vigil_alarm" / "services.yaml").read_text()
-    for name in ("arm", "disarm", "bypass", "unbypass", "unlock_panel"):
+    for name in ("arm", "disarm", "bypass", "unbypass", "unlock_panel", "select_partition"):
         assert f"action: vigil_alarm.{name}" in yaml
         assert f"\n{name}:" in "\n" + services
 

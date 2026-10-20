@@ -27,10 +27,14 @@ from .const import (
     SUBENTRY_SENSOR,
     SUBENTRY_SENSOR_GROUP,
     SUBENTRY_SIREN,
+    SUBENTRY_PARTITION,
+    CONF_PARTITION,
+    PRIMARY_PARTITION,
     SUBENTRY_USER,
 )
 from .editing import notify_services
 from .items import Item, items_of, new_id, save_stored, stored, stored_items
+from .manager import partition_data
 from .languages import GROUP_NAMES, language_of
 
 MAX_NAMES = 3
@@ -71,18 +75,33 @@ def async_readiness(hass: HomeAssistant, entry: ConfigEntry) -> list[dict[str, A
     intrusion = [s for s in sensors if s.data.get("cls") == "intrusion"]
     if not groups:
         found.append(_finding("no_sensor_groups", "problem", "create_groups"))
-    elif intrusion:
-        watched = {
-            mode
-            for s in intrusion
-            for gid in s.data.get(CONF_SENSOR_GROUPS) or []
-            for g in groups
-            if g.subentry_id == gid
-            for mode in g.data.get(CONF_GROUP_MODES) or []
-        }
-        unwatched = [m for m in modes if m not in watched]
-        if unwatched:
-            found.append(_finding("mode_unwatched", "problem", "sensor_group", modes=", ".join(unwatched)))
+    else:
+        # Every partition on its own: a mode of the garage is not watched by the sensors of the house.
+        parts = [(PRIMARY_PARTITION, "", modes)] + [
+            (i.subentry_id, i.title, list(i.data.get(CONF_MODES, DEFAULT_MODES)))
+            for i in items.values() if i.subentry_type == SUBENTRY_PARTITION
+        ]
+        known = {p for p, _t, _m in parts}
+        for pid, title, pmodes in parts:
+            mine = [s for s in intrusion if (s.data.get(CONF_PARTITION) if s.data.get(CONF_PARTITION) in known
+                                              else PRIMARY_PARTITION) == pid]
+            if not mine:
+                if pid != PRIMARY_PARTITION:
+                    found.append(_finding("partition_empty", "problem", "sensor", partition=title))
+                continue
+            watched = {
+                mode
+                for s in mine
+                for gid in s.data.get(CONF_SENSOR_GROUPS) or []
+                for g in groups
+                if g.subentry_id == gid
+                for mode in g.data.get(CONF_GROUP_MODES) or []
+            }
+            unwatched = [m for m in pmodes if m not in watched]
+            if unwatched and pid == PRIMARY_PARTITION:
+                found.append(_finding("mode_unwatched", "problem", "sensor_group", modes=", ".join(unwatched)))
+            elif unwatched:
+                found.append(_finding("partition_unwatched", "problem", "sensor_group", partition=title, modes=", ".join(unwatched)))
     if not any(u.data.get(CONF_CODE_HASH) for u in of(SUBENTRY_USER)):
         found.append(_finding("no_user_code", "problem", "user"))
     if not of(SUBENTRY_NOTIFICATION):
@@ -129,24 +148,32 @@ def _group_names(language: str) -> dict[str, str]:
     return GROUP_NAMES[language_of(language)]
 
 
-def async_create_default_groups(hass: HomeAssistant, entry: ConfigEntry) -> list[str]:
-    """Add the two usual groups, but only the kinds that do not exist yet. Returns the new ids."""
+def async_create_default_groups(hass: HomeAssistant, entry: ConfigEntry, partition: str = PRIMARY_PARTITION) -> list[str]:
+    """Add the two usual groups to a partition, but only the kinds that partition does not have yet. A group of
+    another partition than the first gets the name of the partition behind its name. Returns the new ids."""
     items = items_of(entry)
-    have = {
-        i.data.get(CONF_SUGGEST_FOR)
-        for i in items.values()
-        if i.subentry_type == SUBENTRY_SENSOR_GROUP
-    }
+    mine = [
+        i for i in items.values()
+        if i.subentry_type == SUBENTRY_SENSOR_GROUP and (i.data.get(CONF_PARTITION) or PRIMARY_PARTITION) == partition
+    ]
+    have = {i.data.get(CONF_SUGGEST_FOR) for i in mine}
     taken = {i.title for i in items.values() if i.subentry_type == SUBENTRY_SENSOR_GROUP}
-    modes = list(entry.data.get(CONF_MODES, DEFAULT_MODES))
+    modes = list(partition_data(entry, partition).get(CONF_MODES) or DEFAULT_MODES)
+    suffix = ""
+    if partition != PRIMARY_PARTITION:
+        suffix = f" ({items[partition].title})"
     wanted = {"contacts": modes, "motion": ["away"] if "away" in modes else modes}
     working = stored_items(entry)
     created: list[str] = []
     for kind, name in _group_names(hass.config.language).items():
+        name += suffix
         if kind in have or name in taken:
             continue
         gid = new_id()
-        working[gid] = stored(SUBENTRY_SENSOR_GROUP, name, {CONF_GROUP_MODES: wanted[kind], CONF_SUGGEST_FOR: kind})
+        data = {CONF_GROUP_MODES: wanted[kind], CONF_SUGGEST_FOR: kind}
+        if partition != PRIMARY_PARTITION:
+            data[CONF_PARTITION] = partition
+        working[gid] = stored(SUBENTRY_SENSOR_GROUP, name, data)
         created.append(gid)
     if created:
         save_stored(hass, entry, working)

@@ -15,7 +15,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
-from .const import ATTR_SENSOR, DOMAIN, MODES, SERVICE_ACKNOWLEDGE, SERVICE_ARM, SERVICE_BYPASS, SERVICE_CHECK_CODE, SERVICE_DISARM, SERVICE_SILENCE, SERVICE_TEST_NOTIFICATION, SERVICE_TEST_SIREN, SERVICE_UNBYPASS, SERVICE_UNLOCK_PANEL
+from .const import ATTR_SENSOR, DOMAIN, MODES, SERVICE_ACKNOWLEDGE, SERVICE_ARM, SERVICE_BYPASS, SERVICE_CHECK_CODE, SERVICE_DISARM, SERVICE_SILENCE, SERVICE_TEST_NOTIFICATION, SERVICE_TEST_SIREN, SERVICE_UNBYPASS, SERVICE_UNLOCK_PANEL, SERVICE_SELECT_PARTITION
 from .manager import SIGNAL_UPDATE, VigilManager
 from .migration import async_migrate_entry  # noqa: F401  (Home Assistant looks it up here)
 from homeassistant.helpers.storage import Store
@@ -97,12 +97,14 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
             await entry.runtime_data.async_arm(
                 call.data["mode"], call.data.get("code"), call.data.get("source"), call.context.user_id,
-                bypass_open=call.data.get("bypass_open", False),
+                bypass_open=call.data.get("bypass_open", False), partition=call.data.get("partition"),
             )
 
     async def disarm(call: ServiceCall) -> None:
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
-            await entry.runtime_data.async_disarm(call.data.get("code"), call.data.get("source"), call.context.user_id)
+            await entry.runtime_data.async_disarm(call.data.get("code"), call.data.get("source"), call.context.user_id,
+                partition=call.data.get("partition"),
+            )
 
     # Arm and disarm with the name of the control point (a panel, a keypad) in the log.
     hass.services.async_register(
@@ -112,9 +114,13 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             vol.Optional("code"): cv.string,
             vol.Optional("source"): cv.string,
             vol.Optional("bypass_open", default=False): cv.boolean,
+            vol.Optional("partition"): cv.string,  # the id of a partition, or "all"; none: the first partition
         }),
     )
-    hass.services.async_register(DOMAIN, SERVICE_DISARM, disarm, schema=code_schema)
+    hass.services.async_register(
+        DOMAIN, SERVICE_DISARM, disarm,
+        schema=code_schema.extend({vol.Optional("partition"): cv.string}),
+    )
 
     async def check_code(call: ServiceCall) -> None:
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
@@ -143,6 +149,22 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             # "sensors": the sensor list, a user code or the installer code; "info": the information pages, the installer code
             vol.Optional("scope", default="info"): vol.In(["sensors", "info"]),
         }),
+    )
+
+    async def select_partition(call: ServiceCall) -> None:
+        found = False
+        for entry in hass.config_entries.async_loaded_entries(DOMAIN):
+            if entry.runtime_data.panels.get(call.data["source"]):
+                found = True
+                entry.runtime_data.panels.select(call.data["source"], call.data["partition"])
+        if not found:
+            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="unknown_panel")
+
+    # A panel that can switch between partitions says which one it shows. It changes what the panel gets to see
+    # (its profile) and nothing else: arming and disarming still name the partition and need a code.
+    hass.services.async_register(
+        DOMAIN, SERVICE_SELECT_PARTITION, select_partition,
+        schema=vol.Schema({vol.Required("source"): cv.string, vol.Required("partition"): cv.string}),
     )
 
     async def test_notification(call: ServiceCall) -> None:
@@ -223,6 +245,14 @@ def _remove_orphans(hass: HomeAssistant, entry: VigilConfigEntry, manager) -> No
     ent_reg = er.async_get(hass)
     for ent in er.async_entries_for_config_entry(ent_reg, entry.entry_id):
         uid = ent.unique_id
+        # The alarm entities of a partition that was removed, and the "all" entity once there is one partition left.
+        if ent.domain == "alarm_control_panel" and uid != entry.entry_id:
+            wanted = {f"{entry.entry_id}_partition_{pid}" for pid in manager.partitions}
+            if manager.multiple:
+                wanted.add(f"{entry.entry_id}_all")
+            if uid not in wanted:
+                ent_reg.async_remove(ent.entity_id)
+            continue
         if uid.startswith(prefix) and uid.count("_") >= 2:
             sid = uid[len(prefix):].rsplit("_", 1)[0]
             if sid not in known and (uid.endswith("_status") or uid.endswith("_bypass") or uid.endswith("_profile")):

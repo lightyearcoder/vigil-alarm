@@ -30,7 +30,7 @@ WALKTEST_MINUTES = 15
 
 
 def _needs_disarmed(manager: VigilManager, key: str) -> None:
-    if manager.engine.state != "disarmed":
+    if not manager.all_disarmed:
         raise ServiceValidationError(translation_domain=DOMAIN, translation_key=key)
 
 
@@ -74,7 +74,7 @@ class Practice:
         # Practice ends while the alarm is still going off (it ran out, or was stopped): from now on it is real,
         # so the siren and the messages that were held back are let through now.
         held, self.muted_trigger = self.muted_trigger, None
-        if held is not None and self.manager.engine.state == "triggered":
+        if held is not None and self.manager.any_triggered:
             self.manager.sirens.handle(held)
             self.manager.notifier.handle(held)
         self.manager.notify_changed()
@@ -140,13 +140,12 @@ class WalkTest:
         if self._timer:
             self._timer()
             self._timer = None
-        engine = self.manager.engine
         names = self.manager._sensor_name
         missing = [
             {
                 "id": sid,
                 "name": names.get(sid, sid),
-                "reason": "unavailable" if engine.sensor_status(sid) == "unavailable" else "no_response",
+                "reason": "unavailable" if self.manager.sensor_status(sid) == "unavailable" else "no_response",
             }
             for sid in self._sensors()
             if sid not in self.seen

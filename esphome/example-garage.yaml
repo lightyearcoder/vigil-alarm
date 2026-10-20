@@ -14,7 +14,6 @@
 substitutions:
   name: vigil-panel-garage      # the panel id in Vigil: lower case letters, digits and dashes
   friendly_name: Vigil panel garage
-  # alarm_entity: alarm_control_panel.vigil_alarm   # only if you renamed it
   # backlight_timeout_seconds: "60"   # only until Vigil has told the panel (setting in Vigil)
 
 esphome:

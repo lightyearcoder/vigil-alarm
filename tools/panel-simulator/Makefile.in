@@ -3,7 +3,7 @@ B := $(CURDIR)/.esphome/build/vigil-panel-hallway
 LVGL ?= $(CURDIR)/lvgl-src
 SRC := $(shell find $(B)/src -name '*.cpp')
 LVSRC := $(shell find $(LVGL)/src -name '*.c')
-FLAGS := -DESPHOME_LOG_LEVEL=ESPHOME_LOG_LEVEL_INFO -DLV_CONF_H=1 -DLV_CONF_PATH=\"$(B)/src/lv_conf.h\" -DLV_KCONFIG_IGNORE -DUSE_HOST -I$(B)/src -I$(LVGL) -I$(LVGL)/src -fno-exceptions -O1 -w
+FLAGS := -DESPHOME_LOG_LEVEL=ESPHOME_LOG_LEVEL_INFO -DLV_CONF_H=1 -DLV_CONF_PATH=\"$(B)/src/lv_conf.h\" -DLV_KCONFIG_IGNORE -DUSE_HOST -DLV_USE_IMAGE=1 -I$(B)/src -I$(LVGL) -I$(LVGL)/src -fno-exceptions -O1 -w
 OBJ := $(patsubst $(B)/src/%.cpp,obj/%.o,$(SRC)) $(patsubst $(LVGL)/src/%.c,obj/lv/%.o,$(LVSRC))
 sim: $(OBJ)
 	g++ -o $@ $(OBJ) -lpthread

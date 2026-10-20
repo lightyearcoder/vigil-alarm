@@ -34,3 +34,10 @@ FALSE_ALARM = {
     "en": "false alarm", "nl": "vals alarm", "de": "Fehlalarm", "fr": "fausse alerte", "it": "falso allarme",
     "es": "falsa alarma",
 }
+
+# The name of the first partition of an installation (the whole house until a second partition is made), and of the
+# entity that arms and disarms all partitions together.
+HOME_NAMES = {"en": "Home", "nl": "Huis", "de": "Haus", "fr": "Maison", "it": "Casa", "es": "Casa"}
+ALL_NAMES = {"en": "All", "nl": "Alles", "de": "Alle", "fr": "Tout", "it": "Tutto", "es": "Todo"}
+# The state of the "all" entity when the partitions are in different states.
+MIXED_NAMES = {"en": "mixed", "nl": "gemengd", "de": "gemischt", "fr": "mixte", "it": "misto", "es": "mixto"}

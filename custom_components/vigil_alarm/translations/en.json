@@ -368,6 +368,12 @@
     },
     "walktest_no_sensors": {
       "message": "There are no intrusion sensors to walk along."
+    },
+    "unknown_partition": {
+      "message": "Unknown partition."
+    },
+    "partition_not_allowed": {
+      "message": "{user} may not use partition {partition}."
     }
   },
   "services": {
@@ -390,6 +396,10 @@
         "bypass_open": {
           "name": "Bypass what stops it",
           "description": "Bypass the sensors that stop arming (for example an open tamper contact) and then arm. Needs the right to bypass; never applies to fire or gas sensors."
+        },
+        "partition": {
+          "name": "Partition",
+          "description": "Which partition: its id, \"main\" for the first one, or \"all\" for all of them. Empty: the first partition."
         }
       }
     },
@@ -404,6 +414,10 @@
         "source": {
           "name": "Source",
           "description": "Name of the control point, for example a panel. It appears in the log and in who changed the alarm."
+        },
+        "partition": {
+          "name": "Partition",
+          "description": "Which partition: its id, \"main\" for the first one, or \"all\" for all of them. Empty: the first partition."
         }
       }
     },
@@ -524,6 +538,20 @@
         "source": {
           "name": "Source",
           "description": "The id of the panel."
+        }
+      }
+    },
+    "select_partition": {
+      "name": "Select partition",
+      "description": "Tells Vigil which partition a panel shows. Only changes what the panel gets to see; arming and disarming still name a partition and need a code.",
+      "fields": {
+        "source": {
+          "name": "Source",
+          "description": "The id of the panel."
+        },
+        "partition": {
+          "name": "Partition",
+          "description": "The id of the partition, or all."
         }
       }
     }

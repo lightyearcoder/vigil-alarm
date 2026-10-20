@@ -153,7 +153,9 @@ async def test_the_card_asks_which_panel_belongs_to_the_logged_in_user(hass, has
     client = await _user_client(hass, hass_ws_client, user)  # not an administrator: still allowed
     got = (await _ws(client, type="vigil_alarm/tablet"))["result"]
     assert got == {"linked": True, "kind": "tablet", "user": "Hall tablet", "panel_id": "hall-tablet", "name": "Hall tablet",
-                   "profile_entity": "sensor.hall_tablet_profile", "alarm_entity": PANEL}
+                   "profile_entity": "sensor.hall_tablet_profile", "alarm_entity": PANEL,
+                   "partitions": [{"id": "main", "name": "Home", "alarm": PANEL, "modes": ["home", "away", "night"]}],
+                   "all_entity": None, "default_partition": "main", "return_seconds": 30, "partition_total": 1}
     assert hass.states.get(got["profile_entity"]) is not None
     assert entry.runtime_data.panels.status()[0]["card"] is True
 

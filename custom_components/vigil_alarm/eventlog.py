@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 STORAGE_VERSION = 1
 SAVE_DELAY = 15  # seconds; Home Assistant also writes it when it stops
 MAX_ENTRIES = 50_000  # a safety limit next to the number of days
-FIELDS = ("time", "event", "source", "user", "item", "result", "detail")
+FIELDS = ("time", "event", "partition", "source", "user", "item", "result", "detail")
 _NEVER = {"code", "code_hash", "code_salt", "duress_hash", "duress_salt", "tags", "tag"}  # events hold none of these; belt and braces
 _SHOWN = {"t", "type", "source", "user", "sensor", "sensor_name", "siren", "name", "rule", "reason", "error", "cause", "mode"}
 
@@ -86,7 +86,16 @@ class EventLog:
         item = event.get("sensor_name") or event.get("siren") or event.get("name")
         if not item and event.get("rule"):
             item = self.manager.rule_name(event["rule"])
-        extra = {k: _plain(v) for k, v in event.items() if k not in _SHOWN and k not in _NEVER}
+        extra = {k: _plain(v) for k, v in event.items() if k not in _SHOWN and k not in _NEVER
+                 and k not in ("partition", "partition_name")}
+        partition = None
+        if pid := event.get("partition"):  # the events of an alarm say which partition they are about
+            part = self.manager.partitions.get(pid)
+            partition = event.get("partition_name") or (part.name if part else None)
+            sensor = self.manager.config.sensors.get(event.get("sensor") or "")
+            if sensor is not None and sensor.cls != "intrusion" and sum(
+                    event["sensor"] in q.config.sensors for q in self.manager.partitions.values()) > 1:
+                partition = None  # a safety sensor that watches in every partition
         if event.get("sensors"):
             extra["sensors"] = [names.get(s, s) for s in event["sensors"]]
         # "Edwin (vigil-panel-garage)" is kept as two facts: the user and where it was done
@@ -94,6 +103,7 @@ class EventLog:
         return {
             "time": rfc3339(event.get("t") or datetime.now(UTC).timestamp()),
             "event": event.get("type"),
+            "partition": partition,
             "source": event.get("source") or via,
             "user": user,
             "item": item,

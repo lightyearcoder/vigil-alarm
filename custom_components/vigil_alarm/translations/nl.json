@@ -368,6 +368,12 @@
     },
     "walktest_no_sensors": {
       "message": "Er zijn geen inbraaksensoren om langs te lopen."
+    },
+    "unknown_partition": {
+      "message": "Onbekende partitie."
+    },
+    "partition_not_allowed": {
+      "message": "{user} mag partitie {partition} niet gebruiken."
     }
   },
   "services": {
@@ -390,6 +396,10 @@
         "bypass_open": {
           "name": "Omzeil wat het tegenhoudt",
           "description": "Omzeil de sensoren die het inschakelen tegenhouden (bijvoorbeeld een open sabotagecontact) en schakel dan in. Vraagt het recht om te omzeilen; geldt nooit voor brand- of gassensoren."
+        },
+        "partition": {
+          "name": "Partitie",
+          "description": "Welke partitie: het id, \"main\" voor de eerste, of \"all\" voor alle. Leeg: de eerste partitie."
         }
       }
     },
@@ -404,6 +414,10 @@
         "source": {
           "name": "Bron",
           "description": "Naam van het bedienpunt, bijvoorbeeld een paneel. Komt in het logboek en bij wie het alarm wijzigde."
+        },
+        "partition": {
+          "name": "Partitie",
+          "description": "Welke partitie: het id, \"main\" voor de eerste, of \"all\" voor alle. Leeg: de eerste partitie."
         }
       }
     },
@@ -524,6 +538,20 @@
         "source": {
           "name": "Bron",
           "description": "Het id van het paneel."
+        }
+      }
+    },
+    "select_partition": {
+      "name": "Partitie kiezen",
+      "description": "Zegt Vigil welke partitie een paneel laat zien. Verandert alleen wat het paneel te zien krijgt; in- en uitschakelen blijft per partitie en met code.",
+      "fields": {
+        "source": {
+          "name": "Source",
+          "description": "De id van het paneel."
+        },
+        "partition": {
+          "name": "Partition",
+          "description": "De id van de partitie, of all."
         }
       }
     }

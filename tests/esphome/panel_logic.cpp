@@ -136,5 +136,37 @@ int main(){
   ctx.bypassed="Broken window"; assert(state_sub(0).find("Bypassed: Broken window")!=std::string::npos);
   ctx.bypassed=""; assert(state_sub(0).find("Bypassed")==std::string::npos);
   ctx.state="triggered"; ctx.cause="alarm24"; assert(cause_text()=="24-hour alarm"); ctx.cause="silent24"; assert(cause_text()=="Silent alarm");
+  // 0.6.0: partitions. One partition on this panel while the house has more: a line with the name, no buttons.
+  ctx=Context(); ctx.lang=EN; ctx.ha_connected=true; ctx.profile_version=PROFILE_VERSION; ctx.sensor_list=LIST_ALWAYS; ctx.state="disarmed"; ctx.modes_mask=2;
+  assert(part_count()==0 && !parts_visible() && !parts_switch() && sel_name()=="");
+  ctx.partition_list="p_gar|Garage|disarmed"; ctx.part_total=1; assert(!parts_visible());  // the house is one partition: nothing to say
+  ctx.part_total=2; assert(parts_visible() && !parts_switch() && part_count()==1 && sel_id()=="p_gar" && sel_name()=="Garage");
+  assert(chip_target(0)=="" && chip_target(4)=="" && state_title()=="Disarmed");  // no buttons, and no name in the title
+  // More than one: a button for each, then "all"; the title names what is on the screen
+  ctx.partition_list="main|Home|armed_away\np_gar|Garage|disarmed\nall||armed_away|mixed"; ctx.sel="p_gar"; ctx.default_part="p_gar";
+  assert(parts_switch() && part_count()==2 && part_rows(true).size()==3 && part_rows(false).size()==2);
+  assert(chip_target(0)=="main" && chip_target(1)=="p_gar" && chip_target(2)=="" && chip_target(4)=="all");
+  assert(part_rows(true)[2].id=="all" && part_rows(true)[2].mixed && part_rows(true)[2].state=="armed_away" && part_rows(true)[0].name=="Home");
+  assert(state_title()=="Garage: Disarmed" && sel_name()=="Garage");
+  ctx.sel=""; assert(sel_id()=="main");  // Vigil says nothing: the first
+  ctx.sel="all"; assert(sel_name()=="All" && !mixed_now());  // only with the flag
+  // "All" with the partitions in different states: Mixed, arm what is not armed, and disarm; not while it is going off
+  ctx.mixed=true; ctx.state="armed_away"; ctx.modes_mask=3;
+  assert(mixed_now() && state_title()=="All: Mixed" && state_color()==COL_WARN && state_icon()==VIGIL_ICON_SHIELD_ALERT);
+  assert(show_home()&&show_away()&&!show_night()&&show_disarm() && state_sub(0)=="Home: Away, Garage: Disarmed");
+  ctx.state="triggered"; assert(!mixed_now() && !show_home() && show_disarm() && state_title()=="All: ALARM");
+  ctx.state="armed_away"; ctx.mixed=false; assert(!mixed_now() && !show_home() && show_disarm() && state_title()=="All: Away");
+  // the colours of the buttons come from the states of the partitions
+  assert(color_of_state("disarmed")==COL_OK && color_of_state("armed_home")==COL_HOME && color_of_state("nonsense")==COL_OFF);
+  // back to the default after the time Vigil says, not while it counts down or goes off, not when it is there already
+  ctx.sel="main"; ctx.state="disarmed"; ctx.return_seconds=30;
+  assert(!should_return_to_default(29000) && should_return_to_default(30000) && should_return_to_default(60000));
+  ctx.return_seconds=0; assert(!should_return_to_default(600000)); ctx.return_seconds=30;
+  ctx.sel="p_gar"; assert(!should_return_to_default(60000));
+  ctx.sel="main"; for (auto st : {"arming","pending","triggered"}) { ctx.state=st; assert(!should_return_to_default(60000)); }
+  ctx.state="armed_home"; assert(should_return_to_default(60000)); ctx.default_part=""; assert(!should_return_to_default(60000));
+  ctx.default_part="p_gar"; ctx.partition_list="p_gar|Garage|disarmed"; ctx.sel="p_gar"; assert(!should_return_to_default(60000));  // one partition: nothing to switch
+  // the sensor list of a panel with partitions has a fifth field (the partition): the panel reads the first four
+  ctx.sensors="Door|binary_sensor.door|open|1|main\nSmoke|binary_sensor.smoke|closed|0|\n"; assert(sensor_count()==2 && row_at(0,0).bypassable && !row_at(0,1).bypassable && row_at(0,0).status=="open");
   std::cout << "ok\n";
 }

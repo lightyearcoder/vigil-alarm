@@ -368,6 +368,12 @@
     },
     "walktest_no_sensors": {
       "message": "Es gibt keine Einbruchsensoren zum Abgehen."
+    },
+    "unknown_partition": {
+      "message": "Unbekannte Partition."
+    },
+    "partition_not_allowed": {
+      "message": "{user} darf die Partition {partition} nicht verwenden."
     }
   },
   "services": {
@@ -390,6 +396,10 @@
         "bypass_open": {
           "name": "Überbrücken, was es verhindert",
           "description": "Überbrückt die Sensoren, die das Scharfschalten verhindern (zum Beispiel einen offenen Sabotagekontakt) und schaltet dann scharf. Erfordert das Überbrückungsrecht; gilt nie für Brand- oder Gassensoren."
+        },
+        "partition": {
+          "name": "Partition",
+          "description": "Welche Partition: ihre ID, \"main\" für die erste oder \"all\" für alle. Leer: die erste Partition."
         }
       }
     },
@@ -404,6 +414,10 @@
         "source": {
           "name": "Quelle",
           "description": "Name der Bedienstelle, zum Beispiel ein Bedienteil. Er erscheint im Protokoll und dort, wo steht, wer die Alarmanlage geändert hat."
+        },
+        "partition": {
+          "name": "Partition",
+          "description": "Welche Partition: ihre ID, \"main\" für die erste oder \"all\" für alle. Leer: die erste Partition."
         }
       }
     },
@@ -524,6 +538,20 @@
         "source": {
           "name": "Quelle",
           "description": "Die ID des Bedienteils."
+        }
+      }
+    },
+    "select_partition": {
+      "name": "Partition wählen",
+      "description": "Teilt Vigil mit, welche Partition ein Panel anzeigt. Ändert nur, was das Panel zu sehen bekommt; Scharf- und Unscharfschalten nennen weiterhin eine Partition und brauchen einen Code.",
+      "fields": {
+        "source": {
+          "name": "Source",
+          "description": "Die ID des Panels."
+        },
+        "partition": {
+          "name": "Partition",
+          "description": "Die ID der Partition oder all."
         }
       }
     }

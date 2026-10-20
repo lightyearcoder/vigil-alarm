@@ -27,6 +27,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_ALLOWED_MODES,
+    MODES,
     MODE_BITS,
     CONF_BLOCKED,
     CONF_CAN_BYPASS,
@@ -42,12 +43,18 @@ from .const import (
     DOMAIN,
     PANEL_OFFLINE_SECONDS,
     CONF_SCREEN_OFF_ON_ALARM,
+    CONF_DEFAULT_PARTITION,
+    CONF_PARTITION_RETURN_SECONDS,
+    DEFAULT_PARTITION_RETURN_SECONDS,
+    ALL_PARTITIONS,
     CONF_SCREEN_OFF_SECONDS,
     DEFAULT_SCREEN_OFF_ON_ALARM,
     DEFAULT_SCREEN_OFF_SECONDS,
     PROFILE_VERSION,
+    PRIMARY_PARTITION,
     SUBENTRY_PANEL,
 )
+from .vigil_core import aggregate
 from .credentials import code_matches, find_user_by_code
 from .items import Item, items_of
 from .languages import FALSE_ALARM, language_of
@@ -77,10 +84,16 @@ def admin_bucket(panel_id: str) -> str:
     return f"admin:{panel_id}"
 
 
+def _ha_state(state: str) -> str:
+    """The state as Home Assistant calls it (the engine says armed_custom, Home Assistant armed_custom_bypass)."""
+    return "armed_custom_bypass" if state == "armed_custom" else state
+
+
 class PanelRegistry:
     def __init__(self, hass: HomeAssistant, manager: VigilManager) -> None:
         self.hass = hass
         self.manager = manager
+        self._selected: dict[str, str] = {}  # panel id -> the partition it shows when that is not its default; only in memory
         self._unlocked: dict[str, CALLBACK_TYPE] = {}  # panel id -> cancel the timer; only in memory
         self._since: dict[str, float] = {}  # panel id -> when we first saw it without a connection
         self._offline: set[str] = set()
@@ -142,10 +155,75 @@ class PanelRegistry:
         return {p.data[CONF_PANEL_ID] for p in self.items()}
 
     # --------------------------------------------------------------- profile
-    def allowed_modes(self, panel: Item) -> list[str]:
-        modes = list(self.manager.config.modes)
+    def allowed_partitions(self, panel: Item) -> list[str]:
+        """The partitions this panel may use, in the order of the installation (all of them when none is chosen)."""
+        return self.manager.allowed_partitions(panel, list(self.manager.partitions))
+
+    def allowed_modes(self, panel: Item, partition: str | None = None) -> list[str]:
+        """The modes the panel may arm in a partition (the first one it may use when none is given)."""
+        default = self.default_partition(panel)
+        pid = partition or (default if default != ALL_PARTITIONS else (self.allowed_partitions(panel) or [PRIMARY_PARTITION])[0])
+        part = self.manager.partitions.get(pid) or self.manager.partitions[PRIMARY_PARTITION]
+        modes = list(part.config.modes)
         chosen = panel.data.get(CONF_ALLOWED_MODES) or modes
         return [m for m in modes if m in chosen]
+
+    def default_partition(self, panel: Item) -> str:
+        """The partition the panel shows first: its choice (an id, or "all" when it may use more than one), else the
+        first one it may use."""
+        allowed = self.allowed_partitions(panel) or [PRIMARY_PARTITION]
+        want = panel.data.get(CONF_DEFAULT_PARTITION)
+        if want == ALL_PARTITIONS and len(allowed) > 1:
+            return ALL_PARTITIONS
+        return want if want in allowed else allowed[0]
+
+    def partition_for(self, source: str | None, partition: str | None) -> str | None:
+        """The partition a call is for: the one it names; none named from a registered panel or tablet means the
+        partition that panel starts on, so a panel that may only use the garage never ends up at the house."""
+        if partition:
+            return partition
+        panel = self.get(source)
+        return self.default_partition(panel) if panel is not None else None
+
+    def selected(self, panel: Item) -> str:
+        """What the panel shows now: what it chose last (an id, or "all"), as long as it may still use that."""
+        allowed = self.allowed_partitions(panel) or [PRIMARY_PARTITION]
+        want = self._selected.get(panel.data[CONF_PANEL_ID])
+        if want == ALL_PARTITIONS and len(allowed) > 1:
+            return ALL_PARTITIONS
+        return want if want in allowed else self.default_partition(panel)
+
+    def select(self, source: str | None, partition: str) -> None:
+        """A panel that can switch tells Vigil which partition it shows; the profile follows."""
+        panel = self.get(source)
+        allowed = self.allowed_partitions(panel) if panel is not None else []
+        if panel is None or not (partition in allowed or (partition == ALL_PARTITIONS and len(allowed) > 1)):
+            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="unknown_panel")
+        pid = panel.data[CONF_PANEL_ID]
+        if partition == self.default_partition(panel):
+            self._selected.pop(pid, None)
+        else:
+            self._selected[pid] = partition
+        self.manager.notify_changed()
+
+    def return_seconds(self) -> int:
+        """After this long without touch a screen that can switch goes back to its default partition (0: never)."""
+        return int(self.manager.entry.data.get(CONF_PARTITION_RETURN_SECONDS, DEFAULT_PARTITION_RETURN_SECONDS))
+
+    def partitions_of(self, panel: Item) -> list[dict[str, Any]]:
+        """What the panel may use: for each partition its name, its alarm entity and the modes it may arm."""
+        registry = er.async_get(self.hass)
+        entry_id = self.manager.entry.entry_id
+        out = []
+        for pid in self.allowed_partitions(panel):
+            part = self.manager.partitions[pid]
+            uid = entry_id if part.primary else f"{entry_id}_partition_{pid}"
+            out.append({
+                "id": pid, "name": part.name,
+                "alarm": registry.async_get_entity_id("alarm_control_panel", DOMAIN, uid),
+                "modes": self.allowed_modes(panel, pid),
+            })
+        return out
 
     def language(self, panel: Item) -> str:
         return language_of(panel.data.get(CONF_LANGUAGE) or self.hass.config.language)
@@ -162,15 +240,51 @@ class PanelRegistry:
         sensor_list = d.get(CONF_SENSOR_LIST, "code")
         visible = not blocked and (sensor_list == "always" or (sensor_list == "code" and unlocked))
         registry = er.async_get(self.hass)
-        alarm = registry.async_get_entity_id("alarm_control_panel", DOMAIN, self.manager.entry.entry_id)
-        snap = self.manager.snapshot()
+        shown = self.partitions_of(panel)
+        default = self.default_partition(panel)
+        chosen = self.selected(panel) if shown else default
+        allowed = [e["id"] for e in shown]
+        ids = allowed if chosen == ALL_PARTITIONS else [chosen]  # what the screen shows now
+        first = next((e for e in shown if e["id"] == default), shown[0] if shown else None)  # an older firmware knows one
+        alarm = first["alarm"] if first else None
+        snaps = {pid: self.manager.snapshot(pid) for pid in ids}
+        snap = next(iter(snaps.values()))
+        total = lambda key: sum(len(sn[key]) for sn in snaps.values())  # noqa: E731
+        joined = lambda key: ", ".join(dict.fromkeys(x for sn in snaps.values() for x in sn[key]))  # noqa: E731
+        states = {pid: self.manager.partitions[pid].engine.state for pid in ids}
+        view = aggregate(states) if len(ids) > 1 else None
+        busy = min((sn["delay_end"] for sn in snaps.values() if sn["delay_end"]), default=None)
+        raised = next((sn for sn in snaps.values() if self.manager.partitions[sn["partition"]].engine.state == "triggered"), snap)
+        modes = [m for m in MODES if any(m in self.allowed_modes(panel, q) for q in ids)]
+        every = aggregate({e["id"]: self.manager.partitions[e["id"]].engine.state for e in shown})
+        rows = [f"{e['id']}|{e['name'].replace('|', '/')}|{_ha_state(self.manager.partitions[e['id']].engine.state)}" for e in shown]
+        if len(shown) > 1:
+            rows.append(f"{ALL_PARTITIONS}||{_ha_state(every.ha_state)}{'|mixed' if every.mixed else ''}")
         profile: dict[str, Any] = {
             "profile_version": PROFILE_VERSION,
             "name": panel.title,
             "panel_id": pid,
             "language": self.language(panel),
-            "alarm": [alarm] if alarm else [],
-            "allowed_modes": [] if blocked else self.allowed_modes(panel),
+            "alarm": [alarm] if alarm else [],  # the partition it starts on; an older firmware knows no other
+            "partitions": [] if blocked else shown,
+            "default_partition": default,
+            "selected_partition": chosen,
+            "partition_return_seconds": self.return_seconds(),
+            "partition_total": len(self.manager.partitions),
+            # For a firmware that can switch: "id|name|state" per partition it may use, then "all||state" when it may
+            # use more than one. The state is what the chip is coloured by.
+            "partition_list": "" if blocked else "\n".join(rows),
+            # What the screen shows, of the partition on screen (or added up for "all"): the firmware reads these
+            # instead of the alarm entity, so it needs no entity per partition.
+            "view_state": _ha_state(view.ha_state if view else states.get(ids[0], "disarmed")),
+            "view_mixed": bool(view and view.mixed),
+            "view_mode": "" if view or not snap["mode"] else snap["mode"],
+            "view_delay_left": round(max(0.0, busy - dt_util.utcnow().timestamp()), 1) if busy else "",
+            "view_changed_by": self.manager.changed_by or "",
+            "view_changed_via": self.manager.changed_via or "",
+            "view_cause": raised["cause"] or "",
+            "view_cause_sensor": raised["cause_sensor"] or "",
+            "allowed_modes": [] if blocked else modes,
             "can_disarm": not blocked and bool(d.get(CONF_CAN_DISARM, True)),
             "can_bypass": not blocked and bool(d.get(CONF_CAN_BYPASS, True)),
             "can_silence": not blocked and bool(d.get(CONF_CAN_SILENCE, True)),
@@ -183,9 +297,9 @@ class PanelRegistry:
             "has_admin_code": bool(d.get("code_hash")),
             "unlocked": unlocked,
             "kind": "tablet" if d.get(CONF_HA_USER) else "esphome",
-            "modes_mask": 0 if blocked else sum(MODE_BITS[m] for m in self.allowed_modes(panel)),
-            "open_count": len(snap["open_now"]),
-            "faults_count": len(snap["faults"]),
+            "modes_mask": 0 if blocked else sum(MODE_BITS[m] for m in modes),
+            "open_count": sum(sn["open_now_count"] for sn in snaps.values()),
+            "faults_count": total("faults"),
             "problems_count": len(snap["problems"]),
             "open_now_text": "",
             "open_sensors_text": "",
@@ -194,13 +308,24 @@ class PanelRegistry:
             "bypassed_text": "",
             "sensors": "",
         }
+        # Per partition the panel may use: what it needs to show that partition (names only when it may show them).
+        for entry in profile["partitions"]:
+            psnap = self.manager.snapshot(entry["id"])
+            entry.update({
+                "open_count": len(psnap["open_now"]), "faults_count": len(psnap["faults"]),
+                "open_now_text": ", ".join(psnap["open_now"]) if visible else "",
+                "open_sensors_text": ", ".join(psnap["open_sensors"]) if visible else "",
+                "faults_text": ", ".join(psnap["faults"]) if visible else "",
+                "bypassed_text": ", ".join(psnap["bypassed_sensors"]) if visible else "",
+            })
+        profile["sensors_all"] = self.manager.panel_rows([e["id"] for e in shown]) if visible and len(shown) > 1 else ""
         if visible:
-            profile["open_now_text"] = ", ".join(snap["open_now"])
-            profile["open_sensors_text"] = ", ".join(snap["open_sensors"])
-            profile["faults_text"] = ", ".join(snap["faults"])
-            profile["sensors"] = snap["panel_sensors"]
+            profile["open_now_text"] = joined("open_now")
+            profile["open_sensors_text"] = joined("open_sensors")
+            profile["faults_text"] = joined("faults")
+            profile["sensors"] = self.manager.panel_rows(ids) if len(ids) > 1 else snap["panel_sensors"]
             profile["last_alarm_text"] = self._last_alarm_text(profile["language"])
-            profile["bypassed_text"] = ", ".join(snap["bypassed_sensors"])
+            profile["bypassed_text"] = joined("bypassed_sensors")
         return profile
 
     def _last_alarm_text(self, language: str) -> str:
@@ -217,7 +342,7 @@ class PanelRegistry:
         return text
 
     # ------------------------------------------------------------ enforcement
-    def check(self, source: str | None, action: str, mode: str | None = None) -> Item | None:
+    def check(self, source: str | None, action: str, mode: str | None = None, partition: str | None = None) -> Item | None:
         """Refuse (and log) a call the profile of a registered panel does not allow. Returns the panel."""
         panel = self.get(source)
         if panel is None:
@@ -225,7 +350,9 @@ class PanelRegistry:
         reason: str | None = None
         if panel.data.get(CONF_BLOCKED):
             reason = "blocked"
-        elif action == "arm" and mode not in self.allowed_modes(panel):
+        elif partition and partition not in self.allowed_partitions(panel):
+            reason = "partition"
+        elif action == "arm" and mode not in self.allowed_modes(panel, partition):
             reason = "mode"
         elif (need := _NEEDS.get(action)) and not panel.data.get(need, True):
             reason = need

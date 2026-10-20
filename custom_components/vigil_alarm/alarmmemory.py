@@ -45,8 +45,7 @@ class AlarmMemory:
     async def async_load(self) -> None:
         stored = await self._store.async_load()
         self.record = (stored or {}).get("record")
-        engine = self.manager.engine
-        if self.record and self.record.get("recording") and engine.state == "disarmed":
+        if self.record and self.record.get("recording") and self.manager.all_disarmed:
             self.record["recording"] = False  # it was disarmed while Home Assistant was off
 
     async def async_flush(self) -> None:

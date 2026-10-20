@@ -29,6 +29,7 @@ from .const import (
     CONF_CONTROL,
     CONF_LIGHT,
     CONF_MAX_DURATION,
+    CONF_PARTITIONS,
     CONF_REPEAT_EVERY,
     CONF_TONE,
     CONF_TONE_ENTITY,
@@ -60,6 +61,7 @@ class Siren:
     repeat_every: float
     causes: frozenset[str]
     profiles: dict[str, dict[str, str]]
+    partitions: frozenset[str] = frozenset()  # sounds for an intrusion in these partitions; empty: all of them
 
 
 @dataclass
@@ -92,6 +94,7 @@ class SirenController:
                     float(d.get(CONF_REPEAT_EVERY, 0)),
                     frozenset(d.get(CONF_CAUSES, SIREN_CAUSES)),
                     {c: dict(d[c]) for c in PROFILE_CAUSES if d.get(c)},
+                    frozenset(d.get(CONF_PARTITIONS) or ()),
                 )
             )
         self._active: dict[str, _Active] = {}
@@ -107,27 +110,40 @@ class SirenController:
     def handle(self, event: dict[str, Any]) -> None:
         kind = event["type"]
         if kind in ("triggered", "trigger_cause_changed"):
-            self._begin(event["cause"], event.get("sensor"))
+            self._begin(event["cause"], event.get("sensor"), event.get("partition"))
         elif kind in ENDING:
-            self._end("alarm_ended")
+            self._end("alarm_ended", event.get("partition"))
 
     @callback
     def resume_after_restart(self) -> None:
-        engine = self.manager.engine
-        if engine.state == "triggered" and engine.cause:
-            self._begin(engine.cause, engine.cause_sensor)
+        for part in self.manager.alarming():
+            if part.engine.cause:
+                self._begin(part.engine.cause, part.engine.cause_sensor, part.id)
+
+    @staticmethod
+    def serves(siren: Siren, cause: str, partition: str | None) -> bool:
+        """Does this siren sound for an alarm in this partition? An alarm from a safety sensor (fire, gas, water,
+        tamper, 24 hour) is for the whole house: every siren sounds, whatever partitions it was given."""
+        return cause != "intrusion" or not siren.partitions or partition in siren.partitions or partition is None
 
     @callback
-    def _begin(self, cause: str, sensor_id: str | None) -> None:
+    def _begin(self, cause: str, sensor_id: str | None, partition: str | None = None) -> None:
         for siren in self.sirens:
+            if not self.serves(siren, cause, partition):
+                continue
             # a 24 hour audible alarm sounds the sirens that sound for an intrusion
             if cause in siren.causes or (cause == "alarm24" and "intrusion" in siren.causes):
                 self.hass.async_create_task(self._async_start(siren, cause, sensor_id))
 
     @callback
-    def _end(self, reason: str) -> None:
+    def _end(self, reason: str, partition: str | None = None) -> None:
+        """Stop the sirens, except those that still have an alarm somewhere else (an intrusion in another
+        partition they serve, or an alarm from a safety sensor, which is house wide)."""
+        elsewhere = self.manager.alarming(exclude=partition) if partition else []
         # Always queued: a start that is still waiting in the queue must be undone too.
         for siren in self.sirens:
+            if any(self.serves(siren, p.engine.cause or "intrusion", p.id) for p in elsewhere):
+                continue
             self.hass.async_create_task(self._async_stop(siren, reason))
 
     @callback
@@ -265,7 +281,7 @@ class SirenController:
 
     async def async_test(self, name: str | None, duration: float) -> int:
         """Sound the siren(s) briefly, to check that they respond."""
-        if self.manager.engine.state == "triggered":
+        if self.manager.any_triggered:
             raise ServiceValidationError(translation_domain=DOMAIN, translation_key="alarm_active")
         chosen = [s for s in self.sirens if name in (None, s.name)]
         for siren in chosen:
@@ -276,7 +292,7 @@ class SirenController:
     def _test_off(self, siren: Siren):
         @callback
         def fire(_now: datetime) -> None:
-            if self.manager.engine.state != "triggered":  # a real alarm keeps its siren
+            if not self.manager.any_triggered:  # a real alarm keeps its siren
                 self.hass.async_create_task(self._switch(siren, siren.control, False))
 
         return fire

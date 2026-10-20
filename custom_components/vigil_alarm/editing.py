@@ -70,6 +70,21 @@ from .const import (
     CONF_SUGGEST_FOR,
     SUGGEST_FOR,
     CONF_MODES,
+    CONF_PARTITION,
+    CONF_PARTITIONS,
+    CONF_DEFAULT_PARTITION,
+    ALL_PARTITIONS,
+    CONF_PARTITION_NAME,
+    CHIME_DOMAINS,
+    CONF_CHIME_ENTITY,
+    CONF_DEFAULT_ENTRY_DELAY,
+    CONF_EXIT_DELAY,
+    CONF_TRIGGER_TIME,
+    DEFAULT_EXIT_DELAY,
+    DEFAULT_MODES,
+    MODES,
+    PRIMARY_PARTITION,
+    SUBENTRY_PARTITION,
     CONF_SENSORS,
     PROFILE_CAUSES,
     SUBENTRY_RULE,
@@ -81,7 +96,7 @@ from .const import (
     SUBENTRY_SENSOR_GROUP,
 )
 from .credentials import code_matches, duress_matches, hash_code
-from .manager import build_config
+from .manager import all_enabled_modes, build_config, partition_data
 from .vigil_core import ConfigError
 
 CONF_NAME = "name"
@@ -149,11 +164,14 @@ async def async_prepare(
         return name, _siren(entry, sub, name, raw)
     if kind == SUBENTRY_PANEL:
         return name, await _panel(hass, entry, sub, name, raw)
+    if kind == SUBENTRY_PARTITION:
+        return name, _partition(entry, sub, name, raw)
     raise EditError({"base": "unknown_kind"})
 
 
 def _sensor(entry: ConfigEntry, sub: Item | None, name: str, raw: dict[str, Any]) -> dict[str, Any]:
     data = {k: v for k, v in raw.items() if k != CONF_NAME}
+    tamper_partition = data.pop("tamper_partition", None)  # a tamper sensor: one partition, or all (stored as nothing)
     if data.get(CONF_ON_UNAVAILABLE) in ("default", "", None):
         data.pop(CONF_ON_UNAVAILABLE, None)
     data.pop(CONF_SENSOR_MODES, None)  # modes come from the sensor groups now
@@ -168,6 +186,17 @@ def _sensor(entry: ConfigEntry, sub: Item | None, name: str, raw: dict[str, Any]
         if any(g not in known for g in groups):
             raise EditError({CONF_SENSOR_GROUPS: "unknown_sensor_group"})
         data[CONF_SENSOR_GROUPS] = groups
+    _partition_of_sensor(entry, data)
+    if data.get(CONF_CLS) == "tamper" and tamper_partition not in (None, "", ALL_PARTITIONS):
+        if tamper_partition not in partition_names(entry):
+            raise EditError({"tamper_partition": "unknown_partition"})
+        data[CONF_PARTITION] = tamper_partition
+    if data.get(CONF_CLS) == "intrusion":
+        mine = data.get(CONF_PARTITION) or PRIMARY_PARTITION
+        for gid in data[CONF_SENSOR_GROUPS]:
+            group = items_of(entry)[gid]
+            if (group.data.get(CONF_PARTITION) or PRIMARY_PARTITION) != mine:  # a group belongs to one partition
+                raise EditError({CONF_SENSOR_GROUPS: "group_other_partition"}, {"group": group.title})
     if data.get(CONF_CLS) != "gas":
         data.pop(CONF_GAS_TYPE, None)
     if data.get(CONF_CLS) != "intrusion" or not data.get(CONF_CHIME):
@@ -215,6 +244,72 @@ def _sensor(entry: ConfigEntry, sub: Item | None, name: str, raw: dict[str, Any]
     return data
 
 
+def partition_names(entry: ConfigEntry) -> list[str]:
+    return [PRIMARY_PARTITION] + [i for i, s in items_of(entry).items() if s.subentry_type == SUBENTRY_PARTITION]
+
+
+def _partition_of_sensor(entry: ConfigEntry, data: dict[str, Any]) -> None:
+    """An intrusion sensor is in one partition; the first one is stored as nothing. Safety sensors have none."""
+    chosen = data.get(CONF_PARTITION) or PRIMARY_PARTITION
+    if data.get(CONF_CLS) != "intrusion" or chosen == PRIMARY_PARTITION:
+        data.pop(CONF_PARTITION, None)
+        return
+    if chosen not in partition_names(entry):
+        raise EditError({CONF_PARTITION: "unknown_partition"})
+    data[CONF_PARTITION] = chosen
+
+
+def _partitions_filter(entry: ConfigEntry, raw: dict[str, Any], data: dict[str, Any]) -> None:
+    """The partitions a user, a panel, a channel or a siren is limited to. All of them is stored as nothing, so a
+    partition made later is included too."""
+    known = partition_names(entry)
+    asked = list(raw.get(CONF_PARTITIONS) or [])
+    if len(known) > 1 and not asked:  # with more than one partition the choice is always made, "all" included
+        raise EditError({CONF_PARTITIONS: "partitions_required"})
+    if ALL_PARTITIONS in asked:
+        asked = list(known)
+    chosen = [p for p in known if p in asked]
+    if len(chosen) != len(set(asked)):
+        raise EditError({CONF_PARTITIONS: "unknown_partition"})
+    if chosen and len(chosen) < len(known):
+        data[CONF_PARTITIONS] = chosen
+    else:
+        data.pop(CONF_PARTITIONS, None)
+
+
+def _partition(entry: ConfigEntry, sub: Item | None, name: str, raw: dict[str, Any]) -> dict[str, Any]:
+    """A partition after the first: its own modes, exit delays, entry delay, alarm duration and chime."""
+    modes = [m for m in MODES if m in (raw.get(CONF_MODES) or [])]
+    if not modes or len(modes) != len(set(raw.get(CONF_MODES) or [])):
+        raise EditError({CONF_MODES: "no_modes"})
+    data: dict[str, Any] = {CONF_MODES: modes}
+
+    def number(key: str, default: float, field: str) -> float:
+        try:
+            value = float(raw.get(key, default) if raw.get(key) not in (None, "") else default)
+        except (TypeError, ValueError):
+            raise EditError({field: "required"}) from None
+        if value < 0:
+            raise EditError({field: "required"})
+        return int(value) if value == int(value) else value
+
+    for mode in modes:
+        key = CONF_EXIT_DELAY.format(mode=mode)
+        data[key] = number(key, DEFAULT_EXIT_DELAY.get(mode, 0), key)
+    data[CONF_DEFAULT_ENTRY_DELAY] = number(CONF_DEFAULT_ENTRY_DELAY, 30, CONF_DEFAULT_ENTRY_DELAY)
+    if raw.get(CONF_TRIGGER_TIME) not in (None, "", 0, "0"):
+        data[CONF_TRIGGER_TIME] = number(CONF_TRIGGER_TIME, 0, CONF_TRIGGER_TIME)
+    chime = str(raw.get(CONF_CHIME_ENTITY) or "").strip()
+    if chime:
+        if chime.split(".")[0] not in CHIME_DOMAINS:
+            raise EditError({CONF_CHIME_ENTITY: "chime_entity_domain"})
+        data[CONF_CHIME_ENTITY] = chime
+    if any(o.title == name for o in _others(entry, SUBENTRY_PARTITION, sub)) or name == entry.data.get(CONF_PARTITION_NAME):
+        raise EditError({CONF_NAME: "name_in_use"})
+    _check_core(entry, SUBENTRY_PARTITION, sub, name, data)
+    return data
+
+
 def _companions(entry: ConfigEntry, parent_id: str) -> list[tuple[str, Item]]:
     return [
         (sid, s) for sid, s in items_of(entry).items()
@@ -250,13 +345,28 @@ def plan_companion(
 
 
 def _sensor_group(entry: ConfigEntry, sub: Item | None, name: str, raw: dict[str, Any]) -> dict[str, Any]:
-    enabled = list(entry.data.get(CONF_MODES, []))
+    # A group belongs to one partition (the first one is stored as nothing, like for a sensor).
+    chosen = raw.get(CONF_PARTITION) or PRIMARY_PARTITION
+    if chosen not in partition_names(entry):
+        raise EditError({CONF_PARTITION: "unknown_partition"})
+    # the modes of that partition only
+    enabled = [m for m in MODES if m in (partition_data(entry, chosen).get(CONF_MODES) or DEFAULT_MODES)]
     modes = [m for m in enabled if m in (raw.get(CONF_GROUP_MODES) or [])]
     if not modes:
         raise EditError({CONF_GROUP_MODES: "no_modes"})
     if len(modes) != len(set(raw.get(CONF_GROUP_MODES) or [])):
         raise EditError({CONF_GROUP_MODES: "unknown_mode"})
     data: dict[str, Any] = {CONF_GROUP_MODES: modes}
+    if chosen != PRIMARY_PARTITION:
+        data[CONF_PARTITION] = chosen
+    if sub is not None:  # its sensors must all be in that partition
+        elsewhere = [
+            s.title for s in items_of(entry).values()
+            if s.subentry_type == SUBENTRY_SENSOR and sub.subentry_id in s.data.get(CONF_SENSOR_GROUPS, [])
+            and (s.data.get(CONF_PARTITION) or PRIMARY_PARTITION) != chosen
+        ]
+        if elsewhere:
+            raise EditError({CONF_PARTITION: "group_in_use_elsewhere"}, {"sensors": ", ".join(elsewhere)})
     suggest = raw.get(CONF_SUGGEST_FOR)
     if suggest:
         if suggest not in SUGGEST_FOR:
@@ -298,6 +408,7 @@ async def _user(
         CONF_MAY_BYPASS: bool(raw.get(CONF_MAY_BYPASS, False)),
         CONF_MAY_BYPASS_TAMPER: bool(raw.get(CONF_MAY_BYPASS_TAMPER, False)),
     }
+    _partitions_filter(entry, raw, data)
     code = (raw.get(CONF_CODE) or "").strip()
     if code:
         minimum = max(MIN_CODE_LENGTH_FLOOR, int(entry.data.get(CONF_MIN_CODE_LENGTH, MIN_CODE_LENGTH_FLOOR)))
@@ -354,6 +465,7 @@ def _notification(
     data = {k: v for k, v in raw.items() if k != CONF_NAME}
     data[CONF_DELAY] = float(data.get(CONF_DELAY) or 0)
     data["priority"] = bool(data.get("priority", False))
+    _partitions_filter(entry, raw, data)
     if data.get(CONF_SERVICE) not in notify_services(hass):
         raise EditError({CONF_SERVICE: "service_not_found"})
     if not data.get(CONF_CATEGORIES):
@@ -379,6 +491,8 @@ def _siren(entry: ConfigEntry, sub: Item | None, name: str, raw: dict[str, Any])
         profile = {k: v for k, v in (raw.get(cause) or {}).items() if v not in (None, "")}
         if profile:
             data[cause] = profile
+    data.pop(CONF_PARTITIONS, None)
+    _partitions_filter(entry, raw, data)
     data[CONF_MAX_DURATION] = float(data.get(CONF_MAX_DURATION, 180))
     data[CONF_REPEAT_EVERY] = float(data.get(CONF_REPEAT_EVERY, 0))
     if not data.get("control"):
@@ -432,7 +546,7 @@ async def _panel(
         errors[CONF_PANEL_ID] = "panel_id_in_use"
     if any(o.title == name for o in others):
         errors[CONF_NAME] = "name_in_use"
-    modes = list(entry.data.get(CONF_MODES, []))
+    modes = all_enabled_modes(entry)
     chosen = [m for m in modes if m in (raw.get(CONF_ALLOWED_MODES) or modes)]
     if not chosen:
         errors[CONF_ALLOWED_MODES] = "no_modes"
@@ -472,6 +586,21 @@ async def _panel(
     }
     if ha_user:
         data[CONF_HA_USER] = ha_user
+    try:
+        _partitions_filter(entry, raw, data)
+    except EditError as err:
+        errors.update(err.errors)
+    known = partition_names(entry)
+    if len(known) > 1 and CONF_PARTITIONS not in errors:
+        # the partition the panel shows first: one it may use, or "all" when it may use more than one
+        allowed = data.get(CONF_PARTITIONS) or known
+        default = raw.get(CONF_DEFAULT_PARTITION) or ""
+        if not default:
+            errors[CONF_DEFAULT_PARTITION] = "default_partition_required"
+        elif default not in allowed and not (default == ALL_PARTITIONS and len(allowed) > 1):
+            errors[CONF_DEFAULT_PARTITION] = "default_partition_not_allowed"
+        else:
+            data[CONF_DEFAULT_PARTITION] = default
     code = (raw.get(CONF_CODE) or "").strip()
     if code:
         minimum = max(MIN_CODE_LENGTH_FLOOR, int(entry.data.get(CONF_MIN_CODE_LENGTH, MIN_CODE_LENGTH_FLOOR)))

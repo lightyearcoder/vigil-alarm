@@ -34,8 +34,7 @@ class VigilAlarmActive(VigilEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool:
-        engine = self._manager.engine
-        return engine.state == "triggered" and engine.cause == self._cls
+        return any(e.state == "triggered" and e.cause == self._cls for e in self._manager.engines)
 
 
 class VigilTechnicalActive(VigilEntity, BinarySensorEntity):

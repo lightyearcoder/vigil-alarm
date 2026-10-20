@@ -15,19 +15,22 @@
 # The device name is also the source shown in the history: "Anna (vigil-panel-garage)".
 
 substitutions:
-  # The Vigil alarm entity. Only change this if you renamed it.
-  alarm_entity: alarm_control_panel.vigil_alarm
   # The profile sensor Vigil makes for this panel: the panel id (the device name) with underscores.
   profile_entity: sensor.${ name | replace("-", "_") }_profile
   # How long the screen stays on without touch, until Vigil has told the panel (setting "Screen off after" in Vigil).
   backlight_timeout_seconds: "30"
   # The version of this firmware, reported to Vigil.
-  firmware_version: "0.5.6"
+  firmware_version: "0.6.0"
   # The width of the cards and buttons: the screen minus a margin on both sides.
   content_w: ${ screen_width | int - 24 }
   # The sizes follow the screen: the ring is a bit over a quarter of the shortest side, the keys fill the keypad.
   ring_d: ${ ([screen_width | int, screen_height | int] | min * 27 / 100) | int }
   ring_disc: ${ ([screen_width | int, screen_height | int] | min * 27 / 100) | int - 36 }
+  # The ring and its disc are drawn at 90% inside the box of the full size, with the bottom on the same place.
+  ring_d90: ${ ([screen_width | int, screen_height | int] | min * 27 * 9 / 1000) | int }
+  ring_disc90: ${ (([screen_width | int, screen_height | int] | min * 27 / 100 - 36) * 9 / 10) | int }
+  ring_gap: ${ (([screen_width | int, screen_height | int] | min * 27 / 100 - [screen_width | int, screen_height | int] | min * 27 * 9 / 1000) / 2) | int }
+  disc_gap: ${ (([screen_width | int, screen_height | int] | min * 27 * 9 / 1000 - ([screen_width | int, screen_height | int] | min * 27 / 100 - 36) * 9 / 10) / 2) | int }
   nav_h: "60"
   mode_h: "88"
   keypad_h: ${ screen_height | int - 170 }
@@ -37,6 +40,10 @@ substitutions:
 esphome:
   includes:
     - vigil_panel.h
+    - vigil_logo.h
+  # The logo in the top bar is an LVGL image made in the lambda of `refresh_ui`: the image widget has to be built into LVGL.
+  build_flags:
+    - -DLV_USE_IMAGE=1
   on_boot:
     priority: -100
     then:
@@ -127,6 +134,9 @@ globals:
   - id: sens_page  # the page of the sensors list, from 0
     type: int
     initial_value: "0"
+  - id: logo_made  # has the logo been put in the top bar?
+    type: bool
+    initial_value: "false"
 
 # ----------------------------------------------------------------- what Home Assistant tells us
 text_sensor:
@@ -333,10 +343,68 @@ text_sensor:
         - lambda: vigil::ctx.sensors = vigil::clean(x);
         - script.execute: refresh_ui
         - script.execute: refresh_sensors
-  # ---- the alarm itself
+  # ---- the partitions this panel may use, and the one on the screen
+  - platform: homeassistant
+    id: ha_partition_list
+    entity_id: ${profile_entity}
+    attribute: partition_list
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.partition_list = vigil::clean(x);
+        - script.execute: refresh_parts
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_partition_selected
+    entity_id: ${profile_entity}
+    attribute: selected_partition
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.sel = vigil::clean(x);
+        - script.execute: refresh_parts
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_partition_default
+    entity_id: ${profile_entity}
+    attribute: default_partition
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.default_part = vigil::clean(x);
+  - platform: homeassistant
+    id: ha_partition_return
+    entity_id: ${profile_entity}
+    attribute: partition_return_seconds
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.return_seconds = vigil::to_int(x, 0);
+  - platform: homeassistant
+    id: ha_partition_total
+    entity_id: ${profile_entity}
+    attribute: partition_total
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.part_total = vigil::to_int(x, 1);
+        - script.execute: refresh_parts
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_view_mixed
+    entity_id: ${profile_entity}
+    attribute: view_mixed
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.mixed = vigil::truthy(x);
+        - script.execute: refresh_ui
+  # ---- the alarm itself: of the partition on the screen, or of all of them together. Vigil puts it in the profile
+  # (view_*), so the panel needs no alarm entity per partition and follows the choice made on the screen.
   - platform: homeassistant
     id: ha_state
-    entity_id: ${alarm_entity}
+    entity_id: ${profile_entity}
+    attribute: view_state
     internal: true
     on_value:
       then:
@@ -346,8 +414,8 @@ text_sensor:
         - script.execute: route
   - platform: homeassistant
     id: ha_mode
-    entity_id: ${alarm_entity}
-    attribute: mode
+    entity_id: ${profile_entity}
+    attribute: view_mode
     internal: true
     on_value:
       then:
@@ -355,8 +423,8 @@ text_sensor:
         - script.execute: refresh_ui
   - platform: homeassistant
     id: ha_delay_left
-    entity_id: ${alarm_entity}
-    attribute: delay_left
+    entity_id: ${profile_entity}
+    attribute: view_delay_left
     internal: true
     on_value:
       then:
@@ -368,8 +436,8 @@ text_sensor:
         - script.execute: refresh_ui
   - platform: homeassistant
     id: ha_changed_by
-    entity_id: ${alarm_entity}
-    attribute: changed_by
+    entity_id: ${profile_entity}
+    attribute: view_changed_by
     internal: true
     on_value:
       then:
@@ -377,8 +445,8 @@ text_sensor:
         - script.execute: refresh_ui
   - platform: homeassistant
     id: ha_changed_via
-    entity_id: ${alarm_entity}
-    attribute: changed_via
+    entity_id: ${profile_entity}
+    attribute: view_changed_via
     internal: true
     on_value:
       then:
@@ -386,8 +454,8 @@ text_sensor:
         - script.execute: refresh_ui
   - platform: homeassistant
     id: ha_cause
-    entity_id: ${alarm_entity}
-    attribute: cause
+    entity_id: ${profile_entity}
+    attribute: view_cause
     internal: true
     on_value:
       then:
@@ -395,8 +463,8 @@ text_sensor:
         - script.execute: refresh_ui
   - platform: homeassistant
     id: ha_cause_sensor
-    entity_id: ${alarm_entity}
-    attribute: cause_sensor
+    entity_id: ${profile_entity}
+    attribute: view_cause_sensor
     internal: true
     on_value:
       then:
@@ -461,6 +529,17 @@ interval:
             lambda: return vigil::ctx.state == "arming" || vigil::ctx.state == "pending";
           then:
             - script.execute: refresh_ui
+  # A screen that can switch goes back to its own partition after a while without touch (the time is set in Vigil),
+  # but not while the list of sensors is open: the list would change under the eyes of whoever reads it.
+  - interval: 1s
+    then:
+      - if:
+          condition:
+            lambda: return vigil::should_return_to_default(lv_display_get_inactive_time(nullptr)) && !id(keypad_open) && !id(on_sensors_page);
+          then:
+            - script.execute:
+                id: choose_part
+                partition: !lambda 'return vigil::ctx.default_part;'
   # Is Home Assistant there? Only "connected" for Home Assistant itself, not for a log viewer.
   - interval: 5s
     then:
@@ -562,6 +641,13 @@ script:
           auto hide = [](lv_obj_t *o, bool h) {
             if (h) lv_obj_add_flag(o, LV_OBJ_FLAG_HIDDEN); else lv_obj_remove_flag(o, LV_OBJ_FLAG_HIDDEN);
           };
+          // The logo in the top bar: made once, the first time the screen is drawn.
+          if (!id(logo_made)) {
+            lv_obj_t *logo = lv_image_create(id(logo_box));
+            lv_image_set_src(logo, logo_image());
+            lv_obj_center(logo);
+            id(logo_made) = true;
+          }
           const uint32_t col = ring_color();
           const bool alarm = usable() && ctx.state == "triggered";
           lv_label_set_text(id(lbl_state), state_title().c_str());
@@ -597,6 +683,8 @@ script:
           hide(id(btn_disarm), !show_disarm());
           hide(id(btn_force), !show_force());
           hide(id(row_modes), show_force() || mode_count() == 0);
+          // Mode buttons and Disarm both there (partitions differ): the ring goes, so the text still fits in the card.
+          hide(id(ring_box), show_disarm() && !(show_force() || mode_count() == 0));
           // The alarm: a red frame, and everything a little red
           hide(id(alarm_frame), !alarm);
           const uint32_t ground = alarm ? 0x1A0F12 : 0x0E1116;
@@ -607,7 +695,90 @@ script:
           lv_obj_set_style_bg_color(id(nav), lv_color_hex(ground), 0);
           lv_obj_set_style_bg_color(id(card_ring), lv_color_hex(alarm ? 0x231216 : 0x151A22), 0);
           lv_obj_set_style_border_color(id(card_ring), lv_color_hex(alarm ? 0x5A2A30 : 0x232A35), 0);
+      - script.execute: refresh_parts
       - script.execute: nav_update
+
+  # The partitions at the top of the main page: one line with the name when the panel has one partition and the house
+  # more; else a button for each partition the panel may use, and "All". The one on the screen has a coloured edge,
+  # the panel's own (default) one says so while there are few buttons.
+  - id: refresh_parts
+    then:
+      - lambda: |-
+          using namespace vigil;
+          auto hide = [](lv_obj_t *o, bool h) {
+            if (h) lv_obj_add_flag(o, LV_OBJ_FLAG_HIDDEN); else lv_obj_remove_flag(o, LV_OBJ_FLAG_HIDDEN);
+          };
+          const bool show = usable() && parts_visible();
+          const std::vector<PartRow> rows = part_rows(false);
+          const bool switching = rows.size() > 1;
+          hide(id(row_parts), !show);
+          hide(id(part_one), !(show && !switching));
+          if (show && !switching) {
+            lv_label_set_text(id(lbl_part_one), rows[0].name.c_str());
+            lv_label_set_text(id(lbl_part_note), tr("only_this").c_str());
+            lv_obj_set_style_bg_color(id(part_one_dot), lv_color_hex(color_of_state(rows[0].state)), 0);
+          }
+          lv_obj_t *chips[5] = {id(chip_0), id(chip_1), id(chip_2), id(chip_3), id(chip_all)};
+          lv_obj_t *dots[5] = {id(chip_0_dot), id(chip_1_dot), id(chip_2_dot), id(chip_3_dot), id(chip_all_dot)};
+          lv_obj_t *lbls[5] = {id(chip_0_lbl), id(chip_1_lbl), id(chip_2_lbl), id(chip_3_lbl), id(chip_all_lbl)};
+          lv_obj_t *tags[5] = {id(chip_0_tag), id(chip_1_tag), id(chip_2_tag), id(chip_3_tag), id(chip_all_tag)};
+          const std::vector<PartRow> all_rows = part_rows(true);
+          int n = 0;
+          for (int i = 0; i < 5; i++) if (!chip_target(i).empty()) n++;
+          const int fit = n > 0 ? (${content_w} - 8 * (n - 1)) / n : 0;  // room for one button
+          const lv_font_t *font = n <= 3 ? &lv_font_montserrat_20 : &lv_font_montserrat_14;
+          const std::string sel = sel_id();
+          for (int i = 0; i < 5; i++) {
+            const std::string target = chip_target(i);
+            hide(chips[i], !(show && switching) || target.empty());
+            if (target.empty()) continue;
+            std::string name = tr("all");
+            std::string state = "disarmed";
+            bool mixed = false;
+            for (const PartRow &r : all_rows) {
+              if (r.id != target) continue;
+              if (target != "all") name = r.name;
+              state = r.state;
+              mixed = r.mixed;
+            }
+            const bool on = target == sel;
+            lv_label_set_text(lbls[i], name.c_str());
+            lv_obj_set_style_text_font(lbls[i], font, 0);
+            // One line: as wide as the name, but never wider than what is left of the button (then it ends in dots).
+            lv_point_t size;
+            lv_text_get_size(&size, name.c_str(), font, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+            const int room = std::max(fit - 24 - 10 - 6, 16);
+            lv_obj_set_width(lbls[i], std::min((int) size.x + 2, room));
+            lv_obj_set_height(lbls[i], lv_font_get_line_height(font));
+            lv_label_set_long_mode(lbls[i], LV_LABEL_LONG_DOT);
+            lv_label_set_text(tags[i], "");
+            hide(tags[i], true);
+            lv_obj_set_style_bg_color(dots[i], lv_color_hex(mixed ? COL_WARN : color_of_state(state)), 0);
+            lv_obj_set_style_border_color(chips[i], lv_color_hex(on ? COL_WARN : 0x232A35), 0);
+            lv_obj_set_style_border_width(chips[i], on ? 2 : 1, 0);
+            lv_obj_set_style_bg_color(chips[i], lv_color_hex(on ? 0x2A2410 : 0x151A22), 0);
+          }
+
+  # A button at the top: show that partition. Vigil is told, so the profile (the state, the sensors, the modes) follows;
+  # the screen already shows the choice.
+  - id: choose_part
+    parameters:
+      partition: string
+    then:
+      - if:
+          condition:
+            lambda: return !partition.empty();
+          then:
+            - lambda: |-
+                vigil::ctx.sel = partition;
+                id(sens_page) = 0;
+            - script.execute: refresh_ui
+            - script.execute: refresh_sensors
+            - homeassistant.action:
+                action: vigil_alarm.select_partition
+                data:
+                  source: ${name}
+                  partition: !lambda 'return partition;'
 
   # The tabs at the bottom: the active one has the colour of the state, the keypad has none, the sensors tab has the
   # number of open sensors, or is not there at all if the list is for nobody.
@@ -716,6 +887,13 @@ script:
           text: !lambda |-
             if (vigil::sensor_count() == 0) return vigil::tr("no_sensors");
             return std::to_string(id(sens_page) + 1) + " / " + std::to_string(vigil::page_count());
+      - lambda: |-
+          const bool show = vigil::usable() && vigil::parts_visible();
+          if (show) lv_obj_remove_flag(id(sens_part), LV_OBJ_FLAG_HIDDEN); else lv_obj_add_flag(id(sens_part), LV_OBJ_FLAG_HIDDEN);
+          if (show) lv_label_set_text(id(sens_part_lbl), vigil::sel_name().c_str());
+          // with one partition there is nothing to step to: the name only, no button
+          if (vigil::parts_switch()) lv_obj_add_flag(id(sens_part), LV_OBJ_FLAG_CLICKABLE);
+          else lv_obj_remove_flag(id(sens_part), LV_OBJ_FLAG_CLICKABLE);
       - script.execute: row_update_0
       - script.execute: row_update_1
       - script.execute: row_update_2
@@ -919,6 +1097,7 @@ script:
                   source: ${name}
                   code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
                   bypass_open: !lambda 'return std::string(vigil::ctx.force ? "true" : "false");'
+                  partition: !lambda 'return vigil::sel_id();'
                 on_success:
                   - script.execute: action_done
                 on_error:
@@ -933,6 +1112,7 @@ script:
                 action: vigil_alarm.disarm
                 data:
                   source: ${name}
+                  partition: !lambda 'return vigil::sel_id();'
                   code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
                 on_success:
                   - script.execute: action_done
@@ -1284,6 +1464,358 @@ lvgl:
                   text_color: 0x8A94A6
                   align: RIGHT_MID
                   x: -8
+              # The logo and the name, in the middle between the clock and the Wi-Fi icon
+              - obj:
+                  width: SIZE_CONTENT
+                  height: 32
+                  align: CENTER
+                  bg_opa: TRANSP
+                  border_width: 0
+                  pad_all: 0
+                  scrollable: false
+                  clickable: false
+                  layout:
+                    type: flex
+                    flex_flow: ROW
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_column: 8
+                  widgets:
+                    - obj:
+                        id: logo_box
+                        width: 30
+                        height: 30
+                        bg_opa: TRANSP
+                        border_width: 0
+                        pad_all: 0
+                        scrollable: false
+                        clickable: false
+                    - label:
+                        id: lbl_brand
+                        text: "Vigil Alarm"
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+        # The partitions: one line with the name when this panel has one partition and the house more, else a button
+        # for each partition it may use and "All". The one on the screen has a coloured edge.
+        - obj:
+            id: row_parts
+            width: 100%
+            height: 40
+            bg_opa: TRANSP
+            border_width: 0
+            pad_all: 0
+            scrollable: false
+            hidden: true
+            layout:
+              type: flex
+              flex_flow: ROW
+              pad_column: 8
+              flex_align_main: START
+              flex_align_cross: CENTER
+              flex_align_track: CENTER
+            widgets:
+              - obj:
+                  id: part_one
+                  width: 100%
+                  height: 40
+                  bg_opa: TRANSP
+                  border_width: 0
+                  pad_all: 0
+                  pad_left: 8
+                  scrollable: false
+                  clickable: false
+                  hidden: true
+                  layout:
+                    type: flex
+                    flex_flow: ROW
+                    flex_align_main: START
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_column: 8
+                  widgets:
+                    - obj:
+                        id: part_one_dot
+                        width: 12
+                        height: 12
+                        radius: 100%
+                        bg_color: 0x8A94A6
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                    - label:
+                        id: lbl_part_one
+                        text: ""
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+                        long_mode: DOT
+                    - label:
+                        id: lbl_part_note
+                        text: ""
+                        text_font: montserrat_14
+                        text_color: 0x8A94A6
+              - button:
+                  id: chip_0
+                  height: 40
+                  width: SIZE_CONTENT
+                  radius: 20
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pad_left: 12
+                  pad_right: 12
+                  pad_top: 0
+                  pad_bottom: 0
+                  hidden: true
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - script.execute:
+                          id: choose_part
+                          partition: !lambda 'return vigil::chip_target(0);'
+                  layout:
+                    type: flex
+                    flex_flow: ROW
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_column: 6
+                  widgets:
+                    - obj:
+                        id: chip_0_dot
+                        width: 10
+                        height: 10
+                        radius: 100%
+                        bg_color: 0x8A94A6
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                    - label:
+                        id: chip_0_lbl
+                        text: ""
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+                        long_mode: DOT
+                    - label:
+                        id: chip_0_tag
+                        text: ""
+                        text_font: montserrat_14
+                        text_color: 0x8A94A6
+                        hidden: true
+              - button:
+                  id: chip_1
+                  height: 40
+                  width: SIZE_CONTENT
+                  radius: 20
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pad_left: 12
+                  pad_right: 12
+                  pad_top: 0
+                  pad_bottom: 0
+                  hidden: true
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - script.execute:
+                          id: choose_part
+                          partition: !lambda 'return vigil::chip_target(1);'
+                  layout:
+                    type: flex
+                    flex_flow: ROW
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_column: 6
+                  widgets:
+                    - obj:
+                        id: chip_1_dot
+                        width: 10
+                        height: 10
+                        radius: 100%
+                        bg_color: 0x8A94A6
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                    - label:
+                        id: chip_1_lbl
+                        text: ""
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+                        long_mode: DOT
+                    - label:
+                        id: chip_1_tag
+                        text: ""
+                        text_font: montserrat_14
+                        text_color: 0x8A94A6
+                        hidden: true
+              - button:
+                  id: chip_2
+                  height: 40
+                  width: SIZE_CONTENT
+                  radius: 20
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pad_left: 12
+                  pad_right: 12
+                  pad_top: 0
+                  pad_bottom: 0
+                  hidden: true
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - script.execute:
+                          id: choose_part
+                          partition: !lambda 'return vigil::chip_target(2);'
+                  layout:
+                    type: flex
+                    flex_flow: ROW
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_column: 6
+                  widgets:
+                    - obj:
+                        id: chip_2_dot
+                        width: 10
+                        height: 10
+                        radius: 100%
+                        bg_color: 0x8A94A6
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                    - label:
+                        id: chip_2_lbl
+                        text: ""
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+                        long_mode: DOT
+                    - label:
+                        id: chip_2_tag
+                        text: ""
+                        text_font: montserrat_14
+                        text_color: 0x8A94A6
+                        hidden: true
+              - button:
+                  id: chip_3
+                  height: 40
+                  width: SIZE_CONTENT
+                  radius: 20
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pad_left: 12
+                  pad_right: 12
+                  pad_top: 0
+                  pad_bottom: 0
+                  hidden: true
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - script.execute:
+                          id: choose_part
+                          partition: !lambda 'return vigil::chip_target(3);'
+                  layout:
+                    type: flex
+                    flex_flow: ROW
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_column: 6
+                  widgets:
+                    - obj:
+                        id: chip_3_dot
+                        width: 10
+                        height: 10
+                        radius: 100%
+                        bg_color: 0x8A94A6
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                    - label:
+                        id: chip_3_lbl
+                        text: ""
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+                        long_mode: DOT
+                    - label:
+                        id: chip_3_tag
+                        text: ""
+                        text_font: montserrat_14
+                        text_color: 0x8A94A6
+                        hidden: true
+              - button:
+                  id: chip_all
+                  height: 40
+                  width: SIZE_CONTENT
+                  radius: 20
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pad_left: 12
+                  pad_right: 12
+                  pad_top: 0
+                  pad_bottom: 0
+                  hidden: true
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - script.execute:
+                          id: choose_part
+                          partition: !lambda 'return vigil::chip_target(4);'
+                  layout:
+                    type: flex
+                    flex_flow: ROW
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_column: 6
+                  widgets:
+                    - obj:
+                        id: chip_all_dot
+                        width: 10
+                        height: 10
+                        radius: 100%
+                        bg_color: 0x8A94A6
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                    - label:
+                        id: chip_all_lbl
+                        text: ""
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+                        long_mode: DOT
+                    - label:
+                        id: chip_all_tag
+                        text: ""
+                        text_font: montserrat_14
+                        text_color: 0x8A94A6
+                        hidden: true
         # The state: the ring, what it is, what is the matter
         - obj:
             id: card_ring
@@ -1305,6 +1837,7 @@ lvgl:
               flex_align_track: CENTER
             widgets:
               - obj:
+                  id: ring_box
                   width: ${ring_d}
                   height: ${ring_d}
                   bg_opa: TRANSP
@@ -1314,9 +1847,9 @@ lvgl:
                   widgets:
                     - arc:
                         id: ring
-                        width: ${ring_d}
-                        height: ${ring_d}
-                        align: CENTER
+                        width: ${ring_d90}
+                        height: ${ring_d90}
+                        align: BOTTOM_MID
                         start_angle: 0
                         end_angle: 360
                         rotation: 270
@@ -1334,10 +1867,11 @@ lvgl:
                           pad_all: 0
                     - obj:
                         id: ring_disc
-                        width: ${ring_disc}
-                        height: ${ring_disc}
+                        width: ${ring_disc90}
+                        height: ${ring_disc90}
                         radius: 100%
-                        align: CENTER
+                        align: BOTTOM_MID
+                        y: ${ -1 * disc_gap | int }
                         bg_color: 0x1B232D
                         border_width: 0
                         shadow_width: 0
@@ -1350,12 +1884,14 @@ lvgl:
                         text_font: font_icons_60
                         text_color: 0x8A94A6
                         align: CENTER
+                        y: ${ ring_gap | int }
                     - label:
                         id: lbl_ring_num
                         text: ""
                         text_font: montserrat_40
                         text_color: 0xF2B84B
                         align: CENTER
+                        y: ${ ring_gap | int }
                         hidden: true
               - label:
                   id: lbl_state
@@ -1945,6 +2481,37 @@ lvgl:
             align: TOP_LEFT
             x: 20
             y: 14
+        # The partition whose sensors are listed: a tap on it goes to the next one (and "All"), like the buttons on the
+        # main page; the choice is the same on both pages.
+        - button:
+            id: sens_part
+            width: 150
+            height: 40
+            align: TOP_MID
+            x: 24
+            y: 10
+            radius: 20
+            bg_color: 0x151A22
+            border_width: 2
+            border_color: 0xF2B84B
+            shadow_width: 0
+            pad_all: 0
+            hidden: true
+            on_click:
+              then:
+                - script.execute:
+                    id: choose_part
+                    partition: !lambda 'return vigil::next_part_id();'
+            widgets:
+              - label:
+                  id: sens_part_lbl
+                  text: ""
+                  text_font: montserrat_20
+                  text_color: 0xE8ECF2
+                  long_mode: DOT
+                  width: 126
+                  text_align: CENTER
+                  align: CENTER
         - label:
             id: lbl_sens_sub
             text: ""

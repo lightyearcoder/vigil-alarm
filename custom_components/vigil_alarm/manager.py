@@ -9,9 +9,11 @@ from __future__ import annotations
 
 import logging
 import time
+from dataclasses import dataclass
+from functools import partial
 from collections.abc import Callable
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Mapping
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_ON, STATE_OFF
@@ -50,6 +52,14 @@ from .const import (
     CONF_MAY_BYPASS,
     CONF_MAY_BYPASS_TAMPER,
     CONF_MODES,
+    CONF_COMPANION_OF,
+    CONF_PARTITION,
+    CONF_PARTITIONS,
+    CONF_PARTITION_NAME,
+    PRIMARY_PARTITION,
+    SUBENTRY_PARTITION,
+    DEFAULT_MODES,
+    MODES,
     CONF_ON_UNAVAILABLE,
     CONF_REQUIRED,
     CONF_TRIGGER_TIME,
@@ -80,7 +90,8 @@ from .panels import PanelRegistry
 from .selftest import SelfTest
 from .sirens import SirenController
 from .supervisor import Supervisor
-from .vigil_core import Config, ConfigError, Engine
+from .languages import ALL_NAMES, HOME_NAMES, language_of
+from .vigil_core import Config, ConfigError, Engine, aggregate
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -89,64 +100,124 @@ SIGNAL_EVENT = f"{DOMAIN}_event_{{}}"
 ROUTINE_EVENTS = {"selftest_checked", "selftest_reminder", "selftest_siren_tested", "startup_settled"}
 
 
-def build_config(entry: ConfigEntry, extra: dict[str, Item] | None = None) -> Config:
-    """Build the core configuration from a config entry and its items.
-
-    `extra` can hold a subentry that is not saved yet (used to validate a flow).
-    Raises ConfigError.
-    """
-    enabled = list(entry.data.get(CONF_MODES, []))
-    modes = {
-        m: {"exit_delay": entry.data.get(CONF_EXIT_DELAY.format(mode=m), DEFAULT_EXIT_DELAY.get(m, 0))}
-        for m in enabled
-    }
+def partition_ids(entry: ConfigEntry, extra: dict[str, Item] | None = None) -> list[str]:
+    """The first (implicit) partition, then the partition items in stored order."""
     subentries = dict(items_of(entry))
     subentries.update(extra or {})
-    sensors: dict[str, Any] = {}
-    rules: dict[str, Any] = {}
+    return [PRIMARY_PARTITION] + [i for i, sub in subentries.items() if sub.subentry_type == SUBENTRY_PARTITION]
+
+
+def partition_data(entry: ConfigEntry, pid: str, extra: dict[str, Item] | None = None) -> Mapping[str, Any]:
+    """The settings of a partition: the entry data for the first one, the item data for the others."""
+    if pid == PRIMARY_PARTITION:
+        return entry.data
+    subentries = dict(items_of(entry))
+    subentries.update(extra or {})
+    return subentries[pid].data
+
+
+def all_enabled_modes(entry: Any, extra: dict[str, Item] | None = None) -> list[str]:
+    """The modes any partition has, in the usual order: what a sensor group, a user or a panel can pick from."""
+    chosen: set[str] = set()
+    for pid in partition_ids(entry, extra):
+        chosen.update(partition_data(entry, pid, extra).get(CONF_MODES, []) if pid == PRIMARY_PARTITION
+                      else partition_data(entry, pid, extra).get(CONF_MODES, DEFAULT_MODES))
+    return [m for m in MODES if m in chosen]
+
+
+def build_configs(entry: ConfigEntry, extra: dict[str, Item] | None = None) -> dict[str, Config]:
+    """Build the core configuration of every partition from a config entry and its items.
+
+    A partition has the intrusion sensors that say so (a sensor that names no partition is in the first), and
+    every safety sensor (fire, gas, water, tamper, 24 hour): those watch in every partition.
+    `extra` can hold an item that is not saved yet (used to validate a flow). Raises ConfigError.
+    """
+    subentries = dict(items_of(entry))
+    subentries.update(extra or {})
+    pids = partition_ids(entry, extra)
     # A sensor group says in which modes its sensors are watching; the core only sees the result.
     group_modes = {
         gid: set(sub.data.get(CONF_GROUP_MODES, []))
         for gid, sub in subentries.items()
         if sub.subentry_type == SUBENTRY_SENSOR_GROUP
     }
-    for sid, sub in subentries.items():
-        d = sub.data
-        if sub.subentry_type == SUBENTRY_SENSOR:
-            body: dict[str, Any] = {
-                "cls": d[CONF_CLS],
-                "on_unavailable": d.get(CONF_ON_UNAVAILABLE) or None,
-            }
-            if d[CONF_CLS] == "intrusion":
-                body["type"] = d.get(CONF_TYPE, "instant")
-                groups = d.get(CONF_SENSOR_GROUPS, [])
-                body["modes"] = [m for m in modes if any(m in group_modes.get(g, ()) for g in groups)]
-                body["at_arm_open"] = d.get(CONF_AT_ARM_OPEN, "bypass")
-                if d.get(CONF_ENTRY_DELAY) is not None:
-                    body["entry_delay"] = d[CONF_ENTRY_DELAY]
-            if d.get(CONF_PERMANENT_BYPASS) and d[CONF_CLS] not in ("fire", "gas"):
-                body["permanent_bypass"] = True
-            if d[CONF_CLS] == "gas":
-                body["gas_type"] = d.get(CONF_GAS_TYPE, "other")
-            body = {k: v for k, v in body.items() if v is not None}
-            sensors[sid] = body
-        elif sub.subentry_type == SUBENTRY_RULE:
-            rules[sid] = {
-                "sensors": list(d[CONF_SENSORS]),
-                "required": d.get(CONF_REQUIRED, 2),
-                "window": d.get(CONF_WINDOW, 60),
-                "escalate": d.get(CONF_ESCALATE, False),
-            }
-    raw: dict[str, Any] = {
-        "version": 1,
-        "default_entry_delay": entry.data.get(CONF_DEFAULT_ENTRY_DELAY, 30),
-        "modes": modes,
-        "sensors": sensors,
-        "rules": rules,
-    }
-    if entry.data.get(CONF_TRIGGER_TIME):
-        raw["trigger_time"] = entry.data[CONF_TRIGGER_TIME]
-    return Config.from_dict(raw)
+    all_sensor_ids = {sid for sid, sub in subentries.items() if sub.subentry_type == SUBENTRY_SENSOR}
+    out: dict[str, Config] = {}
+    for pid in pids:
+        pdata = partition_data(entry, pid, extra)
+        enabled = list(pdata.get(CONF_MODES, DEFAULT_MODES if pid != PRIMARY_PARTITION else []))
+        modes = {
+            m: {"exit_delay": pdata.get(CONF_EXIT_DELAY.format(mode=m), DEFAULT_EXIT_DELAY.get(m, 0))}
+            for m in enabled
+        }
+        sensors: dict[str, Any] = {}
+        rules: dict[str, Any] = {}
+        for sid, sub in subentries.items():
+            d = sub.data
+            if sub.subentry_type == SUBENTRY_SENSOR:
+                owner = d
+                if d[CONF_CLS] == "tamper" and d.get(CONF_COMPANION_OF) in subentries:
+                    owner = subentries[d[CONF_COMPANION_OF]].data  # the tamper contact of a sensor is in its partition
+                # an intrusion sensor is in one partition; so is a tamper contact (of a sensor, or one that was given a
+                # partition); every other safety sensor watches in all of them
+                bound = owner[CONF_CLS] == "intrusion" or (owner[CONF_CLS] == "tamper" and bool(owner.get(CONF_PARTITION)))
+                if bound and (owner.get(CONF_PARTITION) or PRIMARY_PARTITION) not in pids:
+                    home = PRIMARY_PARTITION  # its partition was removed
+                else:
+                    home = owner.get(CONF_PARTITION) or PRIMARY_PARTITION
+                if bound and home != pid:
+                    continue
+                body: dict[str, Any] = {
+                    "cls": d[CONF_CLS],
+                    "on_unavailable": d.get(CONF_ON_UNAVAILABLE) or None,
+                }
+                if d[CONF_CLS] == "intrusion":
+                    body["type"] = d.get(CONF_TYPE, "instant")
+                    groups = d.get(CONF_SENSOR_GROUPS, [])
+                    body["modes"] = [m for m in modes if any(m in group_modes.get(g, ()) for g in groups)]
+                    body["at_arm_open"] = d.get(CONF_AT_ARM_OPEN, "bypass")
+                    if d.get(CONF_ENTRY_DELAY) is not None:
+                        body["entry_delay"] = d[CONF_ENTRY_DELAY]
+                if d.get(CONF_PERMANENT_BYPASS) and d[CONF_CLS] not in ("fire", "gas"):
+                    body["permanent_bypass"] = True
+                if d[CONF_CLS] == "gas":
+                    body["gas_type"] = d.get(CONF_GAS_TYPE, "other")
+                body = {k: v for k, v in body.items() if v is not None}
+                sensors[sid] = body
+        for sid, sub in subentries.items():
+            d = sub.data
+            unknown = pid == PRIMARY_PARTITION and sub.subentry_type == SUBENTRY_RULE and any(
+                z not in all_sensor_ids for z in d[CONF_SENSORS])  # left in, so the core names the missing sensor
+            if sub.subentry_type == SUBENTRY_RULE and (unknown or all(z in sensors for z in d[CONF_SENSORS])):
+                rules[sid] = {
+                    "sensors": list(d[CONF_SENSORS]),
+                    "required": d.get(CONF_REQUIRED, 2),
+                    "window": d.get(CONF_WINDOW, 60),
+                    "escalate": d.get(CONF_ESCALATE, False),
+                }
+            elif sub.subentry_type == SUBENTRY_RULE and any(z in sensors for z in d[CONF_SENSORS]):
+                raise ConfigError(f"rule {sub.title}: its sensors must be in one partition")
+        raw: dict[str, Any] = {
+            "version": 1,
+            "default_entry_delay": pdata.get(CONF_DEFAULT_ENTRY_DELAY, 30),
+            "modes": modes,
+            "sensors": sensors,
+            "rules": rules,
+        }
+        if pdata.get(CONF_TRIGGER_TIME):
+            raw["trigger_time"] = pdata[CONF_TRIGGER_TIME]
+        try:
+            out[pid] = Config.from_dict(raw)
+        except ConfigError as err:
+            if pid != PRIMARY_PARTITION:
+                raise ConfigError(f"partition {subentries[pid].title}: {err}") from err
+            raise
+    return out
+
+
+def build_config(entry: ConfigEntry, extra: dict[str, Item] | None = None) -> Config:
+    """The configuration of the first partition (all partitions are checked). Raises ConfigError."""
+    return build_configs(entry, extra)[PRIMARY_PARTITION]
 
 
 def sensor_value(state: Any) -> str:
@@ -170,14 +241,41 @@ def _bypass_rank(status: str, bypassable: bool) -> int:
     return 5  # closed and fine
 
 
+@dataclass
+class Partition:
+    """One part of the house: its own config and its own engine."""
+
+    id: str
+    name: str
+    config: Config
+    engine: Engine
+    primary: bool = False
+    safety_trigger: bool = False  # the alarm it is in came from a safety sensor (reported by the first partition)
+
+
 class VigilManager:
     """Runs the engine of one config entry."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         self.hass = hass
         self.entry = entry
-        self.config = build_config(entry)  # raises ConfigError
-        self.engine = Engine(self.config, now=self._wall(), on_event=self._handle_event)
+        configs = build_configs(entry)  # raises ConfigError
+        self.partitions: dict[str, Partition] = {}
+        for pid, cfg in configs.items():
+            self.partitions[pid] = Partition(
+                pid, self._partition_name(pid), cfg,
+                Engine(cfg, now=self._wall(), on_event=partial(self._handle_event, pid=pid)),
+                primary=pid == PRIMARY_PARTITION,
+            )
+        first = configs[PRIMARY_PARTITION]
+        sensors: dict[str, Any] = {}
+        rules: dict[str, Any] = {}
+        for cfg in configs.values():
+            for sid, sensor in cfg.sensors.items():
+                sensors.setdefault(sid, sensor)
+            rules.update(cfg.rules)
+        # All sensors and rules of the house, for lookups; the modes and delays are those of the first partition.
+        self.config = Config(first.modes, sensors, rules, first.default_entry_delay, first.trigger_time)
         self.ready = False
         self._settling = False  # after a restart: sensors that are not there yet are not reported as lost yet
         self._settle_timer: CALLBACK_TYPE | None = None
@@ -228,6 +326,71 @@ class VigilManager:
         self.users: list[Item] = [
             sub for sub in items_of(entry).values() if sub.subentry_type == SUBENTRY_USER
         ]
+
+    # ----------------------------------------------------------- partitions
+
+    @property
+    def engine(self) -> Engine:
+        """The engine of the first partition: what an installation with one partition has."""
+        return self.partitions[PRIMARY_PARTITION].engine
+
+    @property
+    def engines(self) -> list[Engine]:
+        return [p.engine for p in self.partitions.values()]
+
+    @property
+    def multiple(self) -> bool:
+        return len(self.partitions) > 1
+
+    def _partition_name(self, pid: str) -> str:
+        if pid == PRIMARY_PARTITION:
+            return self.entry.data.get(CONF_PARTITION_NAME) or HOME_NAMES[language_of(self.hass.config.language)]
+        sub = items_of(self.entry).get(pid)
+        return sub.title if sub else pid
+
+    def all_name(self) -> str:
+        return ALL_NAMES[language_of(self.hass.config.language)]
+
+    def partition(self, pid: str | None) -> Partition:
+        """The partition with this id; no id means the first. Raises for an id that does not exist."""
+        part = self.partitions.get(pid or PRIMARY_PARTITION)
+        if part is None:
+            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="unknown_partition")
+        return part
+
+    def partition_of_sensor(self, sensor_id: str) -> Partition:
+        """The partition that owns a sensor: its own for an intrusion sensor, the first for a safety sensor."""
+        for part in self.partitions.values():
+            if sensor_id in part.config.sensors:
+                return part
+        return self.partitions[PRIMARY_PARTITION]
+
+    def engine_for_sensor(self, sensor_id: str) -> Engine:
+        return self.partition_of_sensor(sensor_id).engine
+
+    @property
+    def any_triggered(self) -> bool:
+        return any(e.state == "triggered" for e in self.engines)
+
+    @property
+    def all_disarmed(self) -> bool:
+        return all(e.state == "disarmed" for e in self.engines)
+
+    def combined(self):
+        """The state of all partitions together (the "all" entity)."""
+        return aggregate({pid: p.engine.state for pid, p in self.partitions.items()})
+
+    @staticmethod
+    def allowed_partitions(item: Item | None, pids: list[str]) -> list[str]:
+        """The partitions a user or a panel may use; the list on the item, empty (or none) means all of them."""
+        chosen = list(item.data.get(CONF_PARTITIONS) or []) if item is not None else []
+        return [p for p in pids if p in chosen] if chosen else list(pids)
+
+    def alarming(self, exclude: str | None = None) -> list[Partition]:
+        """The partitions that are the source of an alarm: triggered by an intrusion, or the first partition for an
+        alarm from a safety sensor (those sensors watch in every partition, but the alarm is one)."""
+        return [p for p in self.partitions.values() if p.id != exclude and p.engine.state == "triggered"
+                and (p.primary or p.engine.cause == "intrusion")]
 
     # ------------------------------------------------------------ lifecycle
 
@@ -280,6 +443,13 @@ class VigilManager:
         self._start_feeding(settle=True)
 
     @callback
+    def _feed(self, sensor_id: str, value: str) -> None:
+        """Give a sensor state to every partition that has the sensor (a safety sensor is in all of them)."""
+        for part in self.partitions.values():
+            if sensor_id in part.config.sensors:
+                part.engine.set_sensor(sensor_id, value)
+
+    @callback
     def _unavailable_sensors(self) -> list[str]:
         return [sid for sid, eid in self._sensor_entity.items()
                 if sensor_value(self.hass.states.get(eid)) == "unavailable"]
@@ -298,7 +468,7 @@ class VigilManager:
             value = sensor_value(self.hass.states.get(entity_id))
             if value == "unavailable" and self._settling:
                 continue
-            self.engine.set_sensor(sid, value)
+            self._feed(sid, value)
         if self._sensor_entity:
             self._unsubs.append(
                 async_track_state_change_event(
@@ -336,7 +506,7 @@ class VigilManager:
         self.publish("startup_settled", waited=round(self._clock() - self._started_at), unavailable=len(gone),
                      sensors=", ".join(self._sensor_name.get(s, s) for s in gone))
         for sid in gone:
-            self.engine.set_sensor(sid, "unavailable")  # now it is reported (and may trigger)
+            self._feed(sid, "unavailable")  # now it is reported (and may trigger)
         self._after()
 
     async def async_unload(self) -> None:
@@ -356,7 +526,7 @@ class VigilManager:
         if self._unsub_timer:
             self._unsub_timer()
             self._unsub_timer = None
-        await self._store.async_save(self.engine.export_state())
+        await self._store.async_save(self._data_to_save())
         await self.eventlog.async_flush()
         await self.alarmmemory.async_flush()
         await self.lockout.async_flush()
@@ -368,23 +538,30 @@ class VigilManager:
         saved = await self._store.async_load()
         if not saved:
             return
-        try:
-            self.engine.restore_state(saved)
-        except ValueError as err:
-            _LOGGER.warning("Saved alarm state is unusable, starting disarmed: %s", err)
-            self.engine = Engine(self.config, now=self._wall(), on_event=self._handle_event)
-            self._emit_manager_event("state_restore_failed", reason=str(err))
+        # Since 0.6.0 {"partitions": {id: state}}; before, the state of the one engine itself.
+        states = saved["partitions"] if isinstance(saved.get("partitions"), dict) else {PRIMARY_PARTITION: saved}
+        for pid, part in self.partitions.items():
+            state = states.get(pid)
+            if not state:
+                continue
+            try:
+                part.engine.restore_state(state)
+            except ValueError as err:
+                _LOGGER.warning("Saved alarm state is unusable, starting disarmed: %s", err)
+                part.engine = Engine(part.config, now=self._wall(), on_event=partial(self._handle_event, pid=pid))
+                self._emit_manager_event("state_restore_failed", reason=str(err), partition=pid)
 
     @callback
     def _data_to_save(self) -> dict[str, Any]:
-        return self.engine.export_state()
+        return {"partitions": {pid: p.engine.export_state() for pid, p in self.partitions.items()}}
 
     # ----------------------------------------------------------- engine I/O
 
     @callback
     def _sync(self) -> None:
         """Bring the engine's clock up to the wall clock (fires due timers)."""
-        self.engine.advance(max(self._wall(), self.engine.now))
+        for engine in self.engines:
+            engine.advance(max(self._wall(), engine.now))
 
     @callback
     def notify_changed(self) -> None:
@@ -397,7 +574,8 @@ class VigilManager:
         if self._unsub_timer:
             self._unsub_timer()
             self._unsub_timer = None
-        due = self.engine.next_due()
+        dues = [d for d in (e.next_due() for e in self.engines) if d is not None]
+        due = min(dues) if dues else None
         if due is not None:
             self._unsub_timer = async_track_point_in_utc_time(
                 self.hass, self._timer_fired, datetime.fromtimestamp(due, timezone.utc)
@@ -420,7 +598,7 @@ class VigilManager:
         self._sync()
         for sid, eid in self._sensor_entity.items():
             if eid == entity_id:
-                self.engine.set_sensor(sid, value)
+                self._feed(sid, value)
                 self.walktest.note(sid, value)
                 if not self.practice.active:
                     self.alarmmemory.note(sid, value)
@@ -430,8 +608,29 @@ class VigilManager:
             self._finish_settle()
         self._after()
 
-    def _handle_event(self, event: dict[str, Any]) -> None:
+    def _duplicate(self, part: Partition, event: dict[str, Any]) -> bool:
+        """A safety sensor watches in every partition, so every engine reports it. The first partition speaks for
+        all: what the other engines say about a safety sensor or a safety alarm is dropped."""
+        if part.primary:
+            return False
+        kind = event.get("type")
+        if kind in ("triggered", "trigger_cause_changed"):
+            part.safety_trigger = event.get("cause") != "intrusion"
+            return part.safety_trigger
+        if kind == "trigger_ended":
+            ended, part.safety_trigger = part.safety_trigger, False
+            return ended
+        sensor = part.config.sensors.get(event.get("sensor") or "")
+        return bool(sensor and sensor.cls != "intrusion")
+
+    def _handle_event(self, event: dict[str, Any], pid: str = PRIMARY_PARTITION) -> None:
+        part = self.partitions.get(pid) or self.partitions[PRIMARY_PARTITION]
+        if self._duplicate(part, event):
+            return
         data = dict(event)
+        data["partition"] = pid
+        if self.multiple:
+            data["partition_name"] = part.name
         if sensor := data.get("sensor"):
             data["sensor_name"] = self._sensor_name.get(sensor, sensor)
         if data.get("type") in ("armed", "disarmed"):
@@ -561,7 +760,7 @@ class VigilManager:
     def _sensor_names(self, ids: list[str]) -> str:
         return ", ".join(self._sensor_name.get(z, z) for z in ids) or "-"
 
-    def arm_blockers(self, mode: str, *, sync: bool = True) -> list[dict[str, Any]]:
+    def arm_blockers(self, mode: str, *, sync: bool = True, partition: str | None = None) -> list[dict[str, Any]]:
         """What stops arming `mode` now, with the name of the sensor: the answer to "why can't I arm?".
         `sync=False` takes the engine as it is (the live view must not trigger a sync of its own)."""
         if sync:
@@ -569,70 +768,144 @@ class VigilManager:
         return [
             {**b, "name": self._sensor_names([b["sensor"]]) if b["sensor"] else "",
              "entity_id": self._sensor_entity.get(b["sensor"]) if b["sensor"] else None}
-            for b in self.engine.arm_check(mode)
+            for b in self.partition(partition).engine.arm_check(mode)
         ]
+
+    def _check_partition_right(self, part: Partition, user: Item | None) -> None:
+        if user is not None and part.id not in self.allowed_partitions(user, list(self.partitions)):
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="partition_not_allowed",
+                translation_placeholders={"user": user.title, "partition": part.name},
+            )
+
+    def _targets(self, partition: str | None, user: Item | None, source: str | None, action: str,
+                 mode: str | None = None) -> list[Partition]:
+        """The partitions an arm or disarm applies to: one, or all of them (`partition` "all")."""
+        if partition == "all":
+            if not self.multiple:
+                return [self.partitions[PRIMARY_PARTITION]]
+            allowed = self.allowed_partitions(user, list(self.partitions))
+            panel = self.panels.get(source)
+            if panel is not None:
+                allowed = [p for p in allowed if p in self.panels.allowed_partitions(panel)]
+            return [self.partitions[p] for p in allowed]
+        part = self.partition(partition)
+        self.panels.check(source, action, mode, part.id)
+        return [part]
 
     async def async_arm(
         self, mode: str, code: str | None, source: str | None = None, user_id: str | None = None,
-        *, bypass_open: bool = False,
+        *, bypass_open: bool = False, partition: str | None = None,
     ) -> None:
         """Arm. With `bypass_open` what stops it (an open tamper contact, a sensor that does not answer) is bypassed
-        first: for someone who may bypass, with the same rules as bypassing by hand, and never a fire or gas sensor."""
+        first: for someone who may bypass, with the same rules as bypassing by hand, and never a fire or gas sensor.
+
+        `partition`: the id of one partition (none: the first), or "all": every partition the caller may use that is
+        disarmed and has this mode. Nothing is armed unless all of them can be."""
         self.walktest.stop("stopped")  # arming ends a walk test
         source = await self._operator(source, user_id, "arm")
         if not self.ready:
             raise ServiceValidationError(translation_domain=DOMAIN, translation_key="not_ready")
-        if mode not in self.config.modes:
+        partition = self.panels.partition_for(source, partition)
+        everywhere = partition == "all"
+        first = self.partition(None if everywhere else partition)
+        if not everywhere and mode not in first.config.modes:
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="mode_not_enabled",
                 translation_placeholders={"mode": mode},
             )
-        self.panels.check(source, "arm", mode)
-        panel = self.panels.check(source, "bypass") if bypass_open else None
+        if not everywhere:
+            self.panels.check(source, "arm", mode, first.id)
+        panel = self.panels.check(source, "bypass", None, None if everywhere else first.id) if bypass_open else None
         # From a registered panel a bypass always needs a code, like bypassing by hand.
         user = await self._authenticate(
             code, required=self.code_arm_required or panel is not None, source=source, action="arm"
         )
-        if user is not None:
-            allowed = user.data.get(CONF_ALLOWED_MODES) or list(self.config.modes)
-            if mode not in allowed:
+        if everywhere:
+            targets = [p for p in self._targets("all", user, source, "arm", mode)
+                       if mode in p.config.modes and p.engine.state == "disarmed"]
+            if not targets:
                 raise ServiceValidationError(
-                    translation_domain=DOMAIN,
-                    translation_key="mode_not_allowed",
-                    translation_placeholders={"user": user.title, "mode": mode},
+                    translation_domain=DOMAIN, translation_key="mode_not_enabled",
+                    translation_placeholders={"mode": mode},
                 )
+        else:
+            self._check_partition_right(first, user)
+            targets = [first]
+        if user is not None:
+            for part in targets:
+                allowed = user.data.get(CONF_ALLOWED_MODES) or list(part.config.modes)
+                if mode not in allowed:
+                    raise ServiceValidationError(
+                        translation_domain=DOMAIN,
+                        translation_key="mode_not_allowed",
+                        translation_placeholders={"user": user.title, "mode": mode},
+                    )
         name = self._actor(user, source)
         self._sync()
-        bypassed: list[str] = []
-        if bypass_open:
-            blockers = self.engine.arm_check(mode)
-            is_admin = user_id is not None and await self.async_is_admin_id(user_id)
-            if blockers and not is_admin and user is not None and not user.data.get(CONF_MAY_BYPASS, True):
-                raise ServiceValidationError(translation_domain=DOMAIN, translation_key="bypass_not_allowed")
-            for b in blockers:
-                if b["sensor"] and self.config.sensors[b["sensor"]].cls == "tamper" and not is_admin \
-                        and (user is None or not user.data.get(CONF_MAY_BYPASS_TAMPER, False)):
-                    raise ServiceValidationError(translation_domain=DOMAIN, translation_key="tamper_bypass_not_allowed")
-            if all(b["bypassable"] for b in blockers):  # one that cannot be bypassed: it is refused as usual
-                for b in blockers:
-                    if self.engine.bypass(b["sensor"], user=name):
-                        bypassed.append(b["sensor"])
-        ok = self.engine.arm(mode, user=name)
+        bypassed: list[tuple[Partition, str]] = []
+        try:
+            if bypass_open:
+                is_admin = user_id is not None and await self.async_is_admin_id(user_id)
+                for part in targets:
+                    blockers = part.engine.arm_check(mode)
+                    if blockers and not is_admin and user is not None and not user.data.get(CONF_MAY_BYPASS, True):
+                        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="bypass_not_allowed")
+                    for b in blockers:
+                        if b["sensor"] and self.config.sensors[b["sensor"]].cls == "tamper" and not is_admin \
+                                and (user is None or not user.data.get(CONF_MAY_BYPASS_TAMPER, False)):
+                            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="tamper_bypass_not_allowed")
+                    if all(b["bypassable"] for b in blockers):  # one that cannot be bypassed: it is refused as usual
+                        for b in blockers:
+                            if self._bypass_everywhere(b["sensor"], name, part):
+                                bypassed.append((part, b["sensor"]))
+            # All or nothing: when one partition cannot arm, none is armed.
+            refusal = None
+            if len(targets) > 1:
+                blocked = [(part, part.engine.arm_check(mode)) for part in targets]
+                blocked = [(part, found) for part, found in blocked if found]
+                if blocked:
+                    part, found = blocked[0]
+                    sensors = [b["sensor"] for _p, f in blocked for b in f if b["sensor"]]
+                    refusal = (found[0]["reason"], sensors)
+            ok = refusal is None
+            if ok:
+                for part in targets:
+                    ok = part.engine.arm(mode, user=name) and ok
+        except ServiceValidationError:
+            for part, sid in bypassed:
+                self._unbypass_everywhere(sid, name)
+            raise
         if not ok:
-            for sid in bypassed:  # it did not start after all: put them back
-                self.engine.unbypass(sid, user=name)
+            for part, sid in bypassed:  # it did not start after all: put them back
+                self._unbypass_everywhere(sid, name)
         self._after()
         if not ok:
-            event = next(e for e in reversed(self.engine.events) if e["type"] == "arm_refused")
+            if refusal is None:
+                event = next(e for e in reversed(targets[0].engine.events) if e["type"] == "arm_refused")
+                refusal = (event["reason"], event["sensors"])
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="arm_refused",
                 translation_placeholders={
-                    "reason": event["reason"],
-                    "sensors": self._sensor_names(event["sensors"]),
+                    "reason": refusal[0],
+                    "sensors": self._sensor_names(refusal[1]),
                 },
             )
+
+    def _bypass_everywhere(self, sensor_id: str, name: str | None, part: Partition | None = None) -> bool:
+        """Bypass a sensor in every partition that has it (a safety sensor is in all of them)."""
+        done = False
+        for p in self.partitions.values():
+            if sensor_id in p.config.sensors:
+                done = p.engine.bypass(sensor_id, user=name) or done
+        return done
+
+    def _unbypass_everywhere(self, sensor_id: str, name: str | None) -> None:
+        for p in self.partitions.values():
+            if sensor_id in p.config.sensors:
+                p.engine.unbypass(sensor_id, user=name)
 
     async def async_check_code(self, code: str | None, source: str | None = None, user_id: str | None = None) -> None:
         """Is this a valid code? Counts as a try for the lockout. For a panel that hides things behind a code."""
@@ -640,24 +913,41 @@ class VigilManager:
         self.panels.check(source, "check_code")
         await self._authenticate(code, required=True, source=source, action="check_code")
 
-    async def async_disarm(self, code: str | None, source: str | None = None, user_id: str | None = None) -> None:
+    async def async_disarm(
+        self, code: str | None, source: str | None = None, user_id: str | None = None, *, partition: str | None = None,
+    ) -> None:
+        """Disarm one partition (none: the first) or, with "all", every partition the caller may use.
+
+        An alarm from a safety sensor is one alarm for the whole house: disarming a partition that is in it ends it
+        in every partition that is in it."""
         source = await self._operator(source, user_id, "disarm")
-        self.panels.check(source, "disarm")
+        partition = self.panels.partition_for(source, partition)
+        part = self.partition(None if partition == "all" else partition)
+        self.panels.check(source, "disarm", None, None if partition == "all" else part.id)
         user = await self._authenticate(code, required=True, source=source, action="disarm")
         duress = self.auth_duress
         self._sync()
-        cancelled = not duress and self._within_abort_window()
+        if partition == "all":
+            targets = self._targets("all", user, source, "disarm")
+        else:
+            self._check_partition_right(part, user)
+            targets = [part]
+            if part.engine.state == "triggered" and part.engine.cause != "intrusion":
+                targets += [p for p in self.partitions.values()
+                            if p is not part and p.engine.state == "triggered" and p.engine.cause != "intrusion"]
+        cancelled = not duress and any(self._within_abort_window(p) for p in targets)
         name = self._actor(user, source)
-        self.engine.disarm(user=name)
+        for target in targets:
+            target.engine.disarm(user=name)
         if cancelled:
             self.alarmmemory.mark_cancelled()
             self.publish("alarm_cancelled", user=name, source=source)
         self._after()
 
-    def _within_abort_window(self) -> bool:
+    def _within_abort_window(self, part: Partition | None = None) -> bool:
         """Is this a disarm soon enough after the siren went off to call it a false alarm?"""
         seconds = int(self.entry.data.get(CONF_ABORT_SECONDS, DEFAULT_ABORT_SECONDS))
-        engine = self.engine
+        engine = (part or self.partitions[PRIMARY_PARTITION]).engine
         if seconds <= 0 or engine.state != "triggered" or engine.cause != "intrusion":
             return False
         started = self.alarmmemory.started
@@ -669,7 +959,8 @@ class VigilManager:
     def _chime(self, sensor_id: str) -> None:
         """A door or window with the chime opened while the alarm is off: a short sound. No alarm, no message and no
         line in the log; the event entity gets it, so an automation can do more (play a sound on a speaker)."""
-        if self.engine.state != "disarmed" or not self.ready:
+        part = self.partition_of_sensor(sensor_id)
+        if part.engine.state != "disarmed" or not self.ready:
             return
         now = self._wall()
         if now - self._chime_last.get(sensor_id, 0) < 3:  # a contact that flickers rings once
@@ -677,9 +968,11 @@ class VigilManager:
         self._chime_last[sensor_id] = now
         async_dispatcher_send(
             self.hass, SIGNAL_EVENT.format(self.entry.entry_id),
-            {"t": now, "type": "chime", "sensor": sensor_id, "sensor_name": self._sensor_name.get(sensor_id, sensor_id)},
+            {"t": now, "type": "chime", "sensor": sensor_id, "sensor_name": self._sensor_name.get(sensor_id, sensor_id),
+             "partition": part.id},
         )
-        if entity_id := self.entry.data.get(CONF_CHIME_ENTITY):
+        pdata = partition_data(self.entry, part.id)
+        if entity_id := pdata.get(CONF_CHIME_ENTITY) or self.entry.data.get(CONF_CHIME_ENTITY):
             self.hass.async_create_task(self._async_ring(entity_id))
 
     async def _async_ring(self, entity_id: str) -> None:
@@ -736,9 +1029,9 @@ class VigilManager:
         name = self._actor(user, source)
         self._sync()
         if bypass:
-            ok = self.engine.bypass(sensor_id, user=name)
+            ok = self._bypass_everywhere(sensor_id, name)
         else:
-            self.engine.unbypass(sensor_id, user=name)
+            self._unbypass_everywhere(sensor_id, name)
             ok = True
         self._after()
         if not ok:
@@ -803,34 +1096,64 @@ class VigilManager:
     # ---------------------------------------------------------------- views
 
     def sensor_status(self, sensor_id: str) -> str:
-        return self.engine.sensor_status(sensor_id)
+        return self.engine_for_sensor(sensor_id).sensor_status(sensor_id)
 
     def sensor_is_bypassed(self, sensor_id: str) -> bool:
-        return self.engine.is_bypassed(sensor_id)
+        return self.engine_for_sensor(sensor_id).is_bypassed(sensor_id)
 
     def sensor_items(self) -> list[Item]:
         return [s for s in items_of(self.entry).values() if s.subentry_type == SUBENTRY_SENSOR]
 
-    def snapshot(self) -> dict[str, Any]:
-        snap = self.engine.snapshot()
+    def panel_rows(self, partitions: list[str]) -> str:
+        """The sensor list of a panel that may use several partitions: "name|entity|status|1 or 0|partition" per
+        line. A safety sensor watches in every partition and is listed once, with no partition."""
+        rows = []
+        seen: set[str] = set()
+        for pid in partitions:
+            part = self.partitions[pid]
+            for s in self.sensor_items():
+                sid = s.subentry_id
+                sensor = part.config.sensors.get(sid)
+                if sensor is None or sid in seen:
+                    continue
+                if sensor.cls != "intrusion":
+                    seen.add(sid)
+                status = part.engine.sensor_status(sid)
+                bypassable = sensor.cls not in ("fire", "gas")
+                homes = [q for q in self.partitions.values() if sid in q.config.sensors]  # a tamper contact has one
+                rows.append((
+                    _bypass_rank(status, bypassable), s.title.lower(),
+                    "|".join((s.title.replace("|", "/").replace("\n", " "), s.data[CONF_ENTITY_ID], status,
+                              "1" if bypassable else "0", pid if sensor.cls == "intrusion" or len(homes) == 1 else "")),
+                ))
+        return "\n".join(row for _rank, _name, row in sorted(rows))
+
+    def snapshot(self, partition: str | None = None) -> dict[str, Any]:
+        """The state of one partition (none: the first) for entities, panels and dashboards."""
+        part = self.partition(partition)
+        engine, config = part.engine, part.config
+        snap = engine.snapshot()
         names = self._sensor_name
         for key in ("open_sensors", "faults", "technical_alarms"):
             snap[key] = [names.get(z, z) for z in snap[key]]
         snap["cause_sensor"] = names.get(snap["cause_sensor"], snap["cause_sensor"])
         snap["problems"] = self.supervisor.problems()
         snap["last_event"] = self.last_event
+        snap["partition"] = part.id
+        snap["partition_name"] = part.name
         snap["open_now"] = [
-            names.get(z, z) for z in self.config.sensors if self.engine.sensor_status(z) in ("open", "waiting")
+            names.get(z, z) for z in config.sensors if engine.sensor_status(z) in ("open", "waiting")
         ]
+        snap["open_now_count"] = len(snap["open_now"])
         # One line per sensor, "name|entity|status|1 or 0 (bypassable)": plain text, because a display
         # (ESPHome) only reads plain attribute values, not lists. The sensors that come first for a bypass come
         # first in the list, so nobody has to page through closed doors to find the open one.
         rows = []
         for s in self.sensor_items():
-            if s.subentry_id not in self.config.sensors:
+            if s.subentry_id not in config.sensors:
                 continue
-            status = self.engine.sensor_status(s.subentry_id)
-            bypassable = self.config.sensors[s.subentry_id].cls not in ("fire", "gas")
+            status = engine.sensor_status(s.subentry_id)
+            bypassable = config.sensors[s.subentry_id].cls not in ("fire", "gas")
             rows.append((
                 _bypass_rank(status, bypassable), s.title.lower(),
                 "|".join((s.title.replace("|", "/").replace("\n", " "), s.data[CONF_ENTITY_ID], status,
@@ -838,7 +1161,7 @@ class VigilManager:
             ))
         snap["panel_sensors"] = "\n".join(row for _rank, _name, row in sorted(rows))
         snap["bypassed_sensors"] = [
-            names.get(z, z) for z in self.config.sensors
-            if self.engine.sensor_status(z) in ("bypassed", "bypassed_at_arm")
+            names.get(z, z) for z in config.sensors
+            if engine.sensor_status(z) in ("bypassed", "bypassed_at_arm")
         ]
         return snap

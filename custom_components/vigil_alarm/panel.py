@@ -10,7 +10,7 @@ import hashlib
 import json
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any
+from typing import Any, Mapping
 
 import voluptuous as vol
 
@@ -26,6 +26,7 @@ from .backups import BackupError, capture as capture_config, diff as diff_config
 from .migration import ENTRY_VERSION
 from .items import Item, items_of, new_id as new_item_id, save_stored, stored, stored_items
 from .const import (
+    ALL_PARTITIONS,
     CONF_HEARTBEAT_INTERVAL,
     CONF_HEARTBEAT_URL,
     CONF_LOG_RETENTION_DAYS,
@@ -55,6 +56,9 @@ from .const import (
     CONF_DURESS_HASH,
     CONF_DURESS_SALT,
     CONF_SCREEN_OFF_SECONDS,
+    CONF_PARTITION_RETURN_SECONDS,
+    DEFAULT_PARTITION_RETURN_SECONDS,
+    PARTITION_RETURN_RANGE,
     DEFAULT_SCREEN_OFF_ON_ALARM,
     DEFAULT_SCREEN_OFF_SECONDS,
     SCREEN_OFF_RANGE,
@@ -75,6 +79,7 @@ from .const import (
     CONF_SENSORS,
     DOMAIN,
     MODES,
+    DEFAULT_EXIT_DELAY,
     DEFAULT_MODES,
     NOTIFICATION_CATEGORIES,
     SIREN_CAUSES,
@@ -91,6 +96,14 @@ from .const import (
     SUBENTRY_SENSOR_GROUP,
     CONF_SENSOR_GROUPS,
     SUGGEST_FOR,
+    CONF_PARTITION_NAME,
+    CONF_PARTITIONS,
+    CONF_PARTITION,
+    PRIMARY_PARTITION,
+    SUBENTRY_PARTITION,
+    CONF_DEFAULT_ENTRY_DELAY,
+    CONF_TRIGGER_TIME,
+    CONF_EXIT_DELAY,
 )
 from .about import async_about
 from .heartbeat import valid_url
@@ -99,7 +112,7 @@ from .discovery import async_discover, async_report
 from .readiness import async_create_default_groups, async_readiness, phone_services, phone_title
 from .editing import EditError, _TrialEntry, async_prepare, companion_id, notify_services, plan_companion
 from .languages import LANGUAGES, language_of
-from .manager import SIGNAL_UPDATE, build_config
+from .manager import SIGNAL_UPDATE, all_enabled_modes, build_config, partition_data, partition_ids
 from .presets import siren_preset_ids, siren_suggestion
 from .vigil_core import ConfigError
 from .vigil_core.model import AT_ARM_OPEN, CLASSES, GAS_TYPES, ON_UNAVAILABLE, SENSOR_TYPES
@@ -128,6 +141,7 @@ TYPE_OF = {
     "notification": SUBENTRY_NOTIFICATION,
     "siren": SUBENTRY_SIREN,
     "panel": SUBENTRY_PANEL,
+    "partition": SUBENTRY_PARTITION,
 }
 KINDS = tuple(TYPE_OF)
 _DATA_KEY = f"{DOMAIN}_panel"
@@ -141,8 +155,16 @@ def _f(key: str, type_: str, **kw: Any) -> dict[str, Any]:
     return {"key": key, "type": type_, **kw}
 
 
-def form_schema(modes: list[str]) -> dict[str, list[dict[str, Any]]]:
-    """Describe the forms; the panel renders them (labels live in the panel)."""
+def form_schema(modes: list[str], house: Mapping[str, Any] | None = None) -> dict[str, list[dict[str, Any]]]:
+    """Describe the forms; the panel renders them (labels live in the panel).
+
+    `house` is the first partition: a new partition starts with its modes and times."""
+    house = house or {}
+    house_modes = [m for m in modes if m in (house.get("modes") or DEFAULT_MODES)] or list(modes)
+
+    def delay(mode: str) -> Any:
+        return house.get(f"exit_delay_{mode}", DEFAULT_EXIT_DELAY.get(mode, 0))
+
     intrusion = {"cls": ["intrusion"]}
     return {
         "sensor": [
@@ -150,6 +172,8 @@ def form_schema(modes: list[str]) -> dict[str, list[dict[str, Any]]]:
             _f("entity_id", "entity", domains=["binary_sensor"], required=True),
             _f("cls", "select", options=list(CLASSES), default="intrusion", required=True),
             _f("type", "select", options=list(SENSOR_TYPES), default="instant", show_if=intrusion),
+            _f("partition", "partition", default=PRIMARY_PARTITION, show_if=intrusion),
+            _f("tamper_partition", "partition", default=ALL_PARTITIONS, show_if={"cls": ["tamper"]}),
             _f("sensor_groups", "sensor_groups", default=[], required=True, show_if=intrusion),
             _f("at_arm_open", "select", options=list(AT_ARM_OPEN), default="bypass", show_if=intrusion),
             _f("entry_delay", "number", unit="s", min=0, max=600, show_if=intrusion),
@@ -162,6 +186,7 @@ def form_schema(modes: list[str]) -> dict[str, list[dict[str, Any]]]:
         ],
         "sensor_group": [
             _f("name", "text", required=True),
+            _f("partition", "partition", default=PRIMARY_PARTITION),
             _f("modes", "multiselect", options=modes, default=[], required=True),
             _f("suggest_for", "select", options=["", *SUGGEST_FOR], default=""),
         ],
@@ -177,6 +202,7 @@ def form_schema(modes: list[str]) -> dict[str, list[dict[str, Any]]]:
             _f("code", "password"),
             _f("duress_code", "password"),
             _f("tags", "tags", default=[]),
+            _f("partitions", "partitions", default=[], required=True),
             _f("allowed_modes", "multiselect", options=modes, default=[]),
             _f("may_bypass", "boolean", default=False),
             _f("may_bypass_tamper", "boolean", default=False, show_if={"may_bypass": [True]}),
@@ -188,6 +214,7 @@ def form_schema(modes: list[str]) -> dict[str, list[dict[str, Any]]]:
                default=["alarm", "pending", "fault", "technical"], required=True),
             _f("delay", "number", default=0, unit="s", min=0, max=3600),
             _f("priority", "boolean", default=False),
+            _f("partitions", "partitions", default=[], required=True),
         ],
         "panel": [
             _f("name", "text", required=True),
@@ -195,6 +222,8 @@ def form_schema(modes: list[str]) -> dict[str, list[dict[str, Any]]]:
             _f("panel_id", "text", required=True, show_if={"device": ["esphome"]}),
             _f("ha_user", "ha_user", required=True, show_if={"device": ["account"]}),
             _f("language", "select", options=list(LANGUAGES), default="en"),
+            _f("partitions", "partitions", default=[], required=True),
+            _f("default_partition", "default_partition", default="", required=True),
             _f("allowed_modes", "multiselect", options=modes, default=[]),
             _f("can_disarm", "boolean", default=True),
             _f("can_bypass", "boolean", default=True),
@@ -205,6 +234,14 @@ def form_schema(modes: list[str]) -> dict[str, list[dict[str, Any]]]:
             _f("watch", "boolean", default=True),
             _f("blocked", "boolean", default=False),
         ],
+        "partition": [
+            _f("name", "text", required=True),
+            _f("modes", "multiselect", options=list(MODES), default=house_modes, required=True),
+            *[_f(f"exit_delay_{m}", "number", unit="s", min=0, max=3600, default=delay(m), show_if={"modes": [m]}) for m in MODES],
+            _f("default_entry_delay", "number", unit="s", min=0, max=3600, default=house.get("default_entry_delay", 30)),
+            _f("trigger_time", "number", unit="s", min=0, max=86400, default=house.get("trigger_time")),
+            _f("chime_entity", "entity", domains=list(CHIME_DOMAINS)),
+        ],
         "siren": [
             _f("name", "text", required=True),
             _f("preset", "preset"),  # not stored: fills the fields below for a known device
@@ -213,6 +250,7 @@ def form_schema(modes: list[str]) -> dict[str, list[dict[str, Any]]]:
             _f("max_duration", "number", default=180, unit="s", min=0, max=3600),
             _f("repeat_every", "number", default=0, unit="s", min=0, max=3600),
             _f("light", "entity", domains=["switch", "light"]),
+            _f("partitions", "partitions", default=[], required=True),
             _f("tone_entity", "entity", domains=["select", "input_select"]),
             _f("volume_entity", "entity", domains=["number", "input_number", "select", "input_select"]),
             _f("battery_entity", "entity", domains=["sensor"]),
@@ -228,12 +266,7 @@ def settings_schema() -> list[dict[str, Any]]:
     """The settings form. A `section` puts the field on its own card in the panel."""
     st = SELFTEST_RANGES
     return [
-        _f("modes", "multiselect", options=list(MODES), required=True, section="alarm"),
-        *[_f(f"exit_delay_{m}", "number", unit="s", min=0, max=3600, show_if={"modes": [m]}, section="alarm") for m in MODES],
-        _f("default_entry_delay", "number", unit="s", min=0, max=3600, section="alarm"),
-        _f("trigger_time", "number", unit="s", min=0, max=86400, section="alarm"),
         _f("abort_seconds", "number", unit="s", min=ABORT_SECONDS_RANGE[0], max=ABORT_SECONDS_RANGE[1], default=DEFAULT_ABORT_SECONDS, section="alarm"),
-        _f("chime_entity", "entity", domains=list(CHIME_DOMAINS), section="chime"),
         _f("chime_seconds", "number", unit="s", min=CHIME_SECONDS_RANGE[0], max=CHIME_SECONDS_RANGE[1], default=DEFAULT_CHIME_SECONDS, section="chime"),
         _f("startup_wait_seconds", "number", unit="s", min=STARTUP_WAIT_RANGE[0], max=STARTUP_WAIT_RANGE[1], section="startup"),
         _f("code_arm_required", "boolean", section="codes"),
@@ -247,6 +280,7 @@ def settings_schema() -> list[dict[str, Any]]:
         _f("lock_tries_4", "number", min=LOCK_TRIES_RANGE[0], max=LOCK_TRIES_RANGE[1], section="lock"),
         _f("screen_off_seconds", "number", unit="s", min=SCREEN_OFF_RANGE[0], max=SCREEN_OFF_RANGE[1], section="screen"),
         _f("screen_off_on_alarm", "boolean", default=DEFAULT_SCREEN_OFF_ON_ALARM, section="screen"),
+        _f("partition_return_seconds", "number", unit="s", min=PARTITION_RETURN_RANGE[0], max=PARTITION_RETURN_RANGE[1], default=DEFAULT_PARTITION_RETURN_SECONDS, section="screen"),
         _f("battery_threshold", "number", unit="%", min=1, max=100, section="battery"),
         _f("log_retention_days", "number", unit="d", min=LOG_RETENTION_FLOOR, max=LOG_RETENTION_CEILING, section="log"),
         _f("backup_versions", "number", min=BACKUP_VERSIONS_RANGE[0], max=BACKUP_VERSIONS_RANGE[1], section="backup"),
@@ -286,6 +320,24 @@ def _entry_for(hass: HomeAssistant) -> ConfigEntry | None:
     return entries[0] if entries else None
 
 
+def _partitions(hass: HomeAssistant, entry: ConfigEntry) -> list[dict[str, Any]]:
+    registry = er.async_get(hass)
+    manager = getattr(entry, "runtime_data", None)
+    out = []
+    for pid in partition_ids(entry):
+        sub = items_of(entry).get(pid)
+        uid = entry.entry_id if pid == PRIMARY_PARTITION else f"{entry.entry_id}_partition_{pid}"
+        out.append({
+            "id": pid,
+            "name": (manager.partitions[pid].name if manager is not None and pid in manager.partitions
+                     else sub.title if sub else entry.data.get(CONF_PARTITION_NAME) or ""),
+            "primary": pid == PRIMARY_PARTITION,
+            "modes": list(partition_data(entry, pid).get(CONF_MODES) or ([] if pid == PRIMARY_PARTITION else DEFAULT_MODES)),
+            "entity": registry.async_get_entity_id("alarm_control_panel", DOMAIN, uid),
+        })
+    return out
+
+
 def _snapshot(hass: HomeAssistant, entry: ConfigEntry, users: list[Any]) -> dict[str, Any]:
     registry = er.async_get(hass)
     sensor_entities: dict[str, dict[str, str | None]] = {}
@@ -298,15 +350,18 @@ def _snapshot(hass: HomeAssistant, entry: ConfigEntry, users: list[Any]) -> dict
         }
     return {
         "version": _VERSION,
-        "entry": {"id": entry.entry_id, "title": entry.title, "data": {CONF_STARTUP_WAIT: DEFAULT_STARTUP_WAIT, **LOCK_DEFAULTS, CONF_MIN_CODE_LENGTH: MIN_CODE_LENGTH_FLOOR, CONF_SCREEN_OFF_SECONDS: DEFAULT_SCREEN_OFF_SECONDS, CONF_SCREEN_OFF_ON_ALARM: DEFAULT_SCREEN_OFF_ON_ALARM, CONF_ABORT_SECONDS: DEFAULT_ABORT_SECONDS, CONF_CHIME_SECONDS: DEFAULT_CHIME_SECONDS, CONF_LOG_RETENTION_DAYS: DEFAULT_LOG_RETENTION_DAYS, CONF_BACKUP_VERSIONS: DEFAULT_BACKUP_VERSIONS, CONF_HEARTBEAT_INTERVAL: DEFAULT_HEARTBEAT_INTERVAL, **DEFAULT_SELFTEST, **entry.data}},
+        "entry": {"id": entry.entry_id, "title": entry.title, "data": {CONF_STARTUP_WAIT: DEFAULT_STARTUP_WAIT, **LOCK_DEFAULTS, CONF_MIN_CODE_LENGTH: MIN_CODE_LENGTH_FLOOR, CONF_SCREEN_OFF_SECONDS: DEFAULT_SCREEN_OFF_SECONDS, CONF_SCREEN_OFF_ON_ALARM: DEFAULT_SCREEN_OFF_ON_ALARM, CONF_PARTITION_RETURN_SECONDS: DEFAULT_PARTITION_RETURN_SECONDS, CONF_ABORT_SECONDS: DEFAULT_ABORT_SECONDS, CONF_CHIME_SECONDS: DEFAULT_CHIME_SECONDS, CONF_LOG_RETENTION_DAYS: DEFAULT_LOG_RETENTION_DAYS, CONF_BACKUP_VERSIONS: DEFAULT_BACKUP_VERSIONS, CONF_HEARTBEAT_INTERVAL: DEFAULT_HEARTBEAT_INTERVAL, **DEFAULT_SELFTEST, **entry.data}},
         "items": {
             kind: [_public(s) for s in items_of(entry).values() if s.subentry_type == TYPE_OF[kind]]
             for kind in KINDS
         },
-        "forms": form_schema(list(entry.data.get(CONF_MODES, DEFAULT_MODES))),
+        "forms": form_schema(all_enabled_modes(entry) or list(DEFAULT_MODES), entry.data),
+        # The partitions, the first one first. The first has no item: it is the entry itself.
+        "partitions": _partitions(hass, entry),
         "settings_form": settings_schema(),
         "sensor_entities": sensor_entities,
         "alarm_entity": registry.async_get_entity_id("alarm_control_panel", DOMAIN, entry.entry_id),
+        "alarm_all_entity": registry.async_get_entity_id("alarm_control_panel", DOMAIN, f"{entry.entry_id}_all"),
         "notify_services": notify_services(hass),
         # Who a tablet or phone can be: every active account that is not a system account. An administrator
         # too: that is the administrator's own responsibility (see the guides), and Vigil then treats the account
@@ -327,7 +382,18 @@ def _live(entry: ConfigEntry) -> dict[str, Any] | None:
     return {
         "state": manager.engine.state,
         "mode": manager.engine.mode,
-        "sensors": {z: manager.engine.sensor_status(z) for z in manager.config.sensors},
+        "sensors": {z: manager.sensor_status(z) for z in manager.config.sensors},
+        # Per partition: its name, state, mode and (while disarmed) what would stop arming. The fields above are
+        # those of the first partition, which is all an installation with one partition has.
+        "partitions": {
+            pid: {
+                "name": part.name, "state": part.engine.state, "mode": part.engine.mode,
+                "blockers": {m: b for m in part.config.modes if (b := manager.arm_blockers(m, sync=False, partition=pid))}
+                if part.engine.state == "disarmed" else {},
+            }
+            for pid, part in manager.partitions.items()
+        },
+        "combined": manager.combined().state,
         "problems": manager.supervisor.problems(),
         "panels": manager.panels.status(),
         "new_sensors": manager.new_sensors.entities,
@@ -338,7 +404,7 @@ def _live(entry: ConfigEntry) -> dict[str, Any] | None:
         "permanent_bypassed": [
             {"id": z, "name": manager._sensor_name.get(z, z), "entity_id": manager._sensor_entity.get(z)}
             for z, sensor in manager.config.sensors.items()
-            if sensor.permanent_bypass and manager.engine.is_bypassed(z)
+            if sensor.permanent_bypass and manager.sensor_is_bypassed(z)
         ],
         # Per mode what would stop arming now (only while disarmed; the panel shows it as "why can't I arm?").
         "blockers": {m: b for m in manager.config.modes if (b := manager.arm_blockers(m, sync=False))} if manager.engine.state == "disarmed" else {},
@@ -486,7 +552,7 @@ async def ws_add_phone(hass: HomeAssistant, connection: websocket_api.ActiveConn
         connection.send_result(msg["id"], {"ok": False, "errors": {"service": "service_not_found"}, "placeholders": {}})
         return
     title = phone_title(msg["service"])
-    raw = {"name": title, "service": msg["service"], "categories": ["alarm", "pending", "fault", "technical"], "delay": 0}
+    raw = {"name": title, "service": msg["service"], "categories": ["alarm", "pending", "fault", "technical"], "delay": 0, "partitions": ["all"]}
     try:
         name, data = await async_prepare(hass, entry, SUBENTRY_NOTIFICATION, None, raw)
     except EditError as err:
@@ -590,6 +656,13 @@ def ws_tablet(hass: HomeAssistant, connection: websocket_api.ActiveConnection, m
         "name": panel.title,
         "profile_entity": registry.profile_entity_id(panel),
         "alarm_entity": alarm,
+        # What the card offers: the partitions this tablet may use, and (more than one) the entity for all of them.
+        "partitions": registry.partitions_of(panel),
+        "default_partition": registry.default_partition(panel),
+        "return_seconds": registry.return_seconds(),
+        "partition_total": len(registry.manager.partitions),
+        "all_entity": er.async_get(hass).async_get_entity_id("alarm_control_panel", DOMAIN, f"{entry.entry_id}_all")
+        if len(registry.allowed_partitions(panel)) > 1 else None,
     })
 
 
@@ -643,7 +716,7 @@ def ws_dashboard(hass: HomeAssistant, connection: websocket_api.ActiveConnection
     connection.send_result(msg["id"], {"yaml": async_dashboard(hass, entry)})
 
 
-@websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/create_default_groups"})
+@websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/create_default_groups", vol.Optional("partition"): str})
 @websocket_api.require_admin
 @callback
 def ws_create_default_groups(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
@@ -652,7 +725,11 @@ def ws_create_default_groups(hass: HomeAssistant, connection: websocket_api.Acti
     if entry is None:
         _no_entry(connection, msg)
         return
-    connection.send_result(msg["id"], {"ok": True, "ids": async_create_default_groups(hass, entry)})
+    partition = msg.get("partition") or PRIMARY_PARTITION
+    if partition not in partition_ids(entry):
+        connection.send_result(msg["id"], _failure(EditError({"partition": "unknown_partition"})))
+        return
+    connection.send_result(msg["id"], {"ok": True, "ids": async_create_default_groups(hass, entry, partition)})
 
 
 @websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/subscribe"})
@@ -809,8 +886,36 @@ async def ws_delete(hass: HomeAssistant, connection: websocket_api.ActiveConnect
                 msg["id"], _failure(EditError({"base": "sensor_group_in_use"}, {"sensors": ", ".join(users)}))
             )
             return
+    if sub.subentry_type == SUBENTRY_PARTITION:
+        inside = [
+            s.title for s in items_of(entry).values()
+            if s.subentry_type == SUBENTRY_SENSOR and s.data.get(CONF_PARTITION) == sub.subentry_id
+        ]
+        if inside:  # move them to another partition first: a sensor must never end up in none
+            connection.send_result(
+                msg["id"], _failure(EditError({"base": "partition_in_use"}, {"sensors": ", ".join(inside)}))
+            )
+            return
+        groups = [
+            g.title for g in items_of(entry).values()
+            if g.subentry_type == SUBENTRY_SENSOR_GROUP and g.data.get(CONF_PARTITION) == sub.subentry_id
+        ]
+        if groups:
+            connection.send_result(
+                msg["id"], _failure(EditError({"base": "partition_has_groups"}, {"groups": ", ".join(groups)}))
+            )
+            return
     stored_all = stored_items(entry)
     stored_all.pop(sub.subentry_id, None)
+    if sub.subentry_type == SUBENTRY_PARTITION:  # no list may keep pointing at it
+        for item in stored_all.values():
+            chosen = item.get("data", {}).get(CONF_PARTITIONS)
+            if chosen and sub.subentry_id in chosen:
+                left = [p for p in chosen if p != sub.subentry_id]
+                if left:
+                    item["data"] = {**item["data"], CONF_PARTITIONS: left}
+                else:
+                    item["data"] = {k: v for k, v in item["data"].items() if k != CONF_PARTITIONS}
     if sub.subentry_type == SUBENTRY_SENSOR:
         stored_all.pop(companion_id(entry, sub.subentry_id), None)  # its tamper contact goes with it
     save_stored(hass, entry, stored_all)
@@ -829,7 +934,11 @@ async def ws_save_settings(
     if entry is None:
         _no_entry(connection, msg)
         return
-    data = {k: v for k, v in msg["data"].items() if k in {f["key"] for f in settings_schema()}}
+    first = {CONF_PARTITION_NAME, CONF_MODES, CONF_DEFAULT_ENTRY_DELAY, CONF_TRIGGER_TIME, CONF_CHIME_ENTITY,
+             *(CONF_EXIT_DELAY.format(mode=m) for m in MODES)}  # the first partition: edited under Partitions
+    data = {k: v for k, v in msg["data"].items() if k in {f["key"] for f in settings_schema()} | first}
+    if CONF_MODES not in data:  # the settings tab does not send them: they stay as they are
+        data.update({k: v for k, v in entry.data.items() if k in first})
     try:
         length = int(data.get(CONF_MIN_CODE_LENGTH, MIN_CODE_LENGTH_FLOOR))
     except (TypeError, ValueError):
@@ -902,6 +1011,7 @@ async def ws_save_settings(
     for key, (low, high), default in (
         (CONF_ABORT_SECONDS, ABORT_SECONDS_RANGE, DEFAULT_ABORT_SECONDS),
         (CONF_CHIME_SECONDS, CHIME_SECONDS_RANGE, DEFAULT_CHIME_SECONDS),
+        (CONF_PARTITION_RETURN_SECONDS, PARTITION_RETURN_RANGE, DEFAULT_PARTITION_RETURN_SECONDS),
     ):
         try:
             value = int(data.get(key, default))
@@ -919,6 +1029,14 @@ async def ws_save_settings(
         data[CONF_CHIME_ENTITY] = chime_entity
     else:
         data.pop(CONF_CHIME_ENTITY, None)
+    name = str(data.get(CONF_PARTITION_NAME) or "").strip()
+    if name:
+        if any(s.title == name for s in items_of(entry).values() if s.subentry_type == SUBENTRY_PARTITION):
+            connection.send_result(msg["id"], _failure(EditError({CONF_PARTITION_NAME: "name_in_use"})))
+            return
+        data[CONF_PARTITION_NAME] = name[:60]
+    else:
+        data.pop(CONF_PARTITION_NAME, None)
     for key, (low, high) in SELFTEST_RANGES.items():
         try:
             value = int(data.get(key, entry.data.get(key, DEFAULT_SELFTEST[key])))
@@ -1052,7 +1170,9 @@ def ws_import(hass: HomeAssistant, connection: websocket_api.ActiveConnection, m
     connection.send_result(msg["id"], {"ok": True, "change": change})
 
 
-@websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/arm_check", vol.Required("mode"): str})
+@websocket_api.websocket_command(
+    {vol.Required("type"): "vigil_alarm/arm_check", vol.Required("mode"): str, vol.Optional("partition"): str}
+)
 @websocket_api.require_admin
 @callback
 def ws_arm_check(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
@@ -1062,10 +1182,11 @@ def ws_arm_check(hass: HomeAssistant, connection: websocket_api.ActiveConnection
     if manager is None:
         _no_entry(connection, msg)
         return
-    if msg["mode"] not in manager.config.modes:
+    part = manager.partitions.get(msg.get("partition") or PRIMARY_PARTITION)
+    if part is None or msg["mode"] not in part.config.modes:
         connection.send_error(msg["id"], "unknown_mode", "Unknown mode")
         return
-    connection.send_result(msg["id"], {"blockers": manager.arm_blockers(msg["mode"])})
+    connection.send_result(msg["id"], {"blockers": manager.arm_blockers(msg["mode"], partition=part.id)})
 
 
 @callback

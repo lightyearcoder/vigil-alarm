@@ -81,7 +81,7 @@ async def test_export_as_json_lines_and_csv_hold_the_same_entries(hass, hass_ws_
     assert cs["filename"].endswith(".csv") and "\r\n" in cs["text"]  # RFC 4180
     table = list(csv.DictReader(io.StringIO(cs["text"])))
     assert [r["event"] for r in table] == [r["event"] for r in rows]
-    assert list(table[0]) == ["time", "event", "source", "user", "item", "result", "detail"]
+    assert list(table[0]) == ["time", "event", "partition", "source", "user", "item", "result", "detail"]
     assert rows == sorted(rows, key=lambda r: r["time"])  # oldest first in a file
 
 

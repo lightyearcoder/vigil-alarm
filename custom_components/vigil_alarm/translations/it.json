@@ -368,6 +368,12 @@
     },
     "walktest_no_sensors": {
       "message": "Non ci sono sensori di intrusione da percorrere."
+    },
+    "unknown_partition": {
+      "message": "Partizione sconosciuta."
+    },
+    "partition_not_allowed": {
+      "message": "{user} non può usare la partizione {partition}."
     }
   },
   "services": {
@@ -390,6 +396,10 @@
         "bypass_open": {
           "name": "Escludi ciò che lo impedisce",
           "description": "Esclude i sensori che impediscono l'inserimento (per esempio un contatto antimanomissione aperto) e poi inserisce. Richiede il diritto di esclusione; non vale mai per i sensori di incendio o gas."
+        },
+        "partition": {
+          "name": "Partizione",
+          "description": "Quale partizione: il suo id, \"main\" per la prima o \"all\" per tutte. Vuoto: la prima partizione."
         }
       }
     },
@@ -404,6 +414,10 @@
         "source": {
           "name": "Origine",
           "description": "Nome del punto di comando, per esempio un pannello. Compare nel registro e indica chi ha cambiato l'allarme."
+        },
+        "partition": {
+          "name": "Partizione",
+          "description": "Quale partizione: il suo id, \"main\" per la prima o \"all\" per tutte. Vuoto: la prima partizione."
         }
       }
     },
@@ -524,6 +538,20 @@
         "source": {
           "name": "Origine",
           "description": "L'id del pannello."
+        }
+      }
+    },
+    "select_partition": {
+      "name": "Scegli partizione",
+      "description": "Dice a Vigil quale partizione mostra un pannello. Cambia solo ciò che il pannello vede; inserire e disinserire indicano sempre una partizione e richiedono un codice.",
+      "fields": {
+        "source": {
+          "name": "Source",
+          "description": "L'id del pannello."
+        },
+        "partition": {
+          "name": "Partition",
+          "description": "L'id della partizione, oppure all."
         }
       }
     }

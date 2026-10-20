@@ -148,7 +148,7 @@ class SelfTest:
         return sounded
 
     async def _on_action(self, event: Event) -> None:
-        if event.data.get("action") == ACTION and self.manager.engine.state != "triggered":
+        if event.data.get("action") == ACTION and not self.manager.any_triggered:
             await self.async_sound("notification")
 
     async def _tick(self, _now: datetime | None = None) -> None:
@@ -163,7 +163,7 @@ class SelfTest:
             if due is None or now < due or not self._in_window():
                 return
             if self.setting(CONF_SELFTEST_AUTO):
-                if self.manager.engine.state != "triggered":
+                if not self.manager.any_triggered:
                     await self.async_sound("auto")
                 return
             reminders = int(self.state.get("reminders", 0))

@@ -21,6 +21,7 @@ from .items import items_of
 from .const import (
     CONF_CATEGORIES,
     CONF_DELAY,
+    CONF_PARTITIONS,
     CONF_PRIORITY,
     CONF_SERVICE,
     DEFAULT_CATEGORIES,
@@ -77,6 +78,7 @@ class Channel:
     categories: frozenset[str]
     delay: float
     priority: bool
+    partitions: frozenset[str] = frozenset()  # only events of these partitions (house wide alarms always); empty: all
 
 
 class Notifier:
@@ -96,6 +98,7 @@ class Notifier:
                     frozenset(d.get(CONF_CATEGORIES, DEFAULT_CATEGORIES)),
                     float(d.get(CONF_DELAY, 0)),
                     bool(d.get(CONF_PRIORITY, False)),
+                    frozenset(d.get(CONF_PARTITIONS) or ()),
                 )
             )
         self._pending: list[CALLBACK_TYPE] = []
@@ -104,15 +107,19 @@ class Notifier:
 
     @callback
     def handle(self, event: dict[str, Any]) -> None:
-        if event["type"] in ENDING:
-            self._cancel_pending()
+        if event["type"] in ENDING and not self.manager.alarming(exclude=event.get("partition")):
+            self._cancel_pending()  # an alarm in another partition is still going: its escalation stays
         spec = EVENT_MESSAGES.get(event["type"])
         if spec is None or not self.channels:
             return
         category, key = spec
         message = self._message(key, event)
+        everywhere = self._everywhere(event)
+        pid = event.get("partition")
         for channel in self.channels:
             if category not in channel.categories:
+                continue
+            if channel.partitions and pid and pid not in channel.partitions and not everywhere:
                 continue
             if category == "alarm" and key == "cancelled" and channel.delay > 0:
                 continue  # an escalation channel never heard of this alarm
@@ -127,19 +134,26 @@ class Notifier:
 
         Channels without a delay already got the message before the restart.
         """
-        engine = self.manager.engine
-        if engine.state != "triggered" or engine.cause is None:
-            return
-        event = {
-            "type": "triggered",
-            "cause": engine.cause,
-            "sensor": engine.cause_sensor,
-            "sensor_name": self.manager._sensor_name.get(engine.cause_sensor or "", engine.cause_sensor),
-        }
-        message = self._message("triggered", event)
-        for channel in self.channels:
-            if "alarm" in channel.categories and channel.delay > 0:
-                self._schedule(channel, message, "alarm")
+        for part in self.manager.alarming():
+            engine = part.engine
+            if engine.cause is None:
+                continue
+            event = {
+                "type": "triggered",
+                "cause": engine.cause,
+                "sensor": engine.cause_sensor,
+                "sensor_name": self.manager._sensor_name.get(engine.cause_sensor or "", engine.cause_sensor),
+                "partition": part.id,
+            }
+            if self.manager.multiple:
+                event["partition_name"] = part.name
+            message = self._message("triggered", event)
+            everywhere = self._everywhere(event)
+            for channel in self.channels:
+                if channel.partitions and part.id not in channel.partitions and not everywhere:
+                    continue
+                if "alarm" in channel.categories and channel.delay > 0:
+                    self._schedule(channel, message, "alarm")
 
     @callback
     def async_stop(self) -> None:
@@ -148,6 +162,13 @@ class Notifier:
     @callback
     def cancel_escalations(self) -> None:
         self._cancel_pending()
+
+    def _everywhere(self, event: dict[str, Any]) -> bool:
+        """An alarm or a fault of a safety sensor is for the whole house: every channel gets it."""
+        sensor = self.manager.config.sensors.get(event.get("sensor") or "")
+        if sensor is not None and sensor.cls != "intrusion":
+            return True
+        return event.get("cause") not in (None, "intrusion")
 
     def _cancel_pending(self) -> None:
         for cancel in self._pending:
@@ -190,6 +211,8 @@ class Notifier:
         if key == "unconfirmed_escalated":
             params["rule"] = self.manager.rule_name(event.get("rule"))
         message = render(lang, key, **params)
+        if event.get("partition_name") and not self._everywhere(event):
+            message += f" [{event['partition_name']}]"  # more than one partition: say which one
         if key == "triggered" and not self.manager.siren_configured:
             message += " " + text(lang, "no_siren")
         return message

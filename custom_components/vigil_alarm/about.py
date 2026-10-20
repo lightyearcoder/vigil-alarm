@@ -16,7 +16,7 @@ from .const import DOMAIN
 REPOSITORY = "https://github.com/lightyearcoder/vigil-alarm"
 LINKS = {
     "repository": REPOSITORY,
-    "manual_nl": f"{REPOSITORY}/blob/main/docs/gebruikershandleiding.nl.md",
+    "manual_nl": f"{REPOSITORY}/blob/main/docs/user-guide.nl.md",
     "manual_en": f"{REPOSITORY}/blob/main/docs/user-guide.md",
     "panel_docs": f"{REPOSITORY}/blob/main/esphome/README.md",
     "releases": f"{REPOSITORY}/releases",

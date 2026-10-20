@@ -368,6 +368,12 @@
     },
     "walktest_no_sensors": {
       "message": "Il n'y a aucun capteur d'intrusion à parcourir."
+    },
+    "unknown_partition": {
+      "message": "Partition inconnue."
+    },
+    "partition_not_allowed": {
+      "message": "{user} n'a pas le droit d'utiliser la partition {partition}."
     }
   },
   "services": {
@@ -390,6 +396,10 @@
         "bypass_open": {
           "name": "Inhiber ce qui bloque",
           "description": "Inhibe les capteurs qui empêchent l'activation (par exemple un contact de sabotage ouvert), puis active. Nécessite le droit d'inhiber ; ne s'applique jamais aux capteurs d'incendie ou de gaz."
+        },
+        "partition": {
+          "name": "Partition",
+          "description": "Quelle partition : son identifiant, \"main\" pour la première ou \"all\" pour toutes. Vide : la première partition."
         }
       }
     },
@@ -404,6 +414,10 @@
         "source": {
           "name": "Source",
           "description": "Nom du point de commande, par exemple un clavier. Il apparaît dans le journal et indique qui a modifié l'alarme."
+        },
+        "partition": {
+          "name": "Partition",
+          "description": "Quelle partition : son identifiant, \"main\" pour la première ou \"all\" pour toutes. Vide : la première partition."
         }
       }
     },
@@ -524,6 +538,20 @@
         "source": {
           "name": "Source",
           "description": "L'identifiant du clavier."
+        }
+      }
+    },
+    "select_partition": {
+      "name": "Choisir la partition",
+      "description": "Indique à Vigil quelle partition un panneau affiche. Ne change que ce que le panneau voit ; l'activation et la désactivation nomment toujours une partition et demandent un code.",
+      "fields": {
+        "source": {
+          "name": "Source",
+          "description": "L'identifiant du panneau."
+        },
+        "partition": {
+          "name": "Partition",
+          "description": "L'identifiant de la partition, ou all."
         }
       }
     }

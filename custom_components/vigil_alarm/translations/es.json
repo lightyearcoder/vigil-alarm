@@ -368,6 +368,12 @@
     },
     "walktest_no_sensors": {
       "message": "No hay sensores de intrusión que recorrer."
+    },
+    "unknown_partition": {
+      "message": "Partición desconocida."
+    },
+    "partition_not_allowed": {
+      "message": "{user} no puede usar la partición {partition}."
     }
   },
   "services": {
@@ -390,6 +396,10 @@
         "bypass_open": {
           "name": "Anular lo que lo impide",
           "description": "Anula los sensores que impiden la activación (por ejemplo un contacto de sabotaje abierto) y después activa. Requiere el derecho de anular; nunca se aplica a sensores de incendio o gas."
+        },
+        "partition": {
+          "name": "Partición",
+          "description": "Qué partición: su id, \"main\" para la primera o \"all\" para todas. Vacío: la primera partición."
         }
       }
     },
@@ -404,6 +414,10 @@
         "source": {
           "name": "Origen",
           "description": "Nombre del punto de control, por ejemplo un panel. Aparece en el registro e indica quién cambió la alarma."
+        },
+        "partition": {
+          "name": "Partición",
+          "description": "Qué partición: su id, \"main\" para la primera o \"all\" para todas. Vacío: la primera partición."
         }
       }
     },
@@ -524,6 +538,20 @@
         "source": {
           "name": "Origen",
           "description": "El id del panel."
+        }
+      }
+    },
+    "select_partition": {
+      "name": "Elegir partición",
+      "description": "Le dice a Vigil qué partición muestra un panel. Solo cambia lo que el panel ve; activar y desactivar siguen indicando una partición y piden un código.",
+      "fields": {
+        "source": {
+          "name": "Source",
+          "description": "El id del panel."
+        },
+        "partition": {
+          "name": "Partition",
+          "description": "El id de la partición, o all."
         }
       }
     }

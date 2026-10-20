@@ -28,8 +28,12 @@ cd "$work"
 conf=".esphome/build/vigil-panel-hallway/src/lv_conf.h"
 new="$(md5sum < "$conf")"
 if [ "$new" != "$(cat obj/.conf 2>/dev/null || true)" ]; then rm -rf obj/lv; fi
+# the generated headers (the number of components, the features in use) are not in the Makefile dependencies:
+# build ESPHome's own code again when they changed, or components are silently left out
+defs="$(md5sum < .esphome/build/vigil-panel-hallway/src/esphome/core/defines.h)"
+if [ "$defs" != "$(cat obj/.defines 2>/dev/null || true)" ]; then rm -rf obj/esphome obj/main.o; fi
 make -s -j"$(nproc)" LVGL="$work/lvgl-src"
-mkdir -p obj; echo "$new" > obj/.conf
+mkdir -p obj; echo "$new" > obj/.conf; echo "$defs" > obj/.defines
 rm -f shots/*; mkdir -p shots
 ESPHOME_SNAPSHOT_DIR="$work/shots" timeout 120 ./sim >run.log 2>&1 || { tail -20 run.log; exit 1; }
 python3 - "$work/shots" "$out" <<'PY'

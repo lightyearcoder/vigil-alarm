@@ -20,10 +20,11 @@ const TXT = {
       disclaimer: "Vigil Alarm is geen gecertificeerd alarmsysteem. Test het regelmatig en vertrouw er niet als enige bescherming op.",
       unreleased: "Nog niet uitgebracht", firstRelease: "eerste versie",
     },
-    tabs: { overview: "Overzicht", sensor: "Sensoren", sensor_group: "Sensorgroepen", rule: "Bevestigingsregels", user: "Gebruikers", notification: "Meldingen", siren: "Sirenes", log: "Logboek", settings: "Instellingen", backup: "Back-up", about: "Over", panel: "Panelen" },
-    add: { sensor: "Sensor toevoegen", sensor_group: "Sensorgroep toevoegen", rule: "Bevestigingsregel toevoegen", user: "Gebruiker toevoegen", notification: "Melding toevoegen", siren: "Sirene toevoegen", panel: "Paneel toevoegen" },
-    edit: { sensor: "Sensor bewerken", sensor_group: "Sensorgroep bewerken", rule: "Bevestigingsregel bewerken", user: "Gebruiker bewerken", notification: "Melding bewerken", siren: "Sirene bewerken", panel: "Paneel bewerken" },
+    tabs: { overview: "Overzicht", sensor: "Sensoren", sensor_group: "Sensorgroepen", rule: "Bevestigingsregels", user: "Gebruikers", notification: "Meldingen", siren: "Sirenes", log: "Logboek", settings: "Instellingen", backup: "Back-up", about: "Over", panel: "Panelen", partition: "Partities" },
+    add: { sensor: "Sensor toevoegen", sensor_group: "Sensorgroep toevoegen", rule: "Bevestigingsregel toevoegen", user: "Gebruiker toevoegen", notification: "Melding toevoegen", siren: "Sirene toevoegen", panel: "Paneel toevoegen", partition: "Partitie toevoegen" },
+    edit: { sensor: "Sensor bewerken", sensor_group: "Sensorgroep bewerken", rule: "Bevestigingsregel bewerken", user: "Gebruiker bewerken", notification: "Melding bewerken", siren: "Sirene bewerken", panel: "Paneel bewerken", partition: "Partitie bewerken" },
     intro: {
+      partition: "Een partitie is een deel van het huis met een eigen schakelstand, eigen standen en vertragingen, bijvoorbeeld het huis en de garage. De eerste partitie is de partitie die je al hebt; je kunt haar hier ook hernoemen en haar standen en vertragingen wijzigen. Elke inbraaksensor zit in precies één partitie. Brand-, gas-, water- en 24-uurssensoren hebben geen partitie: ze waken in alle partities en hun alarm geldt voor het hele huis. Het sabotagecontact van een sensor zit in de partitie van die sensor.",
       sensor: "Eén melder, zoals een deurcontact, PIR of rookmelder. Bij een inbraaksensor kies je in welke sensorgroepen hij zit. Brand-, gas-, water- en sabotagesensoren bewaken altijd en hebben geen sensorgroep nodig. Ook 24 uur hoorbaar (een paniekknop, een schuurdeur: alarm met sirene, ook als het alarm uit staat) en 24 uur stil (een vriezer of lekdetectie: alleen een melding en een regel in het logboek) bewaken altijd.",
       sensor_group: "Een sensorgroep bepaalt in welke modi de sensoren erin bewaken. Bijvoorbeeld: Buitenschil (deuren en ramen) bij Thuis, Weg en Nacht, en Binnen (beweging) alleen bij Weg.",
       rule: "Een alarm volgt pas als het opgegeven aantal verschillende sensoren binnen het tijdvenster afgaat. Handig tegen een vals alarm door één PIR.",
@@ -33,6 +34,7 @@ const TXT = {
       panel: "Een apparaat aan de muur: een ESPHome-paneel, of een tablet of telefoon met een eigen Home Assistant-account Vigil bepaalt wat elk paneel mag en welke gegevens het krijgt; het paneel zelf beslist niets. Het paneel-id is de naam van het ESPHome-apparaat. Zodra één account is gekoppeld, kunnen andere gewone accounts het alarm niet meer bedienen.",
     },
     empty: {
+      partition: "Geen extra partities. Het hele huis is één partitie. Voeg er een toe om een deel van het huis, zoals de garage, apart in te schakelen.",
       sensor: "Nog geen sensoren. Voeg eerst een sensorgroep toe als er nog geen is, en daarna je sensoren.",
       sensor_group: "Nog geen sensorgroepen. Een sensorgroep bepaalt in welke modi sensoren bewaken.",
       rule: "Nog geen bevestigingsregels. Optioneel: een alarm pas na meerdere sensoren.",
@@ -47,6 +49,8 @@ const TXT = {
       createGroups: "Standaardgroepen maken", groupsMade: "Sensorgroepen gemaakt",
       addPhone: "Telefoon toevoegen: {name}", phoneAdded: "{name} toegevoegd; er is een testmelding verstuurd. Is die aangekomen?",
       text: {
+        partition_empty: "Partitie {partition} heeft geen inbraaksensoren en bewaakt dus niets.",
+        partition_unwatched: "Geen inbraaksensor van partitie {partition} waakt in deze stand: {modes}.",
         no_sensors: "Er zijn nog geen sensoren. Voeg ze toe of laat ze zoeken.",
         no_sensor_groups: "Er zijn nog geen sensorgroepen. Zonder groep bewaakt een inbraaksensor niets. Vigil kan twee voorstellen: Buitenschil (deuren en ramen) en Binnen (beweging).",
         mode_unwatched: "In deze modus bewaakt geen enkele inbraaksensor: {modes}.",
@@ -62,7 +66,7 @@ const TXT = {
     selftest: { title: "Zelftest", last: "Laatste stille controle", lastSiren: "Laatste sirenetest", next: "Volgende sirenetest", never: "nog niet", off: "Herinnering staat uit (Instellingen)", noSiren: "Er is geen sirene ingesteld.", overdue: "Achterstallig: de test had {days} dagen geleden moeten gebeuren.", test: "Sirene nu testen", started: "De sirene klinkt {seconds} seconden.", auto: "Vigil laat de sirene zelf klinken binnen de ingestelde uren.", problems: "Ontbrekend meldkanaal: {name}" },
     dash: { title: "Dashboard", text: "Een dashboard met de eigen entiteiten van dit alarm. Kopieer het en plak het in een nieuw dashboard (Instellingen > Dashboards > nieuw dashboard > ruwe configuratie-editor).", copy: "Kopieer dashboard" },
     log: { intro: "Alles wat Vigil als gebeurtenis meldt. Het logboek bewaart {days} dagen (zie Instellingen) en bevat geen codes. Tijden zijn in jouw tijdzone; in de downloads staan ze in UTC volgens RFC 3339.", empty: "Nog niets in het logboek.",
-      cols: { time: "Tijd", event: "Gebeurtenis", item: "Onderdeel", who: "Gebruiker", via: "Via", result: "Resultaat", noCode: "onbekend (geen code)", installer: "installateurcode", auto: "automatisch" }, showing: "De nieuwste {n} van {total}", jsonl: "Download (JSON Lines)", csv: "Download (CSV)", refresh: "Vernieuwen" },
+      cols: { "partition": "Partitie", time: "Tijd", event: "Gebeurtenis", item: "Onderdeel", who: "Gebruiker", via: "Via", result: "Resultaat", noCode: "onbekend (geen code)", installer: "installateurcode", auto: "automatisch" }, showing: "De nieuwste {n} van {total}", jsonl: "Download (JSON Lines)", csv: "Download (CSV)", refresh: "Vernieuwen" },
     summary: { always: "{cls}, altijd actief", instant: "direct", delayed: "vertraagd ({s} s)", follower: "volger", and: "en", watching: "{type}, bewaakt in {modes}", nowhere: "{type}, bewaakt in geen enkele modus" },
     whatsNew: "nieuw", batteryLow: "laag", batteryOk: "ok",
     copySuffix: " (kopie)",
@@ -85,7 +89,7 @@ const TXT = {
       end: { title: "Klaar", text: "Vigil is ingesteld. Een proefrondje: zet het alarm aan, open een deur en kijk of je melding komt. Daarna kun je automatiseringen toevoegen met de meegeleverde blueprints (automatisch inschakelen als iedereen weg is, lichten laten knipperen bij een alarm, een bericht uitspreken). Je vindt ze in de handleiding onder Automatiseringen en blueprints." },
     },
     newSensors: { title: "Nieuwe sensoren gevonden", text: "Deze sensoren zijn in Home Assistant bijgekomen sinds Vigil voor het laatst keek. Er is niets toegevoegd.", review: "Bekijk en voeg toe", later: "Niet nu", badge: "{n} nieuw", dismissed: "Oké, Vigil meldt deze niet opnieuw. Je kunt ze altijd nog toevoegen via Sensoren zoeken.", onlyNew: "Alleen de nieuwe sensoren worden getoond.", showAll: "Toon alle sensoren", showNew: "Toon alleen nieuwe" },
-    find: {
+    find: { "partitionHelp": "De inbraaksensoren die je toevoegt komen in deze partitie. Brand-, gas-, water- en 24-uurssensoren hebben geen partitie. Een sabotagecontact bij een sensor zit in de partitie van die sensor; een sabotagesensor die je zelf toevoegt kies je hier (of Alle partities).",
       button: "Sensoren zoeken", title: "Sensoren zoeken",
       intro: "Deze sensoren zijn gevonden in Home Assistant. Kies welke je wilt toevoegen. Er wordt niets opgeslagen voordat je op de knop onderaan drukt.",
       none: "Er zijn geen nieuwe sensoren gevonden. Deur-, raam-, beweging-, rook-, gas-, water- en sabotagesensoren van een geïntegreerd apparaat worden getoond.",
@@ -101,7 +105,7 @@ const TXT = {
     saved: "Opgeslagen", deleted: "Verwijderd", testSent: "Test verstuurd", loading: "Laden…", loadFailed: "Vigil Alarm kon niet geladen worden. Is de integratie actief?",
     retry: "Opnieuw proberen",
     sections: {
-      alarm: ["Modi en vertragingen", "Welke modi je gebruikt en hoe lang je hebt om te vertrekken, binnen te komen en hoe lang het alarm duurt."],
+      alarm: ["Alarm", "Geldt voor alle partities. Modi, uitlooptijden, inlooptijd en alarmduur staan per partitie onder Partities."],
       chime: ["Deurbel", "Een kort geluid als een sensor met het vinkje Deurbel opengaat terwijl het alarm uit is."],
       codes: ["Codes", "Of een code nodig is om in te schakelen en hoe lang een code minstens moet zijn."],
       startup: ["Opstarten", "Na een herstart van Home Assistant wacht Vigil tot al je sensoren beschikbaar zijn (bijvoorbeeld MQTT of Zigbee die nog opstarten) voordat het een sensor als weggevallen meldt of er een alarm van maakt. Zijn ze na deze tijd nog weg, dan volgt de melding wel."],
@@ -113,14 +117,17 @@ const TXT = {
       selftest: ["Zelftest", "Vigil herinnert je eraan de sirene te testen. Zet het interval op 0 om de herinnering uit te zetten."],
       heartbeat: ["Hartslag", "Vigil roept dit adres regelmatig aan, zodat een dienst buiten je huis meldt als Home Assistant of je internet uitvalt."],
     },
+    partitions: { "allOption": "Alle partities", "groupsAll": "Voor alle partities", "noGroups": "Nog geen sensorgroepen voor deze partitie.", first: "Eerste partitie: {name}. Haar standen en vertragingen staan onder Instellingen.", goSettings: "Naar Instellingen", combined: "Alles samen" },
     reloadNote: "Opslaan laadt Vigil Alarm opnieuw (de alarmstatus blijft behouden).",
     alarm: "Alarm", problems: "Aandachtspunten", noProblems: "Geen problemen", sensorsNow: "Sensoren nu",
     coverage: "Wat bewaakt elke modus", coverageNothing: "geen sensorgroep: er wordt niets bewaakt", alwaysOn: "Altijd actief", sensorsCount: "{n} sensoren",
-    state: { disarmed: "Uit", arming: "Wordt ingeschakeld", armed: "Ingeschakeld", pending: "Inlooptijd", triggered: "ALARM" },
+    state: { disarmed: "Uit", arming: "Wordt ingeschakeld", armed: "Ingeschakeld", pending: "Inlooptijd", triggered: "ALARM", mixed: "Gemengd" },
     mode: { home: "Thuis", away: "Weg", night: "Nacht", vacation: "Vakantie", custom: "Aangepast" },
     zstatus: { closed: "Dicht", open: "Open", unavailable: "Onbereikbaar", bypassed: "Omzeild", bypassed_at_arm: "Omzeild bij inschakelen", waiting: "Wacht tot dicht" },
     problem: { battery_low: "batterij bijna leeg", unavailable: "niet bereikbaar", on_battery: "geen netstroom" },
     cols: {
+      partition: "Partitie",
+      partitions: "Partities",
       name: "Naam", entity: "Entiteit", cls: "Klasse", type: "Type", groups: "Sensorgroepen", rule: "Bevestigingsregel", status: "Status", battery: "Batterij",
       modes: "Actief in modi", sensors: "Sensoren", suggest: "Voorstel voor", condition: "Voorwaarde", escalate: "Onbevestigd melden",
       code: "Code", duress: "Dwangcode", tags: "Tags", bypass: "Omzeilen", tamper: "Sabotage omzeilen",
@@ -132,6 +139,10 @@ const TXT = {
     yes: "ja", no: "nee", none: "—", immediately: "direct",
     condition: "{n} binnen {s} s",
     fields: {
+      partition: "Partitie",
+      "default_partition": "Standaardpartitie", "partition_return_seconds": "Terug naar de standaardpartitie na (seconden zonder aanraking, 0 = niet terug)", "partitions": "Partities",
+      partition_name: "Naam van de eerste partitie",
+      "partition.modes": "Beschikbare standen",
       name: "Naam", entity_id: "Entiteit (binary sensor)", cls: "Klasse", type: "Type", sensor_groups: "Sensorgroepen", at_arm_open: "Als open bij einde uitlooptijd",
       entry_delay: "Inlooptijd (leeg = standaard)", gas_type: "Soort gas", on_unavailable: "Als de sensor onbereikbaar wordt", battery_entity: "Batterijsensor", tamper_entity: "Sabotage-entiteit (optioneel)", chime: "Deurbel: laat een geluid horen als deze sensor opengaat terwijl het alarm uit is", permanent_bypass: "Omzeiling blijft staan na uitschakelen (permanent)", duress_code: "Dwangcode (optioneel)",
       "sensor_group.modes": "Actief in modi", suggest_for: "Voorstellen voor nieuwe sensoren",
@@ -151,6 +162,9 @@ const TXT = {
     },
     moreInfo: "Meer uitleg",
     help: {
+      "sensor_group.partition": "De partitie waar deze groep bij hoort. Alleen sensoren van die partitie kunnen de groep gebruiken, en de groep biedt alleen de modi van die partitie.",
+      partition: "Het deel van het huis dat deze sensor bewaakt. Brand-, gas-, water- en sabotagesensoren hebben geen partitie.",
+      "default_partition": "De partitie die het scherm eerst toont en waar het na de ingestelde tijd naar terugkeert. Alle partities kan als het paneel er meer dan één mag gebruiken. Een ESPHome-paneel met oudere firmware bedient alleen deze partitie.", "partition_return_seconds": "Geldt voor alle panelen en tablets die kunnen wisselen van partitie. Het scherm springt terug als het zo lang niet is aangeraakt, behalve tijdens een alarm.", "partitions": "Kies een of meer partities, of Alle partities. Alarmen van brand-, gas-, water-, sabotage- en 24-uurssensoren gelden voor het hele huis en bereiken altijd alles.",
       duress_code: "Een tweede code voor als iemand je dwingt het alarm uit te zetten. Hij zet het alarm gewoon uit en er is niets aan te zien: de sirene blijft stil. Ondertussen gaat er een stille melding naar de kanalen met de soort melding Dwang. Moet anders zijn dan alle andere codes.",
       permanent_bypass: "Omzeil je deze sensor met de hand, dan blijft hij omzeild ook nadat het alarm is uitgeschakeld, tot je hem zelf herstelt. Handig voor een sensor die al een tijd stuk is. Zonder dit vinkje vervalt de omzeiling bij het uitschakelen. Brand- en gassensoren kunnen nooit worden omzeild.",
       chime: "Gaat de sensor open terwijl het alarm uit staat, dan klinkt er kort een geluid via wat je bij de instellingen hebt gekozen. Geen alarm, geen melding, niets in het logboek. Is het alarm aan, dan gebeurt er niets.",
@@ -218,6 +232,8 @@ const TXT = {
       added: "toegevoegd", removed: "verwijderd", changed: "gewijzigd", settings: "Instellingen gewijzigd: {n}", undo: "Ongedaan maken", apply: "Doorvoeren",
     },
     errors: {
+      partitions_required: "Kies een partitie of Alle partities.", default_partition_required: "Kies de standaardpartitie.", default_partition_not_allowed: "De standaardpartitie moet een van de gekozen partities zijn (Alle partities kan alleen bij meer dan één).", group_other_partition: "Sensorgroep {group} hoort bij een andere partitie.", group_in_use_elsewhere: "Deze groep wordt gebruikt door sensoren in een andere partitie: {sensors}.", partition_has_groups: "Deze partitie heeft nog sensorgroepen: {groups}. Verwijder of verplaats ze eerst.", unknown_partition: "Die partitie bestaat niet.",
+      partition_in_use: "Deze partitie heeft nog sensoren: {sensors}. Verplaats ze eerst naar een andere partitie.",
       backup_invalid: "Dit bestand of deze versie bevat geen bruikbare configuratie.", backup_unknown: "Deze versie bestaat niet meer.", import_not_vigil: "Dit is geen exportbestand van Vigil Alarm.", import_format_version: "Dit bestand heeft een onbekend formaat.", import_entry_version: "Dit bestand hoort bij een andere opslagversie ({found}, nodig: {expected}). Importeer het in dezelfde versie van Vigil als waarin het is gemaakt.",
       name_required: "Geef een naam op.", name_in_use: "Deze naam bestaat al.", required: "Verplicht.",
       invalid_config: "Ongeldig: {error}", sensor_not_instant: "Alleen directe sensoren kunnen in een bevestigingsregel. Aanpassen: {sensors}",
@@ -248,10 +264,11 @@ const TXT = {
       disclaimer: "Vigil Alarm is not a certified alarm system. Test it regularly and do not rely on it as your only protection.",
       unreleased: "Not released yet", firstRelease: "first release",
     },
-    tabs: { overview: "Overview", sensor: "Sensors", sensor_group: "Sensor groups", rule: "Confirmation rules", user: "Users", notification: "Notifications", siren: "Sirens", log: "Log", settings: "Settings", backup: "Backup", about: "About", panel: "Panels" },
-    add: { sensor: "Add sensor", sensor_group: "Add sensor group", rule: "Add confirmation rule", user: "Add user", notification: "Add notification", siren: "Add siren", panel: "Add panel" },
-    edit: { sensor: "Edit sensor", sensor_group: "Edit sensor group", rule: "Edit confirmation rule", user: "Edit user", notification: "Edit notification", siren: "Edit siren", panel: "Edit panel" },
+    tabs: { overview: "Overview", sensor: "Sensors", sensor_group: "Sensor groups", rule: "Confirmation rules", user: "Users", notification: "Notifications", siren: "Sirens", log: "Log", settings: "Settings", backup: "Backup", about: "About", panel: "Panels", partition: "Partitions" },
+    add: { sensor: "Add sensor", sensor_group: "Add sensor group", rule: "Add confirmation rule", user: "Add user", notification: "Add notification", siren: "Add siren", panel: "Add panel", partition: "Add partition" },
+    edit: { sensor: "Edit sensor", sensor_group: "Edit sensor group", rule: "Edit confirmation rule", user: "Edit user", notification: "Edit notification", siren: "Edit siren", panel: "Edit panel", partition: "Edit partition" },
     intro: {
+      partition: "A partition is a part of the house with its own arm state, modes and delays, for example the house and the garage. The first partition is the one you already have; you can rename it here and change its modes and delays too. Every intrusion sensor is in exactly one partition. Fire, gas, water and 24 hour sensors have no partition: they watch in all of them, and their alarm is for the whole house. The tamper contact of a sensor is in the partition of that sensor.",
       sensor: "One detector, such as a door contact, PIR or smoke detector. For an intrusion sensor you choose which sensor groups it is in. Fire, gas, water and tamper sensors always watch and need no sensor group. So do 24 hours, audible (a panic button, a shed door: an alarm with siren, also while the alarm is off) and 24 hours, silent (a freezer or a leak detector: only a message and a line in the log).",
       sensor_group: "A sensor group decides in which modes the sensors in it are watching. For example: Perimeter (doors and windows) for Home, Away and Night, and Interior (motion) for Away only.",
       rule: "An alarm follows only when the given number of different sensors trigger within the time window. Handy against a false alarm from a single PIR.",
@@ -261,6 +278,7 @@ const TXT = {
       panel: "A device on the wall: an ESPHome panel, or a tablet or phone with its own Home Assistant account Vigil decides what each panel may do and which data it gets; the panel itself decides nothing. The panel id is the name of the ESPHome device. As soon as one account is linked, other ordinary accounts can no longer operate the alarm.",
     },
     empty: {
+      partition: "No extra partitions. The whole house is one partition. Add one to arm a part of the house, such as the garage, on its own.",
       sensor: "No sensors yet. Add a sensor group first if there is none, then your sensors.",
       sensor_group: "No sensor groups yet. A sensor group decides in which modes sensors are watching.",
       rule: "No confirmation rules yet. Optional: an alarm only after several sensors.",
@@ -275,6 +293,8 @@ const TXT = {
       createGroups: "Create default groups", groupsMade: "Sensor groups created",
       addPhone: "Add phone: {name}", phoneAdded: "{name} added; a test notification was sent. Did it arrive?",
       text: {
+        partition_empty: "Partition {partition} has no intrusion sensors, so it watches nothing.",
+        partition_unwatched: "No intrusion sensor of partition {partition} is watching in this mode: {modes}.",
         no_sensors: "There are no sensors yet. Add them or let Vigil find them.",
         no_sensor_groups: "There are no sensor groups yet. Without a group an intrusion sensor watches nothing. Vigil can propose two: Perimeter (doors and windows) and Interior (motion).",
         mode_unwatched: "No intrusion sensor is watching in this mode: {modes}.",
@@ -290,7 +310,7 @@ const TXT = {
     selftest: { title: "Self-test", last: "Last quiet check", lastSiren: "Last siren test", next: "Next siren test", never: "not yet", off: "Reminder is off (Settings)", noSiren: "No siren is set up.", overdue: "Overdue: the test was due {days} days ago.", test: "Test siren now", started: "The siren sounds for {seconds} seconds.", auto: "Vigil sounds the siren by itself within the set hours.", problems: "Missing notification channel: {name}" },
     dash: { title: "Dashboard", text: "A dashboard with this alarm's own entities. Copy it and paste it into a new dashboard (Settings > Dashboards > new dashboard > raw configuration editor).", copy: "Copy dashboard" },
     log: { intro: "Everything Vigil reports as an event. The log keeps {days} days (see Settings) and holds no codes. Times are in your time zone; in the downloads they are in UTC as RFC 3339.", empty: "Nothing in the log yet.",
-      cols: { time: "Time", event: "Event", item: "Item", who: "User", via: "Via", result: "Result", noCode: "unknown (no code)", installer: "installer code", auto: "automatic" }, showing: "The newest {n} of {total}", jsonl: "Download (JSON Lines)", csv: "Download (CSV)", refresh: "Refresh" },
+      cols: { "partition": "Partition", time: "Time", event: "Event", item: "Item", who: "User", via: "Via", result: "Result", noCode: "unknown (no code)", installer: "installer code", auto: "automatic" }, showing: "The newest {n} of {total}", jsonl: "Download (JSON Lines)", csv: "Download (CSV)", refresh: "Refresh" },
     summary: { always: "{cls}, always on", instant: "instant", delayed: "delayed ({s} s)", follower: "follower", and: "and", watching: "{type}, watching in {modes}", nowhere: "{type}, not watching in any mode" },
     whatsNew: "new", batteryLow: "low", batteryOk: "ok",
     copySuffix: " (copy)",
@@ -313,7 +333,7 @@ const TXT = {
       end: { title: "Done", text: "Vigil is set up. A trial run: arm the alarm, open a door and see whether your message arrives. After that you can add automations with the included blueprints (arm automatically when everyone leaves, flash lights on an alarm, speak a message). You find them in the guide under Automations and blueprints." },
     },
     newSensors: { title: "New sensors found", text: "These sensors have appeared in Home Assistant since Vigil last looked. Nothing has been added.", review: "Review and add", later: "Not now", badge: "{n} new", dismissed: "OK, Vigil will not announce these again. You can still add them with Find sensors.", onlyNew: "Only the new sensors are shown.", showAll: "Show all sensors", showNew: "Show only new" },
-    find: {
+    find: { "partitionHelp": "The intrusion sensors you add go into this partition. Fire, gas, water and 24 hour sensors have no partition. The tamper contact of a sensor is in the partition of that sensor; a tamper sensor you add yourself you choose here (or All partitions).",
       button: "Find sensors", title: "Find sensors",
       intro: "These sensors were found in Home Assistant. Choose which ones to add. Nothing is saved until you press the button at the bottom.",
       none: "No new sensors were found. Door, window, motion, smoke, gas, water and tamper sensors of an integrated device are shown.",
@@ -329,7 +349,7 @@ const TXT = {
     saved: "Saved", deleted: "Deleted", testSent: "Test sent", loading: "Loading…", loadFailed: "Vigil Alarm could not be loaded. Is the integration running?",
     retry: "Try again",
     sections: {
-      alarm: ["Modes and delays", "Which modes you use, and how long you have to leave, to come in, and how long the alarm lasts."],
+      alarm: ["Alarm", "Applies to all partitions. Modes, exit and entry delays and alarm duration are per partition, under Partitions."],
       chime: ["Chime", "A short sound when a sensor with the Chime box ticked opens while the alarm is off."],
       codes: ["Codes", "Whether a code is needed to arm and how long a code must be at least."],
       startup: ["Start-up", "After Home Assistant restarts, Vigil waits until all your sensors are available (for example MQTT or Zigbee still starting) before it reports a sensor as lost or raises an alarm for it. If they are still gone after this time, the report follows."],
@@ -341,14 +361,17 @@ const TXT = {
       selftest: ["Self-test", "Vigil reminds you to test the siren. Set the interval to 0 to turn the reminder off."],
       heartbeat: ["Heartbeat", "Vigil calls this address regularly, so a service outside your house reports when Home Assistant or your internet stops."],
     },
+    partitions: { "allOption": "All partitions", "groupsAll": "For all partitions", "noGroups": "No sensor groups for this partition yet.", first: "First partition: {name}. Its modes and delays are under Settings.", goSettings: "Go to Settings", combined: "All together" },
     reloadNote: "Saving reloads Vigil Alarm (the alarm state is kept).",
     alarm: "Alarm", problems: "Attention", noProblems: "No problems", sensorsNow: "Sensors now",
     coverage: "What each mode watches", coverageNothing: "no sensor group: nothing is watched", alwaysOn: "Always on", sensorsCount: "{n} sensors",
-    state: { disarmed: "Off", arming: "Arming", armed: "Armed", pending: "Entry delay", triggered: "ALARM" },
+    state: { disarmed: "Off", arming: "Arming", armed: "Armed", pending: "Entry delay", triggered: "ALARM", mixed: "Mixed" },
     mode: { home: "Home", away: "Away", night: "Night", vacation: "Vacation", custom: "Custom" },
     zstatus: { closed: "Closed", open: "Open", unavailable: "Unreachable", bypassed: "Bypassed", bypassed_at_arm: "Bypassed at arming", waiting: "Waiting to close" },
     problem: { battery_low: "battery low", unavailable: "unreachable", on_battery: "no mains power" },
     cols: {
+      partition: "Partition",
+      partitions: "Partitions",
       name: "Name", entity: "Entity", cls: "Class", type: "Type", groups: "Sensor groups", rule: "Confirmation rule", status: "Status", battery: "Battery",
       modes: "Active in modes", sensors: "Sensors", suggest: "Suggested for", condition: "Condition", escalate: "Report unconfirmed",
       code: "Code", duress: "Duress code", tags: "Tags", bypass: "Bypass", tamper: "May bypass tamper",
@@ -360,6 +383,10 @@ const TXT = {
     yes: "yes", no: "no", none: "—", immediately: "immediately",
     condition: "{n} within {s} s",
     fields: {
+      partition: "Partition",
+      "default_partition": "Default partition", "partition_return_seconds": "Back to the default partition after (seconds without touch, 0 = stay)", "partitions": "Partitions",
+      partition_name: "Name of the first partition",
+      "partition.modes": "Available modes",
       name: "Name", entity_id: "Entity (binary sensor)", cls: "Class", type: "Type", sensor_groups: "Sensor groups", at_arm_open: "If open when exit delay ends",
       entry_delay: "Entry delay (empty = default)", gas_type: "Type of gas", on_unavailable: "When the sensor becomes unreachable", battery_entity: "Battery sensor", tamper_entity: "Tamper entity (optional)", chime: "Chime: sound when this sensor opens while the alarm is off", permanent_bypass: "Keep the bypass after disarming (permanent)", duress_code: "Duress code (optional)",
       "sensor_group.modes": "Active in modes", suggest_for: "Suggest for new sensors",
@@ -379,6 +406,9 @@ const TXT = {
     },
     moreInfo: "More information",
     help: {
+      "sensor_group.partition": "The partition this group belongs to. Only sensors of that partition can use the group, and it offers only the modes of that partition.",
+      partition: "The part of the house this sensor watches. Fire, gas, water and tamper sensors have no partition.",
+      "default_partition": "The partition the screen shows first and returns to after the set time. All partitions is possible when the panel may use more than one. An ESPHome panel with older firmware only operates this partition.", "partition_return_seconds": "Applies to all panels and tablets that can switch partitions. The screen goes back when it has not been touched for this long, except during an alarm.", "partitions": "Choose one or more partitions, or All partitions. Alarms from fire, gas, water, tamper and 24 hour sensors are for the whole house and always reach everything.",
       duress_code: "A second code for when someone forces you to switch the alarm off. It switches the alarm off as usual and nothing shows: the siren stays quiet. Meanwhile a silent message goes to the channels with the kind of message Duress. It must differ from every other code.",
       permanent_bypass: "If you bypass this sensor by hand, it stays bypassed after the alarm is disarmed, until you restore it yourself. Handy for a sensor that has been broken for a while. Without this tick the bypass ends at disarming. Fire and gas sensors can never be bypassed.",
       chime: "When the sensor opens while the alarm is off, a short sound plays through what you chose in the settings. No alarm, no message, nothing in the log. When the alarm is on, nothing happens.",
@@ -446,6 +476,8 @@ const TXT = {
       added: "added", removed: "removed", changed: "changed", settings: "Settings changed: {n}", undo: "Undo", apply: "Apply",
     },
     errors: {
+      "partitions_required": "Choose a partition or All partitions.", "default_partition_required": "Choose the default partition.", "default_partition_not_allowed": "The default partition must be one of the chosen partitions (All partitions only with more than one).", group_other_partition: "Sensor group {group} belongs to another partition.", group_in_use_elsewhere: "This group is used by sensors in another partition: {sensors}.", partition_has_groups: "This partition still has sensor groups: {groups}. Delete or move them first.", unknown_partition: "That partition does not exist.",
+      partition_in_use: "This partition still has sensors: {sensors}. Move them to another partition first.",
       backup_invalid: "This file or version holds no usable configuration.", backup_unknown: "This version no longer exists.", import_not_vigil: "This is not a Vigil Alarm export file.", import_format_version: "This file has an unknown format.", import_entry_version: "This file belongs to another storage version ({found}, needed: {expected}). Import it in the same version of Vigil it was made in.",
       name_required: "Enter a name.", name_in_use: "This name already exists.", required: "Required.",
       invalid_config: "Invalid: {error}", sensor_not_instant: "Only instant sensors can be in a confirmation rule. Change: {sensors}",
@@ -495,6 +527,7 @@ const TXT = {
       "firstRelease": "erste Version"
     },
     "tabs": {
+      "partition": "Partitionen",
       "overview": "Übersicht",
       "sensor": "Sensoren",
       "sensor_group": "Sensorgruppen",
@@ -509,6 +542,7 @@ const TXT = {
       "panel": "Bedienteile"
     },
     "add": {
+      "partition": "Partition hinzufügen",
       "sensor": "Sensor hinzufügen",
       "sensor_group": "Sensorgruppe hinzufügen",
       "rule": "Bestätigungsregel hinzufügen",
@@ -518,6 +552,7 @@ const TXT = {
       "panel": "Bedienteil hinzufügen"
     },
     "edit": {
+      "partition": "Partition bearbeiten",
       "sensor": "Sensor bearbeiten",
       "sensor_group": "Sensorgruppe bearbeiten",
       "rule": "Bestätigungsregel bearbeiten",
@@ -527,6 +562,7 @@ const TXT = {
       "panel": "Bedienteil bearbeiten"
     },
     "intro": {
+      "partition": "Eine Partition ist ein Teil des Hauses mit eigenem Scharfschalt-Zustand, eigenen Modi und Verzögerungen, zum Beispiel das Haus und die Garage. Die erste Partition ist die, die du schon hast; du kannst sie hier auch umbenennen und ihre Modi und Verzögerungen ändern. Jeder Einbruchsensor gehört zu genau einer Partition. Brand-, Gas-, Wasser- und 24-Stunden-Sensoren haben keine Partition: Sie überwachen in allen, und ihr Alarm gilt für das ganze Haus. Der Sabotagekontakt eines Sensors gehört zur Partition dieses Sensors.",
       "sensor": "Ein einzelner Melder, etwa ein Türkontakt, Bewegungsmelder oder Rauchmelder. Bei einem Einbruchsensor wählst du, in welchen Sensorgruppen er ist. Brand-, Gas-, Wasser- und Sabotagesensoren überwachen immer und brauchen keine Sensorgruppe. Das gilt auch für 24 Stunden, hörbar (ein Panikknopf, eine Schuppentür: Alarm mit Sirene, auch bei unscharfer Anlage) und 24 Stunden, still (eine Tiefkühltruhe oder ein Leckagemelder: nur eine Nachricht und ein Eintrag im Protokoll).",
       "sensor_group": "Eine Sensorgruppe bestimmt, in welchen Modi die darin enthaltenen Sensoren überwachen. Zum Beispiel: Außenhaut (Türen und Fenster) für Zuhause, Abwesend und Nacht, und Innenbereich (Bewegung) nur für Abwesend.",
       "rule": "Ein Alarm folgt erst, wenn die angegebene Anzahl verschiedener Sensoren innerhalb des Zeitfensters auslöst. Praktisch gegen Fehlalarm durch einen einzelnen Bewegungsmelder.",
@@ -536,6 +572,7 @@ const TXT = {
       "panel": "Ein Gerät an der Wand: ein ESPHome-Bedienteil oder ein Tablet oder Handy mit eigenem Home-Assistant-Konto. Vigil entscheidet, was jedes Bedienteil darf und welche Daten es bekommt; das Bedienteil selbst entscheidet nichts. Die Bedienteil-ID ist der Name des ESPHome-Geräts. Sobald ein Konto verknüpft ist, können andere gewöhnliche Konten die Alarmanlage nicht mehr bedienen."
     },
     "empty": {
+      "partition": "Keine zusätzlichen Partitionen. Das ganze Haus ist eine Partition. Füge eine hinzu, um einen Teil des Hauses, etwa die Garage, getrennt scharf zu schalten.",
       "sensor": "Noch keine Sensoren. Lege zuerst eine Sensorgruppe an, falls es noch keine gibt, dann deine Sensoren.",
       "sensor_group": "Noch keine Sensorgruppen. Eine Sensorgruppe bestimmt, in welchen Modi Sensoren überwachen.",
       "rule": "Noch keine Bestätigungsregeln. Optional: ein Alarm erst nach mehreren Sensoren.",
@@ -562,6 +599,8 @@ const TXT = {
       "addPhone": "Handy hinzufügen: {name}",
       "phoneAdded": "{name} hinzugefügt; eine Testbenachrichtigung wurde gesendet. Ist sie angekommen?",
       "text": {
+        "partition_empty": "Partition {partition} hat keine Einbruchsensoren und überwacht daher nichts.",
+        "partition_unwatched": "Kein Einbruchsensor der Partition {partition} überwacht in diesem Modus: {modes}.",
         "no_sensors": "Es gibt noch keine Sensoren. Füge welche hinzu oder lass Vigil sie suchen.",
         "no_sensor_groups": "Es gibt noch keine Sensorgruppen. Ohne Gruppe überwacht ein Einbruchsensor nichts. Vigil kann zwei vorschlagen: Außenhaut (Türen und Fenster) und Innenbereich (Bewegung).",
         "mode_unwatched": "Kein Einbruchsensor überwacht in diesem Modus: {modes}.",
@@ -612,7 +651,7 @@ const TXT = {
       "intro": "Alles, was Vigil als Ereignis meldet. Das Protokoll bewahrt {days} Tage auf (siehe Einstellungen) und enthält keine Codes. Zeiten erscheinen in deiner Zeitzone; in den Downloads sind sie in UTC als RFC 3339.",
       "empty": "Noch nichts im Protokoll.",
       "cols": {
-        "time": "Zeit",
+        "partition": "Partition", "time": "Zeit",
         "event": "Ereignis",
         "item": "Element",
         "who": "Benutzer",
@@ -782,7 +821,7 @@ const TXT = {
       "showAll": "Alle Sensoren anzeigen",
       "showNew": "Nur neue anzeigen"
     },
-    "find": {
+    "find": { "partitionHelp": "Die Einbruchsensoren, die du hinzufügst, kommen in diese Partition. Brand-, Gas-, Wasser- und 24-Stunden-Sensoren haben keine Partition. Der Sabotagekontakt eines Sensors gehört zur Partition dieses Sensors; einen Sabotagesensor, den du selbst hinzufügst, wählst du hier (oder Alle Partitionen).",
       "button": "Sensoren suchen",
       "title": "Sensoren suchen",
       "intro": "Diese Sensoren wurden in Home Assistant gefunden. Wähle, welche hinzugefügt werden. Nichts wird gespeichert, bis du unten auf die Schaltfläche drückst.",
@@ -819,8 +858,8 @@ const TXT = {
     "retry": "Erneut versuchen",
     "sections": {
       "alarm": {
-        "0": "Modi und Verzögerungen",
-        "1": "Welche Modi du nutzt, wie lange du zum Verlassen und Hereinkommen hast und wie lange der Alarm dauert."
+        "0": "Alarm",
+        "1": "Gilt für alle Partitionen. Modi, Verzögerungen und Alarmdauer gibt es pro Partition, unter Partitionen."
       },
       "chime": {
         "0": "Türgong",
@@ -863,6 +902,11 @@ const TXT = {
         "1": "Vigil ruft diese Adresse regelmäßig auf, damit ein Dienst außerhalb deines Hauses meldet, wenn Home Assistant oder dein Internet ausfällt."
       }
     },
+    "partitions": {
+      "allOption": "Alle Partitionen", "groupsAll": "Für alle Partitionen", "noGroups": "Noch keine Sensorgruppen für diese Partition.", "first": "Erste Partition: {name}. Ihre Modi und Verzögerungen findest du unter Einstellungen.",
+      "goSettings": "Zu den Einstellungen",
+      "combined": "Alle zusammen"
+    },
     "reloadNote": "Beim Speichern wird Vigil Alarm neu geladen (der Alarmstatus bleibt erhalten).",
     "alarm": "Alarm",
     "problems": "Achtung",
@@ -873,6 +917,7 @@ const TXT = {
     "alwaysOn": "Immer aktiv",
     "sensorsCount": "{n} Sensoren",
     "state": {
+      "mixed": "Gemischt",
       "disarmed": "Aus",
       "arming": "Wird scharf",
       "armed": "Scharf",
@@ -900,6 +945,8 @@ const TXT = {
       "on_battery": "keine Netzspannung"
     },
     "cols": {
+      "partition": "Partition",
+      "partitions": "Partitionen",
       "name": "Name",
       "entity": "Entität",
       "cls": "Klasse",
@@ -960,6 +1007,10 @@ const TXT = {
     "immediately": "sofort",
     "condition": "{n} innerhalb von {s} s",
     "fields": {
+      "partition": "Partition",
+      "default_partition": "Standardpartition", "partition_return_seconds": "Zurück zur Standardpartition nach (Sekunden ohne Berührung, 0 = bleiben)", "partitions": "Partitionen",
+      "partition_name": "Name der ersten Partition",
+      "partition.modes": "Verfügbare Modi",
       "name": "Name",
       "entity_id": "Entität (Binärsensor)",
       "cls": "Klasse",
@@ -1054,6 +1105,9 @@ const TXT = {
     },
     "moreInfo": "Weitere Informationen",
     "help": {
+      "sensor_group.partition": "Die Partition, zu der diese Gruppe gehört. Nur Sensoren dieser Partition können die Gruppe verwenden, und sie bietet nur die Modi dieser Partition.",
+      "partition": "Der Teil des Hauses, den dieser Sensor überwacht. Brand-, Gas-, Wasser- und Sabotagesensoren haben keine Partition.",
+      "default_partition": "Die Partition, die das Display zuerst zeigt und zu der es nach der eingestellten Zeit zurückkehrt. Alle Partitionen ist möglich, wenn das Panel mehr als eine verwenden darf. Ein ESPHome-Panel mit älterer Firmware bedient nur diese Partition.", "partition_return_seconds": "Gilt für alle Panels und Tablets, die die Partition wechseln können. Das Display springt zurück, wenn es so lange nicht berührt wurde, außer während eines Alarms.", "partitions": "Wähle eine oder mehrere Partitionen oder Alle Partitionen. Alarme von Brand-, Gas-, Wasser-, Sabotage- und 24-Stunden-Sensoren gelten für das ganze Haus und erreichen immer alles.",
       "duress_code": "Ein zweiter Code für den Fall, dass dich jemand zwingt, die Alarmanlage auszuschalten. Er schaltet die Anlage wie gewohnt unscharf und nichts ist zu sehen: Die Sirene bleibt still. Währenddessen geht eine stille Nachricht an die Kanäle mit der Nachrichtenart Zwang. Er muss sich von allen anderen Codes unterscheiden.",
       "permanent_bypass": "Wenn du diesen Sensor von Hand überbrückst, bleibt er auch nach dem Unscharfschalten überbrückt, bis du ihn selbst wiederherstellst. Praktisch für einen Sensor, der schon länger defekt ist. Ohne dieses Häkchen endet die Überbrückung beim Unscharfschalten. Brand- und Gassensoren können nie überbrückt werden.",
       "chime": "Wenn sich der Sensor bei unscharfer Anlage öffnet, ertönt ein kurzer Ton über das, was du in den Einstellungen gewählt hast. Kein Alarm, keine Nachricht, kein Protokolleintrag. Bei scharfer Anlage geschieht nichts.",
@@ -1236,6 +1290,8 @@ const TXT = {
       "apply": "Anwenden"
     },
     "errors": {
+      "partitions_required": "Wähle eine Partition oder Alle Partitionen.", "default_partition_required": "Wähle die Standardpartition.", "default_partition_not_allowed": "Die Standardpartition muss eine der gewählten Partitionen sein (Alle Partitionen nur bei mehr als einer).", group_other_partition: "Die Sensorgruppe {group} gehört zu einer anderen Partition.", group_in_use_elsewhere: "Diese Gruppe wird von Sensoren in einer anderen Partition verwendet: {sensors}.", partition_has_groups: "Diese Partition hat noch Sensorgruppen: {groups}. Lösche oder verschiebe sie zuerst.", "unknown_partition": "Diese Partition gibt es nicht.",
+      "partition_in_use": "In dieser Partition sind noch Sensoren: {sensors}. Verschiebe sie zuerst in eine andere Partition.",
       "backup_invalid": "Diese Datei oder Version enthält keine verwendbare Konfiguration.",
       "backup_unknown": "Diese Version existiert nicht mehr.",
       "import_not_vigil": "Das ist keine Vigil-Alarm-Exportdatei.",
@@ -1323,6 +1379,7 @@ const TXT = {
       "firstRelease": "première version"
     },
     "tabs": {
+      "partition": "Partitions",
       "overview": "Aperçu",
       "sensor": "Capteurs",
       "sensor_group": "Groupes de capteurs",
@@ -1337,6 +1394,7 @@ const TXT = {
       "panel": "Claviers"
     },
     "add": {
+      "partition": "Ajouter une partition",
       "sensor": "Ajouter un capteur",
       "sensor_group": "Ajouter un groupe de capteurs",
       "rule": "Ajouter une règle de confirmation",
@@ -1346,6 +1404,7 @@ const TXT = {
       "panel": "Ajouter un clavier"
     },
     "edit": {
+      "partition": "Modifier la partition",
       "sensor": "Modifier le capteur",
       "sensor_group": "Modifier le groupe de capteurs",
       "rule": "Modifier la règle de confirmation",
@@ -1355,6 +1414,7 @@ const TXT = {
       "panel": "Modifier le clavier"
     },
     "intro": {
+      "partition": "Une partition est une partie de la maison avec son propre état d'armement, ses propres modes et délais, par exemple la maison et le garage. La première partition est celle que vous avez déjà ; vous pouvez aussi la renommer ici et modifier ses modes et délais. Chaque capteur d'intrusion appartient à une seule partition. Les capteurs d'incendie, de gaz, d'eau et 24 h n'ont pas de partition : ils surveillent dans toutes, et leur alarme concerne toute la maison. Le contact d'autoprotection d'un capteur est dans la partition de ce capteur.",
       "sensor": "Un seul détecteur, comme un contact de porte, un détecteur de mouvement ou un détecteur de fumée. Pour un capteur d'intrusion, vous choisissez dans quels groupes de capteurs il se trouve. Les capteurs d'incendie, de gaz, d'eau et de sabotage surveillent toujours et n'ont pas besoin de groupe de capteurs. Il en va de même pour 24 heures, sonore (un bouton d'urgence, la porte d'un abri : une alarme avec sirène, même alarme désactivée) et 24 heures, silencieux (un congélateur ou un détecteur de fuite : seulement un message et une ligne dans le journal).",
       "sensor_group": "Un groupe de capteurs détermine dans quels modes les capteurs qu'il contient surveillent. Par exemple : Périmètre (portes et fenêtres) pour Maison, Absent et Nuit, et Intérieur (mouvement) pour Absent uniquement.",
       "rule": "Une alarme ne suit que si le nombre indiqué de capteurs différents se déclenche dans la fenêtre de temps. Utile contre une fausse alarme due à un seul détecteur de mouvement.",
@@ -1364,6 +1424,7 @@ const TXT = {
       "panel": "Un appareil au mur : un clavier ESPHome, ou une tablette ou un téléphone avec son propre compte Home Assistant. Vigil décide de ce que chaque clavier peut faire et des données qu'il reçoit ; le clavier lui-même ne décide de rien. L'identifiant du clavier est le nom de l'appareil ESPHome. Dès qu'un compte est associé, les autres comptes ordinaires ne peuvent plus utiliser l'alarme."
     },
     "empty": {
+      "partition": "Aucune partition supplémentaire. Toute la maison est une seule partition. Ajoutez-en une pour armer à part une partie de la maison, comme le garage.",
       "sensor": "Aucun capteur pour l'instant. Ajoutez d'abord un groupe de capteurs s'il n'y en a pas, puis vos capteurs.",
       "sensor_group": "Aucun groupe de capteurs pour l'instant. Un groupe de capteurs détermine dans quels modes les capteurs surveillent.",
       "rule": "Aucune règle de confirmation pour l'instant. Facultatif : une alarme seulement après plusieurs capteurs.",
@@ -1390,6 +1451,8 @@ const TXT = {
       "addPhone": "Ajouter un téléphone : {name}",
       "phoneAdded": "{name} ajouté ; une notification de test a été envoyée. Est-elle arrivée ?",
       "text": {
+        "partition_empty": "La partition {partition} n'a aucun capteur d'intrusion et ne surveille donc rien.",
+        "partition_unwatched": "Aucun capteur d'intrusion de la partition {partition} ne surveille dans ce mode : {modes}.",
         "no_sensors": "Il n'y a pas encore de capteurs. Ajoutez-en ou laissez Vigil les chercher.",
         "no_sensor_groups": "Il n'y a pas encore de groupes de capteurs. Sans groupe, un capteur d'intrusion ne surveille rien. Vigil peut en proposer deux : Périmètre (portes et fenêtres) et Intérieur (mouvement).",
         "mode_unwatched": "Aucun capteur d'intrusion ne surveille dans ce mode : {modes}.",
@@ -1440,7 +1503,7 @@ const TXT = {
       "intro": "Tout ce que Vigil signale comme événement. Le journal conserve {days} jours (voir Paramètres) et ne contient aucun code. Les heures sont dans votre fuseau horaire ; dans les téléchargements, elles sont en UTC au format RFC 3339.",
       "empty": "Rien dans le journal pour l'instant.",
       "cols": {
-        "time": "Heure",
+        "partition": "Partition", "time": "Heure",
         "event": "Événement",
         "item": "Élément",
         "who": "Utilisateur",
@@ -1610,7 +1673,7 @@ const TXT = {
       "showAll": "Afficher tous les capteurs",
       "showNew": "Afficher seulement les nouveaux"
     },
-    "find": {
+    "find": { "partitionHelp": "Les capteurs d'intrusion ajoutés vont dans cette partition. Les capteurs d'incendie, de gaz, d'eau et 24 h n'ont pas de partition. Le contact d'autoprotection d'un capteur est dans la partition de ce capteur ; un capteur d'autoprotection que vous ajoutez vous-même se choisit ici (ou Toutes les partitions).",
       "button": "Chercher des capteurs",
       "title": "Chercher des capteurs",
       "intro": "Ces capteurs ont été trouvés dans Home Assistant. Choisissez lesquels ajouter. Rien n'est enregistré avant que vous appuyiez sur le bouton en bas.",
@@ -1647,8 +1710,8 @@ const TXT = {
     "retry": "Réessayer",
     "sections": {
       "alarm": {
-        "0": "Modes et temporisations",
-        "1": "Quels modes vous utilisez, combien de temps vous avez pour sortir et pour entrer, et combien de temps dure l'alarme."
+        "0": "Alarme",
+        "1": "S'applique à toutes les partitions. Les modes, les délais et la durée de l'alarme sont par partition, sous Partitions."
       },
       "chime": {
         "0": "Carillon",
@@ -1691,6 +1754,11 @@ const TXT = {
         "1": "Vigil appelle régulièrement cette adresse, afin qu'un service extérieur à votre maison signale quand Home Assistant ou votre internet s'arrête."
       }
     },
+    "partitions": {
+      "allOption": "Toutes les partitions", "groupsAll": "Pour toutes les partitions", "noGroups": "Pas encore de groupes de capteurs pour cette partition.", "first": "Première partition : {name}. Ses modes et délais se trouvent dans Paramètres.",
+      "goSettings": "Aller aux Paramètres",
+      "combined": "Tout ensemble"
+    },
     "reloadNote": "L'enregistrement recharge Vigil Alarm (l'état de l'alarme est conservé).",
     "alarm": "Alarme",
     "problems": "Attention",
@@ -1701,6 +1769,7 @@ const TXT = {
     "alwaysOn": "Toujours actif",
     "sensorsCount": "{n} capteurs",
     "state": {
+      "mixed": "Mixte",
       "disarmed": "Désactivée",
       "arming": "Activation",
       "armed": "Activée",
@@ -1728,6 +1797,8 @@ const TXT = {
       "on_battery": "pas de courant secteur"
     },
     "cols": {
+      "partition": "Partition",
+      "partitions": "Partitions",
       "name": "Nom",
       "entity": "Entité",
       "cls": "Classe",
@@ -1788,6 +1859,10 @@ const TXT = {
     "immediately": "immédiatement",
     "condition": "{n} en {s} s",
     "fields": {
+      "partition": "Partition",
+      "default_partition": "Partition par défaut", "partition_return_seconds": "Retour à la partition par défaut après (secondes sans toucher, 0 = rester)", "partitions": "Partitions",
+      "partition_name": "Nom de la première partition",
+      "partition.modes": "Modes disponibles",
       "name": "Nom",
       "entity_id": "Entité (capteur binaire)",
       "cls": "Classe",
@@ -1882,6 +1957,9 @@ const TXT = {
     },
     "moreInfo": "Plus d'informations",
     "help": {
+      "sensor_group.partition": "La partition à laquelle ce groupe appartient. Seuls les capteurs de cette partition peuvent utiliser le groupe, et il ne propose que les modes de cette partition.",
+      "partition": "La partie de la maison que ce capteur surveille. Les capteurs d'incendie, de gaz, d'eau et d'autoprotection n'ont pas de partition.",
+      "default_partition": "La partition que l'écran affiche d'abord et à laquelle il revient après le délai réglé. Toutes les partitions est possible si le panneau peut en utiliser plusieurs. Un panneau ESPHome avec un ancien firmware ne commande que cette partition.", "partition_return_seconds": "Valable pour tous les panneaux et tablettes qui peuvent changer de partition. L'écran revient quand il n'a pas été touché aussi longtemps, sauf pendant une alarme.", "partitions": "Choisissez une ou plusieurs partitions, ou Toutes les partitions. Les alarmes des capteurs d'incendie, de gaz, d'eau, d'autoprotection et 24 h concernent toute la maison et atteignent toujours tout.",
       "duress_code": "Un second code pour le cas où quelqu'un vous force à désactiver l'alarme. Il désactive l'alarme comme d'habitude et rien n'apparaît : la sirène reste silencieuse. Pendant ce temps, un message silencieux part vers les canaux avec le type de message Contrainte. Il doit différer de tous les autres codes.",
       "permanent_bypass": "Si vous inhibez ce capteur à la main, il reste inhibé après la désactivation de l'alarme, jusqu'à ce que vous le rétablissiez vous-même. Pratique pour un capteur en panne depuis un moment. Sans cette case, l'inhibition prend fin à la désactivation. Les capteurs d'incendie et de gaz ne peuvent jamais être inhibés.",
       "chime": "Quand le capteur s'ouvre alors que l'alarme est désactivée, un bref son est émis par ce que vous avez choisi dans les paramètres. Pas d'alarme, pas de message, rien dans le journal. Quand l'alarme est activée, rien ne se passe.",
@@ -2064,6 +2142,8 @@ const TXT = {
       "apply": "Appliquer"
     },
     "errors": {
+      "partitions_required": "Choisissez une partition ou Toutes les partitions.", "default_partition_required": "Choisissez la partition par défaut.", "default_partition_not_allowed": "La partition par défaut doit être l'une des partitions choisies (Toutes les partitions seulement avec plus d'une).", group_other_partition: "Le groupe de capteurs {group} appartient à une autre partition.", group_in_use_elsewhere: "Ce groupe est utilisé par des capteurs d'une autre partition : {sensors}.", partition_has_groups: "Cette partition a encore des groupes de capteurs : {groups}. Supprimez-les ou déplacez-les d'abord.", "unknown_partition": "Cette partition n'existe pas.",
+      "partition_in_use": "Cette partition contient encore des capteurs : {sensors}. Déplacez-les d'abord vers une autre partition.",
       "backup_invalid": "Ce fichier ou cette version ne contient aucune configuration utilisable.",
       "backup_unknown": "Cette version n'existe plus.",
       "import_not_vigil": "Ce n'est pas un fichier d'export de Vigil Alarm.",
@@ -2151,6 +2231,7 @@ const TXT = {
       "firstRelease": "prima versione"
     },
     "tabs": {
+      "partition": "Partizioni",
       "overview": "Panoramica",
       "sensor": "Sensori",
       "sensor_group": "Gruppi di sensori",
@@ -2165,6 +2246,7 @@ const TXT = {
       "panel": "Pannelli"
     },
     "add": {
+      "partition": "Aggiungi partizione",
       "sensor": "Aggiungi sensore",
       "sensor_group": "Aggiungi gruppo di sensori",
       "rule": "Aggiungi regola di conferma",
@@ -2174,6 +2256,7 @@ const TXT = {
       "panel": "Aggiungi pannello"
     },
     "edit": {
+      "partition": "Modifica partizione",
       "sensor": "Modifica sensore",
       "sensor_group": "Modifica gruppo di sensori",
       "rule": "Modifica regola di conferma",
@@ -2183,6 +2266,7 @@ const TXT = {
       "panel": "Modifica pannello"
     },
     "intro": {
+      "partition": "Una partizione è una parte della casa con il proprio stato di inserimento, le proprie modalità e i propri ritardi, per esempio la casa e il garage. La prima partizione è quella che hai già; puoi rinominarla qui e cambiarne anche le modalità e i ritardi. Ogni sensore di intrusione appartiene a una sola partizione. I sensori di incendio, gas, acqua e 24 ore non hanno partizione: sorvegliano in tutte e il loro allarme vale per tutta la casa. Il contatto di manomissione di un sensore è nella partizione di quel sensore.",
       "sensor": "Un singolo rilevatore, come un contatto porta, un sensore di movimento o un rilevatore di fumo. Per un sensore di intrusione scegli in quali gruppi di sensori si trova. I sensori di incendio, gas, acqua e manomissione sorvegliano sempre e non hanno bisogno di un gruppo di sensori. Lo stesso vale per 24 ore, sonoro (un pulsante antipanico, la porta di un capanno: un allarme con sirena, anche ad allarme disinserito) e 24 ore, silenzioso (un congelatore o un rilevatore di perdite: solo un messaggio e una riga nel registro).",
       "sensor_group": "Un gruppo di sensori stabilisce in quali modalità i sensori al suo interno sorvegliano. Per esempio: Perimetro (porte e finestre) per Casa, Fuori casa e Notte, e Interno (movimento) solo per Fuori casa.",
       "rule": "Un allarme scatta solo quando il numero indicato di sensori diversi si attiva entro la finestra di tempo. Utile contro un falso allarme causato da un singolo sensore di movimento.",
@@ -2192,6 +2276,7 @@ const TXT = {
       "panel": "Un dispositivo a parete: un pannello ESPHome, oppure un tablet o un telefono con un proprio account Home Assistant. Vigil decide cosa può fare ogni pannello e quali dati riceve; il pannello stesso non decide nulla. L'ID del pannello è il nome del dispositivo ESPHome. Non appena un account è collegato, gli altri account normali non possono più usare l'allarme."
     },
     "empty": {
+      "partition": "Nessuna partizione aggiuntiva. Tutta la casa è una sola partizione. Aggiungine una per inserire separatamente una parte della casa, come il garage.",
       "sensor": "Ancora nessun sensore. Aggiungi prima un gruppo di sensori se non ce n'è, poi i tuoi sensori.",
       "sensor_group": "Ancora nessun gruppo di sensori. Un gruppo di sensori stabilisce in quali modalità i sensori sorvegliano.",
       "rule": "Ancora nessuna regola di conferma. Facoltativo: un allarme solo dopo più sensori.",
@@ -2218,6 +2303,8 @@ const TXT = {
       "addPhone": "Aggiungi telefono: {name}",
       "phoneAdded": "{name} aggiunto; è stata inviata una notifica di prova. È arrivata?",
       "text": {
+        "partition_empty": "La partizione {partition} non ha sensori di intrusione e quindi non sorveglia nulla.",
+        "partition_unwatched": "Nessun sensore di intrusione della partizione {partition} sorveglia in questa modalità: {modes}.",
         "no_sensors": "Non ci sono ancora sensori. Aggiungili o lascia che Vigil li cerchi.",
         "no_sensor_groups": "Non ci sono ancora gruppi di sensori. Senza un gruppo un sensore di intrusione non sorveglia nulla. Vigil può proporne due: Perimetro (porte e finestre) e Interno (movimento).",
         "mode_unwatched": "Nessun sensore di intrusione sorveglia in questa modalità: {modes}.",
@@ -2268,7 +2355,7 @@ const TXT = {
       "intro": "Tutto ciò che Vigil segnala come evento. Il registro conserva {days} giorni (vedi Impostazioni) e non contiene codici. Gli orari sono nel tuo fuso orario; nei download sono in UTC come RFC 3339.",
       "empty": "Ancora nulla nel registro.",
       "cols": {
-        "time": "Ora",
+        "partition": "Partizione", "time": "Ora",
         "event": "Evento",
         "item": "Elemento",
         "who": "Utente",
@@ -2438,7 +2525,7 @@ const TXT = {
       "showAll": "Mostra tutti i sensori",
       "showNew": "Mostra solo i nuovi"
     },
-    "find": {
+    "find": { "partitionHelp": "I sensori di intrusione che aggiungi vanno in questa partizione. I sensori di incendio, gas, acqua e 24 ore non hanno partizione. Il contatto di manomissione di un sensore è nella partizione di quel sensore; un sensore di manomissione che aggiungi tu lo scegli qui (o Tutte le partizioni).",
       "button": "Cerca sensori",
       "title": "Cerca sensori",
       "intro": "Questi sensori sono stati trovati in Home Assistant. Scegli quali aggiungere. Non viene salvato nulla finché non premi il pulsante in fondo.",
@@ -2475,8 +2562,8 @@ const TXT = {
     "retry": "Riprova",
     "sections": {
       "alarm": {
-        "0": "Modalità e ritardi",
-        "1": "Quali modalità usi, quanto tempo hai per uscire e per entrare, e quanto dura l'allarme."
+        "0": "Allarme",
+        "1": "Vale per tutte le partizioni. Modalità, ritardi e durata dell'allarme sono per partizione, in Partizioni."
       },
       "chime": {
         "0": "Campanello",
@@ -2519,6 +2606,11 @@ const TXT = {
         "1": "Vigil chiama regolarmente questo indirizzo, così un servizio esterno alla tua casa segnala quando Home Assistant o il tuo internet si fermano."
       }
     },
+    "partitions": {
+      "allOption": "Tutte le partizioni", "groupsAll": "Per tutte le partizioni", "noGroups": "Ancora nessun gruppo di sensori per questa partizione.", "first": "Prima partizione: {name}. Le sue modalità e i suoi ritardi sono in Impostazioni.",
+      "goSettings": "Vai a Impostazioni",
+      "combined": "Tutte insieme"
+    },
     "reloadNote": "Il salvataggio ricarica Vigil Alarm (lo stato dell'allarme viene mantenuto).",
     "alarm": "Allarme",
     "problems": "Attenzione",
@@ -2529,6 +2621,7 @@ const TXT = {
     "alwaysOn": "Sempre attivo",
     "sensorsCount": "{n} sensori",
     "state": {
+      "mixed": "Misto",
       "disarmed": "Disattivato",
       "arming": "Inserimento",
       "armed": "Inserito",
@@ -2556,6 +2649,8 @@ const TXT = {
       "on_battery": "nessuna alimentazione di rete"
     },
     "cols": {
+      "partition": "Partizione",
+      "partitions": "Partizioni",
       "name": "Nome",
       "entity": "Entità",
       "cls": "Classe",
@@ -2616,6 +2711,10 @@ const TXT = {
     "immediately": "immediatamente",
     "condition": "{n} entro {s} s",
     "fields": {
+      "partition": "Partizione",
+      "default_partition": "Partizione predefinita", "partition_return_seconds": "Ritorno alla partizione predefinita dopo (secondi senza tocco, 0 = resta)", "partitions": "Partizioni",
+      "partition_name": "Nome della prima partizione",
+      "partition.modes": "Modalità disponibili",
       "name": "Nome",
       "entity_id": "Entità (sensore binario)",
       "cls": "Classe",
@@ -2710,6 +2809,9 @@ const TXT = {
     },
     "moreInfo": "Ulteriori informazioni",
     "help": {
+      "sensor_group.partition": "La partizione a cui appartiene questo gruppo. Solo i sensori di quella partizione possono usare il gruppo, che offre solo le modalità di quella partizione.",
+      "partition": "La parte della casa che questo sensore sorveglia. I sensori di incendio, gas, acqua e manomissione non hanno partizione.",
+      "default_partition": "La partizione che lo schermo mostra per prima e a cui torna dopo il tempo impostato. Tutte le partizioni è possibile se il pannello può usarne più di una. Un pannello ESPHome con firmware meno recente gestisce solo questa partizione.", "partition_return_seconds": "Vale per tutti i pannelli e i tablet che possono cambiare partizione. Lo schermo torna indietro se non viene toccato per questo tempo, tranne durante un allarme.", "partitions": "Scegli una o più partizioni, oppure Tutte le partizioni. Gli allarmi dei sensori di incendio, gas, acqua, manomissione e 24 ore valgono per tutta la casa e raggiungono sempre tutto.",
       "duress_code": "Un secondo codice per quando qualcuno ti costringe a spegnere l'allarme. Disinserisce l'allarme come al solito e non si nota nulla: la sirena resta muta. Nel frattempo un messaggio silenzioso va ai canali con il tipo di messaggio Coercizione. Deve essere diverso da ogni altro codice.",
       "permanent_bypass": "Se escludi questo sensore a mano, resta escluso anche dopo il disinserimento dell'allarme, finché non lo ripristini tu. Utile per un sensore guasto da tempo. Senza questa spunta l'esclusione termina al disinserimento. I sensori di incendio e gas non possono mai essere esclusi.",
       "chime": "Quando il sensore si apre ad allarme disinserito, viene riprodotto un breve suono tramite ciò che hai scelto nelle impostazioni. Nessun allarme, nessun messaggio, nulla nel registro. Con l'allarme inserito non succede nulla.",
@@ -2892,6 +2994,8 @@ const TXT = {
       "apply": "Applica"
     },
     "errors": {
+      "partitions_required": "Scegli una partizione o Tutte le partizioni.", "default_partition_required": "Scegli la partizione predefinita.", "default_partition_not_allowed": "La partizione predefinita deve essere una delle partizioni scelte (Tutte le partizioni solo con più di una).", group_other_partition: "Il gruppo di sensori {group} appartiene a un'altra partizione.", group_in_use_elsewhere: "Questo gruppo è usato da sensori di un'altra partizione: {sensors}.", partition_has_groups: "Questa partizione ha ancora gruppi di sensori: {groups}. Eliminali o spostali prima.", "unknown_partition": "Questa partizione non esiste.",
+      "partition_in_use": "Questa partizione ha ancora dei sensori: {sensors}. Spostali prima in un'altra partizione.",
       "backup_invalid": "Questo file o questa versione non contiene una configurazione utilizzabile.",
       "backup_unknown": "Questa versione non esiste più.",
       "import_not_vigil": "Questo non è un file di esportazione di Vigil Alarm.",
@@ -2979,6 +3083,7 @@ const TXT = {
       "firstRelease": "primera versión"
     },
     "tabs": {
+      "partition": "Particiones",
       "overview": "Resumen",
       "sensor": "Sensores",
       "sensor_group": "Grupos de sensores",
@@ -2993,6 +3098,7 @@ const TXT = {
       "panel": "Paneles"
     },
     "add": {
+      "partition": "Añadir partición",
       "sensor": "Añadir sensor",
       "sensor_group": "Añadir grupo de sensores",
       "rule": "Añadir regla de confirmación",
@@ -3002,6 +3108,7 @@ const TXT = {
       "panel": "Añadir panel"
     },
     "edit": {
+      "partition": "Editar partición",
       "sensor": "Editar sensor",
       "sensor_group": "Editar grupo de sensores",
       "rule": "Editar regla de confirmación",
@@ -3011,6 +3118,7 @@ const TXT = {
       "panel": "Editar panel"
     },
     "intro": {
+      "partition": "Una partición es una parte de la casa con su propio estado de armado, sus propios modos y retardos, por ejemplo la casa y el garaje. La primera partición es la que ya tienes; puedes cambiarle el nombre aquí y modificar también sus modos y retardos. Cada sensor de intrusión pertenece a una sola partición. Los sensores de incendio, gas, agua y 24 horas no tienen partición: vigilan en todas y su alarma vale para toda la casa. El contacto de sabotaje de un sensor está en la partición de ese sensor.",
       "sensor": "Un solo detector, como un contacto de puerta, un detector de movimiento o un detector de humo. Para un sensor de intrusión eliges en qué grupos de sensores está. Los sensores de incendio, gas, agua y sabotaje vigilan siempre y no necesitan un grupo de sensores. Lo mismo vale para 24 horas, audible (un botón de pánico, la puerta de un cobertizo: una alarma con sirena, también con la alarma desactivada) y 24 horas, silenciosa (un congelador o un detector de fugas: solo un mensaje y una línea en el registro).",
       "sensor_group": "Un grupo de sensores decide en qué modos vigilan los sensores que contiene. Por ejemplo: Perímetro (puertas y ventanas) para En casa, Fuera y Noche, e Interior (movimiento) solo para Fuera.",
       "rule": "Una alarma solo se produce cuando el número indicado de sensores distintos se activa dentro de la ventana de tiempo. Útil contra una falsa alarma de un único detector de movimiento.",
@@ -3020,6 +3128,7 @@ const TXT = {
       "panel": "Un dispositivo en la pared: un panel ESPHome, o una tableta o un teléfono con su propia cuenta de Home Assistant. Vigil decide qué puede hacer cada panel y qué datos recibe; el propio panel no decide nada. El ID del panel es el nombre del dispositivo ESPHome. En cuanto se vincula una cuenta, las demás cuentas normales ya no pueden manejar la alarma."
     },
     "empty": {
+      "partition": "No hay particiones adicionales. Toda la casa es una sola partición. Añade una para armar por separado una parte de la casa, como el garaje.",
       "sensor": "Aún no hay sensores. Añade primero un grupo de sensores si no hay ninguno, y después tus sensores.",
       "sensor_group": "Aún no hay grupos de sensores. Un grupo de sensores decide en qué modos vigilan los sensores.",
       "rule": "Aún no hay reglas de confirmación. Opcional: una alarma solo después de varios sensores.",
@@ -3046,6 +3155,8 @@ const TXT = {
       "addPhone": "Añadir teléfono: {name}",
       "phoneAdded": "{name} añadido; se envió una notificación de prueba. ¿Ha llegado?",
       "text": {
+        "partition_empty": "La partición {partition} no tiene sensores de intrusión y por tanto no vigila nada.",
+        "partition_unwatched": "Ningún sensor de intrusión de la partición {partition} vigila en este modo: {modes}.",
         "no_sensors": "Aún no hay sensores. Añádelos o deja que Vigil los busque.",
         "no_sensor_groups": "Aún no hay grupos de sensores. Sin un grupo, un sensor de intrusión no vigila nada. Vigil puede proponer dos: Perímetro (puertas y ventanas) e Interior (movimiento).",
         "mode_unwatched": "Ningún sensor de intrusión vigila en este modo: {modes}.",
@@ -3096,7 +3207,7 @@ const TXT = {
       "intro": "Todo lo que Vigil informa como evento. El registro guarda {days} días (ver Ajustes) y no contiene códigos. Las horas están en tu zona horaria; en las descargas están en UTC como RFC 3339.",
       "empty": "Todavía no hay nada en el registro.",
       "cols": {
-        "time": "Hora",
+        "partition": "Partición", "time": "Hora",
         "event": "Evento",
         "item": "Elemento",
         "who": "Usuario",
@@ -3266,7 +3377,7 @@ const TXT = {
       "showAll": "Mostrar todos los sensores",
       "showNew": "Mostrar solo los nuevos"
     },
-    "find": {
+    "find": { "partitionHelp": "Los sensores de intrusión que añadas van a esta partición. Los sensores de incendio, gas, agua y 24 horas no tienen partición. El contacto de sabotaje de un sensor está en la partición de ese sensor; un sensor de sabotaje que añades tú mismo lo eliges aquí (o Todas las particiones).",
       "button": "Buscar sensores",
       "title": "Buscar sensores",
       "intro": "Estos sensores se encontraron en Home Assistant. Elige cuáles añadir. No se guarda nada hasta que pulses el botón de abajo.",
@@ -3303,8 +3414,8 @@ const TXT = {
     "retry": "Reintentar",
     "sections": {
       "alarm": {
-        "0": "Modos y retardos",
-        "1": "Qué modos usas, cuánto tiempo tienes para salir y para entrar, y cuánto dura la alarma."
+        "0": "Alarma",
+        "1": "Se aplica a todas las particiones. Los modos, los retardos y la duración de la alarma son por partición, en Particiones."
       },
       "chime": {
         "0": "Timbre",
@@ -3347,6 +3458,11 @@ const TXT = {
         "1": "Vigil llama a esta dirección con regularidad, para que un servicio fuera de tu casa avise cuando Home Assistant o tu internet se detengan."
       }
     },
+    "partitions": {
+      "allOption": "Todas las particiones", "groupsAll": "Para todas las particiones", "noGroups": "Todavía no hay grupos de sensores para esta partición.", "first": "Primera partición: {name}. Sus modos y retardos están en Ajustes.",
+      "goSettings": "Ir a Ajustes",
+      "combined": "Todas juntas"
+    },
     "reloadNote": "Al guardar se recarga Vigil Alarm (el estado de la alarma se conserva).",
     "alarm": "Alarma",
     "problems": "Atención",
@@ -3357,6 +3473,7 @@ const TXT = {
     "alwaysOn": "Siempre activo",
     "sensorsCount": "{n} sensores",
     "state": {
+      "mixed": "Mixto",
       "disarmed": "Apagada",
       "arming": "Activando",
       "armed": "Activada",
@@ -3384,6 +3501,8 @@ const TXT = {
       "on_battery": "sin corriente de red"
     },
     "cols": {
+      "partition": "Partición",
+      "partitions": "Particiones",
       "name": "Nombre",
       "entity": "Entidad",
       "cls": "Clase",
@@ -3444,6 +3563,10 @@ const TXT = {
     "immediately": "inmediatamente",
     "condition": "{n} en {s} s",
     "fields": {
+      "partition": "Partición",
+      "default_partition": "Partición predeterminada", "partition_return_seconds": "Volver a la partición predeterminada tras (segundos sin tocar, 0 = quedarse)", "partitions": "Particiones",
+      "partition_name": "Nombre de la primera partición",
+      "partition.modes": "Modos disponibles",
       "name": "Nombre",
       "entity_id": "Entidad (sensor binario)",
       "cls": "Clase",
@@ -3538,6 +3661,9 @@ const TXT = {
     },
     "moreInfo": "Más información",
     "help": {
+      "sensor_group.partition": "La partición a la que pertenece este grupo. Solo los sensores de esa partición pueden usar el grupo, y ofrece solo los modos de esa partición.",
+      "partition": "La parte de la casa que vigila este sensor. Los sensores de incendio, gas, agua y sabotaje no tienen partición.",
+      "default_partition": "La partición que la pantalla muestra primero y a la que vuelve tras el tiempo fijado. Todas las particiones es posible si el panel puede usar más de una. Un panel ESPHome con firmware antiguo solo maneja esta partición.", "partition_return_seconds": "Vale para todos los paneles y tablets que pueden cambiar de partición. La pantalla vuelve cuando no se toca durante este tiempo, salvo durante una alarma.", "partitions": "Elige una o más particiones, o Todas las particiones. Las alarmas de los sensores de incendio, gas, agua, sabotaje y 24 horas valen para toda la casa y siempre llegan a todo.",
       "duress_code": "Un segundo código para cuando alguien te obliga a apagar la alarma. Desactiva la alarma como de costumbre y no se nota nada: la sirena permanece en silencio. Mientras tanto, un mensaje silencioso llega a los canales con el tipo de mensaje Coacción. Debe ser distinto de cualquier otro código.",
       "permanent_bypass": "Si anulas este sensor a mano, sigue anulado después de desactivar la alarma, hasta que lo restablezcas tú. Útil para un sensor averiado desde hace tiempo. Sin esta marca, la anulación termina al desactivar. Los sensores de incendio y gas nunca se pueden anular.",
       "chime": "Cuando el sensor se abre con la alarma desactivada, suena un sonido breve a través de lo que hayas elegido en los ajustes. Sin alarma, sin mensaje, nada en el registro. Con la alarma activada no ocurre nada.",
@@ -3720,6 +3846,8 @@ const TXT = {
       "apply": "Aplicar"
     },
     "errors": {
+      "partitions_required": "Elige una partición o Todas las particiones.", "default_partition_required": "Elige la partición predeterminada.", "default_partition_not_allowed": "La partición predeterminada debe ser una de las elegidas (Todas las particiones solo con más de una).", group_other_partition: "El grupo de sensores {group} pertenece a otra partición.", group_in_use_elsewhere: "Este grupo lo usan sensores de otra partición: {sensors}.", partition_has_groups: "Esta partición aún tiene grupos de sensores: {groups}. Elimínalos o muévelos primero.", "unknown_partition": "Esa partición no existe.",
+      "partition_in_use": "Esta partición aún tiene sensores: {sensors}. Muévelos primero a otra partición.",
       "backup_invalid": "Este archivo o esta versión no contiene una configuración utilizable.",
       "backup_unknown": "Esta versión ya no existe.",
       "import_not_vigil": "Este no es un archivo de exportación de Vigil Alarm.",
@@ -3823,7 +3951,7 @@ function iconButton(name, label, cls, onclick) {
 const OPTION_GROUP = { modes: "mode", allowed_modes: "mode" };
 const CONTACT_CLASSES = ["door", "window", "opening", "garage_door"];
 const MOTION_CLASSES = ["motion", "occupancy", "presence", "moving"];
-const KINDS = ["sensor", "sensor_group", "rule", "user", "notification", "siren", "panel"];
+const KINDS = ["partition", "sensor_group", "sensor", "rule", "user", "notification", "siren", "panel"];
 const TABS = ["overview", ...KINDS, "log", "settings", "backup", "about"];
 
 const CSS = `
@@ -3862,6 +3990,10 @@ th { text-align: left; font-weight: 500; color: var(--secondary-text-color, #727
 td { padding: 10px 12px; border-bottom: 1px solid var(--divider-color, #eee); vertical-align: middle; }
 tr.row:hover td { background: var(--secondary-background-color, #f5f5f5); }
 td.actions { text-align: right; white-space: nowrap; }
+table.even { table-layout: fixed; }
+table.even th.act { width: 140px; }
+table.even td { overflow-wrap: anywhere; }
+table.even.cover td:first-child { width: 160px; }
 td .sub { display: block; color: var(--secondary-text-color, #727272); font-size: 12px; }
 .empty { padding: 32px 16px; text-align: center; color: var(--secondary-text-color, #727272); }
 .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; background: var(--secondary-background-color, #eee); }
@@ -3870,7 +4002,17 @@ td .sub { display: block; color: var(--secondary-text-color, #727272); font-size
 .badge.warn { background: color-mix(in srgb, var(--warning-color, #ffa600) 22%, transparent); color: var(--warning-color, #b26a00); }
 .badge.bad { background: color-mix(in srgb, var(--error-color, #db4437) 18%, transparent); color: var(--error-color, #db4437); }
 .tags span { margin-right: 4px; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.ptile { background: color-mix(in srgb, var(--tone) 12%, var(--card-background-color, #fff));
+  --tone: var(--success-color, #43a047); }
+.ptile.armed { --tone: var(--primary-color, #03a9f4); }
+.ptile.warn { --tone: var(--warning-color, #ffa600); }
+.ptile.bad { --tone: var(--error-color, #db4437); }
+.ptile .pname { font-size: 14px; color: var(--secondary-text-color, #727272); overflow-wrap: anywhere; }
+.ptile .pstate { font-size: 18px; margin: 2px 0; font-weight: 500; color: var(--tone); }
+.ptile.single .pstate { font-size: 20px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.grid > .card { margin-bottom: 0; }
+.grid.ptiles { margin-bottom: 12px; }
 .stat { font-size: 26px; font-weight: 500; overflow-wrap: anywhere; }
 .muted { color: var(--secondary-text-color, #727272); font-size: 13px; }
 .about th { text-align: left; font-weight: 500; width: 40%; padding: 4px 8px 4px 0; color: var(--secondary-text-color, #727272); }
@@ -3880,7 +4022,7 @@ td .sub { display: block; color: var(--secondary-text-color, #727272); font-size
 .links svg { color: var(--secondary-text-color, #727272); flex: none; }
 .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
 @media (max-width: 700px) { .cols { grid-template-columns: 1fr; gap: 16px; } }
-.brand { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+.brand { display: flex; align-items: center; gap: 16px; margin: 4px 0 16px; }
 .brand img { border-radius: 14px; }
 .brand h2 { margin: 0 0 2px; }
 a { color: var(--primary-color, #03a9f4); }
@@ -4136,16 +4278,35 @@ class VigilPanel extends HTMLElement {
     const z = this._data.items.sensor.find((x) => x.id === id);
     return z ? z.title : id;
   }
+  // The groups a sensor of a partition can use: the groups of that partition.
+  _groupsFor(pid) {
+    const mine = pid || "main";
+    return this._data.items.sensor_group.filter((g) => (g.data.partition || "main") === mine);
+  }
+  // The modes of a partition (null: not known, so all of them).
+  _partitionModes(pid) {
+    if (!pid) return null;
+    const p = (this._data.partitions || []).find((x) => x.id === pid);
+    return p && p.modes && p.modes.length ? p.modes : null;
+  }
+  // The modes a user or panel can be given: those of the partitions chosen (none chosen: all partitions).
+  _modesOfPartitions(list) {
+    const parts = this._data.partitions || [];
+    const chosen = list && list.length ? parts.filter((p) => list.includes(p.id)) : parts;
+    const all = new Set();
+    for (const p of chosen) for (const m of (p.modes && p.modes.length ? p.modes : null) || []) all.add(m);
+    return all.size ? all : null;
+  }
   _groupName(id) {
     const g = this._data.items.sensor_group.find((x) => x.id === id);
     return g ? g.title : id;
   }
   // Sensors that watch in a mode: intrusion sensors through their groups, the other classes always.
-  _coverage(mode) {
-    const groups = this._data.items.sensor_group.filter((g) => (g.data.modes || []).includes(mode));
+  _coverage(mode, pid = "main") {
+    const groups = this._data.items.sensor_group.filter((g) => (g.data.modes || []).includes(mode) && (g.data.partition || "main") === pid);
     return groups.map((g) => ({
       group: g,
-      sensors: this._data.items.sensor.filter((s) => (s.data.sensor_groups || []).includes(g.id)),
+      sensors: this._data.items.sensor.filter((s) => (s.data.sensor_groups || []).includes(g.id) && (s.data.partition || "main") === pid),
     }));
   }
   _opt(field, value) {
@@ -4159,7 +4320,23 @@ class VigilPanel extends HTMLElement {
   // The items of a kind that have a row in the tables. The tamper contact of a sensor is kept as a
   // sensor of its own, but it is edited with the sensor it belongs to.
   _shown(kind) {
+    if (kind === "partition") return this._partitionItems();
     return this._data.items[kind].filter((i) => !(i.data && i.data.companion_of));
+  }
+  // The first partition is the alarm itself, so it has no item of its own: a row is made from the settings.
+  _partitionItems() {
+    const first = ((this._data.partitions || []).find((p) => p.primary)) || { id: "main", name: "" };
+    const main = { id: "main", primary: true, title: first.name, has_code: false, data: { ...this._data.entry.data } };
+    return [main, ...this._data.items.partition];
+  }
+  // More than one partition: the forms and tables show which partition something belongs to.
+  _multiple() { return ((this._data && this._data.partitions) || []).length > 1; }
+  _partitionName(id) {
+    const p = ((this._data && this._data.partitions) || []).find((x) => x.id === (id || "main"));
+    return p ? p.name : String(id || "");
+  }
+  _partitionList(ids) {
+    return ids && ids.length ? ids.map((x) => this._partitionName(x)).join(", ") : "*";
   }
   _batteryLevel(sensor) {
     const battery = sensor.data.battery_entity && this._hass.states[sensor.data.battery_entity];
@@ -4207,28 +4384,46 @@ class VigilPanel extends HTMLElement {
   }
 
   // ---- overview
-  _coverageCard() {
-    const t = this.t;
-    const modes = this._data.entry.data.modes || [];
+  // One card per partition: what each of its modes watches.
+  _coverageCards() {
     const always = this._data.items.sensor.filter((x) => x.data.cls !== "intrusion");
-    const rows = modes.map((mode) => {
-      const cover = this._coverage(mode);
-      return el("tr", {},
-        el("td", { text: t.mode[mode] || mode }),
-        el("td", {}, cover.length
-          ? cover.map((c) => el("div", {}, el("strong", { text: c.group.title }), " ",
-              el("span", { class: "muted", text: c.sensors.length ? c.sensors.map((x) => x.title).join(", ") : fill(t.sensorsCount, { n: 0 }) })))
-          : el("span", { class: "badge warn", text: t.coverageNothing })));
+    return [
+      ...(this._data.partitions || [{ id: "main", name: "" }]).map((p) => this._coverageCard(p.id)),
+      // the safety sensors watch in every mode of every partition: one card of their own, last
+      ...(always.length ? [el("div", { class: "card" }, el("h2", { text: this.t.alwaysOn }),
+        el("div", { class: "muted", text: always.map((x) => x.title).join(", ") }))] : []),
+    ];
+  }
+  _coverageCard(pid = "main") {
+    const t = this.t;
+    const item = pid === "main" ? null : this._data.items.partition.find((x) => x.id === pid);
+    const modes = (pid === "main" ? this._data.entry.data.modes : item && item.data.modes) || [];
+    const C = t.cols;
+    const rows = modes.flatMap((mode) => {
+      const cover = this._coverage(mode, pid);
+      if (!cover.length) {
+        return [el("tr", {}, el("td", { text: t.mode[mode] || mode }),
+          el("td", { colspan: "2" }, el("span", { class: "badge warn", text: t.coverageNothing })))];
+      }
+      return cover.map((c, n) => el("tr", {},
+        ...(n === 0 ? [el("td", { rowspan: String(cover.length), text: t.mode[mode] || mode })] : []),
+        el("td", { text: c.group.title }),
+        el("td", { class: "muted", text: c.sensors.length ? c.sensors.map((x) => x.title).join(", ") : fill(t.sensorsCount, { n: 0 }) })));
     });
-    if (always.length) {
-      rows.push(el("tr", {}, el("td", { text: t.alwaysOn }),
-        el("td", {}, el("span", { class: "muted", text: always.map((x) => x.title).join(", ") }))));
-    }
-    return el("div", { class: "card" }, el("h2", { text: t.coverage }),
-      el("div", { class: "tablewrap" }, el("table", {}, el("tbody", {}, rows))));
+    const head = el("thead", {}, el("tr", {}, el("th", { text: "" }), el("th", { text: C.groups }), el("th", { text: C.sensors })));
+    return el("div", { class: "card" }, el("h2", { text: this._partitionName(pid) }),
+      el("div", { class: "tablewrap" }, el("table", { class: "even cover" }, head, el("tbody", {}, rows))));
   }
 
   // The alarm reports armed_home, armed_away, armed_night; the mode is shown next to the state.
+  // The colour of a state on the overview: green disarmed, blue armed, amber counting down, red alarm.
+  _stateTone(state) {
+    if (state === "triggered") return "bad";
+    if (state === "arming" || state === "pending") return "warn";
+    if (String(state).startsWith("armed")) return "armed";
+    return "ok";
+  }
+
   _stateText(live) {
     const key = live.state.startsWith("armed_") ? "armed" : live.state;
     return this.t.state[key] || live.state;
@@ -4314,13 +4509,22 @@ class VigilPanel extends HTMLElement {
   // Why arming is refused now, per sensor, with what can be done about it (the live view says what stops each mode).
   _whyCard() {
     const t = this.t, w = t.why;
-    const blockers = this._live && this._live.blockers ? this._live.blockers : {};
+    // [label, blockers] per mode; with more than one partition the label says which partition too.
+    const found = [];
+    const live = this._live || {};
+    if (live.partitions) {
+      for (const p of Object.values(live.partitions)) {
+        for (const [mode, list] of Object.entries(p.blockers || {})) found.push([this._multiple() ? `${p.name}: ${t.mode[mode] || mode}` : (t.mode[mode] || mode), list]);
+      }
+    } else {
+      for (const [mode, list] of Object.entries(live.blockers || {})) found.push([t.mode[mode] || mode, list]);
+    }
     const rows = new Map();
-    for (const [mode, list] of Object.entries(blockers)) {
+    for (const [label, list] of found) {
       for (const b of list) {
         const key = `${b.sensor || ""}|${b.reason}`;
         if (!rows.has(key)) rows.set(key, { ...b, modes: [] });
-        rows.get(key).modes.push(t.mode[mode] || mode);
+        rows.get(key).modes.push(label);
       }
     }
     if (!rows.size) return null;
@@ -4568,10 +4772,19 @@ class VigilPanel extends HTMLElement {
     const problems = live ? live.problems : [];
     const sensors = this._data.items.sensor;
     return el("div", {},
+      el("div", { class: "brand" },
+        el("img", { src: LOGO_URL, alt: "", width: "48", height: "48" }),
+        el("div", {}, el("h2", { text: "Vigil Alarm" }), el("div", { class: "muted", text: t.alarm }))),
+      el("div", { class: "grid ptiles" },
+        ...(live && this._multiple() && live.partitions
+          ? Object.values(live.partitions).map((p) => el("div", { class: `card ptile ${this._stateTone(p.state)}` },
+              el("div", { class: "pname", text: p.name }),
+              el("div", { class: "pstate", text: this._stateText(p) }),
+              el("div", { class: "muted", text: p.mode ? (t.mode[p.mode] || p.mode) : "\u00a0" })))
+          : [el("div", { class: `card ptile single ${this._stateTone(live ? live.state : "")}` },
+              el("div", { class: "pstate", text: live ? this._stateText(live) : t.none }),
+              el("div", { class: "muted", text: live && live.mode ? (t.mode[live.mode] || live.mode) : "\u00a0" }))])),
       el("div", { class: "grid" },
-        el("div", { class: "card" }, el("h2", { text: t.alarm }),
-          el("div", { class: "stat", text: live ? this._stateText(live) : t.none }),
-          el("div", { class: "muted", text: live && live.mode ? (t.mode[live.mode] || live.mode) : "" })),
         ...KINDS.map((k) => el("div", { class: "card", style: "cursor:pointer", onclick: () => { this._tab = k; this._renderBody(); } },
           el("h2", { text: t.tabs[k] }), el("div", { class: "stat", text: String(this._shown(k).length) })))),
       this._wizardCard(),
@@ -4593,7 +4806,7 @@ class VigilPanel extends HTMLElement {
         problems.length
           ? el("ul", { class: "plain" }, problems.map((p) => el("li", { text: `${p.name}: ${t.problem[p.problem] || p.problem}${p.level !== undefined ? ` (${p.level}%)` : ""}` })))
           : el("div", { class: "muted", text: t.noProblems })),
-      this._coverageCard(),
+      ...this._coverageCards(),
       el("div", { class: "card" }, el("h2", { text: t.sensorsNow }),
         sensors.length
           ? el("div", { class: "tablewrap" }, el("table", {}, el("tbody", {}, sensors.map((z) =>
@@ -4615,6 +4828,7 @@ class VigilPanel extends HTMLElement {
         [C.cls, (i) => this._opt("cls", i.data.cls)],
         [C.type, (i) => (i.data.cls === "intrusion" ? this._opt("type", i.data.type || "instant") : t.none)],
         [C.groups, (i) => (i.data.cls === "intrusion" ? (i.data.sensor_groups || []).map((g) => this._groupName(g)).join(", ") || t.none : t.alwaysOn)],
+        ...(this._multiple() ? [[C.partition, (i) => (i.data.cls === "intrusion" ? this._partitionName(i.data.partition) : t.alwaysOn)]] : []),
         [C.rule, (i) => this._rulesOfSensor(i.id).join(", ") || t.none],
         [C.status, (i) => this._sensorBadge(i, false)],
         [C.battery, (i) => this._batteryCell(i)],
@@ -4624,6 +4838,12 @@ class VigilPanel extends HTMLElement {
         [C.modes, (i) => this._optList("modes", i.data.modes)],
         [C.sensors, (i) => this._data.items.sensor.filter((s) => (s.data.sensor_groups || []).includes(i.id)).map((s) => s.title).join(", ") || t.none],
         [C.suggest, (i) => this._opt("suggest_for", i.data.suggest_for || "")],
+      ];
+      case "partition": return [
+        [C.name, (i) => i.title],
+        [C.modes, (i) => this._optList("modes", i.data.modes)],
+        [C.sensors, (i) => this._data.items.sensor.filter((s) => s.data.cls === "intrusion" && (s.data.partition || "main") === i.id).map((s) => s.title).join(", ") || t.none],
+        [t.fields.chime_entity, (i) => (i.data.chime_entity ? this._friendly(i.data.chime_entity) : t.none)],
       ];
       case "rule": return [
         [C.name, (i) => i.title],
@@ -4639,24 +4859,28 @@ class VigilPanel extends HTMLElement {
         [C.modes, (i) => (i.data.allowed_modes && i.data.allowed_modes.length ? this._optList("allowed_modes", i.data.allowed_modes) : "*")],
         [C.bypass, (i) => (i.data.may_bypass !== false ? t.yes : t.no)],
         [C.tamper, (i) => (i.data.may_bypass_tamper ? t.yes : t.no)],
+        ...(this._multiple() ? [[C.partitions, (i) => this._partitionList(i.data.partitions)]] : []),
       ];
       case "notification": return [
         [C.name, (i) => i.title],
         [C.service, (i) => String(i.data.service).includes(".") ? i.data.service : `notify.${i.data.service}`],
         [C.categories, (i) => this._optList("categories", i.data.categories)],
         [C.delay, (i) => (i.data.delay ? `${i.data.delay} s` : t.immediately)],
+        ...(this._multiple() ? [[C.partitions, (i) => this._partitionList(i.data.partitions)]] : []),
       ];
       case "panel": return [
         [C.name, (i) => i.title],
         [C.panelId, (i) => i.data.panel_id],
         [C.conn, (i) => this._panelBadges(i)],
         [C.allowed, (i) => this._panelLimits(i)],
+        ...(this._multiple() ? [[C.partitions, (i) => this._partitionList(i.data.partitions)]] : []),
       ];
       case "siren": return [
         [C.name, (i) => i.title],
         [C.device, (i) => named(i.data.control)],
         [C.causes, (i) => this._optList("causes", i.data.causes)],
         [C.maxdur, (i) => (i.data.max_duration ? `${i.data.max_duration} s` : t.none)],
+        ...(this._multiple() ? [[C.partitions, (i) => this._partitionList(i.data.partitions)]] : []),
         [C.status, (i) => {
           const s = state(i.data.control);
           return el("span", { class: "badge " + (s === undefined || s === "unavailable" ? "bad" : "ok"), text: s === undefined ? "?" : s });
@@ -4718,14 +4942,14 @@ class VigilPanel extends HTMLElement {
     this._toast(doneText);
   }
 
-  _list(kind) {
+  _table(kind, items, cols, emptyText) {
     const t = this.t;
-    const items = this._shown(kind);
-    const cols = this._columns(kind);
     const canTest = kind === "notification" || kind === "siren";
-    const table = items.length
-      ? el("div", { class: "tablewrap" }, el("table", {},
-          el("thead", {}, el("tr", {}, cols.map(([h]) => el("th", { text: h })), el("th", {}))),
+    // The tables that come one per partition keep equal columns, so they line up from one partition to the next.
+    const even = ["partition", "sensor_group", "sensor", "rule"].includes(kind);
+    return items.length
+      ? el("div", { class: "tablewrap" }, el("table", { class: even ? "even" : "" },
+          el("thead", {}, el("tr", {}, cols.map(([h]) => el("th", { text: h })), el("th", { class: "act" }))),
           el("tbody", {}, items.map((item) => el("tr", { class: "row" },
             cols.map(([h, render]) => el("td", { "data-label": h }, render(item))),
             el("td", { class: "actions" },
@@ -4733,16 +4957,53 @@ class VigilPanel extends HTMLElement {
               kind === "panel" ? iconButton("unlock", t.panel.unlock, "", () => this._panelAction(item, "vigil_alarm/panel_unlock", fill(t.panel.unlockedDone, { s: item.data.unlock_seconds || 60 }))) : null,
               kind === "panel" ? iconButton("reset", t.panel.clear, "", () => this._panelAction(item, "vigil_alarm/panel_clear_lock", t.panel.cleared)) : null,
               iconButton("edit", t.editBtn, "", () => this._openForm(kind, item)),
-              kind === "user" ? null : iconButton("copy", t.dup, "", () => this._openForm(kind, item, true)),
-              iconButton("trash", t.del, "danger", () => this._confirmDelete(item))))))))
-      : el("div", { class: "empty", text: t.empty[kind] });
+              kind === "user" || item.primary ? null : iconButton("copy", t.dup, "", () => this._openForm(kind, item, true)),
+              item.primary ? null : iconButton("trash", t.del, "danger", () => this._confirmDelete(item))))))))
+      : el("div", { class: "empty", text: emptyText });
+  }
+
+  // Sensors and sensor groups, one table per partition. Last come the ones that belong to no partition: the groups
+  // for all partitions, and the safety sensors, which watch everywhere.
+  _partitionTables(kind) {
+    const t = this.t;
+    const cols = this._columns(kind).filter(([h]) => h !== t.cols.partition);  // the table says it
+    const rows = this._shown(kind);
+    // A rule is in the partition of its sensors (they must all be in one).
+    const ruleHome = (r) => { const z = this._data.items.sensor.find((x) => x.id === (r.data.sensors || [])[0]); return (z && z.data.partition) || "main"; };
+    const mine = kind === "sensor"
+      ? (pid) => rows.filter((r) => r.data.cls === "intrusion" && (r.data.partition || "main") === pid)
+      : kind === "rule" ? (pid) => rows.filter((r) => ruleHome(r) === pid)
+      : (pid) => rows.filter((r) => (r.data.partition || "main") === pid);
+    const rest = kind === "sensor" ? rows.filter((r) => r.data.cls !== "intrusion") : [];
+    const sections = [
+      ...(this._data.partitions || []).map((p) => ({ id: p.id, title: p.name, items: mine(p.id), empty: kind === "sensor" ? t.empty.sensor : kind === "rule" ? t.empty.rule : t.partitions.noGroups })),
+      ...(rest.length ? [{ id: "", title: t.alwaysOn, items: rest, empty: t.empty[kind] }] : []),
+    ];
+    return sections.map((sec) => el("div", { class: "card" },
+      el("div", { class: "bar" }, el("h2", { text: sec.title, style: "margin:0 auto 0 0" }),
+        el("button", { class: "btn small", text: t.add[kind], onclick: () => this._openForm(kind, null, false,
+          kind === "sensor" ? (sec.id ? { partition: sec.id } : { cls: "fire" }) : { partition: sec.id }) })),
+      this._table(kind, sec.items, cols, sec.empty),
+      kind === "sensor_group" && !sec.items.length
+        ? el("button", { class: "btn", text: t.find.createGroups, onclick: async () => {
+            const made = await this._call({ type: "vigil_alarm/create_default_groups", partition: sec.id });
+            if (made.ok) await this._load();
+          } })
+        : null));
+  }
+
+  _list(kind) {
+    const t = this.t;
+    const grouped = ["sensor_group", "sensor", "rule"].includes(kind) && this._multiple();
     return el("div", {},
       el("div", { class: "bar" }, el("p", { class: "intro", text: t.intro[kind] }),
         kind === "sensor" ? el("button", { class: "btn", text: t.practice.walkTitle, onclick: () => this._openWalkTest() }) : null,
         kind === "sensor" ? el("button", { class: "btn", text: t.find.button, onclick: () => this._openFind() }) : null,
-        el("button", { class: "btn primary", text: t.add[kind], onclick: () => this._openForm(kind) })),
+        grouped ? null : el("button", { class: "btn primary", text: t.add[kind], onclick: () => this._openForm(kind) })),
       kind === "panel" ? el("p", { class: "muted", text: t.panel.hint }) : null,
-      el("div", { class: "card" }, table));
+      grouped ? el("div", {}, this._partitionTables(kind))
+        : el("div", { class: "card" }, this._table(kind, this._shown(kind), this._columns(kind), t.empty[kind])),
+      kind === "partition" ? el("div", {}, this._coverageCards()) : null);
   }
 
   // ---- settings tab
@@ -4764,10 +5025,11 @@ class VigilPanel extends HTMLElement {
         : e.source && byPerson.includes(e.event) ? el("span", { class: "muted", text: l.cols.noCode }) : el("span", { text: t.none }));
       const table = res.entries.length
         ? el("div", { class: "tablewrap" }, el("table", {},
-            el("thead", {}, el("tr", {}, ["time", "event", "item", "who", "via", "result"].map((k) => el("th", { text: l.cols[k] })))),
+            el("thead", {}, el("tr", {}, ["time", "event", "partition", "item", "who", "via", "result"].map((k) => el("th", { text: l.cols[k] })))),
             el("tbody", {}, res.entries.map((e) => el("tr", { class: "row", title: e.detail ? JSON.stringify(e.detail) : "" },
               el("td", { "data-label": l.cols.time, text: when(e.time) }),
               el("td", { "data-label": l.cols.event, text: res.labels[e.event] || e.event }),
+              el("td", { "data-label": l.cols.partition, text: e.partition || t.none }),
               el("td", { "data-label": l.cols.item, text: e.item || t.none }),
               el("td", { "data-label": l.cols.who }, who(e)),
               el("td", { "data-label": l.cols.via, text: e.source || t.none }),
@@ -4799,7 +5061,8 @@ class VigilPanel extends HTMLElement {
 
   _settings() {
     const t = this.t;
-    const form = this._makeForm(this._data.settings_form, { ...this._data.entry.data }, { ctx: "s", kind: "settings", sections: true });
+    const schema = this._data.settings_form;
+    const form = this._makeForm(schema, { ...this._data.entry.data }, { ctx: "s", kind: "settings", sections: true });
     const base = el("div");
     const saveBtn = el("button", { class: "btn primary", text: t.save });
     saveBtn.addEventListener("click", async () => {
@@ -4809,14 +5072,13 @@ class VigilPanel extends HTMLElement {
       if (res.ok) { this._savedToast(t.saved); await this._load(); } else form.showErrors(res, base);
     });
     return el("div", {}, base, form.node,
-      el("div", { class: "card" }, el("div", { class: "bar" }, saveBtn), el("p", { class: "note", text: t.reloadNote })),
-      this._coverageCard());
+      el("div", { class: "card" }, el("div", { class: "bar" }, saveBtn), el("p", { class: "note", text: t.reloadNote })));
   }
 
   // ---- backup tab: kept versions, export and import
   _changeNode(change) {
     const b = this.t.backup;
-    const kindOf = { zone: "sensor", group: "rule", sensor_group: "sensor_group", user: "user", notification: "notification", siren: "siren", panel: "panel" };
+    const kindOf = { zone: "sensor", group: "rule", sensor_group: "sensor_group", user: "user", notification: "notification", siren: "siren", panel: "panel", partition: "partition" };
     const lines = [];
     for (const [type, counts] of Object.entries(change.counts || {})) {
       const parts = ["added", "changed", "removed"].filter((a) => counts[a]).map((a) => `${counts[a]} ${b[a]}`);
@@ -5078,6 +5340,9 @@ class VigilPanel extends HTMLElement {
       return r;
     });
     let onlyNew = !!opts.onlyNew && newIds.size > 0;
+    // With more than one partition the intrusion sensors found go to the partition chosen here (the first at the start).
+    let part = "main";
+    const groupsOf = (r) => { const ok = new Set(this._groupsFor(part).map((g) => g.id)); return (r.c.groups || []).filter((g) => ok.has(g)); };
     const shown = () => rows.filter((r) => !onlyNew || r.isNew);
     const base = el("div");
     const tableHost = el("div");
@@ -5110,14 +5375,14 @@ class VigilPanel extends HTMLElement {
               r.blocked ? el("span", { class: "badge warn", text: r.blocked }) : null),
             el("td", { "data-label": f.cols.cls }, this._opt("cls", r.c.cls)),
             el("td", { "data-label": f.cols.entrance }, entrance),
-            el("td", { "data-label": f.cols.groups }, r.c.cls === "intrusion" ? (r.c.groups || []).map(groupName).join(", ") || t.none : t.alwaysOn),
+            el("td", { "data-label": f.cols.groups }, r.c.cls === "intrusion" ? groupsOf(r).map(groupName).join(", ") || t.none : t.alwaysOn),
             el("td", { "data-label": f.cols.extra }, extras));
         }))));
       const makeGroups = el("button", { class: "btn", text: f.createGroups, onclick: async () => {
-        const made = await this._call({ type: "vigil_alarm/create_default_groups" });
+        const made = await this._call({ type: "vigil_alarm/create_default_groups", partition: part });
         if (made.ok) { close(); await this._load(); this._openFind(); }
       } });
-      tableHost.replaceChildren(missingGroup ? el("div", {}, el("p", { class: "intro", text: f.noGroups }), makeGroups) : null, table);
+      tableHost.replaceChildren(...[missingGroup ? el("div", {}, el("p", { class: "intro", text: f.noGroups }), makeGroups) : null, table].filter(Boolean));
       refresh();
     };
     const setAll = (on) => { shown().forEach((r) => { r.on = on && !r.blocked; }); build(); };
@@ -5127,6 +5392,19 @@ class VigilPanel extends HTMLElement {
       try { await navigator.clipboard.writeText(JSON.stringify(report.entities || [], null, 1)); this._toast(t.about.copied); }
       catch (err) { this._toast(t.about.copyFailed); }
     });
+    const partitionPick = this._multiple()
+      ? el("div", { class: "field" }, el("label", { text: t.fields.partition }),
+          el("select", { onchange: (e) => {
+            part = e.target.value;
+            for (const r of rows) {  // a group of another partition cannot be used: such a sensor waits for a group
+              if (r.c.cls !== "intrusion" || r.c.in_use) continue;
+              r.blocked = groupsOf(r).length ? "" : f.needsGroup;
+              r.on = !r.blocked;
+            }
+            build();
+          } }, (this._data.partitions || []).map((p) => el("option", { value: p.id, text: p.name }))),
+          el("div", { class: "help", text: f.partitionHelp }))
+      : null;
     const filterNote = el("p", { class: "muted" });
     const filterBtn = el("button", { class: "btn" });
     const syncFilter = () => {
@@ -5137,7 +5415,7 @@ class VigilPanel extends HTMLElement {
     filterBtn.addEventListener("click", () => { onlyNew = !onlyNew; syncFilter(); build(); });
     syncFilter();
     build();
-    this._dialog(f.title, [el("p", { class: "intro", text: f.intro }), filterNote, base,
+    this._dialog(f.title, [el("p", { class: "intro", text: f.intro }), partitionPick, filterNote, base,
       el("div", { class: "bar" }, el("button", { class: "btn", text: f.all, onclick: () => setAll(true) }),
         el("button", { class: "btn", text: f.nothing, onclick: () => setAll(false) }), filterBtn, copy),
       tableHost], (closeDialog) => {
@@ -5147,7 +5425,7 @@ class VigilPanel extends HTMLElement {
         const items = chosen.map((r) => {
           const c = r.c;
           const data = { name: (r.name || "").trim() || c.name, entity_id: c.entity_id, cls: c.cls };
-          if (c.cls === "intrusion") Object.assign(data, { type: r.entrance ? "delayed" : "instant", sensor_groups: c.groups, at_arm_open: "bypass" });
+          if (c.cls === "intrusion") Object.assign(data, { type: r.entrance ? "delayed" : "instant", sensor_groups: groupsOf(r), at_arm_open: "bypass", ...(this._multiple() ? { partition: part } : {}) });
           if (c.battery_entity) data.battery_entity = c.battery_entity;
           if (c.tamper_entity) data.tamper_entity = c.tamper_entity;
           return data;
@@ -5167,22 +5445,36 @@ class VigilPanel extends HTMLElement {
 
   _openForm(kind, item, copy = false, prefill = null) {
     const t = this.t;
-    const schema = this._data.forms[kind];
+    // Without a second partition the fields about partitions are left out: there is nothing to choose.
+    const schema = this._data.forms[kind].filter((f) => !["partition", "partitions", "default_partition"].includes(f.type) || this._multiple());
     const initial = item ? { name: item.title, ...item.data } : {};
+    if (item && item.data && item.data.cls === "tamper") initial.tamper_partition = item.data.partition || "all";
     if (copy) initial.name = item.title + t.copySuffix;
     if (prefill) Object.assign(initial, prefill);
     const editing = item && !copy;
-    const form = this._makeForm(schema, initial, { ctx: kind, kind, editing: !!editing, hasCode: !!(item && item.has_code && editing), hasDuress: !!(item && item.has_duress && editing) });
+    const form = this._makeForm(schema, initial, { ctx: kind, kind, partition: prefill && prefill.partition, editing: !!editing, existing: !!item, hasCode: !!(item && item.has_code && editing), hasDuress: !!(item && item.has_duress && editing) });
     const base = el("div");
     this._dialog(editing ? t.edit[kind] : t.add[kind], [base, form.node], (close) => {
       const saveBtn = el("button", { class: "btn primary", text: t.save });
       saveBtn.addEventListener("click", async () => {
         saveBtn.disabled = true;
-        const msg = { type: "vigil_alarm/save", kind, data: form.values() };
+        let msg = { type: "vigil_alarm/save", kind, data: form.values() };
         if (editing) msg.subentry_id = item.id;
+        if (item && item.primary) {
+          // The first partition is the alarm itself: its name, modes and times are kept with the settings.
+          const { name, ...values } = msg.data;
+          const kept = {};
+          for (const f of this._data.settings_form) if (this._data.entry.data[f.key] !== undefined) kept[f.key] = this._data.entry.data[f.key];
+          for (const k of ["trigger_time", "chime_entity", "default_entry_delay"]) if (!(k in values)) delete kept[k];
+          msg = { type: "vigil_alarm/save_settings", data: { ...kept, ...values, partition_name: name } };
+        }
         const res = await this._call(msg);
         saveBtn.disabled = false;
-        if (res.ok) { close(); this._savedToast(t.saved); await this._load(); } else form.showErrors(res, base);
+        if (res.ok) { close(); this._savedToast(t.saved); await this._load(); }
+        else {
+          if (item && item.primary && res.errors && res.errors.partition_name) res.errors = { ...res.errors, name: res.errors.partition_name };
+          form.showErrors(res, base);
+        }
       });
       return [el("button", { class: "btn", text: t.cancel, onclick: close }), saveBtn];
     });
@@ -5195,7 +5487,7 @@ class VigilPanel extends HTMLElement {
     const deviceClass = st && st.attributes.device_class;
     const kind = CONTACT_CLASSES.includes(deviceClass) ? "contacts" : MOTION_CLASSES.includes(deviceClass) ? "motion" : null;
     if (!kind) return false;
-    const ids = this._data.items.sensor_group.filter((g) => g.data.suggest_for === kind).map((g) => g.id);
+    const ids = this._groupsFor(state.partition).filter((g) => g.data.suggest_for === kind).map((g) => g.id);
     if (!ids.length || JSON.stringify(ids) === JSON.stringify(state.sensor_groups)) return false;
     state.sensor_groups = ids;
     return true;
@@ -5238,10 +5530,17 @@ class VigilPanel extends HTMLElement {
     if (opts.ctx === "panel" && (!opts.editing || !Object.keys(TXT).includes(state.language))) {
       state.language = panelLanguage((this._hass.locale && this._hass.locale.language) || this._hass.language);
     }
+    if (schema.some((f) => f.type === "partitions")) {
+      // The choice is always made: an item from before (nothing chosen meant all) starts with every partition ticked,
+      // a new one with none.
+      const ids = (this._data.partitions || []).map((x) => x.id);
+      state.partitions = opts.existing && !(state.partitions || []).length ? ids : [...(state.partitions || [])];
+      if (opts.ctx === "panel") state.default_partition = state.default_partition || (opts.existing ? state.partitions[0] || "" : "");
+    }
     if (opts.kind === "settings") {
       for (const f of schema) if (state[f.key] === undefined) state[f.key] = f.type === "number" ? 0 : f.default;
     }
-    const label = (f) => t.fields[`${opts.ctx}.${f.key}`] || t.fields[f.key] || f.key;
+    const label = (f) => t.fields[`${opts.ctx}.${f.key}`] || t.fields[f.key] || (f.key === "tamper_partition" && t.fields.partition) || f.key;
     const profileGroups = {};
 
     // A tablet or phone is not always there, so it is not watched unless you say so; an ESPHome panel is. The
@@ -5334,8 +5633,9 @@ class VigilPanel extends HTMLElement {
     const t = this.t;
     const key = f.key;
     const more = t.helpMore && t.helpMore[key];
-    const help = t.help[key] && !compact
-      ? el("div", { class: "help" }, el("span", { text: t.help[key] }),
+    const helpText = (opts && t.help[`${opts.ctx}.${key}`]) || t.help[key] || (key === "tamper_partition" && t.help.partition) || "";
+    const help = helpText && !compact
+      ? el("div", { class: "help" }, el("span", { text: helpText }),
           more ? el("button", { type: "button", class: "info", title: t.moreInfo, "aria-label": t.moreInfo,
             onclick: () => this._infoPopup(labelText, more), text: "i" }) : null)
       : null;
@@ -5374,7 +5674,13 @@ class VigilPanel extends HTMLElement {
       }
       case "multiselect": {
         const current = new Set(state[key] || []);
-        return wrap(el("div", { class: "checks" }, f.options.map((o) => el("label", {},
+        let have = opts.ctx === "sensor_group" && key === "modes" ? this._partitionModes(state.partition) : null;
+        if (!have && key === "allowed_modes" && ["user", "panel"].includes(opts.ctx)) {
+          const set = this._modesOfPartitions(state.partitions);
+          have = set ? [...set] : null;
+        }
+        const shown = have ? f.options.filter((o) => have.includes(o)) : f.options;
+        return wrap(el("div", { class: "checks" }, shown.map((o) => el("label", {},
           el("input", { type: "checkbox", checked: current.has(o), onchange: (e) => {
             if (e.target.checked) current.add(o); else current.delete(o);
             state[key] = f.options.filter((x) => current.has(x));
@@ -5382,18 +5688,68 @@ class VigilPanel extends HTMLElement {
           } }), this._opt(key, o)))));
       }
       case "sensors": {
-        const choices = this._data.items.sensor.filter((z) => z.data.cls === "intrusion" && (z.data.type || "instant") === "instant");
+        let choices = this._data.items.sensor.filter((z) => z.data.cls === "intrusion" && (z.data.type || "instant") === "instant");
+        const homeOf = (z) => z.data.partition || "main";
+        const first = choices.find((z) => (state[key] || []).includes(z.id));
+        const pid = this._multiple() ? (first ? homeOf(first) : opts.partition) : null;
+        if (pid) choices = choices.filter((z) => homeOf(z) === pid);  // a rule stays within one partition
         const current = new Set(state[key] || []);
         return wrap(choices.length
           ? el("div", { class: "checks" }, choices.map((z) => el("label", {},
               el("input", { type: "checkbox", checked: current.has(z.id), onchange: (e) => {
                 if (e.target.checked) current.add(z.id); else current.delete(z.id);
                 state[key] = choices.map((c) => c.id).filter((id) => current.has(id));
+                rerender();
               } }), z.title)))
           : el("div", { class: "muted", text: t.empty.sensor }));
       }
+      case "partition": {
+        const choices = this._data.partitions || [];
+        const options = choices.map((p) => el("option", { value: p.id, selected: (state[key] || "main") === p.id, text: p.name }));
+        // a tamper sensor can watch in all partitions: "All partitions" first (that is also what it has when it has none)
+        if (key === "tamper_partition") options.unshift(el("option", { value: "all", selected: !state[key] || state[key] === "all", text: t.partitions.allOption }));
+        return wrap(el("select", { onchange: (e) => {
+          state[key] = e.target.value;
+          if (opts.ctx === "sensor" && key === "partition") {  // only the groups of that partition (and of all) can stay
+            const ok = new Set(this._groupsFor(state[key]).map((g) => g.id));
+            state.sensor_groups = (state.sensor_groups || []).filter((g) => ok.has(g));
+          }
+          if (opts.ctx === "sensor_group") {  // only the modes that partition has
+            const have = this._partitionModes(state[key]);
+            if (have) state.modes = (state.modes || []).filter((m) => have.includes(m));
+          }
+          rerender();
+        } }, options));
+      }
+      case "default_partition": {
+        const choices = this._data.partitions || [];
+        const chosen = state.partitions && state.partitions.length ? choices.filter((x) => state.partitions.includes(x.id)) : [];
+        const options = chosen.map((x) => ({ id: x.id, name: x.name }));
+        if (chosen.length > 1) options.push({ id: "all", name: t.partitions.allOption });
+        if (!options.some((o) => o.id === state[key])) state[key] = options.length ? options[0].id : "";
+        return wrap(el("select", { onchange: (e) => { state[key] = e.target.value; } },
+          options.map((o) => el("option", { value: o.id, selected: state[key] === o.id, text: o.name }))));
+      }
+      case "partitions": {
+        const choices = this._data.partitions || [];
+        const current = new Set(state[key] || []);
+        const everyone = el("label", {}, el("input", { type: "checkbox", checked: choices.length > 0 && current.size === choices.length, onchange: (e) => {
+          state[key] = e.target.checked ? choices.map((c) => c.id) : [];
+          const set = this._modesOfPartitions(state[key]);
+          if (set && state.allowed_modes) state.allowed_modes = state.allowed_modes.filter((m) => set.has(m));
+          rerender();
+        } }), t.partitions.allOption);
+        return wrap(el("div", { class: "checks" }, everyone, choices.map((p) => el("label", {},
+          el("input", { type: "checkbox", checked: current.has(p.id), onchange: (e) => {
+            if (e.target.checked) current.add(p.id); else current.delete(p.id);
+            state[key] = choices.map((c) => c.id).filter((id) => current.has(id));
+            const set = this._modesOfPartitions(state[key]);  // only the modes those partitions have can stay
+            if (set && state.allowed_modes) state.allowed_modes = state.allowed_modes.filter((m) => set.has(m));
+            rerender();
+          } }), p.name))));
+      }
       case "sensor_groups": {
-        const choices = this._data.items.sensor_group;
+        const choices = this._groupsFor(state.partition);
         const current = new Set(state[key] || []);
         return wrap(choices.length
           ? el("div", { class: "checks" }, choices.map((g) => el("label", {},

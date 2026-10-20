@@ -36,6 +36,7 @@
       st_bypassed_at_arm: "omzeild bij inschakelen", st_unavailable: "storing",
       cause_intrusion: "Inbraak", cause_fire: "Brand", cause_gas: "Gas", cause_tamper: "Sabotage", cause_alarm24: "24-uursalarm", cause_silent24: "Stil alarm", cause_water: "Water",
       cause_fault: "Sensorstoring", ok: "OK", delete: "Wis", code: "Code",
+      all: "Alles", mixed: "Gemengd", only_this: "alleen deze partitie", default_tag: "standaard",
     },
     en: {
       disarmed: "Disarmed", armed_home: "Home", armed_away: "Away", armed_night: "Night", armed_vacation: "Vacation", armed_custom_bypass: "Custom", arming: "Arming",
@@ -56,6 +57,7 @@
       st_closed: "closed", st_open: "open", st_waiting: "waiting", st_bypassed: "bypassed",
       st_bypassed_at_arm: "bypassed at arming", st_unavailable: "fault",
       cause_intrusion: "Intrusion", cause_fire: "Fire", cause_gas: "Gas", cause_tamper: "Tamper", cause_alarm24: "24-hour alarm", cause_silent24: "Silent alarm", cause_water: "Water",
+      all: "All", mixed: "Mixed", only_this: "only this partition", default_tag: "default",
       cause_fault: "Sensor fault", ok: "OK", delete: "Delete", code: "Code",
     },
     de: {
@@ -76,6 +78,7 @@
       old_profile: "Vigil oder die Karte aktualisieren", no_admin_code: "Lege zuerst in Vigil einen Installateurcode fest",
       st_closed: "geschlossen", st_open: "offen", st_waiting: "wartet", st_bypassed: "überbrückt",
       st_bypassed_at_arm: "beim Scharfschalten überbrückt", st_unavailable: "Störung",
+      all: "Alle", mixed: "Gemischt", only_this: "nur diese Partition", default_tag: "Standard",
       cause_intrusion: "Einbruch", cause_fire: "Feuer", cause_gas: "Gas", cause_tamper: "Sabotage", cause_alarm24: "24-Stunden-Alarm", cause_silent24: "Stiller Alarm", cause_water: "Wasser",
       cause_fault: "Sensorstörung", ok: "OK", delete: "Löschen", code: "Code",
     },
@@ -96,6 +99,7 @@
       err_invalid_code: "Code invalide", err_code_required: "Un code est requis", err_locked_pre: "Trop de codes erronés. Réessayez dans ", err_locked_post: " min", err_locked: "Trop de codes erronés. Patientez un instant", err_locked_permanent: "Trop de codes erronés. Verrouillé jusqu'à ce qu'un administrateur le déverrouille dans Vigil", err_bypass_tamper: "Vous ne pouvez pas inhiber ou rétablir le sabotage", err_bypass: "Vous ne pouvez pas inhiber ou rétablir les capteurs", err_blocked: "Ce clavier est bloqué", err_not_allowed: "Ce clavier n'a pas le droit de faire cela", err_no_installer_code: "Définissez d'abord un code installateur dans Vigil", err_not_bypassable: "Ce capteur ne peut pas être inhibé",
       old_profile: "Mettez à jour Vigil ou la carte", no_admin_code: "Définissez d'abord un code installateur dans Vigil",
       st_closed: "fermé", st_open: "ouvert", st_waiting: "en attente", st_bypassed: "inhibé",
+      all: "Tout", mixed: "Mixte", only_this: "uniquement cette partition", default_tag: "par défaut",
       st_bypassed_at_arm: "inhibé à l'activation", st_unavailable: "défaut",
       cause_intrusion: "Intrusion", cause_fire: "Incendie", cause_gas: "Gaz", cause_tamper: "Sabotage", cause_alarm24: "Alarme 24 h", cause_silent24: "Alarme silencieuse", cause_water: "Eau",
       cause_fault: "Défaut de capteur", ok: "OK", delete: "Effacer", code: "Code",
@@ -116,6 +120,7 @@
       not_linked_sub: "Aggiungi questo account Home Assistant in Vigil sotto Pannelli. Account: ",
       err_invalid_code: "Codice non valido", err_code_required: "È richiesto un codice", err_locked_pre: "Troppi codici errati. Riprova tra ", err_locked_post: " min", err_locked: "Troppi codici errati. Attendi un momento", err_locked_permanent: "Troppi codici errati. Bloccato finché un amministratore non lo sblocca in Vigil", err_bypass_tamper: "Non puoi escludere o ripristinare la manomissione", err_bypass: "Non puoi escludere o ripristinare i sensori", err_blocked: "Questo pannello è bloccato", err_not_allowed: "Questo pannello non può farlo", err_no_installer_code: "Imposta prima un codice installatore in Vigil", err_not_bypassable: "Questo sensore non può essere escluso",
       old_profile: "Aggiorna Vigil o la scheda", no_admin_code: "Imposta prima un codice installatore in Vigil",
+      all: "Tutto", mixed: "Misto", only_this: "solo questa partizione", default_tag: "predefinita",
       st_closed: "chiuso", st_open: "aperto", st_waiting: "in attesa", st_bypassed: "escluso",
       st_bypassed_at_arm: "escluso all'inserimento", st_unavailable: "guasto",
       cause_intrusion: "Intrusione", cause_fire: "Incendio", cause_gas: "Gas", cause_tamper: "Manomissione", cause_alarm24: "Allarme 24 ore", cause_silent24: "Allarme silenzioso", cause_water: "Acqua",
@@ -136,6 +141,7 @@
       not_linked: "Sin vincular",
       not_linked_sub: "Añade esta cuenta de Home Assistant en Vigil, en Paneles. Cuenta: ",
       err_invalid_code: "Código no válido", err_code_required: "Se necesita un código", err_locked_pre: "Demasiados códigos erróneos. Inténtalo de nuevo en ", err_locked_post: " min", err_locked: "Demasiados códigos erróneos. Espera un momento", err_locked_permanent: "Demasiados códigos erróneos. Bloqueado hasta que un administrador lo desbloquee en Vigil", err_bypass_tamper: "No puedes anular ni restablecer el sabotaje", err_bypass: "No puedes anular ni restablecer sensores", err_blocked: "Este panel está bloqueado", err_not_allowed: "Este panel no puede hacer esto", err_no_installer_code: "Define primero un código de instalador en Vigil", err_not_bypassable: "Este sensor no se puede anular",
+      all: "Todo", mixed: "Mixto", only_this: "solo esta partición", default_tag: "predeterminada",
       old_profile: "Actualiza Vigil o la tarjeta", no_admin_code: "Define primero un código de instalador en Vigil",
       st_closed: "cerrado", st_open: "abierto", st_waiting: "en espera", st_bypassed: "anulado",
       st_bypassed_at_arm: "anulado al activar", st_unavailable: "avería",
@@ -223,6 +229,7 @@
       clearInterval(this._helloTimer);
       clearInterval(this._tick);
       clearTimeout(this._idle);
+      clearTimeout(this._back);
       clearTimeout(this._msgTimer);
     }
 
@@ -252,8 +259,70 @@
       this.hass = this._hass;
     }
 
+    // ------------------------------------------------------------- partitions
+    // The partitions this tablet may use (Vigil sends them), and the choice "all" when it may use more than one.
+    _parts() {
+      return (this._info && Array.isArray(this._info.partitions) ? this._info.partitions : []).filter((x) => x && x.alarm);
+    }
+    _multi() { return this._parts().length > 1; }
+    _hasAll() { return this._multi() && !!(this._info && this._info.all_entity); }
+    // The partition this tablet starts on and returns to: its default (an id or "all"), else the first.
+    _default() {
+      const d = this._info && this._info.default_partition;
+      const parts = this._parts();
+      return d === "all" ? (this._hasAll() ? "all" : parts[0] && parts[0].id) : parts.some((x) => x.id === d) ? d : parts[0] && parts[0].id;
+    }
+    // Back to the default after the time set in Vigil without touch; not while an alarm is going.
+    _armReturn() {
+      clearTimeout(this._back);
+      const seconds = Number(this._info && this._info.return_seconds) || 0;
+      if (!this._multi() || !seconds || !this._ui.partition || this._ui.partition === this._default()) return;
+      this._back = setTimeout(() => {
+        const a = this._alarm();
+        const busy = this._parts().some((x) => ["triggered", "pending", "arming"].includes((this._hass && this._hass.states[x.alarm] || {}).state)) ||
+          (a && ["triggered", "pending", "arming"].includes(a.state));
+        if (busy || this._ui.keypad) { this._armReturn(); return; }
+        this._ui.partition = null;
+        this._ui.view = "main";
+        this._key = "";
+        this._render();
+      }, seconds * 1000);
+    }
+    // The partition on screen: the choice of the person if it still exists, else the first.
+    _sel() {
+      const parts = this._parts();
+      const want = this._ui.partition || this._default();
+      if (want === "all" && this._hasAll()) {
+        const modes = ["home", "away", "night", "vacation", "custom"].filter((m) => parts.some((x) => (x.modes || []).includes(m)));
+        return { id: "all", name: this.tr("all"), alarm: this._info.all_entity, modes };
+      }
+      return parts.find((x) => x.id === want) || parts[0] || null;
+    }
+    // The texts and counts of what is on screen: of one partition, or added up for "all".
+    _pp() {
+      const p = this._p();
+      const sel = this._sel();
+      if (!p || !Array.isArray(p.partitions) || !sel) return null;
+      const mine = sel.id === "all" ? p.partitions : p.partitions.filter((x) => x.id === sel.id);
+      if (!mine.length) return null;
+      const text = (k) => mine.map((x) => clean(x[k])).filter(Boolean).join(", ");
+      const count = (k) => mine.reduce((n, x) => n + (Number(x[k]) || 0), 0);
+      return { open_count: count("open_count"), faults_count: count("faults_count"), open_sensors_text: text("open_sensors_text"),
+        faults_text: text("faults_text"), open_now_text: text("open_now_text"), bypassed_text: text("bypassed_text") };
+    }
+    // One value of the profile, from the partition on screen when Vigil sends them per partition.
+    _pv(key) {
+      const pp = this._pp();
+      const p = this._p();
+      return pp && pp[key] !== undefined ? pp[key] : p ? p[key] : undefined;
+    }
+    _partitionArg() {
+      const sel = this._sel();
+      return this._multi() && sel ? { partition: sel.id } : {};
+    }
     _alarm() {
-      const id = this._info && this._info.alarm_entity;
+      const sel = this._sel();
+      const id = (sel && sel.alarm) || (this._info && this._info.alarm_entity);
       return id && this._hass ? this._hass.states[id] : null;
     }
     _profile() {
@@ -267,7 +336,8 @@
     _snapshotKey() {
       const a = this._alarm();
       const p = this._profile();
-      return JSON.stringify([this._info, this._failed, a && [a.state, a.attributes], p && [p.state, p.attributes],
+      const others = this._hass ? this._parts().map((x) => (this._hass.states[x.alarm] || {}).state) : [];
+      return JSON.stringify([this._info, this._failed, this._ui.partition, others, a && [a.state, a.attributes], p && [p.state, p.attributes],
         this._hass && this._hass.language]);
     }
 
@@ -312,17 +382,20 @@
     }
     _rows() {
       const p = this._p();
-      return String((p && p.sensors) || "")
+      const sel = this._sel();
+      // More than one partition: the list of all of them, narrowed to the partition on screen (safety sensors are in all).
+      const many = this._multi() && p && p.sensors_all;
+      return String((many ? p.sensors_all : p && p.sensors) || "")
         .split("\n")
         .map((line) => line.split("|"))
         .filter((f) => f.length >= 4)
-        .map((f) => ({ name: f[0], entity: f[1], status: f[2], bypassable: f.slice(3).join("|") === "1" }));
+        .map((f) => ({ name: f[0], entity: f[1], status: f[2], bypassable: f[3] === "1", partition: f[4] || "" }))
+        .filter((r) => !many || !sel || sel.id === "all" || !r.partition || r.partition === sel.id);
     }
     _openTotal() {
       const rows = this._rows();
       if (rows.length) return rows.filter((r) => r.status === "open" || r.status === "waiting").length;
-      const p = this._p();
-      return Number((p && p.open_count) || 0);
+      return Number(this._pv("open_count") || 0);
     }
     _bypassAllowed() {
       return this._usable() && !!this._p().can_bypass;
@@ -351,8 +424,12 @@
       if (!this._p()) return this.tr("not_linked");
       if (!this._linked()) return this.tr("not_linked");
       if (this._p().blocked) return this.tr("blocked");
-      const s = this._alarm().state;
-      return TEXTS.en[s] ? this.tr(s) : s;
+      const a = this._alarm();
+      const sel = this._multi() ? this._sel() : null;
+      const own = sel ? sel.name + ": " : "";
+      if (a.attributes && a.attributes.mixed === true) return own + this.tr("mixed");
+      const s = a.state;
+      return own + (TEXTS.en[s] ? this.tr(s) : s);
     }
     // What the ring shows: one of the keys of COLORS.
     _kind() {
@@ -384,28 +461,28 @@
       const left = this._secondsLeft();
       const armed = ["armed_home", "armed_away", "armed_night", "armed_vacation", "armed_custom_bypass"].includes(s);
       if (s === "disarmed") {
-        if (Number(p.open_count) > 0) add(this.tr("open") + p.open_count);
+        if (Number(this._pv("open_count")) > 0) add(this.tr("open") + this._pv("open_count"));
         else add(this.tr("all_closed"));
         if (this._detailsVisible()) add(this._lastAlarm(at));
         // Disarmed and still bypassed: that is a permanent bypass, which must not be forgotten.
         const left_out = Array.isArray(at.bypassed_sensors) ? at.bypassed_sensors.map(clean).filter(Boolean) : [];
         if (left_out.length && this._detailsVisible()) add(this.tr("bypassed_now") + left_out.join(", "));
-        if (clean(p.faults_text)) add(this.tr("problems") + clean(p.faults_text));
-        else if (Number(p.faults_count) > 0 || Number(p.problems_count) > 0) {
-          add(this.tr("problems") + (Number(p.faults_count) > 0 ? p.faults_count : p.problems_count));
+        if (clean(this._pv("faults_text"))) add(this.tr("problems") + clean(this._pv("faults_text")));
+        else if (Number(this._pv("faults_count")) > 0 || Number(p.problems_count) > 0) {
+          add(this.tr("problems") + (Number(this._pv("faults_count")) > 0 ? this._pv("faults_count") : p.problems_count));
         }
       } else if (armed) {
         if (this._detailsVisible()) {
           if (clean(at.changed_by)) add(this.tr("by") + clean(at.changed_by));
           else if (clean(at.changed_via)) add(this.tr("by_unknown"));
           if (clean(at.changed_via)) add(this.tr("via") + clean(at.changed_via));
-          if (clean(p.open_sensors_text)) add(this.tr("open") + clean(p.open_sensors_text));
+          if (clean(this._pv("open_sensors_text"))) add(this.tr("open") + clean(this._pv("open_sensors_text")));
         }
       } else if (s === "arming") {
         const m = clean(at.mode);
         if (TEXTS.en[m]) add(this.tr(m));
         if (left >= 0) add(this.tr("leave_in") + left + " s");
-        if (clean(p.open_sensors_text)) add(this.tr("open") + clean(p.open_sensors_text));
+        if (clean(this._pv("open_sensors_text"))) add(this.tr("open") + clean(this._pv("open_sensors_text")));
       } else if (s === "pending") {
         if (left >= 0) add(this.tr("enter_in") + left + " s");
         if (this._detailsVisible()) add(clean(at.cause_sensor));
@@ -427,7 +504,11 @@
     }
     _modeButtons() {
       const p = this._p();
-      if (!this._usable() || this._alarm().state !== "disarmed") return [];
+      const a = this._alarm();
+      // "All" with some partitions armed and some not still arms the ones that are not.
+      if (!this._usable() || (a.state !== "disarmed" && !(a.attributes && a.attributes.mixed === true))) return [];
+      const sel = this._sel();
+      if (this._multi() && sel) return ["home", "away", "night", "vacation", "custom"].filter((m) => (sel.modes || []).includes(m));
       const mask = Number(p.modes_mask) || 0;
       return [["home", 1], ["away", 2], ["night", 4], ["vacation", 8], ["custom", 16]].filter(([, bit]) => mask & bit).map(([m]) => m);
     }
@@ -441,6 +522,7 @@
 
     // --------------------------------------------------------------------- keypad
     _touch() {
+      this._armReturn();
       clearTimeout(this._idle);
       const seconds = Number(this._config.idle_timeout) || 30;
       this._idle = setTimeout(() => {
@@ -465,9 +547,11 @@
     _route() {
       const k = this._ui.keypad;
       if (!k) return;
-      const s = this._stateKnown() ? this._alarm().state : "";
+      const a = this._stateKnown() ? this._alarm() : null;
+      const s = a ? a.state : "";
+      const mixed = !!(a && a.attributes && a.attributes.mixed === true);  // "all": some armed, some not
       if (k.action === "disarm" && s === "disarmed") this._ui.keypad = null;
-      else if (k.action.startsWith("arm_") && s !== "disarmed") this._ui.keypad = null;
+      else if (k.action.startsWith("arm_") && s !== "disarmed" && !mixed) this._ui.keypad = null;
     }
     _start(action, extra = {}) {
       if (ADMIN_ACTIONS.includes(action) && !this._p().has_admin_code) {
@@ -493,8 +577,8 @@
       const withCode = (data) => (code ? { ...data, code } : data);
       this._ui.busy = true;
       try {
-        if (action.startsWith("arm_")) await call("arm", withCode({ mode: action.slice(4), source, ...(extra.force ? { bypass_open: true } : {}) }));
-        else if (action === "disarm") await call("disarm", { code, source });
+        if (action.startsWith("arm_")) await call("arm", withCode({ mode: action.slice(4), source, ...this._partitionArg(), ...(extra.force ? { bypass_open: true } : {}) }));
+        else if (action === "disarm") await call("disarm", { code, source, ...this._partitionArg() });
         else if (action === "bypass") await call("bypass", { sensor: extra.entity, code, source });
         else if (action === "unbypass") await call("unbypass", { sensor: extra.entity, code, source });
         else if (action === "unlock") await call("unlock_panel", { code, source, scope: "sensors" });
@@ -618,7 +702,7 @@
       const kind = this._kind();
       const c = COLORS[kind];
       const name = this._info && this._info.name ? esc(this._info.name) : "";
-      const header = `<header class="top"><img class="logo" src="/vigil_alarm_static/logo.png" alt=""><span class="brand">Vigil</span><span class="pname">${name}</span></header>`;
+      const header = `<header class="top"><img class="logo" src="/vigil_alarm_static/logo.png" alt=""><span class="brand">Vigil Alarm</span><span class="pname">${name}</span></header>${keypad || sensorsView ? "" : this._partsHtml()}`;
       let body;
       if (sensorsView && !keypad) body = this._sensorsHtml();
       else body = `<div class="grid ${keypad ? "has-keypad" : ""}">
@@ -627,6 +711,27 @@
       root.innerHTML = `<style>${STYLE}</style><ha-card class="k-${kind}" style="--c:${c}">${header}${body}</ha-card>`;
       root.querySelectorAll("[data-act]").forEach((el) =>
         el.addEventListener("click", (ev) => this._click(el, ev)));
+    }
+
+    // More than one partition: a button for each, coloured by its state, and "All" when the tablet may use more than one.
+    _partsHtml() {
+      if (!this._hass) return "";
+      const sel = this._sel();
+      if (!this._multi()) {
+        // One partition on this tablet, but the house has more: say which one it is.
+        const only = this._parts()[0];
+        if (!only || !(Number(this._info && this._info.partition_total) > 1)) return "";
+        const st = (this._hass.states[only.alarm] || {}).state;
+        return `<div class="one" style="--c:${COLORS[st] || COLORS.none}"><span class="cdot"></span><b>${esc(only.name)}</b><span>${esc(this.tr("only_this"))}</span></div>`;
+      }
+      const dflt = this._default();
+      const chip = (id, label, state) => `<button class="chip ${sel && sel.id === id ? "on" : ""}" style="--c:${COLORS[state] || COLORS.none}" data-act="part" data-id="${esc(id)}"><span class="cdot"></span>${esc(label)}${id === dflt ? `<small>${esc(this.tr("default_tag"))}</small>` : ""}</button>`;
+      const items = this._parts().map((x) => chip(x.id, x.name, (this._hass.states[x.alarm] || {}).state));
+      if (this._hasAll()) {
+        const a = this._hass.states[this._info.all_entity] || {};
+        items.push(chip("all", this.tr("all"), a.attributes && a.attributes.mixed === true ? "notready" : a.state));
+      }
+      return `<div class="chips">${items.join("")}</div>`;
     }
 
     _ringHtml(kind, c) {
@@ -717,7 +822,14 @@
       ev.stopPropagation();
       this._touch();
       const act = el.dataset.act;
-      if (act === "arm") this._start("arm_" + el.dataset.mode);
+      if (act === "part") {
+        this._ui.partition = el.dataset.id;
+        this._armReturn();
+        this._ui.view = "main";
+        this._ui.force = null;
+        this._key = "";
+        this._render();
+      } else if (act === "arm") this._start("arm_" + el.dataset.mode);
       else if (act === "disarm") this._start("disarm");
       else if (act === "force") this._ui.force && this._start(this._ui.force.action, { force: true });
       else if (act === "sensors") {
@@ -752,6 +864,15 @@
     svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
     .top { display: flex; align-items: center; gap: 10px; min-height: 34px; margin-bottom: 12px; }
     .logo { width: 28px; height: 28px; border-radius: 8px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: -4px 0 12px; }
+    .chip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; min-height: 40px;
+      background: var(--surface); border: 1.5px solid var(--line); font-weight: 600; }
+    .chip.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 16%, var(--surface)); }
+    .one { display: flex; align-items: center; gap: 8px; margin: -4px 0 12px; font-size: 15px; }
+    .one span:last-child { color: var(--muted, #9aa4b2); font-size: 13px; }
+    .one .cdot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
+    .chip small { font-size: 11px; font-weight: 400; opacity: .7; }
+    .chip .cdot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
     .brand { font-size: 18px; font-weight: 700; }
     .pname { margin-left: auto; font-size: 14px; color: var(--muted); }
     .grid { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }

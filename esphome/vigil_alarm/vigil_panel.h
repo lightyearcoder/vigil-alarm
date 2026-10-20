@@ -129,6 +129,10 @@ static const Text TEXTS[] = {
     // codes
     {"nav_alarm", {"Alarm", "Alarm", "Alarm", "Alarme", "Allarme", "Alarma"}},
     {"nav_info", {"Info", "Info", "Info", "Infos", "Info", "Info"}},
+    {"all", {"Alles", "All", "Alle", "Tout", "Tutto", "Todo"}},
+    {"mixed", {"Gemengd", "Mixed", "Gemischt", "Mixte", "Misto", "Mixto"}},
+    {"only_this", {"alleen deze partitie", "only this partition", "nur diese Partition", "uniquement cette partition", "solo questa partizione", "solo esta particion"}},
+    {"default_tag", {"standaard", "default", "Standard", "par defaut", "predefinita", "predeterminada"}},
     {"code_hint", {"Code", "Code", "Code", "Code", "Codice", "Codigo"}},
 };
 
@@ -196,6 +200,14 @@ struct Context {
   bool sensors_unlocked = false;   // a code (user or installer) was entered a moment ago, on this panel
   bool installer_unlocked = false; // the installer code was entered a moment ago: the info page may open
   std::string device_name;        // the ESPHome name: the panel id and the source of every call
+  // The partitions (profile of Vigil 0.6.0 and later). The screen shows one partition, or all of them together.
+  std::string partition_list;     // one "id|name|state" line per partition this panel may use, then "all||state[|mixed]"
+  std::string sel;                // the partition on screen: an id, or "all" (empty: Vigil does not tell)
+  std::string default_part;       // the partition the screen starts on and returns to
+  int return_seconds = 0;         // back to the default after this long without touch (0: stay)
+  int part_total = 1;             // how many partitions the whole house has
+  bool mixed = false;             // "all" on screen and the partitions are not in the same state
+  uint32_t last_touch_ms = 0;     // the last touch (or choice of a partition), for the way back to the default
 };
 
 inline Context ctx;
@@ -325,6 +337,100 @@ inline bool linked() { return ctx.profile_version == PROFILE_VERSION; }
 // May the panel work at all: connected, known to Vigil, a profile it understands, not blocked.
 inline bool usable() { return state_known() && linked() && !ctx.blocked; }
 
+// ------------------------------------------------------------------------------------------- partitions
+
+struct PartRow {
+  std::string id, name, state;
+  bool mixed = false;
+};
+
+// The rows of ctx.partition_list; `with_all` keeps the row "all" (it is only there when the panel may use more than one).
+inline std::vector<PartRow> part_rows(bool with_all) {
+  std::vector<PartRow> rows;
+  size_t start = 0;
+  const std::string &text = ctx.partition_list;
+  while (start <= text.size()) {
+    size_t end = text.find('\n', start);
+    if (end == std::string::npos) end = text.size();
+    std::string line = text.substr(start, end - start);
+    start = end + 1;
+    if (line.empty()) continue;
+    std::string parts[4];
+    size_t from = 0;
+    int n = 0;
+    while (n < 3) {
+      size_t bar = line.find('|', from);
+      if (bar == std::string::npos) break;
+      parts[n++] = line.substr(from, bar - from);
+      from = bar + 1;
+    }
+    if (n < 2) continue;  // not a line we understand
+    parts[n] = line.substr(from);  // the state; or, after it, "mixed"
+    PartRow row{parts[0], parts[1], parts[2], false};
+    if (n == 3) { row.state = parts[2]; row.mixed = parts[3] == "mixed"; }
+    else row.state = parts[2];
+    if (row.id == "all" && !with_all) continue;
+    rows.push_back(row);
+  }
+  return rows;
+}
+
+constexpr int MAX_PARTITIONS_SHOWN = 4;  // as many buttons fit in the row (and "All" besides)
+
+inline int part_count() { return (int) part_rows(false).size(); }
+// Can the screen switch? More than one partition on this panel.
+inline bool parts_switch() { return part_count() > 1; }
+// Is there something to say about the partition? Switching, or one partition on this panel while the house has more.
+inline bool parts_visible() { return part_count() > 1 || (part_count() == 1 && ctx.part_total > 1); }
+
+// The partition on screen: what Vigil says, else the first.
+inline std::string sel_id() {
+  if (!ctx.sel.empty()) return ctx.sel;
+  std::vector<PartRow> rows = part_rows(false);
+  return rows.empty() ? std::string() : rows[0].id;
+}
+
+inline std::string sel_name() {
+  const std::string id = sel_id();
+  if (id == "all") return tr("all");
+  for (const PartRow &r : part_rows(false))
+    if (r.id == id) return r.name;
+  return "";
+}
+
+// Is the screen on "all" with the partitions in different states?
+inline bool mixed_now() {
+  return ctx.mixed && sel_id() == "all" && (ctx.state == "disarmed" || ctx.state == "armed_home" || ctx.state == "armed_away" ||
+                                             ctx.state == "armed_night" || ctx.state == "armed_vacation" || ctx.state == "armed_custom_bypass");
+}
+
+// The partition a button at the top stands for, "" if that button is not there: 0 to 3 the partitions, 4 "all".
+inline std::string chip_target(int index) {
+  if (!parts_switch()) return "";
+  if (index == MAX_PARTITIONS_SHOWN) {
+    for (const PartRow &r : part_rows(true))
+      if (r.id == "all") return "all";
+    return "";
+  }
+  std::vector<PartRow> rows = part_rows(false);
+  return index >= 0 && index < MAX_PARTITIONS_SHOWN && index < (int) rows.size() ? rows[index].id : "";
+}
+
+// The partition after the one on screen, in the order of the buttons (the partitions, then "all"), round again: the
+// button on the sensors page steps through them. "" when there is nothing to step to.
+inline std::string next_part_id() {
+  std::vector<std::string> order;
+  for (int i = 0; i <= MAX_PARTITIONS_SHOWN; i++) {
+    const std::string t = chip_target(i);
+    if (!t.empty()) order.push_back(t);
+  }
+  if (order.size() < 2) return "";
+  const std::string now = sel_id();
+  for (size_t i = 0; i < order.size(); i++)
+    if (order[i] == now) return order[(i + 1) % order.size()];
+  return order[0];
+}
+
 // The colours of Vigil, the same on the card and on the panel. One colour per state: the ring, the icon and the
 // active tab use it; `state_tint` is the dark version for the background of the icon.
 constexpr uint32_t COL_OK = 0x4CCB8F;       // disarmed and everything closed
@@ -366,6 +472,8 @@ inline std::vector<SensorRow> sensor_rows() {
     }
     if (n < 3) continue;  // not a line we understand
     parts[3] = line.substr(from);
+    size_t more = parts[3].find('|');  // a fifth field (the partition) may follow: not needed here
+    if (more != std::string::npos) parts[3].resize(more);
     rows.push_back({parts[0], parts[1], parts[2], parts[3] == "1"});
   }
   return rows;
@@ -450,29 +558,38 @@ inline std::string mode_name(const std::string &mode) {
   return "";
 }
 
+// The title: the state, with the name of the partition in front of it when the screen can switch.
 inline std::string state_title() {
   if (!state_known()) return tr("offline");
   if (ctx.profile_version == 0 || !linked()) return tr("not_linked");
   if (ctx.blocked) return tr("blocked");
+  const std::string own = parts_switch() && !sel_name().empty() ? sel_name() + ": " : "";
+  if (mixed_now()) return own + tr("mixed");
   if (ctx.state == "disarmed" || ctx.state == "arming" || ctx.state == "pending" || ctx.state == "triggered" ||
       is_armed_state(ctx.state)) {
-    return tr(ctx.state.c_str());
+    return own + tr(ctx.state.c_str());
   }
   return ctx.state;
 }
 
+// The colour of a state (also of the partitions in the buttons at the top).
+inline uint32_t color_of_state(const std::string &s) {
+  if (s == "disarmed") return COL_OK;
+  if (s == "armed_home") return COL_HOME;
+  if (s == "armed_away") return COL_AWAY;
+  if (s == "armed_night") return COL_NIGHT;
+  if (s == "armed_vacation") return COL_VACATION;
+  if (s == "armed_custom_bypass") return COL_CUSTOM;
+  if (s == "arming") return COL_WARN;
+  if (s == "pending") return COL_ENTRY;
+  if (s == "triggered") return COL_ALARM;
+  return COL_OFF;
+}
+
 inline uint32_t state_color() {
   if (!usable()) return COL_OFF;
-  if (ctx.state == "disarmed") return COL_OK;
-  if (ctx.state == "armed_home") return COL_HOME;
-  if (ctx.state == "armed_away") return COL_AWAY;
-  if (ctx.state == "armed_night") return COL_NIGHT;
-  if (ctx.state == "armed_vacation") return COL_VACATION;
-  if (ctx.state == "armed_custom_bypass") return COL_CUSTOM;
-  if (ctx.state == "arming") return COL_WARN;
-  if (ctx.state == "pending") return COL_ENTRY;
-  if (ctx.state == "triggered") return COL_ALARM;
-  return COL_OFF;
+  if (mixed_now()) return COL_WARN;
+  return color_of_state(ctx.state);
 }
 
 // The dark background that belongs to a colour above (for the circle behind an icon, and the alarm screen).
@@ -525,6 +642,7 @@ inline std::string state_icon() {
   if (!linked()) return VIGIL_ICON_LINK_OFF;
   if (ctx.blocked) return VIGIL_ICON_CANCEL;
   const std::string &s = ctx.state;
+  if (mixed_now()) return VIGIL_ICON_SHIELD_ALERT;
   if (s == "disarmed") return open_total_count() > 0 || ctx.faults_total > 0 || ctx.problems > 0 ? VIGIL_ICON_SHIELD_ALERT : VIGIL_ICON_SHIELD_CHECK;
   if (s == "armed_home") return VIGIL_ICON_HOME;
   if (s == "armed_away") return VIGIL_ICON_AWAY;
@@ -606,6 +724,16 @@ inline std::string state_sub(double /*now: the ring shows the countdown*/) {
   if (ctx.blocked) return tr("blocked_sub");
   std::string out;
   const std::string &s = ctx.state;
+  if (mixed_now()) {
+    // Which partition is in which state: "Garage: Away, Home: Disarmed"
+    std::string line;
+    for (const PartRow &r : part_rows(false)) {
+      if (!line.empty()) line += ", ";
+      line += r.name + ": " + tr(r.state.c_str());
+    }
+    add_line(out, line);
+    return out;
+  }
   if (s == "disarmed") {
     // Only how many are open: the names are on the sensor list, also after that list was unlocked.
     int open = open_total_count();
@@ -638,11 +766,13 @@ inline std::string state_sub(double /*now: the ring shows the countdown*/) {
 
 // Which buttons are there? Only the modes that are switched on in Vigil, and while the alarm is
 // off. As soon as it is on, there is one button: disarm.
-inline bool show_home() { return usable() && ctx.state == "disarmed" && (ctx.modes_mask & 1); }
-inline bool show_away() { return usable() && ctx.state == "disarmed" && (ctx.modes_mask & 2); }
-inline bool show_night() { return usable() && ctx.state == "disarmed" && (ctx.modes_mask & 4); }
-inline bool show_vacation() { return usable() && ctx.state == "disarmed" && (ctx.modes_mask & 8); }
-inline bool show_custom() { return usable() && ctx.state == "disarmed" && (ctx.modes_mask & 16); }
+// Buttons to arm: while disarmed, or on "all" with some partitions armed and some not (the rest gets armed).
+inline bool can_arm_now() { return ctx.state == "disarmed" || mixed_now(); }
+inline bool show_home() { return usable() && can_arm_now() && (ctx.modes_mask & 1); }
+inline bool show_away() { return usable() && can_arm_now() && (ctx.modes_mask & 2); }
+inline bool show_night() { return usable() && can_arm_now() && (ctx.modes_mask & 4); }
+inline bool show_vacation() { return usable() && can_arm_now() && (ctx.modes_mask & 8); }
+inline bool show_custom() { return usable() && can_arm_now() && (ctx.modes_mask & 16); }
 // More than three buttons in one row: the texts get smaller so they fit.
 inline int mode_count() {
   return (show_home() ? 1 : 0) + (show_away() ? 1 : 0) + (show_night() ? 1 : 0) + (show_vacation() ? 1 : 0) +
@@ -650,7 +780,7 @@ inline int mode_count() {
 }
 // After a refused arm that bypassing could solve: one button instead of the tiles, until the message is gone.
 inline bool show_force() { return usable() && ctx.state == "disarmed" && ctx.refused_action != 0 && ctx.can_bypass; }
-inline bool show_disarm() { return usable() && ctx.state != "disarmed" && ctx.can_disarm; }
+inline bool show_disarm() { return usable() && (ctx.state != "disarmed" || mixed_now()) && ctx.can_disarm; }
 
 // May sensors be bypassed from this panel? Only a panel that is allowed to, and only while it works.
 inline bool bypass_allowed() { return usable() && ctx.can_bypass; }
@@ -724,6 +854,15 @@ inline int keypad_route(bool keypad_open, int action) {
   if (action == DISARM) return ctx.state == "disarmed" ? 2 : 0;  // nobody has to disarm any more
   if (is_arm_action(action) && ctx.state != "disarmed") return 2;
   return 0;
+}
+
+// A screen that can switch goes back to its own partition after the time set in Vigil without touch. Not while the
+// alarm counts down or goes off: whoever is at the panel then is busy with it. `idle_ms`: time since the last touch.
+inline bool should_return_to_default(uint32_t idle_ms) {
+  if (ctx.return_seconds <= 0 || !parts_switch() || ctx.default_part.empty() || !usable()) return false;
+  if (sel_id() == ctx.default_part) return false;
+  if (ctx.state == "arming" || ctx.state == "pending" || ctx.state == "triggered") return false;
+  return idle_ms >= (uint32_t) ctx.return_seconds * 1000U;
 }
 
 }  // namespace vigil

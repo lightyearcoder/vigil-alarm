@@ -13,6 +13,7 @@ SUBENTRY_USER = "user"
 SUBENTRY_NOTIFICATION = "notification"
 SUBENTRY_SIREN = "siren"
 SUBENTRY_PANEL = "panel"
+SUBENTRY_PARTITION = "partition"
 
 # Modes available in release 1; the rest of the code derives everything from
 # the enabled modes, so a mode can be added here later.
@@ -22,6 +23,12 @@ DEFAULT_EXIT_DELAY = {"home": 0, "away": 60, "night": 10, "vacation": 60, "custo
 # Bits of `modes_mask` in the profile of a panel (read by the ESPHome firmware).
 MODE_BITS = {"home": 1, "away": 2, "night": 4, "vacation": 8, "custom": 16}
 
+# Partitions (0.6.0). The first partition is implicit: it is the entry itself (modes, delays), so an installation
+# from before partitions keeps working untouched. More partitions are items of type "partition".
+PRIMARY_PARTITION = "main"
+CONF_PARTITION = "partition"  # on an intrusion sensor: the partition it belongs to (missing: the first)
+CONF_PARTITIONS = "partitions"  # on a user, panel, notification or siren: the partitions it may use (missing/empty: all)
+CONF_PARTITION_NAME = "partition_name"  # the name of the first partition (in the entry data)
 CONF_MODES = "modes"
 CONF_EXIT_DELAY = "exit_delay_{mode}"
 CONF_DEFAULT_ENTRY_DELAY = "default_entry_delay"
@@ -111,6 +118,11 @@ MIN_CODE_LENGTH_CEILING = 12
 CONF_SCREEN_OFF_SECONDS = "screen_off_seconds"  # how long a panel screen stays on without touch
 DEFAULT_SCREEN_OFF_SECONDS = 30
 SCREEN_OFF_RANGE = (5, 3600)
+CONF_DEFAULT_PARTITION = "default_partition"  # on a panel: the partition it shows first (an id, or "all"); missing: the first
+ALL_PARTITIONS = "all"
+CONF_PARTITION_RETURN_SECONDS = "partition_return_seconds"  # a screen that can switch returns to its default partition after this long
+DEFAULT_PARTITION_RETURN_SECONDS = 30
+PARTITION_RETURN_RANGE = (0, 3600)
 CONF_SCREEN_OFF_ON_ALARM = "screen_off_on_alarm"  # may the screen go dark while the alarm is going off
 DEFAULT_SCREEN_OFF_ON_ALARM = False
 
@@ -246,4 +258,5 @@ SERVICE_TEST_SIREN = "test_siren"
 SERVICE_SILENCE = "silence"
 SERVICE_ACKNOWLEDGE = "acknowledge"
 SERVICE_UNLOCK_PANEL = "unlock_panel"
+SERVICE_SELECT_PARTITION = "select_partition"
 ATTR_SENSOR = "sensor"

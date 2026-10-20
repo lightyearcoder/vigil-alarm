@@ -8,7 +8,8 @@ import re
 from urllib.parse import parse_qs, unquote, urlparse
 
 ROOT = pathlib.Path(__file__).parents[1]
-DOCS = [ROOT / "README.md", ROOT / "docs" / "user-guide.md", ROOT / "docs" / "gebruikershandleiding.nl.md",
+DOCS = [ROOT / "README.md", ROOT / "docs" / "user-guide.md", ROOT / "docs" / "user-guide.nl.md",
+        *(ROOT / "docs" / f"user-guide.{lang}.md" for lang in ("de", "fr", "it", "es")),
         ROOT / "docs" / "installatie-en-testen.nl.md",
         ROOT / "docs" / "tablet.md", ROOT / "docs" / "tablet.nl.md"]
 OWNER_REPO = "lightyearcoder/vigil-alarm"
@@ -68,8 +69,11 @@ def test_every_event_is_documented_in_the_readme():
 
 def test_the_guides_cover_the_same_sections():
     en = re.findall(r"^## ", (ROOT / "docs/user-guide.md").read_text(), re.M)
-    nl = re.findall(r"^## ", (ROOT / "docs/gebruikershandleiding.nl.md").read_text(), re.M)
+    nl = re.findall(r"^## ", (ROOT / "docs/user-guide.nl.md").read_text(), re.M)
     assert len(en) == len(nl)
+    for lang in ("de", "fr", "it", "es"):
+        other = re.findall(r"^## ", (ROOT / f"docs/user-guide.{lang}.md").read_text(), re.M)
+        assert len(en) == len(other), lang
 
 
 def test_the_vigil_card_is_shipped_and_registered():

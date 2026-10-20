@@ -74,4 +74,16 @@ SCENES = [
     ("triggered-alarm24", "main", 'c.state = "triggered"; c.mode = "away"; c.cause = "alarm24"; c.cause_sensor = "Paniekknop";', 0, "", ""),
     # Release 0.5.5: disarmed, but a sensor is still bypassed for good.
     ("disarmed-permanent-bypass", "main", 'c.last_alarm = "14:03 Voordeur > Gang"; c.bypassed = "Raam zolder";', 0, "", ""),
+    # Release 0.6.0: partitions. One partition on this panel while the house has more: a line with the name.
+    ("part-one", "main", 'c.partition_list = "p_gar|Garage|disarmed"; c.sel = "p_gar"; c.default_part = "p_gar"; c.part_total = 2; c.modes_mask = 2;', 0, "", ""),
+    # More than one: a button for each, "All", the one on the screen has a coloured edge; the title has the name.
+    ("part-two", "main", 'c.partition_list = "main|Huis|armed_away\\np_gar|Garage|disarmed\\nall||armed_away|mixed"; c.sel = "p_gar"; c.default_part = "p_gar"; c.part_total = 2; c.return_seconds = 30; c.modes_mask = 2;', 0, "", ""),
+    ("part-house-armed", "main", 'c.partition_list = "main|Huis|armed_away\\np_gar|Garage|disarmed\\nall||armed_away|mixed"; c.sel = "main"; c.default_part = "p_gar"; c.part_total = 2; c.state = "armed_away"; c.mode = "away"; c.changed_by = "Anna";', 0, "", ""),
+    # "All" with the partitions in different states: Mixed, the buttons to arm the rest, and Disarm.
+    ("part-all-mixed", "main", 'c.partition_list = "main|Huis|armed_away\\np_gar|Garage|disarmed\\nall||armed_away|mixed"; c.sel = "all"; c.default_part = "all"; c.part_total = 2; c.state = "armed_away"; c.mixed = true; c.modes_mask = 3;', 0, "", ""),
+    # Four partitions: smaller buttons, long names are cut.
+    ("part-four", "main", 'c.partition_list = "main|Huis|disarmed\\np_gar|Garage|armed_away\\np_wp|Werkplaats van Jan|armed_night\\np_gast|Gastenverblijf|disarmed\\nall||disarmed|mixed"; c.sel = "p_wp"; c.default_part = "main"; c.part_total = 4; c.state = "armed_night"; c.mode = "night"; c.changed_by = "Anna";', 0, "", ""),
+    # The sensors page of a panel with partitions: the button at the top says whose sensors these are.
+    ("part-sensors", "sensors", 'c.partition_list = "main|Huis|armed_away\\np_gar|Garage|disarmed\\nall||armed_away|mixed"; c.sel = "p_gar"; c.default_part = "p_gar"; c.part_total = 2; '
+     'c.sensors = "Garagedeur|binary_sensor.gd|closed|1\\nGaragedeur (sabotage)|binary_sensor.gdt|closed|1\\nBeweging garage|binary_sensor.bg|open|1\\n";', 0, "", ""),
 ]

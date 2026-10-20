@@ -20,8 +20,16 @@ arm:
       default: false
       selector:
         boolean:
+    partition:
+      required: false
+      selector:
+        text:
 disarm:
   fields:
+    partition:
+      required: false
+      selector:
+        text:
     code:
       required: false
       selector:
@@ -139,5 +147,15 @@ clear_alarm_memory:
   fields:
     source:
       required: false
+      selector:
+        text:
+select_partition:
+  fields:
+    source:
+      required: true
+      selector:
+        text:
+    partition:
+      required: true
       selector:
         text:
