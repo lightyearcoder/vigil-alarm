@@ -289,3 +289,30 @@ async def test_sensor_fault_alarm_uses_the_intrusion_sound(hass, freezer):
     await hass.async_block_till_done()
     assert hass.states.get(PANEL).attributes["cause"] == "fault"
     assert m.select[-1].data["option"] == "burglar"
+
+
+async def test_the_last_start_of_a_siren_says_confirmed_sent_or_failed(hass, freezer):
+    """The self-test card shows what the last start came to, so a siren that cannot confirm is not mistaken for
+    one that does."""
+    from homeassistant.exceptions import HomeAssistantError
+    from .common import PANEL  # noqa: F401
+
+    entry = await _setup(hass, make_entry(extra_subentries=[siren()]))
+    manager = entry.runtime_data
+    assert manager.selftest.status()["siren_starts"] == []
+    hass.states.async_set("switch.siren", "off")
+    calls = async_mock_service(hass, "switch", "turn_on")
+    await manager.sirens._async_start(manager.sirens.sirens[0], "intrusion", None)
+    assert [s["result"] for s in manager.selftest.status()["siren_starts"]] == ["sent"]  # it did not turn on by itself
+    hass.states.async_set("switch.siren", "on")
+    await manager.sirens._async_start(manager.sirens.sirens[0], "intrusion", None)
+    assert manager.selftest.status()["siren_starts"][0]["result"] == "confirmed"
+
+    def broken(call):
+        raise HomeAssistantError("offline")
+
+    hass.services.async_register("switch", "turn_on", broken)
+    await manager.sirens._async_start(manager.sirens.sirens[0], "intrusion", None)
+    only = manager.selftest.status()["siren_starts"]
+    assert len(only) == 1 and only[0]["result"] == "failed" and only[0]["name"] == "Hall siren" and only[0]["at"]
+    assert calls

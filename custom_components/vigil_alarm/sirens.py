@@ -78,6 +78,9 @@ class SirenController:
         self.hass = hass
         self.manager = manager
         self.sirens: list[Siren] = []
+        # What the last start of each siren came to: "failed" (the command was refused), "sent" (accepted, but the
+        # siren does not say it is on) or "confirmed" (the siren says it is on). Not kept over a restart.
+        self.last_start: dict[str, dict[str, Any]] = {}
         for sid, sub in items_of(manager.entry).items():
             if sub.subentry_type != SUBENTRY_SIREN:
                 continue
@@ -224,12 +227,12 @@ class SirenController:
             if siren.light and not (cause == "gas" and self._gas_is_flammable(sensor_id)):
                 await self._switch(siren, siren.light, True)  # no switching near flammable gas
             if not ok:
+                self.last_start[siren.id] = {"name": siren.name, "result": "failed", "at": self.manager._wall()}
                 return
             state = self.hass.states.get(siren.control)
-            self.manager.publish(
-                "siren_started", siren=siren.name, cause=cause,
-                verified=bool(state and state.state == "on"),
-            )
+            verified = bool(state and state.state == "on")
+            self.last_start[siren.id] = {"name": siren.name, "result": "confirmed" if verified else "sent", "at": self.manager._wall()}
+            self.manager.publish("siren_started", siren=siren.name, cause=cause, verified=verified)
             active.timers.append(async_call_later(self.hass, siren.max_duration, self._timeout(siren)))
             if siren.repeat_every > 0:
                 active.timers.append(

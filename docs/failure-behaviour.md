@@ -12,10 +12,11 @@ Dutch: [wat Vigil doet bij storingen](failure-behaviour.nl.md).
 | The exit delay **ended while Home Assistant was down** | The alarm is armed on start. |
 | Restart while **armed** | Still armed, in the same mode, by the same user (the user is kept over a restart since 0.6.4). The sensors are watched again as soon as they are trusted (see below). |
 | A door was **opened while Home Assistant was down** | When Vigil is back and sees the open sensor, the entry delay starts. |
+| Restart **exactly when the entry delay ends**, or stopped just before and started just after | The alarm triggers, once. |
 | Restart during the **entry delay** | The entry delay carries on and ends at the original time. Restarting three times in a row changes nothing. Disarming after the restart stops it. |
 | Restart during the **alarm** | The alarm is still on; the cause and sensor are kept; the right code disarms it, a wrong code does not. The siren sounds again and notifications that were waiting to escalate still escalate, without repeating the ones already sent. |
 | The alarm's **siren time ran out while Home Assistant was down** | The alarm has ended on start and the system is armed again, not disarmed. |
-| The saved state is **unusable** | Vigil starts disarmed and logs `state_restore_failed`. |
+| The saved state is **unusable** (damaged, incomplete, from a newer version) | Vigil starts disarmed. It never comes back armed or triggered on a state it cannot read. |
 | Sensors are not there yet right after a start | For a short grace period Vigil does not call that a fault and does not arm; after that, a sensor that is still missing is reported as unreachable. |
 
 ## Sensors
@@ -27,6 +28,13 @@ Dutch: [wat Vigil doet bij storingen](failure-behaviour.nl.md).
 | A door **opens and closes again** in the entry delay | The alarm still ends in an alarm after the entry delay; closing the door does not cancel it, only a code does. |
 | A **second sensor** goes off during the alarm | One alarm: no second alarm starts. |
 | **Smoke** during an intrusion alarm | It is not lost: the alarm shows the fire cause as well. |
+| **Two sensors at the same moment**, one with an entry delay and one instant | One alarm, from the instant sensor, without waiting for the delay. |
+
+## Settings changed during a delay
+
+| Situation | What Vigil does |
+|---|---|
+| The settings (entry delay, siren time) are **changed while the entry delay runs** | The delay that was running keeps its end; the new values apply from the next one. |
 
 ## Commands
 
@@ -42,6 +50,7 @@ Dutch: [wat Vigil doet bij storingen](failure-behaviour.nl.md).
 |---|---|
 | The **phone cannot be reached** (the notify service fails) | The failure is reported and logged; the alarm is not affected. |
 | The **siren cannot be switched on** | Reported and logged; the alarm is not affected, and it can still be disarmed. |
+| A siren that **accepts the command but cannot say that it is on** | Shown as *command sent, the siren does not confirm* on the *Self-test* card. Vigil cannot hear a siren: test it by ear now and then. |
 | Both at the same time | The alarm still triggers, shows its state on the panels and card, and can be disarmed with a code. |
 
 ## What is not covered

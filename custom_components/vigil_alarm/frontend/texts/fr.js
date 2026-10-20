@@ -113,7 +113,8 @@ export default {
       "no_siren": "Il n'y a pas de sirène. L'alarme fonctionne alors uniquement avec des notifications.",
       "battery_missing": "{n} capteurs n'ont pas de capteur de batterie, vous ne saurez donc pas quand une batterie est faible : {names}.",
       "tamper_unlinked": "{n} capteurs ont un contact de sabotage sur le même appareil qui n'est relié à rien : {names}.",
-      "panel_firmware": "Le firmware du clavier {name} comprend la version de profil {seen}, Vigil utilise la version {wanted}. Mettez à jour le firmware du clavier."
+      "panel_firmware": "Le firmware du clavier {name} comprend la version de profil {seen}, Vigil utilise la version {wanted}. Mettez à jour le firmware du clavier.",
+      "arm_without_code": "Un utilisateur a un code, mais l'activation n'en demande pas (Paramètres) : toute personne qui peut atteindre l'alarme sur un clavier, dans Home Assistant ou par un service peut donc l'activer. La désactivation demande toujours un code."
     }
   },
   "heartbeat": {
@@ -144,7 +145,14 @@ export default {
     "test": "Tester la sirène maintenant",
     "started": "La sirène retentit pendant {seconds} secondes.",
     "auto": "Vigil fait retentir la sirène lui-même pendant les heures réglées.",
-    "problems": "Canal de notification manquant : {name}"
+    "problems": "Canal de notification manquant : {name}",
+    "lastStart": "Dernier démarrage de {name}",
+    "startResult": {
+      "confirmed": "confirmée allumée",
+      "sent": "commande envoyée, la sirène ne confirme pas",
+      "failed": "échec"
+    },
+    "unconfirmed": "Une sirène qui ne confirme pas ne peut pas être vérifiée par Vigil : testez-la à l'oreille de temps en temps (Tester la sirène maintenant)."
   },
   "dash": {
     "title": "Tableau de bord",
@@ -155,7 +163,8 @@ export default {
     "intro": "Tout ce que Vigil signale comme événement. Le journal conserve {days} jours (voir Paramètres) et ne contient aucun code. Les heures sont dans votre fuseau horaire ; dans les téléchargements, elles sont en UTC au format RFC 3339.",
     "empty": "Rien dans le journal pour l'instant.",
     "cols": {
-      "partition": "Partition", "time": "Heure",
+      "partition": "Partition",
+      "time": "Heure",
       "event": "Événement",
       "item": "Élément",
       "who": "Utilisateur",
@@ -325,7 +334,8 @@ export default {
     "showAll": "Afficher tous les capteurs",
     "showNew": "Afficher seulement les nouveaux"
   },
-  "find": { "partitionHelp": "Les capteurs d'intrusion ajoutés vont dans cette partition. Les capteurs d'incendie, de gaz, d'eau et 24 h n'ont pas de partition. Le contact d'autoprotection d'un capteur est dans la partition de ce capteur ; un capteur d'autoprotection que vous ajoutez vous-même se choisit ici (ou Toutes les partitions).",
+  "find": {
+    "partitionHelp": "Les capteurs d'intrusion ajoutés vont dans cette partition. Les capteurs d'incendie, de gaz, d'eau et 24 h n'ont pas de partition. Le contact d'autoprotection d'un capteur est dans la partition de ce capteur ; un capteur d'autoprotection que vous ajoutez vous-même se choisit ici (ou Toutes les partitions).",
     "button": "Chercher des capteurs",
     "title": "Chercher des capteurs",
     "intro": "Ces capteurs ont été trouvés dans Home Assistant. Choisissez lesquels ajouter. Rien n'est enregistré avant que vous appuyiez sur le bouton en bas.",
@@ -407,7 +417,10 @@ export default {
     }
   },
   "partitions": {
-    "allOption": "Toutes les partitions", "groupsAll": "Pour toutes les partitions", "noGroups": "Pas encore de groupes de capteurs pour cette partition.", "first": "Première partition : {name}. Ses modes et délais se trouvent dans Paramètres.",
+    "allOption": "Toutes les partitions",
+    "groupsAll": "Pour toutes les partitions",
+    "noGroups": "Pas encore de groupes de capteurs pour cette partition.",
+    "first": "Première partition : {name}. Ses modes et délais se trouvent dans Paramètres.",
     "goSettings": "Aller aux Paramètres",
     "combined": "Tout ensemble"
   },
@@ -512,7 +525,9 @@ export default {
   "condition": "{n} en {s} s",
   "fields": {
     "partition": "Partition",
-    "default_partition": "Partition par défaut", "partition_return_seconds": "Retour à la partition par défaut après (secondes sans toucher, 0 = rester)", "partitions": "Partitions",
+    "default_partition": "Partition par défaut",
+    "partition_return_seconds": "Retour à la partition par défaut après (secondes sans toucher, 0 = rester)",
+    "partitions": "Partitions",
     "partition_name": "Nom de la première partition",
     "partition.modes": "Modes disponibles",
     "name": "Nom",
@@ -611,7 +626,9 @@ export default {
   "help": {
     "sensor_group.partition": "La partition à laquelle ce groupe appartient. Seuls les capteurs de cette partition peuvent utiliser le groupe, et il ne propose que les modes de cette partition.",
     "partition": "La partie de la maison que ce capteur surveille. Les capteurs d'incendie, de gaz, d'eau et d'autoprotection n'ont pas de partition.",
-    "default_partition": "La partition que l'écran affiche d'abord et à laquelle il revient après le délai réglé. Toutes les partitions est possible si le panneau peut en utiliser plusieurs. Un panneau ESPHome avec un ancien firmware ne commande que cette partition.", "partition_return_seconds": "Valable pour tous les panneaux et tablettes qui peuvent changer de partition. L'écran revient quand il n'a pas été touché aussi longtemps, sauf pendant une alarme.", "partitions": "Choisissez une ou plusieurs partitions, ou Toutes les partitions. Les alarmes des capteurs d'incendie, de gaz, d'eau, d'autoprotection et 24 h concernent toute la maison et atteignent toujours tout.",
+    "default_partition": "La partition que l'écran affiche d'abord et à laquelle il revient après le délai réglé. Toutes les partitions est possible si le panneau peut en utiliser plusieurs. Un panneau ESPHome avec un ancien firmware ne commande que cette partition.",
+    "partition_return_seconds": "Valable pour tous les panneaux et tablettes qui peuvent changer de partition. L'écran revient quand il n'a pas été touché aussi longtemps, sauf pendant une alarme.",
+    "partitions": "Choisissez une ou plusieurs partitions, ou Toutes les partitions. Les alarmes des capteurs d'incendie, de gaz, d'eau, d'autoprotection et 24 h concernent toute la maison et atteignent toujours tout.",
     "duress_code": "Un second code pour le cas où quelqu'un vous force à désactiver l'alarme. Il désactive l'alarme comme d'habitude et rien n'apparaît : la sirène reste silencieuse. Pendant ce temps, un message silencieux part vers les canaux avec le type de message Contrainte. Il doit différer de tous les autres codes.",
     "permanent_bypass": "Si vous inhibez ce capteur à la main, il reste inhibé après la désactivation de l'alarme, jusqu'à ce que vous le rétablissiez vous-même. Pratique pour un capteur en panne depuis un moment. Sans cette case, l'inhibition prend fin à la désactivation. Les capteurs d'incendie et de gaz ne peuvent jamais être inhibés.",
     "chime": "Quand le capteur s'ouvre alors que l'alarme est désactivée, un bref son est émis par ce que vous avez choisi dans les paramètres. Pas d'alarme, pas de message, rien dans le journal. Quand l'alarme est activée, rien ne se passe.",
@@ -794,7 +811,13 @@ export default {
     "apply": "Appliquer"
   },
   "errors": {
-    "partitions_required": "Choisissez une partition ou Toutes les partitions.", "default_partition_required": "Choisissez la partition par défaut.", "default_partition_not_allowed": "La partition par défaut doit être l'une des partitions choisies (Toutes les partitions seulement avec plus d'une).", group_other_partition: "Le groupe de capteurs {group} appartient à une autre partition.", group_in_use_elsewhere: "Ce groupe est utilisé par des capteurs d'une autre partition : {sensors}.", partition_has_groups: "Cette partition a encore des groupes de capteurs : {groups}. Supprimez-les ou déplacez-les d'abord.", "unknown_partition": "Cette partition n'existe pas.",
+    "partitions_required": "Choisissez une partition ou Toutes les partitions.",
+    "default_partition_required": "Choisissez la partition par défaut.",
+    "default_partition_not_allowed": "La partition par défaut doit être l'une des partitions choisies (Toutes les partitions seulement avec plus d'une).",
+    "group_other_partition": "Le groupe de capteurs {group} appartient à une autre partition.",
+    "group_in_use_elsewhere": "Ce groupe est utilisé par des capteurs d'une autre partition : {sensors}.",
+    "partition_has_groups": "Cette partition a encore des groupes de capteurs : {groups}. Supprimez-les ou déplacez-les d'abord.",
+    "unknown_partition": "Cette partition n'existe pas.",
     "partition_in_use": "Cette partition contient encore des capteurs : {sensors}. Déplacez-les d'abord vers une autre partition.",
     "backup_invalid": "Ce fichier ou cette version ne contient aucune configuration utilisable.",
     "backup_unknown": "Cette version n'existe plus.",

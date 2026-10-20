@@ -113,7 +113,8 @@ export default {
       "no_siren": "Er is geen sirene. Het alarm werkt dan alleen met meldingen.",
       "battery_missing": "{n} sensoren hebben geen batterijsensor, dus je hoort niet als de batterij leeg raakt: {names}.",
       "tamper_unlinked": "{n} sensoren hebben een sabotagesensor op hetzelfde apparaat die nergens aan gekoppeld is: {names}.",
-      "panel_firmware": "De firmware van paneel {name} begrijpt profielversie {seen}, Vigil gebruikt versie {wanted}. Werk de firmware van het paneel bij."
+      "panel_firmware": "De firmware van paneel {name} begrijpt profielversie {seen}, Vigil gebruikt versie {wanted}. Werk de firmware van het paneel bij.",
+      "arm_without_code": "Een gebruiker heeft een code, maar inschakelen vraagt geen code (Instellingen), dus iedereen die bij het alarm kan op een paneel, in Home Assistant of via een service kan het inschakelen. Uitschakelen vraagt altijd een code."
     }
   },
   "heartbeat": {
@@ -144,7 +145,14 @@ export default {
     "test": "Sirene nu testen",
     "started": "De sirene klinkt {seconds} seconden.",
     "auto": "Vigil laat de sirene zelf klinken binnen de ingestelde uren.",
-    "problems": "Ontbrekend meldkanaal: {name}"
+    "problems": "Ontbrekend meldkanaal: {name}",
+    "lastStart": "Laatste start van {name}",
+    "startResult": {
+      "confirmed": "bevestigd aan",
+      "sent": "commando verstuurd, de sirene bevestigt niet",
+      "failed": "mislukt"
+    },
+    "unconfirmed": "Een sirene die niet bevestigt kan Vigil niet controleren: test hem af en toe op gehoor (Sirene nu testen)."
   },
   "dash": {
     "title": "Dashboard",

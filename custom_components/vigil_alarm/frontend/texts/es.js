@@ -113,7 +113,8 @@ export default {
       "no_siren": "No hay sirena. La alarma funciona entonces solo con notificaciones.",
       "battery_missing": "{n} sensores no tienen sensor de batería, así que no te enterarás cuando una batería se agote: {names}.",
       "tamper_unlinked": "{n} sensores tienen un contacto de sabotaje en el mismo dispositivo que no está conectado a nada: {names}.",
-      "panel_firmware": "El firmware del panel {name} entiende la versión de perfil {seen}, Vigil usa la versión {wanted}. Actualiza el firmware del panel."
+      "panel_firmware": "El firmware del panel {name} entiende la versión de perfil {seen}, Vigil usa la versión {wanted}. Actualiza el firmware del panel.",
+      "arm_without_code": "Un usuario tiene un código, pero activar no pide código (Ajustes): cualquiera que pueda llegar a la alarma en un panel, en Home Assistant o mediante un servicio puede activarla. Desactivar siempre pide un código."
     }
   },
   "heartbeat": {
@@ -144,7 +145,14 @@ export default {
     "test": "Probar la sirena ahora",
     "started": "La sirena suena durante {seconds} segundos.",
     "auto": "Vigil hace sonar la sirena por sí mismo dentro de las horas configuradas.",
-    "problems": "Falta el canal de notificación: {name}"
+    "problems": "Falta el canal de notificación: {name}",
+    "lastStart": "Último arranque de {name}",
+    "startResult": {
+      "confirmed": "confirmada encendida",
+      "sent": "orden enviada, la sirena no confirma",
+      "failed": "fallido"
+    },
+    "unconfirmed": "Una sirena que no confirma no puede ser comprobada por Vigil: pruébala de oído de vez en cuando (Probar la sirena ahora)."
   },
   "dash": {
     "title": "Panel de control",
@@ -155,7 +163,8 @@ export default {
     "intro": "Todo lo que Vigil informa como evento. El registro guarda {days} días (ver Ajustes) y no contiene códigos. Las horas están en tu zona horaria; en las descargas están en UTC como RFC 3339.",
     "empty": "Todavía no hay nada en el registro.",
     "cols": {
-      "partition": "Partición", "time": "Hora",
+      "partition": "Partición",
+      "time": "Hora",
       "event": "Evento",
       "item": "Elemento",
       "who": "Usuario",
@@ -325,7 +334,8 @@ export default {
     "showAll": "Mostrar todos los sensores",
     "showNew": "Mostrar solo los nuevos"
   },
-  "find": { "partitionHelp": "Los sensores de intrusión que añadas van a esta partición. Los sensores de incendio, gas, agua y 24 horas no tienen partición. El contacto de sabotaje de un sensor está en la partición de ese sensor; un sensor de sabotaje que añades tú mismo lo eliges aquí (o Todas las particiones).",
+  "find": {
+    "partitionHelp": "Los sensores de intrusión que añadas van a esta partición. Los sensores de incendio, gas, agua y 24 horas no tienen partición. El contacto de sabotaje de un sensor está en la partición de ese sensor; un sensor de sabotaje que añades tú mismo lo eliges aquí (o Todas las particiones).",
     "button": "Buscar sensores",
     "title": "Buscar sensores",
     "intro": "Estos sensores se encontraron en Home Assistant. Elige cuáles añadir. No se guarda nada hasta que pulses el botón de abajo.",
@@ -407,7 +417,10 @@ export default {
     }
   },
   "partitions": {
-    "allOption": "Todas las particiones", "groupsAll": "Para todas las particiones", "noGroups": "Todavía no hay grupos de sensores para esta partición.", "first": "Primera partición: {name}. Sus modos y retardos están en Ajustes.",
+    "allOption": "Todas las particiones",
+    "groupsAll": "Para todas las particiones",
+    "noGroups": "Todavía no hay grupos de sensores para esta partición.",
+    "first": "Primera partición: {name}. Sus modos y retardos están en Ajustes.",
     "goSettings": "Ir a Ajustes",
     "combined": "Todas juntas"
   },
@@ -512,7 +525,9 @@ export default {
   "condition": "{n} en {s} s",
   "fields": {
     "partition": "Partición",
-    "default_partition": "Partición predeterminada", "partition_return_seconds": "Volver a la partición predeterminada tras (segundos sin tocar, 0 = quedarse)", "partitions": "Particiones",
+    "default_partition": "Partición predeterminada",
+    "partition_return_seconds": "Volver a la partición predeterminada tras (segundos sin tocar, 0 = quedarse)",
+    "partitions": "Particiones",
     "partition_name": "Nombre de la primera partición",
     "partition.modes": "Modos disponibles",
     "name": "Nombre",
@@ -611,7 +626,9 @@ export default {
   "help": {
     "sensor_group.partition": "La partición a la que pertenece este grupo. Solo los sensores de esa partición pueden usar el grupo, y ofrece solo los modos de esa partición.",
     "partition": "La parte de la casa que vigila este sensor. Los sensores de incendio, gas, agua y sabotaje no tienen partición.",
-    "default_partition": "La partición que la pantalla muestra primero y a la que vuelve tras el tiempo fijado. Todas las particiones es posible si el panel puede usar más de una. Un panel ESPHome con firmware antiguo solo maneja esta partición.", "partition_return_seconds": "Vale para todos los paneles y tablets que pueden cambiar de partición. La pantalla vuelve cuando no se toca durante este tiempo, salvo durante una alarma.", "partitions": "Elige una o más particiones, o Todas las particiones. Las alarmas de los sensores de incendio, gas, agua, sabotaje y 24 horas valen para toda la casa y siempre llegan a todo.",
+    "default_partition": "La partición que la pantalla muestra primero y a la que vuelve tras el tiempo fijado. Todas las particiones es posible si el panel puede usar más de una. Un panel ESPHome con firmware antiguo solo maneja esta partición.",
+    "partition_return_seconds": "Vale para todos los paneles y tablets que pueden cambiar de partición. La pantalla vuelve cuando no se toca durante este tiempo, salvo durante una alarma.",
+    "partitions": "Elige una o más particiones, o Todas las particiones. Las alarmas de los sensores de incendio, gas, agua, sabotaje y 24 horas valen para toda la casa y siempre llegan a todo.",
     "duress_code": "Un segundo código para cuando alguien te obliga a apagar la alarma. Desactiva la alarma como de costumbre y no se nota nada: la sirena permanece en silencio. Mientras tanto, un mensaje silencioso llega a los canales con el tipo de mensaje Coacción. Debe ser distinto de cualquier otro código.",
     "permanent_bypass": "Si anulas este sensor a mano, sigue anulado después de desactivar la alarma, hasta que lo restablezcas tú. Útil para un sensor averiado desde hace tiempo. Sin esta marca, la anulación termina al desactivar. Los sensores de incendio y gas nunca se pueden anular.",
     "chime": "Cuando el sensor se abre con la alarma desactivada, suena un sonido breve a través de lo que hayas elegido en los ajustes. Sin alarma, sin mensaje, nada en el registro. Con la alarma activada no ocurre nada.",
@@ -794,7 +811,13 @@ export default {
     "apply": "Aplicar"
   },
   "errors": {
-    "partitions_required": "Elige una partición o Todas las particiones.", "default_partition_required": "Elige la partición predeterminada.", "default_partition_not_allowed": "La partición predeterminada debe ser una de las elegidas (Todas las particiones solo con más de una).", group_other_partition: "El grupo de sensores {group} pertenece a otra partición.", group_in_use_elsewhere: "Este grupo lo usan sensores de otra partición: {sensors}.", partition_has_groups: "Esta partición aún tiene grupos de sensores: {groups}. Elimínalos o muévelos primero.", "unknown_partition": "Esa partición no existe.",
+    "partitions_required": "Elige una partición o Todas las particiones.",
+    "default_partition_required": "Elige la partición predeterminada.",
+    "default_partition_not_allowed": "La partición predeterminada debe ser una de las elegidas (Todas las particiones solo con más de una).",
+    "group_other_partition": "El grupo de sensores {group} pertenece a otra partición.",
+    "group_in_use_elsewhere": "Este grupo lo usan sensores de otra partición: {sensors}.",
+    "partition_has_groups": "Esta partición aún tiene grupos de sensores: {groups}. Elimínalos o muévelos primero.",
+    "unknown_partition": "Esa partición no existe.",
     "partition_in_use": "Esta partición aún tiene sensores: {sensors}. Muévelos primero a otra partición.",
     "backup_invalid": "Este archivo o esta versión no contiene una configuración utilizable.",
     "backup_unknown": "Esta versión ya no existe.",

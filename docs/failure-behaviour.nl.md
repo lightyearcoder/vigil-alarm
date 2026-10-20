@@ -12,10 +12,11 @@ English: [what Vigil does when something goes wrong](failure-behaviour.md).
 | De uitgangsvertraging was **voorbij terwijl Home Assistant uit was** | Het alarm is bij het opstarten ingeschakeld. |
 | Herstart terwijl **ingeschakeld** | Nog steeds ingeschakeld, in dezelfde modus, door dezelfde gebruiker (de gebruiker blijft sinds 0.6.4 bewaard over een herstart). De sensoren worden weer bewaakt zodra ze vertrouwd worden (zie hieronder). |
 | Een deur werd **geopend terwijl Home Assistant uit was** | Zodra Vigil terug is en de open sensor ziet, begint de ingangsvertraging. |
+| Herstart **precies op het moment dat de ingangsvertraging eindigt**, of net ervoor gestopt en net erna gestart | Het alarm gaat af, één keer. |
 | Herstart tijdens de **ingangsvertraging** | De ingangsvertraging loopt door en eindigt op het oorspronkelijke tijdstip. Drie keer achter elkaar herstarten verandert niets. Uitschakelen na de herstart stopt haar. |
 | Herstart tijdens het **alarm** | Het alarm blijft aan; oorzaak en sensor blijven bewaard; de juiste code schakelt uit, een foute code niet. De sirene klinkt opnieuw en meldingen die nog moesten escaleren, escaleren alsnog, zonder de al verstuurde te herhalen. |
 | De **sirenetijd was om terwijl Home Assistant uit was** | Het alarm is bij het opstarten afgelopen en het systeem is weer ingeschakeld, niet uitgeschakeld. |
-| De opgeslagen toestand is **onbruikbaar** | Vigil start uitgeschakeld en logt `state_restore_failed`. |
+| De opgeslagen toestand is **onbruikbaar** (beschadigd, onvolledig, van een nieuwere versie) | Vigil start uitgeschakeld. Hij komt nooit ingeschakeld of afgegaan terug op een toestand die hij niet kan lezen. |
 | Sensoren zijn er direct na een start nog niet | Korte tijd noemt Vigil dat geen storing en schakelt niet in; daarna wordt een sensor die nog ontbreekt als onbereikbaar gemeld. |
 
 ## Sensoren
@@ -27,6 +28,13 @@ English: [what Vigil does when something goes wrong](failure-behaviour.md).
 | Een deur **gaat open en weer dicht** in de ingangsvertraging | Het eindigt na de ingangsvertraging toch in een alarm; de deur sluiten annuleert niets, alleen een code. |
 | Een **tweede sensor** gaat af tijdens het alarm | Eén alarm: er begint geen tweede. |
 | **Rook** tijdens een inbraakalarm | Gaat niet verloren: het alarm toont ook de oorzaak brand. |
+| **Twee sensoren op hetzelfde moment**, één met ingangsvertraging en één direct | Eén alarm, van de directe sensor, zonder op de vertraging te wachten. |
+
+## Instellingen gewijzigd tijdens een vertraging
+
+| Situatie | Wat Vigil doet |
+|---|---|
+| De instellingen (ingangsvertraging, sirenetijd) worden **gewijzigd terwijl de ingangsvertraging loopt** | De lopende vertraging behoudt haar einde; de nieuwe waarden gelden vanaf de volgende. |
 
 ## Commando's
 
@@ -42,6 +50,7 @@ English: [what Vigil does when something goes wrong](failure-behaviour.md).
 |---|---|
 | De **telefoon is niet bereikbaar** (de notify-service faalt) | De fout wordt gemeld en gelogd; het alarm zelf wordt er niet door beïnvloed. |
 | De **sirene kan niet aan** | Gemeld en gelogd; het alarm zelf niet beïnvloed en het kan nog steeds worden uitgeschakeld. |
+| Een sirene die **het commando aanneemt maar niet kan zeggen dat hij aan staat** | Getoond als *commando verstuurd, de sirene bevestigt niet* op de kaart *Zelftest*. Vigil kan een sirene niet horen: test hem af en toe op gehoor. |
 | Beide tegelijk | Het alarm gaat toch af, toont zijn toestand op de panelen en de kaart en kan met een code worden uitgeschakeld. |
 
 ## Wat niet gedekt is

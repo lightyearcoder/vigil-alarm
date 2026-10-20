@@ -238,3 +238,11 @@ def test_the_panel_script_has_no_texts_of_its_own():
     js = (frontend / "vigil-panel.js").read_text(encoding="utf-8")
     assert js.count("const TXT =") == 1 and "Object.fromEntries" in js
     assert len(js.splitlines()) < 2500
+
+
+def test_every_version_field_says_the_same():
+    """pyproject.toml had been left at 0.4.1 while the integration moved on."""
+    manifest = json.loads((ROOT / "custom_components/vigil_alarm/manifest.json").read_text())["version"]
+    pyproject = re.search(r'^version = "([^"]+)"', (ROOT / "pyproject.toml").read_text(), re.M).group(1)
+    assert pyproject == manifest
+    assert re.search(rf"^## {re.escape(manifest)}$", (ROOT / "CHANGELOG.md").read_text(), re.M)

@@ -578,12 +578,16 @@ class VigilPanel extends HTMLElement {
     const rows = [row(t.last, when(st.last_check))];
     if (st.siren) rows.push(row(t.lastSiren, when(st.last_siren_test)));
     if (st.siren && st.enabled) rows.push(row(t.next, when(st.due)));
+    // What the last start of each siren came to: confirmed on, command sent only, or failed.
+    const starts = st.siren_starts || [];
+    for (const s of starts) rows.push(row(fill(t.lastStart, { name: s.name }), `${t.startResult[s.result] || s.result} (${when(s.at)})`));
     return el("div", { class: "card" }, el("h2", { text: t.title }),
       el("div", { class: "tablewrap" }, el("table", {}, el("tbody", {}, rows))),
       ...(st.problems || []).map((p) => el("div", { class: "muted", text: fill(t.problems, { name: p.name }) })),
       st.overdue_days != null ? el("div", { class: "badge bad", text: fill(t.overdue, { days: st.overdue_days }) }) : null,
       !st.siren ? el("div", { class: "muted", text: t.noSiren }) : (!st.enabled ? el("div", { class: "muted", text: t.off }) : null),
       st.siren && st.auto ? el("div", { class: "muted", text: t.auto }) : null,
+      starts.some((s) => s.result === "sent") ? el("div", { class: "muted", text: t.unconfirmed }) : null,
       st.siren ? el("button", { class: "btn", text: t.test, onclick: async () => {
         try {
           await this._hass.callService("vigil_alarm", "test_siren", { duration: st.seconds });

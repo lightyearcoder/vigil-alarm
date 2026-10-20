@@ -254,3 +254,73 @@ async def test_an_alarm_still_sounds_and_can_be_disarmed_when_the_phone_and_the_
     await _call(hass, "alarm_disarm", code="1234")
     assert _state(hass).state == "disarmed"
     assert entry.state.name == "LOADED"
+
+
+# --- timing and several things at once ---------------------------------------------------------------------------
+
+
+def _types(entry):
+    return [e.get("event") for e in reversed(entry.runtime_data.eventlog.recent(500))]
+
+
+async def test_a_restart_on_the_very_second_the_entry_delay_ends_still_ends_in_an_alarm(hass, freezer):
+    entry = await _armed_away(hass, freezer)
+    hass.states.async_set("binary_sensor.front_door", "on")
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(seconds=30))  # the delay is over, but the timer has not been handled yet
+    await _reload(hass, entry)
+    assert _state(hass).state == "triggered"
+    assert _types(entry).count("triggered") == 1
+
+
+async def test_stopping_one_second_before_the_end_of_the_entry_delay_and_starting_one_second_after(hass, freezer):
+    entry = await _armed_away(hass, freezer)
+    hass.states.async_set("binary_sensor.front_door", "on")
+    await hass.async_block_till_done()
+    await _tick(hass, freezer, 29)
+    await _down_for(hass, freezer, entry, 2)
+    assert _state(hass).state == "triggered"
+
+
+async def test_two_sensors_at_the_same_moment_make_one_alarm_from_the_one_that_acts_first(hass, freezer):
+    entry = await _armed_away(hass, freezer)
+    hass.states.async_set("binary_sensor.front_door", "on")  # an entry delay ...
+    hass.states.async_set("binary_sensor.living_pir", "on")  # ... and an instant sensor in the same moment
+    await hass.async_block_till_done()
+    state = _state(hass)
+    assert state.state == "triggered" and state.attributes["cause_sensor"] == "Living PIR"  # no waiting for the delay
+    await _tick(hass, freezer, 60)
+    assert _state(hass).state == "triggered"
+    assert _types(entry).count("triggered") == 1
+
+
+async def test_a_change_of_the_settings_during_the_entry_delay_does_not_move_the_end_of_it(hass, freezer):
+    entry = await _armed_away(hass, freezer)
+    hass.states.async_set("binary_sensor.front_door", "on")
+    await hass.async_block_till_done()
+    await _tick(hass, freezer, 10)
+    hass.config_entries.async_update_entry(entry, data={**entry.data, "default_entry_delay": 120, "trigger_time": 300})
+    await hass.async_block_till_done()
+    assert _state(hass).state == "pending"
+    await _tick(hass, freezer, 19)
+    assert _state(hass).state == "pending"
+    await _tick(hass, freezer, 1)  # 30 s after the door: the delay that was running keeps its end
+    assert _state(hass).state == "triggered"
+
+
+@pytest.mark.parametrize("junk", [
+    {"version": 99},
+    {"partitions": {"main": {"version": 1, "state": "triggered"}}},  # a state without the rest of it
+    {"partitions": {"main": []}},
+    {"partitions": {"main": {"version": 1, "state": "nonsense", "cause": 7}}},
+])
+async def test_an_unusable_saved_state_never_comes_back_armed_or_triggered(hass, hass_storage, junk):
+    """Whatever is wrong with the saved state, the alarm starts disarmed, and says so when it had to give up."""
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    hass_storage[f"vigil_alarm.{entry.entry_id}"] = {"version": 1, "key": f"vigil_alarm.{entry.entry_id}", "data": junk}
+    for name in ("front_door", "living_pir", "smoke", "tamper"):
+        hass.states.async_set(f"binary_sensor.{name}", "off")
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert _state(hass).state == "disarmed"

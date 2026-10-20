@@ -113,7 +113,8 @@ export default {
       "no_siren": "There is no siren. The alarm then works with notifications only.",
       "battery_missing": "{n} sensors have no battery sensor, so you will not hear when a battery runs low: {names}.",
       "tamper_unlinked": "{n} sensors have a tamper contact on the same device that is not connected to anything: {names}.",
-      "panel_firmware": "The firmware of panel {name} understands profile version {seen}, Vigil uses version {wanted}. Update the firmware of the panel."
+      "panel_firmware": "The firmware of panel {name} understands profile version {seen}, Vigil uses version {wanted}. Update the firmware of the panel.",
+      "arm_without_code": "A user has a code, but arming needs no code (Settings), so anyone who can reach the alarm on a panel, in Home Assistant or through a service can arm it. Disarming always needs a code."
     }
   },
   "heartbeat": {
@@ -144,7 +145,14 @@ export default {
     "test": "Test siren now",
     "started": "The siren sounds for {seconds} seconds.",
     "auto": "Vigil sounds the siren by itself within the set hours.",
-    "problems": "Missing notification channel: {name}"
+    "problems": "Missing notification channel: {name}",
+    "lastStart": "Last start of {name}",
+    "startResult": {
+      "confirmed": "confirmed on",
+      "sent": "command sent, the siren does not confirm",
+      "failed": "failed"
+    },
+    "unconfirmed": "A siren that does not confirm cannot be checked by Vigil: test it by ear now and then (Test siren now)."
   },
   "dash": {
     "title": "Dashboard",

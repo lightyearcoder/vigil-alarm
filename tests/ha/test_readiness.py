@@ -160,3 +160,22 @@ async def test_diagnostics_hold_no_codes_tags_or_user_names(hass):
     assert users and all(u["data"]["code_hash"] == "**redacted**" for u in users)
     assert any(i["title"] == "Front door" for i in out["items"])
     assert out["state"]["state"] == "disarmed"
+
+
+async def test_arming_without_a_code_is_advised_against_once_there_is_a_user_with_a_code(hass):
+    """Without a user nothing needs a code anyway (no_user_code says so); with a user and a switch that lets
+    arming go without a code, the panel says who can then arm."""
+    from custom_components.vigil_alarm.readiness import async_readiness
+
+    from .common import make_entry
+
+    entry = make_entry(code_arm_required=False)
+    entry.add_to_hass(hass)
+    assert any(f["code"] == "arm_without_code" and f["level"] == "advice" for f in async_readiness(hass, entry))
+    entry2 = make_entry(code_arm_required=True)
+    entry2.add_to_hass(hass)
+    assert all(f["code"] != "arm_without_code" for f in async_readiness(hass, entry2))
+    entry3 = make_entry(users=False, code_arm_required=False)
+    entry3.add_to_hass(hass)
+    codes = {f["code"] for f in async_readiness(hass, entry3)}
+    assert "no_user_code" in codes and "arm_without_code" not in codes

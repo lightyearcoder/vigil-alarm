@@ -15,6 +15,7 @@ from homeassistant.helpers import entity_registry as er
 
 from .const import (
     CONF_BATTERY_ENTITY,
+    CONF_CODE_ARM_REQUIRED,
     CONF_CODE_HASH,
     CONF_GROUP_MODES,
     CONF_MODES,
@@ -104,6 +105,8 @@ def async_readiness(hass: HomeAssistant, entry: ConfigEntry) -> list[dict[str, A
                 found.append(_finding("partition_unwatched", "problem", "sensor_group", partition=title, modes=", ".join(unwatched)))
     if not any(u.data.get(CONF_CODE_HASH) for u in of(SUBENTRY_USER)):
         found.append(_finding("no_user_code", "problem", "user"))
+    if any(u.data.get(CONF_CODE_HASH) for u in of(SUBENTRY_USER)) and not entry.data.get(CONF_CODE_ARM_REQUIRED, True):
+        found.append(_finding("arm_without_code", "advice", "settings"))
     if not of(SUBENTRY_NOTIFICATION):
         phones = phone_services(hass, entry)
         finding = _finding("no_notification", "problem", "add_phone" if phones else "notification")

@@ -1,9 +1,16 @@
 # Changelog
 
+## 0.6.5
+
+- **The *Self-test* card shows what the last start of each siren came to:** *confirmed on*, *command sent, the siren does not confirm* or *failed*, with the time, and a reminder to test by ear when a siren cannot confirm. Until now this was only in the log (`verified`). (Kept until Home Assistant restarts.)
+- **A new advice in *Ready for use?*:** when a user has a code but *code needed to arm* is off, the panel says that anyone who can reach the alarm on a panel, in Home Assistant or through a service can arm it (disarming always needs a code).
+- **Six more failure scenarios are tested** (restart on the very second the entry delay ends, stopping just before and starting just after it, two sensors at the same moment, a change of the settings during the entry delay, and four kinds of unusable saved state), plus the new advice and the siren result. `docs/failure-behaviour.md` (and the Dutch page) list them.
+
 ## 0.6.4
 
 - **Failure scenarios are tested, and written down.** 17 new tests (`tests/ha/test_failure_scenarios.py`) run the whole installation through a restart during the exit delay, the entry delay and the alarm, a restart that took longer than a delay or the siren time, a door opened while Home Assistant was down, sensors that drop out, flap or report twice, commands that arrive twice, and a phone and siren that both fail. The new page `docs/failure-behaviour.md` (Dutch: `failure-behaviour.nl.md`) lists what Vigil does in each case and what it cannot do (no alarm while Home Assistant is down).
 - **After a restart the alarm still knows who armed it.** The user (`changed_by`) and the panel or device (`changed_via`) of the last arming or disarming were lost at a restart of Home Assistant; they are now saved with the state. Found by the new tests.
+- **One version everywhere:** `pyproject.toml` still said 0.4.1; it now says the same as the manifest, and a test keeps all version fields (manifest, `pyproject.toml`, changelog) equal.
 
 ## 0.6.3
 

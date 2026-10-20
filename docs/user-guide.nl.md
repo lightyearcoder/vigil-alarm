@@ -107,7 +107,7 @@ teruggezet. De sirene stopt als het alarm uitgaat en na een maximale duur. Een s
 stopt kan elke N seconden opnieuw worden aangezet.
 
 Veel sirenes kunnen niet melden of ze echt aan staan. Dan heeft `siren_started` de waarde
-`verified: false`, en een commando dat mislukt geeft `siren_failed` en een melding.
+`verified: false`, en een commando dat mislukt geeft `siren_failed` en een melding. De kaart *Zelftest* op het *Overzicht* toont per sirene waar de laatste start op uitkwam: *bevestigd aan*, *commando verstuurd, de sirene bevestigt niet* of *mislukt*, zodat een sirene die niet kan bevestigen niet voor een bevestigde wordt aangezien. Vigil kan een sirene niet horen: test hem af en toe op gehoor.
 
 **Voorinstelling voor de Sonoff SNZB-09P (Zigbee2MQTT):** kies bij *Sirene* de aan/uit-schakelaar
 van de sirene en kies dan de voorinstelling. Vigil vult de tonen in (klassiek bij inbraak,

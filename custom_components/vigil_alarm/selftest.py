@@ -197,6 +197,10 @@ class SelfTest:
             "reminders": int(self.state.get("reminders", 0)),
             "overdue_days": self.overdue_days(),
             "siren": self.manager.sirens.configured,
+            "siren_starts": [
+                {"name": v["name"], "result": v["result"], "at": iso(v["at"])}
+                for v in self.manager.sirens.last_start.values()
+            ],
             "enabled": due is not None,
             "seconds": float(self.setting(CONF_SELFTEST_SECONDS)),
             "auto": bool(self.setting(CONF_SELFTEST_AUTO)),

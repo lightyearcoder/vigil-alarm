@@ -107,7 +107,7 @@ siren stops when the alarm is switched off and after a maximum duration. A siren
 itself can be switched on again every N seconds.
 
 Many sirens cannot report whether they are really on. Then `siren_started` has
-`verified: false`, and a command that fails gives `siren_failed` and a notification.
+`verified: false`, and a command that fails gives `siren_failed` and a notification. The *Self-test* card on the *Overview* shows, per siren, what its last start came to: *confirmed on*, *command sent, the siren does not confirm* or *failed*, so a siren that cannot confirm is not mistaken for one that does. Vigil cannot hear a siren: test it by ear now and then.
 
 **Preset for the Sonoff SNZB-09P (Zigbee2MQTT):** pick the siren's on/off switch under
 *Siren*, then choose the preset. Vigil fills in tones (classic for intrusion, warning for fire,
