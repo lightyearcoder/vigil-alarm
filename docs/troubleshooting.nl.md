@@ -62,6 +62,10 @@ Zoek hieronder wat je ziet. Per verschijnsel staan de meest waarschijnlijke oorz
 - Bij de sensor moet een **batterijsensor** zijn ingevuld. De kaart *Klaar voor gebruik?* noemt sensoren zonder. Een apparaat dat alleen "batterij laag" meldt (aan/uit), werkt ook.
 - Heeft het apparaat een **sabotagesensor**, vul die dan in bij de sensor. De kaart noemt sabotagesensoren die nergens aan gekoppeld zijn.
 
+## Een weigering staat in een andere taal dan ik verwachtte
+
+Toont een standaardkaart van Home Assistant (bijvoorbeeld de tegel met de inschakelknoppen) een weigering, dan staat de tekst in de taal waarop **Home Assistant is ingesteld** (*Instellingen, Systeem, Algemeen*), niet in de taal van je profiel, en zonder gebruikersnaam: *Modus Aangepast is door u niet toegestaan om in te schakelen.* Vigil heeft de teksten in zes talen (Engels voor een andere). De Vigil-kaart en het aanraakpaneel tonen de weigering in de taal van het paneel.
+
 ## De entiteiten heten anders dan ik verwachtte
 
 De entiteit-id's van Vigil eindigen altijd op de Engelse naam, ook als Home Assistant op Nederlands staat (bijvoorbeeld `binary_sensor.vigil_alarm_intrusion_alarm`). Wat je in de interface ziet, volgt je eigen taal. Controleer de echte namen onder *Instellingen → Apparaten en diensten → Vigil Alarm*. Wie van een oudere versie komt, moet automatiseringen en dashboards aan de nieuwe id's aanpassen (zie de release notes).

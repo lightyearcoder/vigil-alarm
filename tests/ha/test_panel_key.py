@@ -6,7 +6,7 @@ from __future__ import annotations
 import pytest
 from homeassistant.auth.const import GROUP_ID_USER
 from homeassistant.core import Context
-from homeassistant.exceptions import ServiceValidationError
+from custom_components.vigil_alarm.errors import VigilError as ServiceValidationError
 
 from custom_components.vigil_alarm.const import DOMAIN
 from custom_components.vigil_alarm.items import items_of

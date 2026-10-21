@@ -16,7 +16,7 @@ from typing import Any, Mapping
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_ON, STATE_OFF
 from homeassistant.core import CALLBACK_TYPE, Context, Event, HomeAssistant, callback
-from homeassistant.exceptions import ServiceValidationError
+from .errors import VigilError
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import (
     async_call_later,
@@ -352,7 +352,7 @@ class VigilManager:
         """The partition with this id; no id means the first. Raises for an id that does not exist."""
         part = self.partitions.get(pid or PRIMARY_PARTITION)
         if part is None:
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="unknown_partition")
+            raise VigilError(translation_domain=DOMAIN, translation_key="unknown_partition")
         return part
 
     def partition_of_sensor(self, sensor_id: str) -> Partition:
@@ -698,7 +698,7 @@ class VigilManager:
         account = await self.hass.auth.async_get_user(user_id)
         if account is not None and not account.is_admin and not account.system_generated:
             self.publish("user_refused", user=account.name, source=source, action=action)
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="user_not_registered")
+            raise VigilError(translation_domain=DOMAIN, translation_key="user_not_registered")
         return source
 
     async def _authenticate(
@@ -709,7 +709,7 @@ class VigilManager:
             return None
         if not code:
             if required:
-                raise ServiceValidationError(
+                raise VigilError(
                     translation_domain=DOMAIN, translation_key="code_required"
                 )
             return None
@@ -728,16 +728,16 @@ class VigilManager:
             self.publish("code_rejected", source=source, action=action)
             if locked:  # this wrong code started a lock: say so at once, not only at the next try
                 raise self.lock_error(source, started=locked)
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="invalid_code")
+            raise VigilError(translation_domain=DOMAIN, translation_key="invalid_code")
         return user
 
-    def lock_error(self, source: str | None, bucket: str | None = None, started=None) -> ServiceValidationError:
+    def lock_error(self, source: str | None, bucket: str | None = None, started=None) -> VigilError:
         """The error for a locked control point: for good, or for so many more minutes (rounded up)."""
         if started is not None:
             permanent, seconds = started.minutes is None, (started.minutes or 0) * 60
         else:
             permanent, seconds = self.lockout.is_permanent(source, bucket), self.lockout.remaining(source, bucket)
-        return ServiceValidationError(
+        return VigilError(
             translation_domain=DOMAIN,
             translation_key="code_locked_permanent" if permanent else "code_locked",
             translation_placeholders={"minutes": str(max(1, -(-int(seconds) // 60)))},
@@ -775,7 +775,7 @@ class VigilManager:
 
     def _check_partition_right(self, part: Partition, user: Item | None) -> None:
         if user is not None and part.id not in self.allowed_partitions(user, list(self.partitions)):
-            raise ServiceValidationError(
+            raise VigilError(
                 translation_domain=DOMAIN, translation_key="partition_not_allowed",
                 translation_placeholders={"user": user.title, "partition": part.name},
             )
@@ -807,12 +807,12 @@ class VigilManager:
         self.walktest.stop("stopped")  # arming ends a walk test
         source = await self._operator(source, user_id, "arm")
         if not self.ready:
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="not_ready")
+            raise VigilError(translation_domain=DOMAIN, translation_key="not_ready")
         partition = self.panels.partition_for(source, partition)
         everywhere = partition == "all"
         first = self.partition(None if everywhere else partition)
         if not everywhere and mode not in first.config.modes:
-            raise ServiceValidationError(
+            raise VigilError(
                 translation_domain=DOMAIN,
                 translation_key="mode_not_enabled",
                 translation_placeholders={"mode": mode},
@@ -828,7 +828,7 @@ class VigilManager:
             targets = [p for p in self._targets("all", user, source, "arm", mode)
                        if mode in p.config.modes and p.engine.state == "disarmed"]
             if not targets:
-                raise ServiceValidationError(
+                raise VigilError(
                     translation_domain=DOMAIN, translation_key="mode_not_enabled",
                     translation_placeholders={"mode": mode},
                 )
@@ -839,7 +839,7 @@ class VigilManager:
             for part in targets:
                 allowed = user.data.get(CONF_ALLOWED_MODES) or list(part.config.modes)
                 if mode not in allowed:
-                    raise ServiceValidationError(
+                    raise VigilError(
                         translation_domain=DOMAIN,
                         translation_key="mode_not_allowed",
                         translation_placeholders={"user": user.title, "mode": mode},
@@ -853,11 +853,11 @@ class VigilManager:
                 for part in targets:
                     blockers = part.engine.arm_check(mode)
                     if blockers and not is_admin and user is not None and not user.data.get(CONF_MAY_BYPASS, True):
-                        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="bypass_not_allowed")
+                        raise VigilError(translation_domain=DOMAIN, translation_key="bypass_not_allowed")
                     for b in blockers:
                         if b["sensor"] and self.config.sensors[b["sensor"]].cls == "tamper" and not is_admin \
                                 and (user is None or not user.data.get(CONF_MAY_BYPASS_TAMPER, False)):
-                            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="tamper_bypass_not_allowed")
+                            raise VigilError(translation_domain=DOMAIN, translation_key="tamper_bypass_not_allowed")
                     if all(b["bypassable"] for b in blockers):  # one that cannot be bypassed: it is refused as usual
                         for b in blockers:
                             if self._bypass_everywhere(b["sensor"], name, part):
@@ -875,7 +875,7 @@ class VigilManager:
             if ok:
                 for part in targets:
                     ok = part.engine.arm(mode, user=name) and ok
-        except ServiceValidationError:
+        except VigilError:
             for part, sid in bypassed:
                 self._unbypass_everywhere(sid, name)
             raise
@@ -887,7 +887,7 @@ class VigilManager:
             if refusal is None:
                 event = next(e for e in reversed(targets[0].engine.events) if e["type"] == "arm_refused")
                 refusal = (event["reason"], event["sensors"])
-            raise ServiceValidationError(
+            raise VigilError(
                 translation_domain=DOMAIN,
                 translation_key="arm_refused",
                 translation_placeholders={
@@ -1010,7 +1010,7 @@ class VigilManager:
     ) -> None:
         source = await self._operator(source, user_id, "bypass" if bypass else "unbypass")
         if sensor_id not in self.config.sensors:
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="unknown_sensor")
+            raise VigilError(translation_domain=DOMAIN, translation_key="unknown_sensor")
         sensor = self.config.sensors[sensor_id]
         action = "bypass" if bypass else "unbypass"
         panel = self.panels.check(source, action)
@@ -1022,10 +1022,10 @@ class VigilManager:
         )
         # Putting a sensor back follows the same rules as bypassing it: who may bypass it may restore it.
         if not is_admin and user is not None and not user.data.get(CONF_MAY_BYPASS, True):
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="bypass_not_allowed")
+            raise VigilError(translation_domain=DOMAIN, translation_key="bypass_not_allowed")
         if sensor.cls == "tamper" and not is_admin:
             if user is None or not user.data.get(CONF_MAY_BYPASS_TAMPER, False):
-                raise ServiceValidationError(
+                raise VigilError(
                     translation_domain=DOMAIN, translation_key="tamper_bypass_not_allowed"
                 )
         name = self._actor(user, source)
@@ -1037,7 +1037,7 @@ class VigilManager:
             ok = True
         self._after()
         if not ok:
-            raise ServiceValidationError(
+            raise VigilError(
                 translation_domain=DOMAIN, translation_key="sensor_not_bypassable"
             )
 
@@ -1106,9 +1106,11 @@ class VigilManager:
     def sensor_items(self) -> list[Item]:
         return [s for s in items_of(self.entry).values() if s.subentry_type == SUBENTRY_SENSOR]
 
-    def panel_rows(self, partitions: list[str]) -> str:
+    def panel_rows(self, partitions: list[str], scope: str = "all") -> str:
         """The sensor list of a panel that may use several partitions: "name|entity|status|1 or 0|partition" per
-        line. A safety sensor watches in every partition and is listed once, with no partition."""
+        line. A safety sensor watches in every partition and is listed once, with no partition. `scope` "partition"
+        leaves those always-on sensors out and "always" lists only them (0.6.10: they are shown apart, not under
+        every partition)."""
         rows = []
         seen: set[str] = set()
         for pid in partitions:
@@ -1128,6 +1130,9 @@ class VigilManager:
                     "|".join((s.title.replace("|", "/").replace("\n", " "), s.data[CONF_ENTITY_ID], status,
                               "1" if bypassable else "0", pid if sensor.cls == "intrusion" or len(homes) == 1 else "")),
                 ))
+        if scope != "all":
+            keep_always = scope == "always"
+            rows = [r for r in rows if (r[2].rsplit("|", 1)[-1] == "") == keep_always]
         return "\n".join(row for _rank, _name, row in sorted(rows))
 
     def snapshot(self, partition: str | None = None) -> dict[str, Any]:

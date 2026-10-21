@@ -64,6 +64,10 @@ Cerca qui sotto ciò che vedi. Per ogni sintomo: le cause probabili, dove contro
 - Il sensore ha bisogno di un **sensore di batteria**. *Pronto all'uso?* nomina i sensori che non ce l'hanno. Va bene anche un dispositivo che segnala solo «batteria scarica» (on/off).
 - Se il dispositivo ha un **sensore antimanomissione**, indicalo sul sensore. La scheda nomina i sensori antimanomissione non collegati a nulla.
 
+## Un rifiuto è in una lingua diversa da quella attesa
+
+Quando una scheda standard di Home Assistant (per esempio il riquadro con i pulsanti di inserimento) mostra un rifiuto, il testo è nella lingua **impostata in Home Assistant** (*Impostazioni, Sistema, Generale*), non in quella del tuo profilo, e senza nome utente: *La modalità Personalizzato non può essere inserita da lei.* Vigil ha i testi in sei lingue (inglese per ogni altra). La scheda Vigil e la tastiera touch mostrano il rifiuto nella lingua della tastiera.
+
 ## Le entità hanno nomi diversi da quelli attesi
 
 Gli identificativi delle entità di Vigil terminano sempre con il nome inglese, anche quando Home Assistant è impostato su un'altra lingua (per esempio `binary_sensor.vigil_alarm_intrusion_alarm`). Ciò che vedi nell'interfaccia segue la tua lingua. Controlla i nomi reali in *Impostazioni → Dispositivi e servizi → Vigil Alarm*. Se vieni da una versione più vecchia, aggiorna le tue automazioni e dashboard ai nuovi identificativi (vedi le note di rilascio).

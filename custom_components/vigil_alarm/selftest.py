@@ -35,7 +35,7 @@ from .const import (
     SUBENTRY_SIREN,
 )
 from .eventlog import rfc3339
-from .items import items_of
+from .items import channel_services, items_of
 
 if TYPE_CHECKING:
     from .manager import VigilManager
@@ -99,7 +99,7 @@ class SelfTest:
         problems: list[dict[str, str]] = []
         services = set(notify_services(self.hass))
         for item in items_of(self.entry).values():
-            if item.subentry_type == SUBENTRY_NOTIFICATION and item.data.get("service") not in services:
+            if item.subentry_type == SUBENTRY_NOTIFICATION and any(s not in services for s in channel_services(item.data)):
                 problems.append({"code": "channel_missing", "name": item.title})
             elif item.subentry_type == SUBENTRY_SIREN:
                 st = self.hass.states.get(item.data.get("control", ""))

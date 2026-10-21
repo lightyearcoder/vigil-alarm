@@ -6,7 +6,8 @@ import pytest
 from homeassistant.components.alarm_control_panel import DOMAIN as ACP
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ServiceValidationError
+from homeassistant.exceptions import HomeAssistantError
+from custom_components.vigil_alarm.errors import VigilError as ServiceValidationError
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
@@ -65,11 +66,11 @@ async def test_arm_away_with_exit_delay_then_door_triggers_after_entry_delay(has
 
 async def test_codes_are_checked(hass):
     await _setup(hass)
-    with pytest.raises(ServiceValidationError):
-        await _call(hass, "alarm_arm_home")  # code required
+    with pytest.raises(HomeAssistantError):
+        await _call(hass, "alarm_arm_home")  # code required (Home Assistant's own check)
     with pytest.raises(ServiceValidationError):
         await _call(hass, "alarm_arm_home", code="0000")
-    with pytest.raises(ServiceValidationError, match="may not arm"):
+    with pytest.raises(ServiceValidationError, match="not allowed to be armed by you"):
         await _call(hass, "alarm_arm_away", code="5678")  # Bob: home only
     await _call(hass, "alarm_arm_home", code="5678")
     assert hass.states.get(PANEL).state == "armed_home"

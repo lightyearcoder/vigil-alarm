@@ -20,7 +20,7 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
-from homeassistant.exceptions import ServiceValidationError
+from .errors import VigilError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_call_later, async_track_time_interval
@@ -201,7 +201,7 @@ class PanelRegistry:
         panel = self.get(source)
         allowed = self.allowed_partitions(panel) if panel is not None else []
         if panel is None or not (partition in allowed or (partition == ALL_PARTITIONS and len(allowed) > 1)):
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="unknown_panel")
+            raise VigilError(translation_domain=DOMAIN, translation_key="unknown_panel")
         pid = panel.data[CONF_PANEL_ID]
         if partition == self.default_partition(panel):
             self._selected.pop(pid, None)
@@ -321,11 +321,16 @@ class PanelRegistry:
                 "bypassed_text": ", ".join(psnap["bypassed_sensors"]) if visible else "",
             })
         profile["sensors_all"] = self.manager.panel_rows([e["id"] for e in shown]) if visible and len(shown) > 1 else ""
+        # The always-on sensors (fire, gas, water, ...) are no part of a partition: listed apart, for the choice "Always on".
+        profile["sensors_always"] = self.manager.panel_rows(allowed, "always") if visible and len(shown) > 1 else ""
         if visible:
             profile["open_now_text"] = joined("open_now")
             profile["open_sensors_text"] = joined("open_sensors")
             profile["faults_text"] = joined("faults")
-            profile["sensors"] = self.manager.panel_rows(ids) if len(ids) > 1 else snap["panel_sensors"]
+            if len(shown) > 1:
+                profile["sensors"] = self.manager.panel_rows(ids, "partition")
+            else:
+                profile["sensors"] = snap["panel_sensors"]
             profile["last_alarm_text"] = self._last_alarm_text(profile["language"])
             profile["bypassed_text"] = joined("bypassed_sensors")
         return profile
@@ -362,7 +367,7 @@ class PanelRegistry:
         if reason is None:
             return panel
         self.manager.publish("panel_refused", source=source, panel=panel.title, action=action, reason=reason)
-        raise ServiceValidationError(
+        raise VigilError(
             translation_domain=DOMAIN,
             translation_key="panel_blocked" if reason == "blocked" else "panel_not_allowed",
             translation_placeholders={"panel": panel.title, "action": action},
@@ -387,14 +392,14 @@ class PanelRegistry:
         if key and hmac.compare_digest(self._key_digest(key), panel.data[CONF_KEY_HASH]):
             return
         self.manager.publish("panel_refused", source=source, panel=panel.title, action="call", reason="key")
-        raise ServiceValidationError(
+        raise VigilError(
             translation_domain=DOMAIN, translation_key="panel_key_wrong", translation_placeholders={"panel": panel.title},
         )
 
     def create_key(self, panel: Item, by: str | None = None) -> str:
         """A new key for an ESPHome panel (the old one stops working at once). Returned once; only its digest is kept."""
         if panel.data.get(CONF_HA_USER):
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="panel_not_allowed",
+            raise VigilError(translation_domain=DOMAIN, translation_key="panel_not_allowed",
                                          translation_placeholders={"panel": panel.title, "action": "key"})
         key = secrets.token_hex(16)
         self._store_key(panel, self._key_digest(key))
@@ -430,7 +435,7 @@ class PanelRegistry:
         """Show the list of sensors and the information pages for `unlock_seconds`. Never disarms."""
         pid = panel.data[CONF_PANEL_ID]
         if panel.data.get(CONF_BLOCKED):
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="panel_blocked",
+            raise VigilError(translation_domain=DOMAIN, translation_key="panel_blocked",
                                          translation_placeholders={"panel": panel.title, "action": "unlock"})
         self.lock(pid, quiet=True)
         seconds = int(panel.data.get(CONF_UNLOCK_SECONDS, DEFAULT_UNLOCK_SECONDS))
@@ -460,14 +465,14 @@ class PanelRegistry:
         on the same lockout timer as every other user code of the panel."""
         panel = self.check(source, "unlock_panel")
         if panel is None:
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="unknown_panel")
+            raise VigilError(translation_domain=DOMAIN, translation_key="unknown_panel")
         if scope == "sensors":
             await self._unlock_for_sensors(panel, code, source)
             return
         if not panel.data.get("code_hash"):
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="no_admin_code")
+            raise VigilError(translation_domain=DOMAIN, translation_key="no_admin_code")
         if not code:
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="code_required")
+            raise VigilError(translation_domain=DOMAIN, translation_key="code_required")
         pid = panel.data[CONF_PANEL_ID]
         bucket = admin_bucket(pid)
         lockout = self.manager.lockout
@@ -480,16 +485,16 @@ class PanelRegistry:
             self.manager.publish("code_rejected", source=source, action="unlock_panel")
             if locked:
                 raise self.manager.lock_error(source, bucket, started=locked)
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="invalid_code")
+            raise VigilError(translation_domain=DOMAIN, translation_key="invalid_code")
         lockout.record_success(source, bucket=bucket)
         self.unlock(panel)
 
     async def _unlock_for_sensors(self, panel: Item, code: str | None, source: str | None) -> None:
         manager = self.manager
         if not manager.users and not panel.data.get("code_hash"):
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="no_admin_code")
+            raise VigilError(translation_domain=DOMAIN, translation_key="no_admin_code")
         if not code:
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="code_required")
+            raise VigilError(translation_domain=DOMAIN, translation_key="code_required")
         if manager.lockout.refusal(source):
             raise manager.lock_error(source)
         user = await self.hass.async_add_executor_job(find_user_by_code, code, manager.users) if manager.users else None
@@ -502,7 +507,7 @@ class PanelRegistry:
             manager.publish("code_rejected", source=source, action="unlock_panel")
             if locked:
                 raise manager.lock_error(source, started=locked)
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="invalid_code")
+            raise VigilError(translation_domain=DOMAIN, translation_key="invalid_code")
         manager.lockout.record_success(source)
         self.unlock(panel, by=user.title if user else "installer")
 

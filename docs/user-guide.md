@@ -31,7 +31,7 @@ This guide explains how to set up and use Vigil Alarm. For installation see the
 | **Sensor group** | Decides **in which modes** the intrusion sensors in it are watching. |
 | **Confirmation rule** | Optional. An alarm only follows when several different sensors trigger within a time window. |
 | **User** | A person with a code, optionally limited to certain modes. |
-| **Notification** | One `notify` service that receives messages, optionally delayed (escalation). |
+| **Notification** | One or more `notify` services that receives messages, optionally delayed (escalation). |
 | **Siren** | Optional. Something that makes noise during an alarm. |
 
 ### Sensor classes
@@ -87,8 +87,8 @@ the alarm state is kept.
    - Optionally add a battery sensor; Vigil then warns when it runs low.
 3. **Add a user** (tab *Users*): a name and a code. Without any user, no code is needed at all.
    A user can be limited to certain modes. Bypassing a sensor is a right you give to a user (*May bypass sensors*): without it a user can neither bypass nor restore a sensor, even with a right code. Whoever may bypass a sensor may also restore it. A tamper sensor needs the extra right *May bypass tamper*, for bypassing and for restoring. Users saved before this right existed keep it until you untick it.
-4. **Add a notification** (tab *Notifications*): pick a `notify` service or a notify entity (for example a *notify group* made under *Settings → Devices & services → Helpers → Group*, shown as `notify.family`) and the kinds of
-   message it should get. A notify entity gets a title and a message only: no app specific data, so no critical alert on a phone (choose a `mobile_app_…` service for that). With a *delay* the channel only sends alarm messages when the alarm is
+4. **Add a notification** (tab *Notifications*): pick one or more `notify` services (tick several when more than one person must get the same message; notify groups are not offered, they cannot send with a high priority) and the kinds of
+   message it should get. A critical alert on a phone only works with a `mobile_app_…` service. With a *delay* the channel only sends alarm messages when the alarm is
    still active after that time: that is an escalation channel for a second person or device.
 5. **Optional: a confirmation rule** (tab *Confirmation rules*): choose the instant intrusion
    sensors, how many must trigger, and in what time window.
@@ -161,7 +161,7 @@ Bypass leaves one sensor out until the alarm is switched off (or until you un-by
 
 ![The states of the touch panel: disarmed, not ready, arming, alarm](images/touch-panel-states-en.png)
 
-The panel and the Vigil card share one look. The state is a **ring with an icon** in the colour of the state: green when disarmed and everything is closed, amber when something is open or while arming, orange during the entry delay, blue, coral, violet, teal and pink for home, away, night, vacation and custom, red for an alarm (with a red frame around the screen), grey without a connection. During the exit and entry delay the ring is the **countdown**: the seconds in the middle, the ring running down to empty; when it reaches zero the alarm is on. Under the ring you see the buttons for the modes this panel may use, or one big *Disarm* button when the alarm is on. At the bottom are the tabs *Alarm*, *Sensors* (with the number of open sensors) and *Info*; the keypad has no tabs.
+The panel and the Vigil card share one look. The state is a **ring with an icon** in the colour of the state: green when disarmed and everything is closed, amber when something is open or while arming, orange during the entry delay, blue, coral, violet, teal and pink for home, away, night, vacation and custom, red for an alarm (with a red frame around the screen), grey without a connection. During the exit and entry delay the ring is the **countdown**: the seconds in the middle, the ring running down to empty; when it reaches zero the alarm is on. Under the ring you see the buttons for the modes this panel may use, or a wide *Disarm* button when the alarm is on, as high as the mode buttons. At the bottom are the tabs *Alarm*, *Sensors* (with the number of open sensors) and *Info*; the keypad has no tabs.
 
 ![The other pages: keypad, sensors, info, armed away](images/touch-panel-pages-en.png)
 
@@ -237,6 +237,8 @@ in the event.
 
 Actions in the lists are icon buttons (edit, copy, delete, test); hover for the name. Rules and users have no copy button. Some fields have an ⓘ: click it for a fuller explanation.
 
+Every tab has an address of its own (for example `/vigil_alarm/sensor`), so the *back* and *forward* buttons of the browser switch between the tabs you looked at, and you can bookmark a tab.
+
 | Tab | What you do there |
 |---|---|
 | **Overview** | the card *Alarm* with the Vigil logo and, with more than one partition, a coloured tile per partition (green off, blue armed, amber counting down, red alarm), the card *Practice and test* (*Start practice mode* and *Start walk test*, see *Practice mode and walk test* below), the card *Set up Vigil* (the wizard, while something is still missing), the card *New sensors found* (sensors that appeared in Home Assistant since Vigil last looked; *Review and add* opens the list with only the new ones, *Not now* does not announce them again; nothing is ever added by itself, and the *Sensors* tab shows a badge), *Ready for use?* (what is still missing), the *Self-test* card (last check, last siren test, next test, *Test siren now*), the *Heartbeat* card (last success, *Test now*), a *Dashboard* card with a button that copies a dashboard with your own entity ids, alarm state, attention points (low batteries, unreachable devices), what each mode watches, and the live status of every sensor. |
@@ -292,6 +294,7 @@ By default Vigil has one alarm. Under **Partitions** you can add more, for a gar
 - **Sensor groups belong to one partition.** With more than one partition, the *Sensor groups* tab has a table per partition. A group offers only the modes of its partition, and a sensor can only use the groups of its own partition. A new partition starts without groups: use *Create default groups* in its table. Confirmation rules are listed per partition as well (a rule's sensors must all be in one partition).
 - **The log** has a *Partition* column; a fire, gas, water, tamper or 24-hour event has none (it is for the whole house).
 - **Touch panels and the tablet card** always show which partition (or *All*) they operate, also when it may be only one, together with *Vigil Alarm* and the logo. A panel that may operate several partitions has a row of buttons to switch (and a button at the top of the *Sensors* page that chooses whose sensors are listed); *All* arms or disarms every partition. After the return time without touch it jumps back to its default partition. The service `vigil_alarm.select_partition` does the same switch from an automation.
+- **Always-on sensors apart.** Fire, gas, water, tamper and 24-hour sensors belong to no partition, so the sensor list of a partition (on the Vigil card and on the touch panel) leaves them out. They are a choice of their own next to the partitions, *Always on*: on the card one more button in the row on the *Sensors* page, on the touch panel one more step of the partition button at the top of that page. With more than four partitions the touch panel shows three at a time with an arrow on each side (the *All* button stays); a partition chosen elsewhere brings its own page into view.
 
 ## Automations and blueprints
 

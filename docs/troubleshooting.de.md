@@ -64,6 +64,10 @@ Such unten, was du siehst. Zu jedem Symptom: die wahrscheinlichen Ursachen, wo d
 - Der Sensor braucht einen **Batteriesensor**. *Einsatzbereit?* nennt Sensoren ohne. Ein Gerät, das nur „Batterie schwach“ (an/aus) meldet, funktioniert auch.
 - Hat das Gerät einen **Sabotagesensor**, trage ihn am Sensor ein. Die Karte nennt Sabotagesensoren, die mit nichts verbunden sind.
 
+## Eine Ablehnung steht in einer anderen Sprache als erwartet
+
+Zeigt eine Standardkarte von Home Assistant (zum Beispiel die Kachel mit den Scharfschalt-Tasten) eine Ablehnung, steht der Text in der Sprache, auf die **Home Assistant eingestellt ist** (*Einstellungen, System, Allgemein*), nicht in der Sprache deines Profils, und ohne Benutzernamen: *Der Modus Benutzerdefiniert darf von Ihnen nicht scharfgeschaltet werden.* Vigil hat die Texte in sechs Sprachen (Englisch für jede andere). Die Vigil-Karte und das Touch-Bedienteil zeigen die Ablehnung in der Sprache des Bedienteils.
+
 ## Die Entitäten heißen anders als erwartet
 
 Die Entitäts-IDs von Vigil enden immer auf den englischen Namen, auch wenn Home Assistant auf eine andere Sprache eingestellt ist (zum Beispiel `binary_sensor.vigil_alarm_intrusion_alarm`). Was du in der Oberfläche siehst, folgt deiner eigenen Sprache. Die echten Namen findest du unter *Einstellungen → Geräte & Dienste → Vigil Alarm*. Kommst du von einer älteren Version, passe deine Automatisierungen und Dashboards an die neuen IDs an (siehe die Versionshinweise).

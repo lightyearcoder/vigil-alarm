@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from homeassistant.exceptions import ServiceValidationError
+from custom_components.vigil_alarm.errors import VigilError as ServiceValidationError
 
 from custom_components.vigil_alarm.const import LOCK_DEFAULTS
 from custom_components.vigil_alarm.lockout import OTHER, CodeLockout, Locked

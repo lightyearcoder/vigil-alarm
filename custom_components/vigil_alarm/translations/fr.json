@@ -317,7 +317,7 @@
       "message": "L'alarme est encore en cours de démarrage."
     },
     "mode_not_allowed": {
-      "message": "{user} n'est pas autorisé à activer le mode {mode}."
+      "message": "Le mode {mode} ne peut pas être activé par vous."
     },
     "arm_refused": {
       "message": "Activation refusée : {reason} ({sensors})."
@@ -377,7 +377,7 @@
       "message": "Partition inconnue."
     },
     "partition_not_allowed": {
-      "message": "{user} n'a pas le droit d'utiliser la partition {partition}."
+      "message": "La partition {partition} ne peut pas être utilisée par vous."
     },
     "panel_key_wrong": {
       "message": "Le clavier {panel} n'a pas envoyé sa clé, ou a envoyé la mauvaise."

@@ -317,7 +317,7 @@
       "message": "The alarm is still starting up."
     },
     "mode_not_allowed": {
-      "message": "{user} may not arm in mode {mode}."
+      "message": "Mode {mode} is not allowed to be armed by you."
     },
     "arm_refused": {
       "message": "Arming refused: {reason} ({sensors})."
@@ -377,7 +377,7 @@
       "message": "Unknown partition."
     },
     "partition_not_allowed": {
-      "message": "{user} may not use partition {partition}."
+      "message": "This partition ({partition}) may not be used by you."
     },
     "panel_key_wrong": {
       "message": "The panel {panel} did not send its key, or sent the wrong one."

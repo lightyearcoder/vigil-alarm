@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import timedelta
 
 import pytest
-from homeassistant.exceptions import ServiceValidationError
+from custom_components.vigil_alarm.errors import VigilError as ServiceValidationError
 
 from .common import EVENTS, PANEL, make_entry
 from .test_integration import _call, _setup, _tick

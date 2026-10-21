@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 
 import pytest
-from homeassistant.exceptions import ServiceValidationError
+from custom_components.vigil_alarm.errors import VigilError as ServiceValidationError
 
 from custom_components.vigil_alarm.const import DOMAIN
 

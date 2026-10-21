@@ -3,7 +3,8 @@ from __future__ import annotations
 import pytest
 from homeassistant.config_entries import SOURCE_USER
 from homeassistant.data_entry_flow import FlowResultType
-from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.exceptions import HomeAssistantError
+from custom_components.vigil_alarm.errors import VigilError as ServiceValidationError
 from pytest_homeassistant_custom_component.common import async_mock_service
 
 from .common import EVENTS, PANEL, make_entry, sub

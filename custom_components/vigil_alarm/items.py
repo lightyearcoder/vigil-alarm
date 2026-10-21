@@ -51,3 +51,13 @@ def save_stored(hass: HomeAssistant, entry: ConfigEntry, items: dict[str, dict[s
 def stored_items(entry: ConfigEntry) -> dict[str, dict[str, Any]]:
     """A copy of the stored form, to change and give to `save_stored`."""
     return {k: dict(v) for k, v in ((entry.options or {}).get(OPTION_KEY) or {}).items()}
+
+
+def channel_services(data: Any) -> list[str]:
+    """The notify services of a notification channel: the list `services` (0.6.10), or the one `service` an older
+    channel was saved with."""
+    services = data.get("services")
+    if isinstance(services, (list, tuple)):
+        return [str(x) for x in services if x]
+    single = data.get("service")
+    return [str(single)] if single else []

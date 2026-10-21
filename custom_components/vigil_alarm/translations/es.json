@@ -317,7 +317,7 @@
       "message": "La alarma todavía se está iniciando."
     },
     "mode_not_allowed": {
-      "message": "{user} no puede activar el modo {mode}."
+      "message": "El modo {mode} no puede ser activado por usted."
     },
     "arm_refused": {
       "message": "Activación rechazada: {reason} ({sensors})."
@@ -377,7 +377,7 @@
       "message": "Partición desconocida."
     },
     "partition_not_allowed": {
-      "message": "{user} no puede usar la partición {partition}."
+      "message": "La partición {partition} no puede ser usada por usted."
     },
     "panel_key_wrong": {
       "message": "El panel {panel} no envió su clave, o envió una incorrecta."

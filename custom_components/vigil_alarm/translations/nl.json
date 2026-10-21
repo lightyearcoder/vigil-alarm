@@ -317,7 +317,7 @@
       "message": "Het alarm is nog aan het opstarten."
     },
     "mode_not_allowed": {
-      "message": "{user} mag niet inschakelen in modus {mode}."
+      "message": "Modus {mode} is door u niet toegestaan om in te schakelen."
     },
     "arm_refused": {
       "message": "Inschakelen geweigerd: {reason} ({sensors})."
@@ -377,7 +377,7 @@
       "message": "Onbekende partitie."
     },
     "partition_not_allowed": {
-      "message": "{user} mag partitie {partition} niet gebruiken."
+      "message": "Partitie {partition} mag door u niet worden gebruikt."
     },
     "panel_key_wrong": {
       "message": "Het paneel {panel} stuurde zijn sleutel niet mee, of de verkeerde."

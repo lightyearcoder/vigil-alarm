@@ -24,7 +24,7 @@ substitutions:
   # key made under Panels in Vigil). Set it in your device file, from secrets.yaml. Empty: no key is sent.
   panel_key: ""
   # The version of this firmware, reported to Vigil.
-  firmware_version: "0.6.9"
+  firmware_version: "0.6.10"
   # The width of the cards and buttons: the screen minus a margin on both sides.
   content_w: ${ screen_width | int - 24 }
   # The sizes follow the screen: the ring is a bit over a quarter of the shortest side, the keys fill the keypad.
@@ -345,6 +345,17 @@ text_sensor:
     on_value:
       then:
         - lambda: vigil::ctx.sensors = vigil::clean(x);
+        - script.execute: refresh_ui
+        - script.execute: refresh_sensors
+  # The always-on sensors (fire, gas, water ...) belong to no partition: a list of their own, a choice next to the partitions
+  - platform: homeassistant
+    id: ha_profile_sensors_always
+    entity_id: ${profile_entity}
+    attribute: sensors_always
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.sensors_always = vigil::clean(x);
         - script.execute: refresh_ui
         - script.execute: refresh_sensors
   # ---- the partitions this panel may use, and the one on the screen
@@ -715,6 +726,15 @@ script:
           const bool show = usable() && parts_visible();
           const std::vector<PartRow> rows = part_rows(false);
           const bool switching = rows.size() > 1;
+          sync_chip_page();
+          const bool paged = show && switching && parts_paged();
+          hide(id(chip_prev), !paged);
+          hide(id(chip_next), !paged);
+          if (paged) {
+            // an arrow is dim when there is nothing further that way
+            lv_obj_set_style_opa(id(chip_prev), chip_page_now() > 0 ? LV_OPA_COVER : LV_OPA_40, 0);
+            lv_obj_set_style_opa(id(chip_next), chip_page_now() < part_pages() - 1 ? LV_OPA_COVER : LV_OPA_40, 0);
+          }
           hide(id(row_parts), !show);
           hide(id(part_one), !(show && !switching));
           if (show && !switching) {
@@ -728,9 +748,11 @@ script:
           lv_obj_t *tags[5] = {id(chip_0_tag), id(chip_1_tag), id(chip_2_tag), id(chip_3_tag), id(chip_all_tag)};
           const std::vector<PartRow> all_rows = part_rows(true);
           int n = 0;
-          for (int i = 0; i < 5; i++) if (!chip_target(i).empty()) n++;
-          const int fit = n > 0 ? (${content_w} - 8 * (n - 1)) / n : 0;  // room for one button
-          const lv_font_t *font = n <= 3 ? &lv_font_montserrat_20 : &lv_font_montserrat_14;
+          for (int i = 0; i < 5; i++) if (!chip_target(i).empty()) n++;  // (the first loop of the buttons)
+          const int arrows = paged ? 2 : 0;  // an arrow on each side takes 34 and a gap of 8
+          const int fit = n > 0 ? (${content_w} - 8 * (n - 1 + arrows) - 34 * arrows) / n : 0;  // room for one button
+          const int pad = paged ? 8 : 12;    // the buttons are a little tighter when there are arrows
+          const lv_font_t *font = n <= 3 && !paged ? &lv_font_montserrat_20 : &lv_font_montserrat_14;
           const std::string sel = sel_id();
           for (int i = 0; i < 5; i++) {
             const std::string target = chip_target(i);
@@ -751,7 +773,9 @@ script:
             // One line: as wide as the name, but never wider than what is left of the button (then it ends in dots).
             lv_point_t size;
             lv_text_get_size(&size, name.c_str(), font, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
-            const int room = std::max(fit - 24 - 10 - 6, 16);
+            lv_obj_set_style_pad_left(chips[i], pad, 0);
+            lv_obj_set_style_pad_right(chips[i], pad, 0);
+            const int room = std::max(fit - 2 * pad - 10 - 6, 16);
             lv_obj_set_width(lbls[i], std::min((int) size.x + 2, room));
             lv_obj_set_height(lbls[i], lv_font_get_line_height(font));
             lv_label_set_long_mode(lbls[i], LV_LABEL_LONG_DOT);
@@ -771,10 +795,21 @@ script:
     then:
       - if:
           condition:
-            lambda: return !partition.empty();
+            lambda: return partition == "always";
+          then:
+            # "Always on" is no partition: only the list changes, Vigil is not told and the main page stays as it is
+            - lambda: |-
+                vigil::ctx.sens_always = true;
+                id(sens_page) = 0;
+            - script.execute: refresh_sensors
+      - if:
+          condition:
+            lambda: return !partition.empty() && partition != "always";
           then:
             - lambda: |-
+                vigil::ctx.sens_always = false;
                 vigil::ctx.sel = partition;
+                vigil::ctx.page_sel = "";  // the buttons show the page of this partition again
                 id(sens_page) = 0;
             - script.execute: refresh_ui
             - script.execute: refresh_sensors
@@ -939,6 +974,7 @@ script:
   # profile (`sensor_list`).
   - id: open_sensors
     then:
+      - lambda: vigil::ctx.sens_always = false;  // the list starts with the partition on screen
       - if:
           condition:
             lambda: return vigil::sensors_visible();
@@ -1249,7 +1285,7 @@ script:
             id(keypad_open) = false;
             id(pending_action) = 0;
           } else {
-            vigil::ctx.message = vigil::localize_error(message);
+            vigil::ctx.message = vigil::localize_error(message, arm ? vigil::tr(vigil::arm_mode_name(id(pending_action))) : std::string());
           }
       - lvgl.textarea.update:
           id: pin_text
@@ -1570,6 +1606,30 @@ lvgl:
                         text_font: montserrat_14
                         text_color: 0x8A94A6
               - button:
+                  id: chip_prev
+                  width: 34
+                  height: 40
+                  radius: 20
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pad_all: 0
+                  hidden: true
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - lambda: |-
+                          vigil::ctx.chip_page = vigil::chip_page_now() - 1;
+                      - script.execute: refresh_parts
+                  widgets:
+                    - label:
+                        text: "\U000F0141"
+                        text_font: font_icons_30
+                        text_color: 0xC5CCD8
+                        align: CENTER
+              - button:
                   id: chip_0
                   height: 40
                   width: SIZE_CONTENT
@@ -1777,6 +1837,30 @@ lvgl:
                         text_font: montserrat_14
                         text_color: 0x8A94A6
                         hidden: true
+              - button:
+                  id: chip_next
+                  width: 34
+                  height: 40
+                  radius: 20
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pad_all: 0
+                  hidden: true
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - lambda: |-
+                          vigil::ctx.chip_page = vigil::chip_page_now() + 1;
+                      - script.execute: refresh_parts
+                  widgets:
+                    - label:
+                        text: "\U000F0142"
+                        text_font: font_icons_30
+                        text_color: 0xC5CCD8
+                        align: CENTER
               - button:
                   id: chip_all
                   height: 40

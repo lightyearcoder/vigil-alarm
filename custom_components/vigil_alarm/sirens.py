@@ -20,7 +20,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
-from homeassistant.exceptions import ServiceValidationError
+from .errors import VigilError
 from homeassistant.helpers.event import async_call_later
 
 from .items import items_of
@@ -285,7 +285,7 @@ class SirenController:
     async def async_test(self, name: str | None, duration: float) -> int:
         """Sound the siren(s) briefly, to check that they respond."""
         if self.manager.any_triggered:
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="alarm_active")
+            raise VigilError(translation_domain=DOMAIN, translation_key="alarm_active")
         chosen = [s for s in self.sirens if name in (None, s.name)]
         for siren in chosen:
             if await self._switch(siren, siren.control, True):

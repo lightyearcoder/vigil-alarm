@@ -140,7 +140,7 @@ async def test_notification_and_siren(hass, hass_ws_client):
     assert res["result"]["ok"] is True
     res = await _ws(client, type="vigil_alarm/save", kind="notification", data={
         "name": "Ghost", "service": "nope", "categories": ["alarm"], "delay": 0})
-    assert res["result"]["errors"] == {"service": "service_not_found"}
+    assert res["result"]["errors"] == {"services": "service_not_found"}
     res = await _ws(client, type="vigil_alarm/save", kind="siren", data={
         "name": "Hall", "control": "switch.siren", "causes": ["intrusion"], "intrusion": {"tone": "alarm_1"}})
     assert res["result"]["errors"] == {"base": "tone_without_entity"}
@@ -257,7 +257,7 @@ async def test_channel_checks_the_service_and_names_are_unique(hass, hass_ws_cli
     assert res["result"]["errors"] == {"categories": "no_categories"}
     res = await _ws(client, type="vigil_alarm/save", kind="notification", data=base)
     assert res["result"]["ok"] is True
-    assert items_of(entry)[res["result"]["id"]].data["service"] == "mobile_app_anna"
+    assert items_of(entry)[res["result"]["id"]].data["services"] == ["mobile_app_anna"]
     res = await _ws(client, type="vigil_alarm/save", kind="notification", data=base)
     assert res["result"]["errors"] == {"name": "name_in_use"}
 

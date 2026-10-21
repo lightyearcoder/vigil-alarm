@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import pytest
 from homeassistant.core import Context
-from homeassistant.exceptions import ServiceValidationError, Unauthorized
+from homeassistant.exceptions import Unauthorized
+from custom_components.vigil_alarm.errors import VigilError as ServiceValidationError
 
 from .common import PANEL, make_entry, sub
 from .test_integration import _call, _setup, _tick

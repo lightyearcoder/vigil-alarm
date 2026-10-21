@@ -467,8 +467,14 @@ def _notification(
     data[CONF_DELAY] = float(data.get(CONF_DELAY) or 0)
     data["priority"] = bool(data.get("priority", False))
     _partitions_filter(entry, raw, data)
-    if data.get(CONF_SERVICE) not in notify_services(hass):
-        raise EditError({CONF_SERVICE: "service_not_found"})
+    # one or more services in one channel (several people get the same message); a single `service` of an older
+    # form is taken as a list of one
+    chosen = [str(x) for x in (raw.get("services") or ([raw["service"]] if raw.get("service") else [])) if x]
+    chosen = list(dict.fromkeys(chosen))
+    if not chosen or any(x not in notify_services(hass) for x in chosen):
+        raise EditError({"services": "service_not_found"})
+    data.pop(CONF_SERVICE, None)
+    data["services"] = chosen
     if not data.get(CONF_CATEGORIES):
         raise EditError({CONF_CATEGORIES: "no_categories"})
     if any(o.title == name for o in _others(entry, SUBENTRY_NOTIFICATION, sub)):
@@ -477,11 +483,9 @@ def _notification(
 
 
 def notify_services(hass: HomeAssistant) -> list[str]:
-    """What a channel can send to: the notify services by name (`mobile_app_phone`, a YAML notify group) and the
-    notify entities by entity id (`notify.family`, a notify group made as a helper). A name never has a dot, an
-    entity id always has."""
-    services = (n for n in hass.services.async_services_for_domain("notify") if n != "send_message")
-    return sorted(services) + sorted(hass.states.async_entity_ids("notify"))
+    """What a channel can send to: the notify services by name (`mobile_app_phone`). Notify groups and other notify
+    entities are not offered: they cannot send an alarm with a high priority (a critical alert on a phone)."""
+    return sorted(n for n in hass.services.async_services_for_domain("notify") if n != "send_message")
 
 
 def _siren(entry: ConfigEntry, sub: Item | None, name: str, raw: dict[str, Any]) -> dict[str, Any]:

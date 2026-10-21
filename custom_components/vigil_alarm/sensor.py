@@ -81,7 +81,7 @@ class VigilPanelProfile(VigilSensorEntity, SensorEntity):
     _attr_translation_key = "panel_profile"
     _attr_has_entity_name = False
     _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _unrecorded_attributes = frozenset({"sensors", "unlocked", "open_now_text", "open_sensors_text", "faults_text", "last_alarm_text", "bypassed_text", "partitions", "sensors_all", "partition_list"})
+    _unrecorded_attributes = frozenset({"sensors", "unlocked", "open_now_text", "open_sensors_text", "faults_text", "last_alarm_text", "bypassed_text", "partitions", "sensors_all", "sensors_always", "partition_list"})
 
     def __init__(self, manager, item_id: str, title: str) -> None:
         super().__init__(manager, item_id, title)

@@ -317,7 +317,7 @@
       "message": "Die Alarmanlage startet noch."
     },
     "mode_not_allowed": {
-      "message": "{user} darf im Modus {mode} nicht scharfschalten."
+      "message": "Der Modus {mode} darf von Ihnen nicht scharfgeschaltet werden."
     },
     "arm_refused": {
       "message": "Scharfschalten abgelehnt: {reason} ({sensors})."
@@ -377,7 +377,7 @@
       "message": "Unbekannte Partition."
     },
     "partition_not_allowed": {
-      "message": "{user} darf die Partition {partition} nicht verwenden."
+      "message": "Die Partition {partition} darf von Ihnen nicht verwendet werden."
     },
     "panel_key_wrong": {
       "message": "Das Bedienteil {panel} hat seinen Schlüssel nicht gesendet oder den falschen."

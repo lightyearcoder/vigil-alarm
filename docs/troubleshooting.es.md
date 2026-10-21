@@ -64,6 +64,10 @@ Busca abajo lo que ves. Para cada síntoma: las causas probables, dónde comprob
 - El sensor necesita un **sensor de batería**. *¿Listo para usar?* nombra los sensores que no lo tienen. También sirve un dispositivo que solo informa «batería baja» (encendido/apagado).
 - Si el dispositivo tiene un **sensor de sabotaje**, indícalo en el sensor. La tarjeta nombra los sensores de sabotaje que no están conectados a nada.
 
+## Un rechazo está en un idioma distinto del esperado
+
+Cuando una tarjeta estándar de Home Assistant (por ejemplo el mosaico con los botones de activación) muestra un rechazo, el texto está en el idioma **configurado en Home Assistant** (*Ajustes, Sistema, General*), no en el de tu perfil, y sin nombre de usuario: *El modo Personalizado no puede ser activado por usted.* Vigil tiene los textos en seis idiomas (inglés para cualquier otro). La tarjeta Vigil y el teclado táctil muestran el rechazo en el idioma del teclado.
+
 ## Las entidades se llaman distinto de lo que esperaba
 
 Los identificadores de entidad de Vigil siempre terminan en el nombre en inglés, incluso cuando Home Assistant está en otro idioma (por ejemplo `binary_sensor.vigil_alarm_intrusion_alarm`). Lo que ves en la interfaz sigue tu propio idioma. Comprueba los nombres reales en *Ajustes → Dispositivos y servicios → Vigil Alarm*. Si vienes de una versión anterior, actualiza tus automatizaciones y paneles de control a los nuevos identificadores (véanse las notas de la versión).

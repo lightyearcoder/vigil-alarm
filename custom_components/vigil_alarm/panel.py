@@ -17,7 +17,7 @@ from homeassistant.components import frontend, panel_custom, websocket_api
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import ServiceValidationError
+from .errors import VigilError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
@@ -209,7 +209,7 @@ def form_schema(modes: list[str], house: Mapping[str, Any] | None = None) -> dic
         ],
         "notification": [
             _f("name", "text", required=True),
-            _f("service", "notify", required=True),
+            _f("services", "notify", default=[], required=True),
             _f("categories", "multiselect", options=list(NOTIFICATION_CATEGORIES),
                default=["alarm", "pending", "fault", "technical"], required=True),
             _f("delay", "number", default=0, unit="s", min=0, max=3600),
@@ -498,7 +498,7 @@ def ws_practice(hass: HomeAssistant, connection: websocket_api.ActiveConnection,
         return
     try:
         manager.practice.start() if msg["enable"] else manager.practice.stop()
-    except ServiceValidationError as err:
+    except VigilError as err:
         connection.send_error(msg["id"], "refused", str(err))
         return
     connection.send_result(msg["id"], {"ok": True, "until": manager.practice.until})
@@ -516,7 +516,7 @@ def ws_walktest(hass: HomeAssistant, connection: websocket_api.ActiveConnection,
         return
     try:
         manager.walktest.start() if msg["action"] == "start" else manager.walktest.stop("stopped")
-    except ServiceValidationError as err:
+    except VigilError as err:
         connection.send_error(msg["id"], "refused", str(err))
         return
     connection.send_result(msg["id"], {"ok": True, **manager.walktest.status()})
@@ -555,7 +555,7 @@ async def ws_add_phone(hass: HomeAssistant, connection: websocket_api.ActiveConn
         connection.send_result(msg["id"], {"ok": False, "errors": {"service": "service_not_found"}, "placeholders": {}})
         return
     title = phone_title(msg["service"])
-    raw = {"name": title, "service": msg["service"], "categories": ["alarm", "pending", "fault", "technical"], "delay": 0, "partitions": ["all"]}
+    raw = {"name": title, "services": [msg["service"]], "categories": ["alarm", "pending", "fault", "technical"], "delay": 0, "partitions": ["all"]}
     try:
         name, data = await async_prepare(hass, entry, SUBENTRY_NOTIFICATION, None, raw)
     except EditError as err:

@@ -34,7 +34,7 @@ from .const import (
     SUBENTRY_USER,
 )
 from .editing import notify_services
-from .items import Item, items_of, new_id, save_stored, stored, stored_items
+from .items import Item, channel_services, items_of, new_id, save_stored, stored, stored_items
 from .manager import partition_data
 from .languages import GROUP_NAMES, language_of
 
@@ -44,7 +44,7 @@ PHONE_PREFIX = "mobile_app_"
 
 def phone_services(hass: HomeAssistant, entry: ConfigEntry) -> list[str]:
     """notify services of the Home Assistant app on a phone that no channel uses yet."""
-    used = {i.data.get("service") for i in items_of(entry).values() if i.subentry_type == SUBENTRY_NOTIFICATION}
+    used = {s for i in items_of(entry).values() if i.subentry_type == SUBENTRY_NOTIFICATION for s in channel_services(i.data)}
     return [n for n in notify_services(hass) if n.startswith(PHONE_PREFIX) and n not in used]
 
 

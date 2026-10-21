@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from homeassistant.exceptions import ServiceValidationError
+from custom_components.vigil_alarm.errors import VigilError as ServiceValidationError
 from homeassistant.core import Context
 from pytest_homeassistant_custom_component.common import async_mock_service
 

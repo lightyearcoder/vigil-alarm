@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from homeassistant.exceptions import ServiceValidationError
+from custom_components.vigil_alarm.errors import VigilError as ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import async_mock_service
 
@@ -146,7 +146,7 @@ async def test_a_user_can_be_limited_to_partitions(hass):
     from .common import user_data
     limited = sub("user", "Carl", user_data("4321", allowed_modes=[], partitions=["main"]), "carl")
     entry, home, garage, everything = await house(hass, limited)
-    with pytest.raises(ServiceValidationError, match="Carl may not use partition Garage"):
+    with pytest.raises(ServiceValidationError, match="may not be used by you"):
         await act(hass, garage, "alarm_arm_away", code="4321")
     await act(hass, home, "alarm_arm_home", code="4321")
     assert hass.states.get(home).state == "armed_home"
@@ -614,3 +614,32 @@ async def test_the_last_alarm_names_no_partition_with_one_partition(hass, freeze
     entry, manager = await _alarm_in_the_house(hass, freezer)
     assert manager.alarmmemory.view()["partition_name"] is None
     assert hass.states.get("alarm_control_panel.vigil_alarm").attributes["last_alarm"]["partition"] is None
+
+
+async def test_the_always_on_sensors_are_listed_apart_from_the_partitions(hass):
+    """0.6.10: smoke and the like belong to no partition, so they are not under every partition: the list of a
+    partition has its own sensors, and the always-on ones are a choice of their own (card and touch panel)."""
+    smoke = sub("zone", "Smoke hall", {"entity_id": "binary_sensor.smoke_hall", "cls": "fire"}, "smoke")
+    hass.states.async_set("binary_sensor.smoke_hall", "off")
+    panel = sub("panel", "Hall", {"panel_id": "hall", "default_partition": "p_gar", "sensor_list": "always",
+                                  "can_disarm": True, "can_bypass": True, "can_silence": True, "allowed_modes": []}, "pp")
+    entry, home, garage, everything = await house(hass, smoke, panel)
+    registry = entry.runtime_data.panels
+    item = registry.get("hall")
+    for chosen in ("p_gar", "main", "all"):
+        await hass.services.async_call("vigil_alarm", "select_partition", {"source": "hall", "partition": chosen}, blocking=True)
+        profile = registry.profile(item)
+        assert "binary_sensor.smoke_hall" not in profile["sensors"], chosen
+        assert profile["sensors"]  # the sensors of that partition are there
+    always = [r.split("|") for r in registry.profile(item)["sensors_always"].split("\n")]
+    assert "binary_sensor.smoke_hall" in [r[1] for r in always] and all(r[4] == "" for r in always)
+    # the list of all partitions (for the card) has both kinds, the always-on ones with no partition
+    rows = [r.split("|") for r in registry.profile(item)["sensors_all"].split("\n")]
+    assert next(r for r in rows if r[1] == "binary_sensor.smoke_hall")[4] == ""
+    assert any(r[4] == "p_gar" for r in rows)
+    # a panel with one partition has no choice to make: its list is the whole list and there is no extra one
+    solo = sub("panel", "Solo", {"panel_id": "solo", "partitions": ["p_gar"], "default_partition": "p_gar", "sensor_list": "always",
+                                 "can_disarm": True, "can_bypass": True, "can_silence": True, "allowed_modes": []}, "ps")
+    entry2 = await _setup(hass, make_entry(extra_subentries=list(EXTRA) + [smoke, solo]))
+    profile = entry2.runtime_data.panels.profile(entry2.runtime_data.panels.get("solo"))
+    assert profile["sensors_always"] == ""

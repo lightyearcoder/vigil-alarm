@@ -64,6 +64,10 @@ Cherchez ci-dessous ce que vous voyez. Pour chaque symptôme : les causes probab
 - Le capteur a besoin d'un **capteur de batterie**. *Prêt à l'emploi ?* nomme les capteurs qui n'en ont pas. Un appareil qui signale seulement « batterie faible » (marche/arrêt) convient aussi.
 - Si l'appareil a un **capteur d'autoprotection**, indiquez-le sur le capteur. La carte nomme les capteurs d'autoprotection qui ne sont reliés à rien.
 
+## Un refus est dans une autre langue que prévu
+
+Quand une carte standard de Home Assistant (par exemple la tuile avec les boutons d'activation) affiche un refus, le texte est dans la langue **réglée dans Home Assistant** (*Paramètres, Système, Général*), pas dans celle de votre profil, et sans nom d'utilisateur : *Le mode Personnalisé ne peut pas être activé par vous.* Vigil a les textes en six langues (l'anglais pour toute autre). La carte Vigil et le clavier tactile affichent le refus dans la langue du clavier.
+
 ## Les entités ne portent pas les noms attendus
 
 Les identifiants d'entités de Vigil se terminent toujours par le nom anglais, même quand Home Assistant est réglé sur une autre langue (par exemple `binary_sensor.vigil_alarm_intrusion_alarm`). Ce que vous voyez dans l'interface suit votre propre langue. Vérifiez les vrais noms sous *Paramètres → Appareils et services → Vigil Alarm*. Si vous venez d'une version plus ancienne, mettez à jour vos automatisations et tableaux de bord avec les nouveaux identifiants (voir les notes de version).

@@ -30,12 +30,14 @@
       refuse_alarm_condition: "Inschakelen kan niet: {s} staat open", refuse_sensor_unavailable: "Inschakelen kan niet: {s} reageert niet", refuse_sensor_open: "Inschakelen kan niet: {s} staat open", refuse_not_disarmed: "Het alarm staat al aan", force: "Omzeilen en inschakelen",
       not_linked: "Niet gekoppeld",
       not_linked_sub: "Voeg dit Home Assistant-account toe in Vigil onder Panelen. Account: ",
+      err_mode_not_allowed: "Modus {m} is door u niet toegestaan om in te schakelen",
       err_invalid_code: "Ongeldige code", err_code_required: "Voer een code in", err_locked_pre: "Te veel foute codes. Probeer het over ", err_locked_post: " min opnieuw", err_locked: "Te veel foute codes. Even wachten", err_locked_permanent: "Te veel foute codes. Vergrendeld totdat een beheerder dit in Vigil opheft", err_bypass_tamper: "U mag sabotage niet omzeilen of terugzetten", err_bypass: "U mag sensoren niet omzeilen of terugzetten", err_blocked: "Dit paneel is geblokkeerd", err_not_allowed: "Dit paneel mag dit niet", err_no_installer_code: "Stel eerst een installateurscode in Vigil in", err_not_bypassable: "Deze sensor kan niet worden omzeild",
       old_profile: "Update Vigil of de kaart", no_admin_code: "Stel eerst een installateurscode in Vigil in",
       st_closed: "dicht", st_open: "open", st_waiting: "wacht", st_bypassed: "omzeild",
       st_bypassed_at_arm: "omzeild bij inschakelen", st_unavailable: "storing",
       cause_intrusion: "Inbraak", cause_fire: "Brand", cause_gas: "Gas", cause_tamper: "Sabotage", cause_alarm24: "24-uursalarm", cause_silent24: "Stil alarm", cause_water: "Water",
       cause_fault: "Sensorstoring", ok: "OK", delete: "Wis", code: "Code",
+      always_on: "Altijd aan",
       all: "Alles", mixed: "Gemengd", only_this: "alleen deze partitie", default_tag: "standaard",
     },
     en: {
@@ -52,11 +54,13 @@
       refuse_alarm_condition: "Cannot arm: {s} is open", refuse_sensor_unavailable: "Cannot arm: {s} does not respond", refuse_sensor_open: "Cannot arm: {s} is open", refuse_not_disarmed: "The alarm is already on", force: "Bypass and arm",
       not_linked: "Not linked",
       not_linked_sub: "Add this Home Assistant account in Vigil under Panels. Account: ",
+      err_mode_not_allowed: "Mode {m} is not allowed to be armed by you",
       err_invalid_code: "Invalid code", err_code_required: "A code is required", err_locked_pre: "Too many wrong codes. Try again in ", err_locked_post: " min", err_locked: "Too many wrong codes. Wait a moment", err_locked_permanent: "Too many wrong codes. Locked until an administrator unlocks it in Vigil", err_bypass_tamper: "You may not bypass or restore tamper", err_bypass: "You may not bypass or restore sensors", err_blocked: "This panel is blocked", err_not_allowed: "This panel may not do this", err_no_installer_code: "Set an installer code in Vigil first", err_not_bypassable: "This sensor cannot be bypassed",
       old_profile: "Update Vigil or the card", no_admin_code: "Set an installer code in Vigil first",
       st_closed: "closed", st_open: "open", st_waiting: "waiting", st_bypassed: "bypassed",
       st_bypassed_at_arm: "bypassed at arming", st_unavailable: "fault",
       cause_intrusion: "Intrusion", cause_fire: "Fire", cause_gas: "Gas", cause_tamper: "Tamper", cause_alarm24: "24-hour alarm", cause_silent24: "Silent alarm", cause_water: "Water",
+      always_on: "Always on",
       all: "All", mixed: "Mixed", only_this: "only this partition", default_tag: "default",
       cause_fault: "Sensor fault", ok: "OK", delete: "Delete", code: "Code",
     },
@@ -74,10 +78,12 @@
       refuse_alarm_condition: "Scharfschalten nicht möglich: {s} ist offen", refuse_sensor_unavailable: "Scharfschalten nicht möglich: {s} antwortet nicht", refuse_sensor_open: "Scharfschalten nicht möglich: {s} ist offen", refuse_not_disarmed: "Die Alarmanlage ist bereits scharf", force: "Überbrücken und scharf schalten",
       not_linked: "Nicht verknüpft",
       not_linked_sub: "Füge dieses Home-Assistant-Konto in Vigil unter Bedienteile hinzu. Konto: ",
+      err_mode_not_allowed: "Der Modus {m} darf von Ihnen nicht scharfgeschaltet werden",
       err_invalid_code: "Ungültiger Code", err_code_required: "Code erforderlich", err_locked_pre: "Zu viele falsche Codes. Erneut versuchen in ", err_locked_post: " Min", err_locked: "Zu viele falsche Codes. Bitte kurz warten", err_locked_permanent: "Zu viele falsche Codes. Gesperrt, bis ein Administrator in Vigil entsperrt", err_bypass_tamper: "Sabotage darf nicht überbrückt oder wiederhergestellt werden", err_bypass: "Sensoren dürfen nicht überbrückt oder wiederhergestellt werden", err_blocked: "Dieses Bedienteil ist gesperrt", err_not_allowed: "Dieses Bedienteil darf das nicht", err_no_installer_code: "Lege zuerst in Vigil einen Installateurcode fest", err_not_bypassable: "Dieser Sensor kann nicht überbrückt werden",
       old_profile: "Vigil oder die Karte aktualisieren", no_admin_code: "Lege zuerst in Vigil einen Installateurcode fest",
       st_closed: "geschlossen", st_open: "offen", st_waiting: "wartet", st_bypassed: "überbrückt",
       st_bypassed_at_arm: "beim Scharfschalten überbrückt", st_unavailable: "Störung",
+      always_on: "Immer aktiv",
       all: "Alle", mixed: "Gemischt", only_this: "nur diese Partition", default_tag: "Standard",
       cause_intrusion: "Einbruch", cause_fire: "Feuer", cause_gas: "Gas", cause_tamper: "Sabotage", cause_alarm24: "24-Stunden-Alarm", cause_silent24: "Stiller Alarm", cause_water: "Wasser",
       cause_fault: "Sensorstörung", ok: "OK", delete: "Löschen", code: "Code",
@@ -96,9 +102,11 @@
       refuse_alarm_condition: "Activation impossible : {s} est ouvert", refuse_sensor_unavailable: "Activation impossible : {s} ne répond pas", refuse_sensor_open: "Activation impossible : {s} est ouvert", refuse_not_disarmed: "L'alarme est déjà activée", force: "Inhiber et activer",
       not_linked: "Non associé",
       not_linked_sub: "Ajoutez ce compte Home Assistant dans Vigil sous Claviers. Compte : ",
+      err_mode_not_allowed: "Le mode {m} ne peut pas être activé par vous",
       err_invalid_code: "Code invalide", err_code_required: "Un code est requis", err_locked_pre: "Trop de codes erronés. Réessayez dans ", err_locked_post: " min", err_locked: "Trop de codes erronés. Patientez un instant", err_locked_permanent: "Trop de codes erronés. Verrouillé jusqu'à ce qu'un administrateur le déverrouille dans Vigil", err_bypass_tamper: "Vous ne pouvez pas inhiber ou rétablir le sabotage", err_bypass: "Vous ne pouvez pas inhiber ou rétablir les capteurs", err_blocked: "Ce clavier est bloqué", err_not_allowed: "Ce clavier n'a pas le droit de faire cela", err_no_installer_code: "Définissez d'abord un code installateur dans Vigil", err_not_bypassable: "Ce capteur ne peut pas être inhibé",
       old_profile: "Mettez à jour Vigil ou la carte", no_admin_code: "Définissez d'abord un code installateur dans Vigil",
       st_closed: "fermé", st_open: "ouvert", st_waiting: "en attente", st_bypassed: "inhibé",
+      always_on: "Toujours actif",
       all: "Tout", mixed: "Mixte", only_this: "uniquement cette partition", default_tag: "par défaut",
       st_bypassed_at_arm: "inhibé à l'activation", st_unavailable: "défaut",
       cause_intrusion: "Intrusion", cause_fire: "Incendie", cause_gas: "Gaz", cause_tamper: "Sabotage", cause_alarm24: "Alarme 24 h", cause_silent24: "Alarme silencieuse", cause_water: "Eau",
@@ -118,8 +126,10 @@
       refuse_alarm_condition: "Impossibile inserire: {s} è aperto", refuse_sensor_unavailable: "Impossibile inserire: {s} non risponde", refuse_sensor_open: "Impossibile inserire: {s} è aperto", refuse_not_disarmed: "L'allarme è già inserito", force: "Escludi e inserisci",
       not_linked: "Non collegato",
       not_linked_sub: "Aggiungi questo account Home Assistant in Vigil sotto Pannelli. Account: ",
+      err_mode_not_allowed: "La modalità {m} non può essere inserita da lei",
       err_invalid_code: "Codice non valido", err_code_required: "È richiesto un codice", err_locked_pre: "Troppi codici errati. Riprova tra ", err_locked_post: " min", err_locked: "Troppi codici errati. Attendi un momento", err_locked_permanent: "Troppi codici errati. Bloccato finché un amministratore non lo sblocca in Vigil", err_bypass_tamper: "Non puoi escludere o ripristinare la manomissione", err_bypass: "Non puoi escludere o ripristinare i sensori", err_blocked: "Questo pannello è bloccato", err_not_allowed: "Questo pannello non può farlo", err_no_installer_code: "Imposta prima un codice installatore in Vigil", err_not_bypassable: "Questo sensore non può essere escluso",
       old_profile: "Aggiorna Vigil o la scheda", no_admin_code: "Imposta prima un codice installatore in Vigil",
+      always_on: "Sempre attivo",
       all: "Tutto", mixed: "Misto", only_this: "solo questa partizione", default_tag: "predefinita",
       st_closed: "chiuso", st_open: "aperto", st_waiting: "in attesa", st_bypassed: "escluso",
       st_bypassed_at_arm: "escluso all'inserimento", st_unavailable: "guasto",
@@ -140,7 +150,9 @@
       refuse_alarm_condition: "No se puede activar: {s} está abierto", refuse_sensor_unavailable: "No se puede activar: {s} no responde", refuse_sensor_open: "No se puede activar: {s} está abierto", refuse_not_disarmed: "La alarma ya está activada", force: "Anular y activar",
       not_linked: "Sin vincular",
       not_linked_sub: "Añade esta cuenta de Home Assistant en Vigil, en Paneles. Cuenta: ",
+      err_mode_not_allowed: "El modo {m} no puede ser activado por usted",
       err_invalid_code: "Código no válido", err_code_required: "Se necesita un código", err_locked_pre: "Demasiados códigos erróneos. Inténtalo de nuevo en ", err_locked_post: " min", err_locked: "Demasiados códigos erróneos. Espera un momento", err_locked_permanent: "Demasiados códigos erróneos. Bloqueado hasta que un administrador lo desbloquee en Vigil", err_bypass_tamper: "No puedes anular ni restablecer el sabotaje", err_bypass: "No puedes anular ni restablecer sensores", err_blocked: "Este panel está bloqueado", err_not_allowed: "Este panel no puede hacer esto", err_no_installer_code: "Define primero un código de instalador en Vigil", err_not_bypassable: "Este sensor no se puede anular",
+      always_on: "Siempre activo",
       all: "Todo", mixed: "Mixto", only_this: "solo esta partición", default_tag: "predeterminada",
       old_profile: "Actualiza Vigil o la tarjeta", no_admin_code: "Define primero un código de instalador en Vigil",
       st_closed: "cerrado", st_open: "abierto", st_waiting: "en espera", st_bypassed: "anulado",
@@ -188,6 +200,7 @@
     [["may not do this", "mag dit niet", "darf das nicht", "n'a pas le droit de faire cela", "non può farlo", "no puede hacer esto"], "err_not_allowed"],
     [["no installer code", "geen installateurscode", "keinen Installateurcode", "pas de code installateur", "non ha un codice installatore", "no tiene código de instalador"], "err_no_installer_code"],
     [["cannot be bypassed", "kan niet worden omzeild", "kann nicht überbrückt werden", "ne peut pas être inhibé", "non può essere escluso", "no se puede anular"], "err_not_bypassable"],
+    [["not allowed to be armed by you", "door u niet toegestaan", "von Ihnen nicht scharfgeschaltet", "ne peut pas être activé par vous", "non può essere inserita da lei", "no puede ser activado por usted"], "err_mode_not_allowed"],
   ];
   const ADMIN_ACTIONS = [];  // the sensor list opens with any user code (or the installer code); the card has no info page
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -239,7 +252,9 @@
       const key = this._snapshotKey();
       if (key === this._key) return;
       this._key = key;
-      if (!this._p() || this._p().unlocked === false) this._ui.unlocked = false;
+      // Right after entering the code the answer of Home Assistant can still be on its way: do not forget the unlock then.
+      if (!this._waitingForUnlock() && (!this._p() || this._p().unlocked === false)) this._ui.unlocked = false;
+      if (this._p() && this._p().unlocked) this._ui.waitUnlock = 0;
       this._route();
       this._render();
     }
@@ -364,6 +379,9 @@
       const p = this._p();
       return !!this._info && this._info.linked && this._stateKnown() && this._linked() && !p.blocked;
     }
+    _waitingForUnlock() {
+      return !!this._ui.waitUnlock && Date.now() - this._ui.waitUnlock < 5000;
+    }
     _unlockedNow() {
       const p = this._p();
       return this._ui.unlocked && !!p && !!p.unlocked;
@@ -380,19 +398,43 @@
       const p = this._p();
       return this._usable() && p.sensor_list !== "never";
     }
-    _rows() {
+    // All sensors with their partition ("" = always on: fire, gas, water ... they belong to no partition).
+    _allRows() {
       const p = this._p();
-      const sel = this._sel();
-      // More than one partition: the list of all of them, narrowed to the partition on screen (safety sensors are in all).
       const many = this._multi() && p && p.sensors_all;
       return String((many ? p.sensors_all : p && p.sensors) || "")
         .split("\n")
         .map((line) => line.split("|"))
         .filter((f) => f.length >= 4)
-        .map((f) => ({ name: f[0], entity: f[1], status: f[2], bypassable: f[3] === "1", partition: f[4] || "" }))
-        .filter((r) => !many || !sel || sel.id === "all" || !r.partition || r.partition === sel.id);
+        .map((f) => ({ name: f[0], entity: f[1], status: f[2], bypassable: f[3] === "1", partition: f[4] || "" }));
+    }
+    _many() {
+      const p = this._p();
+      return !!(this._multi() && p && p.sensors_all);
+    }
+    _inPartition(r, sel) {
+      return !sel || sel.id === "all" ? !!r.partition : r.partition === sel.id;
+    }
+    // What the sensors page lists: the sensors of the partition on screen, without the always-on ones, or only those
+    // when "Always on" is chosen.
+    _rows() {
+      const rows = this._allRows();
+      if (!this._many()) return rows;
+      if (this._ui.always) return rows.filter((r) => !r.partition);
+      const sel = this._sel();
+      return rows.filter((r) => this._inPartition(r, sel));
+    }
+    _hasAlwaysOn() {
+      return this._many() && this._allRows().some((r) => !r.partition);
     }
     _openTotal() {
+      // The button counts what is open on this partition and in the always-on sensors, whichever is shown.
+      const all = this._allRows();
+      if (all.length) {
+        const sel = this._sel();
+        const mine = this._many() ? all.filter((r) => !r.partition || this._inPartition(r, sel)) : all;
+        return mine.filter((r) => r.status === "open" || r.status === "waiting").length;
+      }
       const rows = this._rows();
       if (rows.length) return rows.filter((r) => r.status === "open" || r.status === "waiting").length;
       return Number(this._pv("open_count") || 0);
@@ -531,6 +573,7 @@
         // disarm, then the keypad comes back by itself.
         this._ui.keypad = null;
         this._ui.view = "main";
+        this._ui.always = false;
         this._ui.unlocked = false;
         this._route();
         this._render();
@@ -596,7 +639,7 @@
           this._flash(refused.text);
           return;
         }
-        const text = this._localError(raw);
+        const text = this._localError(raw, action);
         if (this._ui.keypad) {
           this._ui.keypad.code = "";
           this._ui.keypad.error = text;
@@ -612,9 +655,11 @@
     }
     // Home Assistant answers in its own language; Vigil's known refusals are shown in the language of the panel.
     // The phrases must keep matching translations/*.json (a test checks that).
-    _localError(raw) {
+    _localError(raw, action = "") {
       for (const [phrases, key] of ERROR_ROWS) {
         if (!phrases.some((x) => raw.includes(x))) continue;
+        // the name of the mode that was pressed, as it is on the button
+        if (key === "err_mode_not_allowed") return this.tr(key).replace("{m}", String(action).startsWith("arm_") ? this.tr(action.slice(4)) : "");
         if (key !== "err_locked") return this.tr(key);
         const m = raw.match(/\d+/);
         return m ? this.tr("err_locked_pre") + m[0] + this.tr("err_locked_post") : this.tr("err_locked");
@@ -628,6 +673,8 @@
       if (action === "unlock") {
         this._ui.unlocked = true;
         this._ui.view = "sensors";
+        this._ui.waitUnlock = Date.now();
+        setTimeout(() => this._render(), 5100);
       }
       this._render();
     }
@@ -699,7 +746,8 @@
       const root = this.shadowRoot;
       const keypad = this._ui.keypad;
       const sensorsView = this._ui.view === "sensors" && this._sensorsVisible() && this._usable();
-      if (this._ui.view === "sensors" && !sensorsView) this._ui.view = "main";
+      // The list opens as soon as the state with the unlock arrives; until then (a moment) the main page stays.
+      if (this._ui.view === "sensors" && !sensorsView && !this._waitingForUnlock()) this._ui.view = "main";
       const kind = this._kind();
       const c = COLORS[kind];
       const name = this._info && this._info.name ? esc(this._info.name) : "";
@@ -732,6 +780,21 @@
         const a = this._hass.states[this._info.all_entity] || {};
         items.push(chip("all", this.tr("all"), a.attributes && a.attributes.mixed === true ? "notready" : a.state));
       }
+      return `<div class="chips">${items.join("")}</div>`;
+    }
+
+    // On the sensors page: a button for each partition and "Always on" (the sensors that belong to no partition).
+    _sensorChips() {
+      if (!this._hass || !this._multi()) return "";
+      const sel = this._sel();
+      const on = (id) => (this._ui.always ? id === "always" : sel && sel.id === id);
+      const chip = (id, label, state, act) => `<button class="chip ${on(id) ? "on" : ""}" style="--c:${COLORS[state] || COLORS.none}" data-act="${act}" data-id="${esc(id)}"><span class="cdot"></span>${esc(label)}</button>`;
+      const items = this._parts().map((x) => chip(x.id, x.name, (this._hass.states[x.alarm] || {}).state, "spart"));
+      if (this._hasAll()) {
+        const a = this._hass.states[this._info.all_entity] || {};
+        items.push(chip("all", this.tr("all"), a.attributes && a.attributes.mixed === true ? "notready" : a.state, "spart"));
+      }
+      if (this._hasAlwaysOn()) items.push(chip("always", this.tr("always_on"), "none", "salways"));
       return `<div class="chips">${items.join("")}</div>`;
     }
 
@@ -815,7 +878,7 @@
         }).join("")
         : `<div class="empty">${esc(this.tr("no_sensors"))}</div>`;
       return `<div class="sens-head"><button class="back" data-act="back">${icon("back", 22)}<span>${esc(this.tr("back"))}</span></button>
-          <span class="kp-title">${esc(this.tr("sensors"))}</span></div>
+          <span class="kp-title">${esc(this.tr("sensors"))}</span></div>${this._sensorChips()}
         <div class="list">${list}</div>`;
     }
 
@@ -823,7 +886,14 @@
       ev.stopPropagation();
       this._touch();
       const act = el.dataset.act;
-      if (act === "part") {
+      if (act === "spart" || act === "salways") {
+        // On the sensors page: stay there, only the list changes.
+        if (act === "spart") this._ui.partition = el.dataset.id;
+        this._ui.always = act === "salways";
+        this._key = "";
+        this._render();
+      } else if (act === "part") {
+        this._ui.always = false;
         this._ui.partition = el.dataset.id;
         this._armReturn();
         this._ui.view = "main";
@@ -840,6 +910,7 @@
         } else this._start("unlock");
       } else if (act === "back") {
         this._ui.view = "main";
+        this._ui.always = false;
         this._ui.unlocked = false; // leaving the list forgets the unlock, like the panel does
         this._render();
       } else if (act === "cancel") this._closeKeypad();
@@ -904,7 +975,7 @@
     .chev { color: var(--muted); opacity: .7; }
     .badge { min-width: 26px; height: 26px; padding: 0 7px; box-sizing: border-box; border-radius: 13px; background: #F2B84B; color: #2A1D00;
       font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
-    .disarm { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 76px; border-radius: 22px;
+    .disarm { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 72px; border-radius: 22px;
       background: #4CCB8F; color: #07251A; font-size: 22px; font-weight: 800; }
     .force { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 60px; border-radius: 20px;
       border: 2px solid #F2B84B; color: #F2B84B; background: transparent; font-size: 19px; font-weight: 800; }
@@ -932,7 +1003,8 @@
     @container (min-width: 640px) {
       .grid { grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); align-items: stretch; }
       .grid.has-keypad .status { display: flex; }
-      .side .modes { flex: 1; } .side .mode, .side .disarm { flex: 1; }
+      /* No stretching of the buttons with the status card: the Disarm button is as high as a mode button and the
+         Sensors button follows right under the buttons. */
       .list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .title { font-size: 34px; }
       .ring { width: 180px; height: 180px; }

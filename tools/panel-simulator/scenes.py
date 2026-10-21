@@ -86,4 +86,10 @@ SCENES = [
     # The sensors page of a panel with partitions: the button at the top says whose sensors these are.
     ("part-sensors", "sensors", 'c.partition_list = "main|Huis|armed_away\\np_gar|Garage|disarmed\\nall||armed_away|mixed"; c.sel = "p_gar"; c.default_part = "p_gar"; c.part_total = 2; '
      'c.sensors = "Garagedeur|binary_sensor.gd|closed|1\\nGaragedeur (sabotage)|binary_sensor.gdt|closed|1\\nBeweging garage|binary_sensor.bg|open|1\\n";', 0, "", ""),
+    # More partitions than fit in the row: three at a time, with an arrow on each side.
+    ("part-six-first", "main", 'c.partition_list = "main|Huis|disarmed\\np_gar|Garage|armed_away\\np_wp|Werkplaats van Jan|armed_night\\np_gast|Gastenverblijf|disarmed\\np_tuin|Tuinhuis|disarmed\\np_zolder|Zolder|disarmed\\nall||disarmed|mixed"; c.sel = "main"; c.default_part = "main"; c.part_total = 6; c.modes_mask = 2;', 0, "", ""),
+    ("part-six-second", "main", 'c.partition_list = "main|Huis|disarmed\\np_gar|Garage|armed_away\\np_wp|Werkplaats van Jan|armed_night\\np_gast|Gastenverblijf|disarmed\\np_tuin|Tuinhuis|disarmed\\np_zolder|Zolder|disarmed\\nall||disarmed|mixed"; c.sel = "p_tuin"; c.default_part = "main"; c.part_total = 6; c.modes_mask = 2;', 0, "", ""),
+    # The sensors page: the sensors of one partition without the always-on ones, which are a choice of their own.
+    ("part-sensors-always", "sensors", 'c.partition_list = "main|Huis|armed_away\\np_gar|Garage|disarmed\\nall||armed_away|mixed"; c.sel = "p_gar"; c.default_part = "p_gar"; c.part_total = 2; c.sens_always = true; '
+     'c.sensors = "Garagedeur|binary_sensor.gd|closed|1\\n"; c.sensors_always = "Rookmelder hal|binary_sensor.smoke|closed|0\\nWaterlek keuken|binary_sensor.water|open|1\\n";', 0, "", ""),
 ]

@@ -158,7 +158,7 @@ def test_the_card_error_phrases_occur_in_the_translations_of_each_language():
 
     js = _card_source()
     rows = re.findall(r"\[\[((?:\"[^\"]+\",? ?)+)\], \"(err_\w+)\"\]", js)
-    assert len(rows) == 10
+    assert len(rows) == 11
     order = ("en", "nl", "de", "fr", "it", "es")
     assert set(order) == set(LANGUAGES)
     texts = {}
@@ -298,3 +298,21 @@ def test_the_overview_tiles_have_one_column_per_kind():
     assert len(re.findall(r'"[^"]+"', kinds)) == 8
     assert "repeat(8, minmax(0, 1fr))" in js
     assert js.count('class: "grid cols8') == 2  # the partition tiles and the count tiles
+
+
+def test_the_card_keeps_the_unlock_while_home_assistant_is_still_answering():
+    # After the code the list must open, also when the state with `unlocked` arrives a moment later: the card
+    # waits for it (max 5 s) instead of going back to the main page and forgetting what it knew.
+    card = (ROOT / "custom_components" / "vigil_alarm" / "frontend" / "vigil-card.js").read_text()
+    assert "_waitingForUnlock()" in card and "waitUnlock = Date.now()" in card
+    assert "!sensorsView && !this._waitingForUnlock()" in card
+    assert "if (!this._waitingForUnlock() && (!this._p() || this._p().unlocked === false))" in card
+
+
+def test_every_tab_of_the_admin_panel_has_an_address_of_its_own():
+    # 0.6.10: /vigil_alarm/<tab>, so back and forward switch between tabs (checked in a test browser: click, back, forward,
+    # a route from Home Assistant, an unknown tab = overview). Every tab change goes through one function.
+    panel = (ROOT / "custom_components" / "vigil_alarm" / "frontend" / "vigil-panel.js").read_text()
+    assert "history.pushState(null" in panel and '"location-changed"' in panel and 'addEventListener("popstate"' in panel
+    assert "removeEventListener(\"popstate\"" in panel and "set route(route)" in panel
+    assert "this._tab = " not in panel.replace("this._tab = tab;", "").replace('this._tab = "overview";', "")

@@ -113,6 +113,7 @@ static const Text TEXTS[] = {
     {"err_not_allowed", {"Dit paneel mag dit niet", "This panel may not do this", "Dieses Bedienteil darf das nicht", "Ce clavier n'a pas le droit de faire cela", "Questo pannello non puo farlo", "Este panel no puede hacer esto"}},
     {"err_no_installer_code", {"Stel eerst een installateurscode in Vigil in", "Set an installer code in Vigil first", "Lege zuerst in Vigil einen Installateurcode fest", "Definissez d'abord un code installateur dans Vigil", "Imposta prima un codice installatore in Vigil", "Define primero un codigo de instalador en Vigil"}},
     {"err_not_bypassable", {"Deze sensor kan niet worden omzeild", "This sensor cannot be bypassed", "Dieser Sensor kann nicht ueberbrueckt werden", "Ce capteur ne peut pas etre inhibe", "Questo sensore non puo essere escluso", "Este sensor no se puede anular"}},
+    {"err_mode_not_allowed", {"Modus {m} is door u niet toegestaan om in te schakelen", "Mode {m} is not allowed to be armed by you", "Der Modus {m} darf von Ihnen nicht scharfgeschaltet werden", "Le mode {m} ne peut pas etre active par vous", "La modalita {m} non puo essere inserita da lei", "El modo {m} no puede ser activado por usted"}},
     // sensor states
     {"st_closed", {"dicht", "closed", "geschlossen", "ferme", "chiuso", "cerrado"}},
     {"st_open", {"open", "open", "offen", "ouvert", "aperto", "abierto"}},
@@ -133,6 +134,7 @@ static const Text TEXTS[] = {
     {"nav_alarm", {"Alarm", "Alarm", "Alarm", "Alarme", "Allarme", "Alarma"}},
     {"nav_info", {"Info", "Info", "Info", "Infos", "Info", "Info"}},
     {"all", {"Alles", "All", "Alle", "Tout", "Tutto", "Todo"}},
+    {"always_on", {"Altijd aan", "Always on", "Immer aktiv", "Toujours actif", "Sempre attivo", "Siempre activo"}},
     {"mixed", {"Gemengd", "Mixed", "Gemischt", "Mixte", "Misto", "Mixto"}},
     {"only_this", {"alleen deze partitie", "only this partition", "nur diese Partition", "uniquement cette partition", "solo questa partizione", "solo esta particion"}},
     {"default_tag", {"standaard", "default", "Standard", "par defaut", "predefinita", "predeterminada"}},
@@ -196,6 +198,10 @@ struct Context {
   std::string faults;
   int problems = 0;       // number of problems (alarm entity or profile)
   std::string sensors;    // one "name|entity|status|bypassable" line per sensor
+  std::string sensors_always;     // the same for the always-on sensors (fire, gas, ...), when the panel has more than one partition
+  bool sens_always = false;       // the sensors page shows the always-on sensors instead of those of the partition
+  int chip_page = 0;              // the page of partition buttons at the top (with more than four partitions)
+  std::string page_sel;           // the partition the page was last set for, so a choice made elsewhere brings its page
   std::string message;    // an error to show for a while
   int refused_action = 0; // an arm action that Vigil refused because something stops it: the button "bypass and arm" repeats it
   bool force = false;     // the keypad is open for "bypass and arm"
@@ -245,6 +251,7 @@ inline const ErrorRow *error_rows(size_t &count) {
       {{"mag dit niet", "may not do this", "darf das nicht", "n'a pas le droit de faire cela", "non può farlo", "no puede hacer esto"}, "err_not_allowed"},
       {{"geen installateurscode", "no installer code", "keinen Installateurcode", "pas de code installateur", "non ha un codice installatore", "no tiene código de instalador"}, "err_no_installer_code"},
       {{"kan niet worden omzeild", "cannot be bypassed", "kann nicht überbrückt werden", "ne peut pas être inhibé", "non può essere escluso", "no se puede anular"}, "err_not_bypassable"},
+      {{"door u niet toegestaan", "not allowed to be armed by you", "von Ihnen nicht scharfgeschaltet", "ne peut pas être activé par vous", "non può essere inserita da lei", "no puede ser activado por usted"}, "err_mode_not_allowed"},
   };
   count = sizeof(rows) / sizeof(rows[0]);
   return rows;
@@ -252,7 +259,7 @@ inline const ErrorRow *error_rows(size_t &count) {
 
 // ---------------------------------------------------------------------------- small helpers
 
-inline std::string localize_error(const std::string &raw) {
+inline std::string localize_error(const std::string &raw, const std::string &mode_label = "") {
   size_t count = 0;
   const ErrorRow *rows = error_rows(count);
   for (size_t i = 0; i < count; i++) {
@@ -260,6 +267,13 @@ inline std::string localize_error(const std::string &raw) {
     for (int l = 0; l < LANGUAGE_COUNT && !found; l++) found = raw.find(rows[i].phrase[l]) != std::string::npos;
     if (!found) continue;
     std::string key = rows[i].key;
+    if (key == "err_mode_not_allowed") {
+      // "Mode {m} is not allowed ...": the name of the mode the person pressed, as it is on the button
+      std::string text = tr(rows[i].key);
+      const size_t at = text.find("{m}");
+      if (at != std::string::npos) text.replace(at, 3, mode_label);
+      return text;
+    }
     if (key != "err_locked") return tr(rows[i].key);
     // "Try again in 5 min": the number of minutes is the first number in the text
     size_t start = raw.find_first_of("0123456789");
@@ -379,6 +393,7 @@ inline std::vector<PartRow> part_rows(bool with_all) {
 }
 
 constexpr int MAX_PARTITIONS_SHOWN = 4;  // as many buttons fit in the row (and "All" besides)
+constexpr int PARTS_PER_PAGE = 3;        // with more partitions than that the row has arrows and shows three at a time
 
 inline int part_count() { return (int) part_rows(false).size(); }
 // Can the screen switch? More than one partition on this panel.
@@ -394,6 +409,7 @@ inline std::string sel_id() {
 }
 
 inline std::string sel_name() {
+  if (ctx.sens_always) return tr("always_on");
   const std::string id = sel_id();
   if (id == "all") return tr("all");
   for (const PartRow &r : part_rows(false))
@@ -407,7 +423,28 @@ inline bool mixed_now() {
                                              ctx.state == "armed_night" || ctx.state == "armed_vacation" || ctx.state == "armed_custom_bypass");
 }
 
-// The partition a button at the top stands for, "" if that button is not there: 0 to 3 the partitions, 4 "all".
+// More partitions than fit: the row gets an arrow on each side and shows PARTS_PER_PAGE of them at a time.
+inline bool parts_paged() { return part_count() > MAX_PARTITIONS_SHOWN; }
+inline int parts_per_page() { return parts_paged() ? PARTS_PER_PAGE : MAX_PARTITIONS_SHOWN; }
+inline int part_pages() {
+  const int n = part_count(), pp = parts_per_page();
+  return n <= 0 ? 1 : (n + pp - 1) / pp;
+}
+inline int chip_page_now() {
+  if (!parts_paged()) return 0;
+  return ctx.chip_page < 0 ? 0 : (ctx.chip_page >= part_pages() ? part_pages() - 1 : ctx.chip_page);
+}
+// The choice made somewhere else (the other page, a restart of the screen) brings its own page into view.
+inline void sync_chip_page() {
+  if (!parts_paged() || ctx.page_sel == sel_id()) return;
+  ctx.page_sel = sel_id();
+  const std::vector<PartRow> rows = part_rows(false);
+  for (size_t i = 0; i < rows.size(); i++)
+    if (rows[i].id == ctx.page_sel) ctx.chip_page = (int) i / parts_per_page();
+}
+
+// The partition a button at the top stands for, "" if that button is not there: 0 to 3 the partitions (0 to 2 with
+// arrows, on the page shown), 4 "all".
 inline std::string chip_target(int index) {
   if (!parts_switch()) return "";
   if (index == MAX_PARTITIONS_SHOWN) {
@@ -416,19 +453,21 @@ inline std::string chip_target(int index) {
     return "";
   }
   std::vector<PartRow> rows = part_rows(false);
-  return index >= 0 && index < MAX_PARTITIONS_SHOWN && index < (int) rows.size() ? rows[index].id : "";
+  const int at = chip_page_now() * parts_per_page() + index;
+  return index >= 0 && index < parts_per_page() && at < (int) rows.size() ? rows[at].id : "";
 }
 
 // The partition after the one on screen, in the order of the buttons (the partitions, then "all"), round again: the
 // button on the sensors page steps through them. "" when there is nothing to step to.
 inline std::string next_part_id() {
   std::vector<std::string> order;
-  for (int i = 0; i <= MAX_PARTITIONS_SHOWN; i++) {
-    const std::string t = chip_target(i);
-    if (!t.empty()) order.push_back(t);
-  }
+  for (const PartRow &r : part_rows(false)) order.push_back(r.id);
+  if (order.size() > 1)
+    for (const PartRow &r : part_rows(true))
+      if (r.id == "all") order.push_back("all");
+  if (!ctx.sensors_always.empty()) order.push_back("always");  // the sensors that belong to no partition
   if (order.size() < 2) return "";
-  const std::string now = sel_id();
+  const std::string now = ctx.sens_always ? std::string("always") : sel_id();
   for (size_t i = 0; i < order.size(); i++)
     if (order[i] == now) return order[(i + 1) % order.size()];
   return order[0];
@@ -454,9 +493,8 @@ struct SensorRow {
   bool bypassable = false;
 };
 
-inline std::vector<SensorRow> sensor_rows() {
+inline std::vector<SensorRow> sensor_rows_of(const std::string &text) {
   std::vector<SensorRow> rows;
-  const std::string &text = ctx.sensors;
   size_t start = 0;
   while (start <= text.size()) {
     size_t end = text.find('\n', start);
@@ -481,6 +519,9 @@ inline std::vector<SensorRow> sensor_rows() {
   }
   return rows;
 }
+
+// What the sensors page lists: the sensors of the partition on screen, or the always-on ones.
+inline std::vector<SensorRow> sensor_rows() { return sensor_rows_of(ctx.sens_always ? ctx.sensors_always : ctx.sensors); }
 
 constexpr int ROWS_PER_PAGE = 5;
 
@@ -523,7 +564,17 @@ inline int open_count() {
 
 // How many sensors are open: counted from the list when Vigil sent the names, otherwise the number
 // Vigil sent. The number is always there; the names are only there while this panel may show them.
-inline int open_total_count() { return sensor_rows().empty() ? ctx.open_total : open_count(); }
+inline int open_total_count() {
+  // The partition on screen and the always-on sensors together, whichever of them the page shows.
+  std::vector<SensorRow> rows = sensor_rows_of(ctx.sensors);
+  const std::vector<SensorRow> always = sensor_rows_of(ctx.sensors_always);
+  rows.insert(rows.end(), always.begin(), always.end());
+  if (rows.empty()) return ctx.open_total;
+  int n = 0;
+  for (const SensorRow &r : rows)
+    if (r.status == "open" || r.status == "waiting") n++;
+  return n;
+}
 
 // Did the installer code unlock this panel, and does Vigil still agree?
 inline bool unlocked_now() { return ctx.sensors_unlocked && ctx.profile_unlocked; }

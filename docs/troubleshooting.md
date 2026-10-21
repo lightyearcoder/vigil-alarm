@@ -62,6 +62,10 @@ Find what you see below. For each symptom: the likely causes, where to check, an
 - The sensor needs a **battery sensor**. *Ready for use?* names sensors without one. A device that only reports "battery low" (on/off) works too.
 - If the device has a **tamper sensor**, enter it on the sensor. The card names tamper sensors that are not connected to anything.
 
+## A refusal is in English, or in another language than I expected
+
+When a standard Home Assistant card (for example the tile with the arm buttons) shows a refusal, the text is in the language **Home Assistant is set to** (*Settings, System, General*), not in the language of your profile, and without a user name: *Mode Custom is not allowed to be armed by you.* Vigil has the texts in six languages (English for any other). The Vigil card and the touch panel show the refusal in the language of the panel.
+
 ## The entities are named differently than I expected
 
 Vigil's entity ids always end in the English name, also when Home Assistant is set to another language (for example `binary_sensor.vigil_alarm_intrusion_alarm`). What you see in the interface follows your own language. Check the real names under *Settings → Devices & services → Vigil Alarm*. If you come from an older version, update your automations and dashboards to the new ids (see the release notes).

@@ -194,7 +194,7 @@ def test_the_error_phrases_of_the_panel_and_the_card_match_vigils_own_texts():
     card = (ROOT / "custom_components/vigil_alarm/frontend/vigil-card.js").read_text(encoding="utf-8")
     rows = re.findall(r'\{\{([^}]*)\}, "(err_[a-z_]+)"\}', header)
     card_rows = re.findall(r'\[\[([^\]]*)\], "(err_[a-z_]+)"\]', card)
-    assert len(rows) == len(card_rows) == 10
+    assert len(rows) == len(card_rows) == 11
 
     def phrases(row):
         return re.findall(r'"((?:[^"\\]|\\.)*)"', row[0])
@@ -278,3 +278,28 @@ def test_the_info_page_says_whether_a_panel_key_is_set_and_never_shows_it():
     for key in ("panel_key", "key_set", "key_not_set"):
         row = re.search(r'\{"%s", \{(.*)\}\},' % key, header)
         assert row and len(re.findall(r'"[^"]*"', row.group(1))) == 6  # one text per language
+
+
+def test_the_panel_has_arrows_for_many_partitions_and_a_list_of_always_on_sensors():
+    yaml = (ROOT / "esphome/vigil_alarm/vigil-panel.yaml").read_text(encoding="utf-8")
+    header = (ROOT / "esphome/vigil_alarm/vigil_panel.h").read_text(encoding="utf-8")
+    # arrows on both sides of the partition buttons, shown only when there are more partitions than fit
+    for name in ("chip_prev", "chip_next"):
+        assert f"id: {name}" in yaml and f"id({name})" in yaml
+    assert "parts_paged()" in header and "PARTS_PER_PAGE = 3" in header and "sync_chip_page()" in yaml
+    # the always-on sensors: their own attribute, own list, and a step of the button on the sensors page
+    assert "attribute: sensors_always" in yaml and "ctx.sensors_always" in yaml
+    assert 'order.push_back("always")' in header and 'partition == "always"' in yaml
+    # "always" is no partition: Vigil is not told about it
+    branch = yaml.split('lambda: return partition == "always";', 1)[1].split("lambda: return !partition.empty()", 1)[0]
+    assert "select_partition" not in branch
+    # the text is in all six languages
+    row = re.search(r'\{"always_on", \{(.*?)\}\}', header).group(1)
+    assert len(re.findall(r'"[^"]+"', row)) == 6
+
+
+def test_the_card_lists_the_always_on_sensors_apart():
+    card = (ROOT / "custom_components/vigil_alarm/frontend/vigil-card.js").read_text(encoding="utf-8")
+    assert "_sensorChips()" in card and '"salways"' in card and card.count("always_on:") == 6
+    # the list of a partition has no row without a partition; those are the "Always on" choice
+    assert "_inPartition(r, sel)" in card and "filter((r) => !r.partition)" in card

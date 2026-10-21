@@ -317,7 +317,7 @@
       "message": "L'allarme si sta ancora avviando."
     },
     "mode_not_allowed": {
-      "message": "{user} non può inserire nella modalità {mode}."
+      "message": "La modalità {mode} non può essere inserita da lei."
     },
     "arm_refused": {
       "message": "Inserimento rifiutato: {reason} ({sensors})."
@@ -377,7 +377,7 @@
       "message": "Partizione sconosciuta."
     },
     "partition_not_allowed": {
-      "message": "{user} non può usare la partizione {partition}."
+      "message": "La partizione {partition} non può essere usata da lei."
     },
     "panel_key_wrong": {
       "message": "Il pannello {panel} non ha inviato la sua chiave, o ne ha inviata una sbagliata."

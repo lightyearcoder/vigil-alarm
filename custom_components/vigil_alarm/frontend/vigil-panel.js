@@ -261,15 +261,57 @@ class VigilPanel extends HTMLElement {
   }
   set narrow(v) { this._narrow = v; this._renderHeader(); }
   set panel(_) {}
-  set route(_) {}
+  // Home Assistant tells which part of the address is ours ("/vigil_alarm/sensor": prefix and path); that is the tab.
+  set route(route) {
+    this._route = route;
+    this._showTabOfAddress(route && typeof route.path === "string" ? route.path : null);
+  }
+
+  // Every tab has an address of its own (/vigil_alarm/sensor), so the browser's back and forward buttons switch
+  // between the tabs you looked at.
+  _tabOfPath(path) {
+    const name = String(path || "").split("/").filter(Boolean).pop();
+    return TABS.includes(name) ? name : "overview";
+  }
+  _basePath() {
+    const prefix = this._route && typeof this._route.prefix === "string" && this._route.prefix ? this._route.prefix : "/vigil_alarm";
+    return prefix.replace(/\/+$/, "");
+  }
+  _showTabOfAddress(path) {
+    // Back or forward to a page of Home Assistant that is not ours: nothing to do here (the panel is being replaced).
+    if (path === null && !location.pathname.startsWith(this._basePath())) return;
+    const now = path !== null ? path : location.pathname.slice(this._basePath().length);
+    const tab = this._tabOfPath(now);
+    if (tab === this._tab) return;
+    this._applyTab(tab);
+  }
+  _applyTab(tab) {
+    this._tab = tab;
+    if (tab === "log") this._logNode = null;
+    if (tab === "about") { this._about = null; this._markVersionSeen(); }
+    if (this._root && this._data) { this._renderNav(); this._renderBody(); }
+  }
+  _setTab(tab) {
+    const url = this._basePath() + (tab === "overview" ? "" : "/" + tab);
+    if (location.pathname !== url) {
+      try {
+        history.pushState(null, "", url);
+        window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));  // like Home Assistant's own navigation
+      } catch (err) { /* no history: the tab still switches */ }
+    }
+    this._applyTab(tab);
+  }
 
   get t() { return TXT[panelLanguage(this._hass && this._hass.language)]; }
 
   connectedCallback() {
+    this._onPop = () => this._showTabOfAddress(null);
+    window.addEventListener("popstate", this._onPop);
     if (this._hass && this._data) this._subscribe();
   }
 
   disconnectedCallback() {
+    window.removeEventListener("popstate", this._onPop);
     if (this._unsub) { this._unsub.then((u) => u && u()).catch(() => {}); this._unsub = null; }
   }
 
@@ -371,7 +413,7 @@ class VigilPanel extends HTMLElement {
     const nav = el("nav", {}, TABS.map((tab) => {
       const count = KINDS.includes(tab) && this._data ? this._shown(tab).length : null;
       const fresh = tab === "about" && this._tab !== "about" && this._newVersion();
-      return el("button", { class: tab === this._tab ? "active" : "", onclick: () => { this._tab = tab; if (tab === "log") this._logNode = null; if (tab === "about") { this._about = null; this._markVersionSeen(); } this._renderNav(); this._renderBody(); } },
+      return el("button", { class: tab === this._tab ? "active" : "", onclick: () => this._setTab(tab) },
         t.tabs[tab], count !== null ? el("span", { class: "count", text: `(${count})` }) : null,
         fresh ? el("span", { class: "badge ok", style: "margin-left:6px", text: t.whatsNew }) : null,
         tab === "sensor" && this._newSensors().length ? el("span", { class: "badge warn", style: "margin-left:6px", text: fill(t.newSensors.badge, { n: this._newSensors().length }) }) : null);
@@ -543,7 +585,7 @@ class VigilPanel extends HTMLElement {
         el("td", { text: c.group.title }),
         el("td", { class: "muted", text: c.sensors.length ? c.sensors.map((x) => x.title).join(", ") : fill(t.sensorsCount, { n: 0 }) })));
     });
-    const head = el("thead", {}, el("tr", {}, el("th", { text: "" }), el("th", { text: C.groups }), el("th", { text: C.sensors })));
+    const head = el("thead", {}, el("tr", {}, el("th", { text: C.mode }), el("th", { text: C.groups }), el("th", { text: C.sensors })));
     return el("div", { class: "card" }, el("h2", { text: this._partitionName(pid) }),
       el("div", { class: "tablewrap" }, el("table", { class: "even cover" }, head, el("tbody", {}, rows))));
   }
@@ -574,7 +616,7 @@ class VigilPanel extends HTMLElement {
           await this._load();
           try { await this._hass.callService("vigil_alarm", "test_notification", { channel: res.title }); } catch (err) { /* shown by the toast below */ }
           this._toast(fill(r.phoneAdded, { name: res.title }));
-        } })), el("button", { class: "btn", text: r.go, onclick: () => { this._tab = "notification"; this._renderBody(); } }));
+        } })), el("button", { class: "btn", text: r.go, onclick: () => this._setTab("notification") }));
       }
       if (f.go === "create_groups") {
         return el("button", { class: "btn", text: r.createGroups, onclick: async () => {
@@ -582,7 +624,7 @@ class VigilPanel extends HTMLElement {
           if (res.ok) { this._toast(r.groupsMade); await this._load(); }
         } });
       }
-      return el("button", { class: "btn", text: r.go, onclick: () => { this._tab = f.go; this._renderBody(); } });
+      return el("button", { class: "btn", text: r.go, onclick: () => this._setTab(f.go) });
     };
     const row = (f) => el("li", { class: "readyrow" },
       el("span", { class: "badge " + (f.level === "problem" ? "bad" : "warn"), text: f.level === "problem" ? r.problem : r.advice }),
@@ -922,7 +964,7 @@ class VigilPanel extends HTMLElement {
               el("div", { class: "pstate", text: live ? this._stateText(live) : t.none }),
               el("div", { class: "muted", text: live && live.mode ? (t.mode[live.mode] || live.mode) : "\u00a0" }))])),
       el("div", { class: "grid cols8" },
-        ...KINDS.map((k) => el("div", { class: "card", style: "cursor:pointer", onclick: () => { this._tab = k; this._renderBody(); } },
+        ...KINDS.map((k) => el("div", { class: "card", style: "cursor:pointer", onclick: () => this._setTab(k) },
           el("h2", { text: t.tabs[k] }), el("div", { class: "stat", text: String(this._shown(k).length) })))),
       this._wizardCard(),
       this._newSensorsCard(),
@@ -1000,7 +1042,7 @@ class VigilPanel extends HTMLElement {
       ];
       case "notification": return [
         [C.name, (i) => i.title],
-        [C.service, (i) => String(i.data.service).includes(".") ? i.data.service : `notify.${i.data.service}`],
+        [C.service, (i) => this._channelServices(i.data).map((x) => (x.includes(".") ? x : `notify.${x}`)).join(", ")],
         [C.categories, (i) => this._optList("categories", i.data.categories)],
         [C.delay, (i) => (i.data.delay ? `${i.data.delay} s` : t.immediately)],
         ...(this._multiple() ? [[C.partitions, (i) => this._partitionList(i.data.partitions)]] : []),
@@ -1632,12 +1674,19 @@ class VigilPanel extends HTMLElement {
     }, true);
   }
 
+  // The notify services of a channel: the list, or the one service an older channel was saved with.
+  _channelServices(data) {
+    if (Array.isArray(data.services)) return data.services.filter(Boolean);
+    return data.service ? [data.service] : [];
+  }
+
   _openForm(kind, item, copy = false, prefill = null) {
     const t = this.t;
     // Without a second partition the fields about partitions are left out: there is nothing to choose.
     const schema = this._data.forms[kind].filter((f) => !["partition", "partitions", "default_partition"].includes(f.type) || this._multiple());
     const initial = item ? { name: item.title, ...item.data } : {};
     if (item && item.data && item.data.cls === "tamper") initial.tamper_partition = item.data.partition || "all";
+    if (kind === "notification") { initial.services = this._channelServices(initial); delete initial.service; }
     if (copy) initial.name = item.title + t.copySuffix;
     if (prefill) Object.assign(initial, prefill);
     const editing = item && !copy;
@@ -1979,12 +2028,16 @@ class VigilPanel extends HTMLElement {
         return wrap(select);
       }
       case "notify": {
+        // One or more services: several people get the same message from one channel. A service that is not in the
+        // list (gone, or a notify group chosen in an older version) stays visible so it can be unticked.
         const services = [...this._data.notify_services];
-        if (state[key] && !services.includes(state[key])) services.push(state[key]);
-        const select = el("select", { onchange: (e) => { state[key] = e.target.value; } },
-          el("option", { value: "", text: "—" }),
-          services.map((s) => el("option", { value: s, selected: state[key] === s, text: s.includes(".") ? s : `notify.${s}` })));
-        return wrap(select);
+        for (const s of state[key] || []) if (!services.includes(s)) services.push(s);
+        const current = new Set(state[key] || []);
+        return wrap(el("div", { class: "checks" }, services.map((s) => el("label", {},
+          el("input", { type: "checkbox", checked: current.has(s), onchange: (e) => {
+            if (e.target.checked) current.add(s); else current.delete(s);
+            state[key] = services.filter((x) => current.has(x));
+          } }), s.includes(".") ? s : `notify.${s}`))));
       }
       case "entity": {
         const id = listId(key);

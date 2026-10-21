@@ -114,7 +114,7 @@ async def test_a_phone_is_offered_as_the_first_channel_and_added_with_the_usual_
     assert res["result"] == {"ok": True, "id": res["result"]["id"], "title": "Annas Phone"}
     await hass.async_block_till_done()
     chan = next(i for i in items_of(hass.config_entries.async_entries(DOMAIN)[0]).values() if i.title == "Annas Phone")
-    assert chan.data["service"] == "mobile_app_annas_phone"
+    assert chan.data["services"] == ["mobile_app_annas_phone"]
     assert set(chan.data["categories"]) == {"alarm", "pending", "fault", "technical"}
     # the channel exists now: no more problem, and that phone is not offered again
     again = await _ws(client, type="vigil_alarm/readiness")

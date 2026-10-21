@@ -9,13 +9,15 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_ENTITY_ID, Platform
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ConfigEntryError, ServiceValidationError
+from homeassistant.exceptions import ConfigEntryError
+
 from homeassistant.helpers import config_validation as cv, device_registry as dr, entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
 from .const import ATTR_SENSOR, DOMAIN, MODES, SERVICE_ACKNOWLEDGE, SERVICE_ARM, SERVICE_BYPASS, SERVICE_CHECK_CODE, SERVICE_DISARM, SERVICE_SILENCE, SERVICE_TEST_NOTIFICATION, SERVICE_TEST_SIREN, SERVICE_UNBYPASS, SERVICE_UNLOCK_PANEL, SERVICE_SELECT_PARTITION
+from .errors import VigilError, async_prepare
 from .manager import SIGNAL_UPDATE, VigilManager
 from .migration import async_migrate_entry  # noqa: F401  (Home Assistant looks it up here)
 from homeassistant.helpers.storage import Store
@@ -73,7 +75,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                     source=call.data.get("source"), user_id=call.context.user_id,
                 )
                 return
-        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="unknown_sensor")
+        raise VigilError(translation_domain=DOMAIN, translation_key="unknown_sensor")
 
     async def bypass(call: ServiceCall) -> None:
         await _handle(call, bypass=True)
@@ -150,7 +152,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 found = True
                 await entry.runtime_data.panels.async_unlock_with_code(call.data["code"], source, call.data["scope"])
         if not found:
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="unknown_panel")
+            raise VigilError(translation_domain=DOMAIN, translation_key="unknown_panel")
 
     # The panel sends a code; Vigil checks it. A Home Assistant action, but it only opens the
     # sensor list and the information pages for a short time and never disarms.
@@ -173,7 +175,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 found = True
                 entry.runtime_data.panels.select(call.data["source"], call.data["partition"])
         if not found:
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="unknown_panel")
+            raise VigilError(translation_domain=DOMAIN, translation_key="unknown_panel")
 
     # A panel that can switch between partitions says which one it shows. It changes what the panel gets to see
     # (its profile) and nothing else: arming and disarming still name the partition and need a code.
@@ -187,14 +189,14 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
             sent += await entry.runtime_data.notifier.async_test(call.data.get("channel"))
         if not sent:
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="no_channels")
+            raise VigilError(translation_domain=DOMAIN, translation_key="no_channels")
 
     async def test_siren(call: ServiceCall) -> None:
         sounded = 0
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
             sounded += await entry.runtime_data.sirens.async_test(call.data.get("siren"), call.data["duration"])
         if not sounded:
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="no_sirens")
+            raise VigilError(translation_domain=DOMAIN, translation_key="no_sirens")
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
             entry.runtime_data.selftest.record_siren_test("manual")
 
@@ -228,6 +230,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> bool:
+    await async_prepare(hass)  # the texts of the errors, in the language of Home Assistant
     try:
         manager = VigilManager(hass, entry)
     except ConfigError as err:

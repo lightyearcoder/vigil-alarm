@@ -17,13 +17,12 @@ from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers.event import async_call_later
 from homeassistant.util import dt as dt_util
 
-from .items import items_of
+from .items import channel_services, items_of
 from .const import (
     CONF_CATEGORIES,
     CONF_DELAY,
     CONF_PARTITIONS,
     CONF_PRIORITY,
-    CONF_SERVICE,
     DEFAULT_CATEGORIES,
     SUBENTRY_NOTIFICATION,
 )
@@ -74,7 +73,7 @@ ENDING = {"disarmed", "trigger_ended"}
 class Channel:
     id: str
     name: str
-    service: str
+    services: tuple[str, ...]
     categories: frozenset[str]
     delay: float
     priority: bool
@@ -94,7 +93,7 @@ class Notifier:
                 Channel(
                     sid,
                     sub.title,
-                    d[CONF_SERVICE],
+                    tuple(channel_services(d)),
                     frozenset(d.get(CONF_CATEGORIES, DEFAULT_CATEGORIES)),
                     float(d.get(CONF_DELAY, 0)),
                     bool(d.get(CONF_PRIORITY, False)),
@@ -245,15 +244,25 @@ class Notifier:
         self.hass.async_create_task(self._async_send(channel, message, category))
 
     async def _async_call(self, channel: Channel, data: dict[str, Any]) -> None:
-        """Send through a notify service, or to a notify entity (a value with a dot is an entity id, for example a
-        notify group made as a helper). An entity takes a title and a message only: no app specific data."""
-        if "." in channel.service:
-            payload = {"entity_id": channel.service, "message": data["message"]}
+        """Send through every notify service of the channel. One that fails does not stop the others; the
+        failure is logged and published, and shows as `notification_failed` with the service."""
+        for service in channel.services:
+            try:
+                await self._async_call_one(service, data)
+            except Exception as err:  # noqa: BLE001 - any failing service must not break the alarm
+                _LOGGER.error("Notification via notify.%s failed: %s", service, err)
+                self.manager.publish("notification_failed", channel=channel.name, service=service, error=str(err))
+
+    async def _async_call_one(self, service: str, data: dict[str, Any]) -> None:
+        """One notify service. A value with a dot is a notify entity (a channel saved when those were offered, a
+        notify group made as a helper): it still works, with a title and a message only."""
+        if "." in service:
+            payload = {"entity_id": service, "message": data["message"]}
             if data.get("title"):
                 payload["title"] = data["title"]
             await self.hass.services.async_call("notify", "send_message", payload, blocking=True)
         else:
-            await self.hass.services.async_call("notify", channel.service, data, blocking=True)
+            await self.hass.services.async_call("notify", service, data, blocking=True)
 
     async def _async_send(self, channel: Channel, message: str, category: str) -> None:
         data: dict[str, Any] = {"title": text(self._lang(), "title"), "message": message}
@@ -264,11 +273,7 @@ class Notifier:
                 "ttl": 0,
                 "priority": "high",
             }
-        try:
-            await self._async_call(channel, data)
-        except Exception as err:  # noqa: BLE001 - any failing service must not break the alarm
-            _LOGGER.error("Notification via notify.%s failed: %s", channel.service, err)
-            self.manager.publish("notification_failed", channel=channel.name, error=str(err))
+        await self._async_call(channel, data)
 
     async def async_send_reminder(self, key: str) -> int:
         """The test reminder, to every channel that gets fault messages.
@@ -281,15 +286,16 @@ class Notifier:
         for channel in self.channels:
             if "fault" not in channel.categories:
                 continue
-            data: dict[str, Any] = {"title": text(lang, "title"), "message": text(lang, key)}
-            if channel.service.startswith("mobile_app_"):
-                data["data"] = {"tag": "vigil_selftest", "actions": [{"action": "VIGIL_TEST_SIREN", "title": text(lang, "selftest_action")}]}
             sent += 1
-            try:
-                await self._async_call(channel, data)
-            except Exception as err:  # noqa: BLE001
-                _LOGGER.error("Notification via notify.%s failed: %s", channel.service, err)
-                self.manager.publish("notification_failed", channel=channel.name, error=str(err))
+            for service in channel.services:
+                data: dict[str, Any] = {"title": text(lang, "title"), "message": text(lang, key)}
+                if service.startswith("mobile_app_"):
+                    data["data"] = {"tag": "vigil_selftest", "actions": [{"action": "VIGIL_TEST_SIREN", "title": text(lang, "selftest_action")}]}
+                try:
+                    await self._async_call_one(service, data)
+                except Exception as err:  # noqa: BLE001
+                    _LOGGER.error("Notification via notify.%s failed: %s", service, err)
+                    self.manager.publish("notification_failed", channel=channel.name, service=service, error=str(err))
         return sent
 
     async def async_send_problem(self, problems: str) -> None:

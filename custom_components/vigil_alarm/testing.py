@@ -16,7 +16,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.core import CALLBACK_TYPE, callback
-from homeassistant.exceptions import ServiceValidationError
+from .errors import VigilError
 from homeassistant.helpers.event import async_call_later
 from homeassistant.util import dt as dt_util
 
@@ -31,7 +31,7 @@ WALKTEST_MINUTES = 15
 
 def _needs_disarmed(manager: VigilManager, key: str) -> None:
     if not manager.all_disarmed:
-        raise ServiceValidationError(translation_domain=DOMAIN, translation_key=key)
+        raise VigilError(translation_domain=DOMAIN, translation_key=key)
 
 
 class Practice:
@@ -110,7 +110,7 @@ class WalkTest:
             return
         _needs_disarmed(self.manager, "walktest_needs_disarmed")
         if not self._sensors():
-            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="walktest_no_sensors")
+            raise VigilError(translation_domain=DOMAIN, translation_key="walktest_no_sensors")
         self.seen = set()
         self.until = dt_util.utcnow().timestamp() + WALKTEST_MINUTES * 60
         self._timer = async_call_later(self.hass, WALKTEST_MINUTES * 60, self._expire)

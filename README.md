@@ -74,10 +74,6 @@ The core decides and publishes events; it never calls a device itself. Only the 
   <img src="docs/images/panel-overview.png" alt="The Vigil admin panel: overview" width="760">
 </p>
 
-<p align="center">
-  <img src="docs/images/panel-overview.png" alt="The Vigil admin panel: overview" width="760">
-</p>
-
 ## Installation
 
 ### With HACS (recommended)

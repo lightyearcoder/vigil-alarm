@@ -1,6 +1,6 @@
 [project]
 name = "vigil-alarm"
-version = "0.6.9"
+version = "0.6.10"
 description = "Vigil Alarm: a modular alarm system for Home Assistant"
 requires-python = ">=3.12"
 license = "GPL-3.0-or-later"

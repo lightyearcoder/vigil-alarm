@@ -3,7 +3,8 @@ from __future__ import annotations
 import pytest
 from homeassistant.config_entries import SOURCE_USER
 from homeassistant.data_entry_flow import FlowResultType, InvalidData
-from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.exceptions import HomeAssistantError
+from custom_components.vigil_alarm.errors import VigilError as ServiceValidationError
 from pytest_homeassistant_custom_component.common import async_mock_service
 
 from .common import EVENTS, PANEL, make_entry, sub
@@ -177,16 +178,55 @@ async def test_a_lockout_is_reported_on_the_fault_channels(hass):
     assert _messages(calls) == ["Too many wrong codes at panel garage: locked for 5 minutes"]
 
 
-async def test_a_notify_entity_such_as_a_notify_group_can_be_a_channel(hass):
-    """Release 0.5.5: a notify entity (for example a notify group made as a helper) is offered and receives the
-    message through `notify.send_message`, with a title and a message only."""
+async def test_notify_groups_are_not_offered_but_an_older_channel_with_one_keeps_working(hass):
+    """0.6.10: notify entities (groups made as a helper) are not offered any more, because they cannot send an alarm
+    with a high priority; a channel saved with one in 0.5.5 to 0.6.9 still sends, with a title and a message."""
     from custom_components.vigil_alarm.editing import notify_services
 
     calls = async_mock_service(hass, "notify", "send_message")
     hass.states.async_set("notify.family", "unknown")
     await _house(hass, channel(sid="grp", name="Family", service="notify.family", priority=True))
-    assert "notify.family" in notify_services(hass)  # offered next to the services, by entity id
+    assert "notify.family" not in notify_services(hass)
     await _call(hass, "alarm_arm_home", code="1234")
     assert [c.data["message"] for c in calls] == ["Armed (home) by Anna"]
     assert calls[0].data["entity_id"] == "notify.family" and calls[0].data["title"] == "Vigil Alarm"
     assert "data" not in calls[0].data  # no app specific data for an entity
+
+
+async def test_a_channel_can_have_several_services_and_one_that_fails_does_not_stop_the_others(hass):
+    """0.6.10: several people get the same message from one channel; a failing service is reported and the rest go on."""
+    anna = async_mock_service(hass, "notify", "mobile_app_anna")
+    bob = async_mock_service(hass, "notify", "mobile_app_bob")
+    broken = async_mock_service(hass, "notify", "mobile_app_broken", raise_exception=RuntimeError("offline"))
+    item = sub("notification", "Family", {"services": ["mobile_app_broken", "mobile_app_anna", "mobile_app_bob"],
+                                          "categories": ["alarm", "arming"], "delay": 0, "priority": True}, "fam")
+    await _house(hass, item)
+    await _call(hass, "alarm_arm_home", code="1234")
+    await hass.async_block_till_done()
+    assert [c.data["message"] for c in anna] == ["Armed (home) by Anna"] == [c.data["message"] for c in bob]
+    assert len(broken) == 1
+    attrs = hass.states.get(EVENTS).attributes
+    assert attrs["event_type"] == "notification_failed" and attrs["channel"] == "Family" and attrs["service"] == "mobile_app_broken"
+
+
+async def test_a_channel_is_saved_with_a_list_of_services(hass):
+    """The form gives `services` (or an older `service`); the channel keeps a list, every service must exist."""
+    import pytest
+
+    from custom_components.vigil_alarm.editing import EditError, async_prepare
+    from custom_components.vigil_alarm.items import channel_services
+
+    async_mock_service(hass, "notify", "mobile_app_anna")
+    async_mock_service(hass, "notify", "mobile_app_bob")
+    entry = await _house(hass)
+    raw = {"name": "Family", "categories": ["alarm"], "delay": 0}
+    _name, data = await async_prepare(hass, entry, "notification", None, {**raw, "services": ["mobile_app_anna", "mobile_app_bob", "mobile_app_anna"]})
+    assert data["services"] == ["mobile_app_anna", "mobile_app_bob"] and "service" not in data
+    _name, data = await async_prepare(hass, entry, "notification", None, {**raw, "service": "mobile_app_anna"})  # an older form
+    assert data["services"] == ["mobile_app_anna"]
+    for bad in ({"services": []}, {"services": ["mobile_app_anna", "notify.family"]}, {"services": ["nope"]}, {}):
+        with pytest.raises(EditError) as err:
+            await async_prepare(hass, entry, "notification", None, {**raw, **bad})
+        assert err.value.errors == {"services": "service_not_found"}
+    assert channel_services({"service": "mobile_app_anna"}) == ["mobile_app_anna"]
+    assert channel_services({"services": ["a", "b"], "service": "old"}) == ["a", "b"]
