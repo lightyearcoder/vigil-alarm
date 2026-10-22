@@ -49,7 +49,7 @@ Esta guía explica cómo configurar y usar Vigil Alarm. Para la instalación, co
 | **Sabotaje** | Vigila siempre. Un contacto de sabotaje que se abre dispara una alarma. |
 | **Agua** | Vigila siempre. Una *alarma técnica*: nunca cambia el estado de la alarma, solo publica eventos y un sensor de «alarma activa». |
 | **24 horas con sonido** | Vigila siempre, en cualquier estado, incluso con la alarma apagada, como un contacto de sabotaje: al abrirse suena la sirena y los canales de alarma reciben un mensaje (causa *alarma 24 h*). Para un botón de pánico o una caja fuerte. Mientras esté abierto, se rechaza la activación. |
-| **24 horas silencioso** | Vigila siempre, sin sirena: una *alarma técnica* como el agua, con un mensaje a los canales *Técnico* y una línea en el registro. Para un botón de pánico silencioso o un congelador que se calienta. |
+| **24 horas silencioso** | Vigila siempre, sin sirena: una *alarma técnica* como el agua, con un mensaje a los canales *Técnico* y una línea en el registro. Para un botón de pánico silencioso, o para un número: elige un sensor con un número (temperatura, tensión, potencia, corriente) y fija un límite inferior y/o superior y un tiempo. Un valor fuera de los límites durante más de ese tiempo es un sensor abierto; de vuelta dentro de los límites queda cerrado de inmediato. Ejemplos: congelador por encima de -15 durante 30 minutos, nevera por encima de 8, un terrario o acuario fuera de su rango, una sala donde el aire acondicionado se ha parado, tensión de red por debajo de 180 durante un minuto. Un valor que no es un número (`unavailable`) sigue la opción elegida para sensores no disponibles. |
 
 ### Grupos de sensores: qué sensores vigilan en qué modo
 
@@ -82,7 +82,7 @@ el estado de la alarma se conserva.
    - Elige el `binary_sensor`. Para un contacto de puerta o un detector de movimiento, el panel propone solo el grupo
      de sensores correcto.
    - Elige la clase y, para intrusión, el tipo y los grupos de sensores.
-   - ¿El dispositivo tiene también un contacto de sabotaje (la mayoría de los contactos de puerta Zigbee lo tienen)? Indícalo en *Entidad de sabotaje*. Vigil añade por sí mismo un sensor de sabotaje llamado «Puerta de entrada (sabotaje)»: siempre vigilando, con su propio interruptor de anulación. Sigue al sensor cuando lo renombras, lo editas o lo eliminas, y no tiene fila propia en la tabla.
+   - ¿El dispositivo tiene también un contacto de sabotaje (la mayoría de los contactos de puerta Zigbee lo tienen)? Indícalo en *Entidad de sabotaje*. Vigil añade por sí mismo un sensor de sabotaje llamado «Puerta de entrada (sabotaje)»: siempre vigilando, con su propio indicador *Anulado*. Sigue al sensor cuando lo renombras, lo editas o lo eliminas, y no tiene fila propia en la tabla.
    - *Si está abierto al final del retardo de salida* decide qué ocurre con una puerta aún abierta al activar: **anular con un aviso** (predeterminado; vuelve a vigilarse en cuanto se cierra), **esperar a que se cierre**, **rechazar la activación** o **iniciar el retardo de entrada**.
    - *Cuando el sensor deja de ser alcanzable*: **bloquear la activación** (predeterminado para intrusión y
      sabotaje), **solo notificar** (predeterminado para incendio, gas y agua), **disparar la alarma** o **activar
@@ -152,7 +152,7 @@ La anulación deja un sensor aparte hasta que se desactive la alarma (o hasta qu
 
 **Anulación permanente.** Marca *Mantener la anulación tras desactivar (permanente)* en un sensor (no disponible para sensores de incendio y gas) y una anulación manual de ese sensor permanece tras desactivar la alarma, incluso tras reiniciar Home Assistant, hasta que alguien la restablezca a mano. Útil para un sensor que lleva tiempo averiado. El sensor sigue en la lista como *anulado*, la pestaña *Resumen* tiene una tarjeta **Anulados permanentemente** con un botón *Restablecer*, y la tarjeta Vigil y el teclado táctil muestran *Anulado: ventana rota* bajo *Apagada*, para que no se olvide; el registro tiene `sensor_bypassed` al principio y `sensor_unbypassed` (motivo *manual*) al final. Sin la casilla no cambia nada: la anulación termina al desactivar.
 
-- En el panel y en el panel de control: el interruptor **Anular** del sensor (solo administradores).
+- En el panel de Vigil: el botón **Anular** del sensor (solo administradores). En la tarjeta de Vigil y en el panel táctil lo mismo, con un código. La entidad `binary_sensor.<sensor>_bypassed` lo muestra (solo lectura; no hay interruptor).
 - Mediante acción: `vigil_alarm.bypass` y `vigil_alarm.unbypass` con la entidad del sensor y, para quienes no son
   administradores, un código. Este código solo hace falta si la activación también lo pide (el ajuste
   *código necesario para activar*). Los sensores de sabotaje solo pueden ser anulados por administradores y por usuarios
@@ -296,7 +296,7 @@ Por defecto Vigil tiene una sola alarma. En **Particiones** puedes añadir más,
 - **Los grupos de sensores pertenecen a una partición.** Con más de una partición, la pestaña *Grupos de sensores* tiene una tabla por partición. Un grupo solo ofrece los modos de su partición, y un sensor solo puede usar los grupos de su propia partición. Una partición nueva empieza sin grupos: usa *Crear los grupos predeterminados* en su tabla. Las reglas de confirmación también se listan por partición (todos los sensores de una regla deben estar en una partición).
 - **El registro** tiene una columna *Partición*; un evento de incendio, gas, agua o 24 horas no la tiene (vale para toda la casa).
 - **Los teclados táctiles y la tarjeta de la tableta** siempre muestran qué partición (o *Todas*) usan, incluso cuando solo hay una, con *Vigil Alarm* y el logo. Un teclado que puede usar varias particiones tiene una fila de botones para cambiar (y un botón arriba en la página *Sensores* que elige de qué partición se listan los sensores); *Todas* activa o desactiva cada partición. Tras el retardo de retorno sin tocar, vuelve a su partición predeterminada, pero no mientras la lista de sensores está abierta. El servicio `vigil_alarm.select_partition` hace el mismo cambio desde una automatización.
-- **Sensores siempre activos aparte.** Los sensores de incendio, gas, agua, sabotaje y 24 horas no pertenecen a ninguna partición, así que la lista de sensores de una partición (en la tarjeta Vigil y en el teclado táctil) no los muestra. Son una opción aparte junto a las particiones, *Siempre activo*: en la tarjeta un botón más en la fila de la página *Sensores*, en el teclado táctil un paso más del botón de partición en la parte superior de esa página. Con más de cuatro particiones el teclado táctil muestra tres a la vez con una flecha a cada lado (el botón *Todo* se queda); una partición elegida en otro sitio trae a la vista su propia página.
+- **Sensores siempre activos aparte.** Los sensores de incendio, gas, agua, sabotaje y 24 horas no pertenecen a ninguna partición, así que la lista de sensores de una partición (en la tarjeta Vigil y en el teclado táctil) no los muestra. Son una opción aparte junto a las particiones, *Siempre activo*: en la tarjeta un botón más en la fila de la página *Sensores*, en el teclado táctil un paso más del botón de partición en la parte superior de esa página. Con más de cuatro particiones el teclado táctil muestra cuatro a la vez con una flecha a cada lado (la flecha derecha queda en el extremo derecho; *Todo* va después de la última partición, en la última página, o en una página aparte si esa está llena); una partición elegida en otro sitio trae a la vista su propia página.
 
 ## Automatizaciones y blueprints
 
@@ -308,14 +308,14 @@ Los [blueprints](../README.md#blueprints) incluidos cubren los casos habituales:
 
 - **Hacer parpadear las luces durante una alarma** guarda el estado de tus luces, las hace parpadear mientras la alarma
   está disparada y las restablece después, también cuando se desactiva la alarma. Elige qué
-  causas hacen parpadear (el gas está desactivado por defecto). El valor predeterminado de 2 segundos encendido y 2 segundos apagado queda
+  causas hacen parpadear (el gas está desactivado por defecto) y, con más de una partición, para qué particiones (*Only for these partitions*). El valor predeterminado de 2 segundos encendido y 2 segundos apagado queda
   muy por debajo de la frecuencia que importa a las personas fotosensibles. Para Hue usa una habitación o una zona
   (grupo) en lugar de lámparas sueltas; los grupos están desactivados por defecto en Home Assistant, así que actívalos
   primero.
 - **Anunciar por voz los eventos de alarma** dice un mensaje cuando la alarma se activa, se desactiva, inicia
-  el retardo de entrada o se dispara. Deja un mensaje vacío para permanecer en silencio en ese evento.
+  el retardo de entrada o se dispara. Deja un mensaje vacío para permanecer en silencio en ese evento. Con más de una partición el mensaje empieza con el nombre de la partición (se desactiva con *Name the partition*; `partition_name` también está disponible en tu texto).
 - **Ejecutar tus propias acciones en los eventos de alarma** es el bloque general: elige eventos y añade
-  cualquier acción, con `event_type` y `data` disponibles.
+  cualquier acción, con `event_type` y `data` disponibles. Este blueprint y el de voz tienen *Only for these partitions* (se pueden elegir varias; vacío = todas); `data.partition_name` dice de qué partición se trata.
 - **Recordar al llegar a una casa activada** envía un mensaje cuando alguien llega mientras la
   alarma está activada. No desactiva.
 
@@ -336,6 +336,37 @@ opciones:
 Si se rechaza la activación (por ejemplo porque una puerta está abierta), puedes recibir un mensaje que dice
 por qué. Si dejas vacío el campo del mensaje, no se envía nada.
 
+### ¿Siguen funcionando tus automatizaciones?
+
+Un blueprint o una automatización que reacciona a la alarma puede fallar sin que nadie lo note: está desactivada, tiene un error, o una lámpara que no existe. Vigil lo vigila.
+
+- **Los blueprints de Vigil** (hacer parpadear las luces, voz, acciones propias) avisan a Vigil con la acción `vigil_alarm.handler_report` cuándo empieza una ejecución y cuándo ha terminado. Una ejecución que acaba **sin** haber terminado (un error la detuvo, o se desactivó) da el evento `handler_stalled`, un mensaje a tus canales de avería, una línea en *¿Listo para usar?* y una **reparación** en Home Assistant. Si Home Assistant aún tiene la traza, la reparación dice qué paso falló. Un manejador que simplemente sigue en marcha, por ejemplo una repetición que espera a que cambies algo, nunca es una avería, por mucho que dure: Vigil mira la propia automatización (su número de ejecuciones en curso), no el reloj.
+- **La comprobación silenciosa:** cada día, con el autotest, Vigil pide a cada automatización que reacciona a la alarma que informe de que funciona (el evento `handler_test` con `dry_run`). Los blueprints solo informan y no hacen nada más: ninguna luz parpadea y nada suena. Una automatización que no responde en un minuto da `handler_stalled` (*no iniciada*). La misma comprobación encuentra una automatización de un blueprint de Vigil que está desactivada, rota o desaparecida.
+- **La prueba semanal con las acciones reales** (*Ajustes*, *Autotest*, desactivada por defecto): una vez por semana, en las horas fijadas y solo con la alarma apagada, las automatizaciones hacen su trabajo real en **modo de práctica**: las luces parpadean tres veces, pero sin sirena y Vigil no envía mensajes. Cada blueprint tiene la opción *Actuar también en modo de práctica*: activada para las luces, desactivada para la voz y para tus propias acciones (solo informan de que se ejecutaron). La misma prueba se inicia desde la tarjeta *Autotest* (*Probar las automatizaciones (en silencio)* y *Probar con las acciones reales*) o con la acción `vigil_alarm.test_handlers`.
+- **En tus propias acciones** la variable `practice` es `true` mientras el modo de práctica está activo, de modo que una sirena y una luz intermitente combinadas puedan dejar fuera la sirena: usa un `choose` con la condición `{{ not practice }}` alrededor de la sirena. Con el blueprint *Ejecutar tus propias acciones* también puedes elegir el evento `handler_test`, para que tus acciones participen en la prueba semanal.
+- **Tus propias automatizaciones** también pueden participar: llama a `vigil_alarm.handler_report` al principio y al final, con el mismo `run_id`:
+
+```yaml
+variables:
+  run_id: "{{ this.entity_id }}-{{ now().timestamp() }}"
+actions:
+  - action: vigil_alarm.handler_report
+    data:
+      run_id: "{{ run_id }}"
+      state: started
+      automation: "{{ this.entity_id }}"
+      handler: My own automation
+  # ... your actions ...
+  - action: vigil_alarm.handler_report
+    data:
+      run_id: "{{ run_id }}"
+      state: done
+```
+
+  Indica `waits_for_user: true` si la ejecución puede durar lo que haga falta, o `max_duration` (segundos) si una ejecución más larga merece un aviso (una sola vez, sin reparación).
+
+Vigil no ve una acción que podía fallar a propósito con `continue_on_error`: Home Assistant no la registra en la traza. Y un manejador que llega hasta el final prueba que se ejecutó, no que la lámpara se encendiera ni que el teléfono recibiera el mensaje.
+
 ## Autovigilancia
 
 Las averías reales (un sensor no alcanzable, una batería baja, una sirena no disponible o con batería) aparecen también en *Ajustes → Sistema → Reparaciones* y desaparecen solas una vez resueltas. Los ajustes que faltan no son reparaciones; *¿Listo para usar?* los muestra.
@@ -346,7 +377,7 @@ Las averías reales (un sensor no alcanzable, una batería baja, una sirena no d
   con `supervision_lost` y `supervision_restored`.
 - **Sirenas:** Vigil informa cuando una sirena deja de estar disponible y, con una entidad de modo de alimentación,
   cuando funciona con batería (el valor que significa «con batería» es un ajuste, predeterminado
-  `battery`; comprueba qué informa tu dispositivo). Añade el contacto de sabotaje de una sirena como sensor de sabotaje.
+  `battery`; comprueba qué informa tu dispositivo). Indica el contacto de sabotaje de una sirena en el formulario de la sirena (*Entidad de sabotaje*): Vigil añade un sensor de sabotaje, siempre vigilando en todas las particiones.
 - Los problemas que existen al arrancar se listan en el atributo `problems` de la alarma sin evento; siguen eventos ante cambios. El resumen los muestra bajo *Atención*.
 
 ### Autotest

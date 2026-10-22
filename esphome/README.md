@@ -4,7 +4,7 @@ A touch panel for Vigil Alarm: arm, disarm, see what is open and bypass a sensor
 It runs on an ESP32 with an LVGL display. It is a *dumb terminal*: it decides nothing. What it may do
 and show is set in Vigil (tab *Panels*) and the panel reads that from its **profile**.
 
-Made for ESPHome 2026.9 (the only version it was checked with: `esphome config` and the simulator ran on 2026.9.1; older versions were not tried, so 2026.9 is the minimum we can name). The hardware file is for the **Guition ESP32-S3-4848S040** (480x480).
+Made for ESPHome 2026.9 and 2026.10 (`esphome config` and the simulator ran on 2026.9.1 and 2026.10.0; older versions were not tried, so 2026.9 is the minimum we can name). The hardware file is for the **Guition ESP32-S3-4848S040** (480x480).
 Other displays work with another hardware file, see below.
 
 > **Status:** the logic and the way the panel works with Home Assistant were tested on a real Guition 4848 panel,
@@ -56,7 +56,7 @@ For a second panel copy the example file again, with another `name`.
 ![The states of the panel: disarmed, not ready, arming, alarm](../docs/images/touch-panel-states-en.png)
 
 - **Top bar**: the Vigil logo with *Vigil Alarm*, and under it the partition this panel operates now (*Garage*, or *All*). It shows also when the panel may operate one partition only.
-- **Partitions**: every panel has a *default partition* (or *All*) set in Vigil. If the panel may operate more than one, a row of buttons under the state lets you switch (up to four partitions and *All* fit in the row; with more, the row shows three at a time with an arrow on each side and *All* stays). On the *Sensors* page the button at the top steps through the partitions, *All* and *Always on* (the fire, gas, water, tamper and 24-hour sensors, which belong to no partition and are left out of the list of a partition). *All* arms and disarms every partition at once. After the time set in Vigil (*Settings*, *Panel screen*, *Return to default partition*, default 30 seconds; 0 = never) without touching the panel, it jumps back to its default partition.
+- **Partitions**: every panel has a *default partition* (or *All*) set in Vigil. If the panel may operate more than one, a row of buttons under the state lets you switch (up to four partitions and *All* fit in the row; with more, the row shows four at a time with an arrow on each side, the right arrow stays at the far right, and *All* comes after the last partition, on the last page or on a page of its own if that one is full). On the *Sensors* page the button at the top steps through the partitions, *Always on* and *All* (the fire, gas, water, tamper and 24-hour sensors, which belong to no partition and are left out of the list of a partition). *All* arms and disarms every partition at once. After the time set in Vigil (*Settings*, *Panel screen*, *Return to default partition*, default 30 seconds; 0 = never) without touching the panel, it jumps back to its default partition.
 - **Main page**: the state is a ring with an icon, in the colour of the state (green disarmed, amber arming or
   something open, orange entry delay, blue Home, coral Away, violet Night, teal Vacation, pink Custom, red alarm, grey no connection), with the
   state and what is the matter under it. While the exit or entry delay runs the ring is the countdown: the seconds in

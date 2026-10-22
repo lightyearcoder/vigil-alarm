@@ -49,7 +49,7 @@ Dieses Handbuch erklärt, wie du Vigil Alarm einrichtest und benutzt. Zur Instal
 | **Sabotage** | Überwacht immer. Ein Sabotagekontakt, der öffnet, löst einen Alarm aus. |
 | **Wasser** | Überwacht immer. Ein *technischer Alarm*: Er ändert nie den Alarmzustand, er veröffentlicht nur Ereignisse und einen Sensor „Alarm aktiv“. |
 | **24 Stunden hörbar** | Überwacht immer, in jedem Zustand, auch bei ausgeschaltetem Alarm, wie ein Sabotagekontakt: Beim Öffnen ertönt die Sirene und die Alarmkanäle erhalten eine Nachricht (Ursache *24-Stunden-Alarm*). Für einen Panikknopf oder einen Tresor. Solange er offen ist, wird das Scharfschalten verweigert. |
-| **24 Stunden still** | Überwacht immer, ohne Sirene: ein *technischer Alarm* wie Wasser, mit einer Nachricht an die *Technik*-Kanäle und einer Zeile im Protokoll. Für einen stillen Panikknopf oder eine Gefriertruhe, die zu warm wird. |
+| **24 Stunden still** | Überwacht immer, ohne Sirene: ein *technischer Alarm* wie Wasser, mit einer Nachricht an die *Technik*-Kanäle und einer Zeile im Protokoll. Für einen stillen Panikknopf oder für eine Zahl: Wähle einen Sensor mit einer Zahl (Temperatur, Spannung, Leistung, Strom) und lege eine Untergrenze und/oder eine Obergrenze und eine Zeit fest. Ein Wert, der länger als diese Zeit außerhalb der Grenzen liegt, ist ein offener Sensor; zurück innerhalb ist sofort geschlossen. Beispiele: Tiefkühltruhe über -15 für 30 Minuten, Kühlschrank über 8, ein Terrarium oder Aquarium außerhalb seines Bereichs, ein Raum, in dem die Klimaanlage ausgefallen ist, Netzspannung eine Minute unter 180. Ein Wert, der keine Zahl ist (`unavailable`), folgt der Wahl für nicht verfügbare Sensoren. |
 
 ### Sensorgruppen: welche Sensoren in welchem Modus überwachen
 
@@ -82,7 +82,7 @@ der Alarmzustand bleibt erhalten.
    - Wähle den `binary_sensor`. Bei einem Türkontakt oder Bewegungsmelder schlägt das Panel die passende
      Sensorgruppe selbst vor.
    - Wähle die Klasse und, bei Einbruch, den Typ und die Sensorgruppen.
-   - Hat das Gerät auch einen Sabotagekontakt (die meisten Zigbee-Türkontakte haben einen)? Trage ihn unter *Sabotage-Entität* ein. Vigil legt von selbst einen Sabotagesensor namens „Haustür (Sabotage)“ an: immer überwachend, mit eigenem Umgehungsschalter. Er folgt dem Sensor, wenn du ihn umbenennst, änderst oder löschst, und hat keine eigene Zeile in der Tabelle.
+   - Hat das Gerät auch einen Sabotagekontakt (die meisten Zigbee-Türkontakte haben einen)? Trage ihn unter *Sabotage-Entität* ein. Vigil legt von selbst einen Sabotagesensor namens „Haustür (Sabotage)“ an: immer überwachend, mit eigener Anzeige *Überbrückt*. Er folgt dem Sensor, wenn du ihn umbenennst, änderst oder löschst, und hat keine eigene Zeile in der Tabelle.
    - *Wenn beim Ende der Ausgangsverzögerung offen* bestimmt, was mit einer Tür passiert, die beim Scharfschalten noch offen ist: **umgehen mit Hinweis** (Standard; sie wird wieder überwacht, sobald sie schließt), **warten bis geschlossen**, **Scharfschalten verweigern** oder **Eingangsverzögerung starten**.
    - *Wenn der Sensor nicht erreichbar wird*: **Scharfschalten blockieren** (Standard für Einbruch und
      Sabotage), **nur benachrichtigen** (Standard für Feuer, Gas und Wasser), **Alarm auslösen** oder **trotzdem
@@ -152,7 +152,7 @@ Umgehen lässt einen Sensor aus, bis der Alarm ausgeschaltet wird (oder bis du d
 
 **Dauerhaftes Umgehen.** Setze bei einem Sensor den Haken *Umgehung nach dem Unscharfschalten behalten (dauerhaft)* (nicht möglich bei Feuer- und Gassensoren), und ein manuelles Umgehen dieses Sensors bleibt nach dem Unscharfschalten bestehen, auch über einen Neustart von Home Assistant hinweg, bis jemand es von Hand wieder aufhebt. Praktisch für einen Sensor, der schon länger defekt ist. Der Sensor bleibt in der Liste als *umgangen*, der Tab *Übersicht* hat eine Karte **Dauerhaft umgangen** mit einer Schaltfläche *Wiederherstellen*, und die Vigil-Karte und das Touch-Bedienteil zeigen unter *Aus* die Zeile *Umgangen: Kaputtes Fenster*, damit es nicht vergessen wird; das Protokoll hat `sensor_bypassed`, wenn es beginnt, und `sensor_unbypassed` (Grund *manuell*), wenn es endet. Ohne den Haken ändert sich nichts: Die Umgehung endet beim Unscharfschalten.
 
-- Im Panel und im Dashboard: der **Umgehen**-Schalter des Sensors (nur Administratoren).
+- Im Vigil-Panel: die Schaltfläche **Umgehen** des Sensors (nur Administratoren). In der Vigil-Karte und am Touch-Bedienteil dasselbe, mit Code. Die Entität `binary_sensor.<sensor>_bypassed` zeigt es an (nur lesbar; es gibt keinen Schalter).
 - Per Aktion: `vigil_alarm.bypass` und `vigil_alarm.unbypass` mit der Sensor-Entität und, für Personen, die keine
   Administratoren sind, einem Code. Dieser Code ist nur nötig, wenn auch das Scharfschalten einen braucht (die Einstellung
   *Code zum Scharfschalten erforderlich*). Sabotagesensoren können nur von Administratoren und von Benutzern
@@ -296,7 +296,7 @@ Standardmäßig hat Vigil einen Alarm. Unter **Partitionen** kannst du weitere h
 - **Sensorgruppen gehören zu einer Partition.** Bei mehr als einer Partition hat der Tab *Sensorgruppen* eine Tabelle pro Partition. Eine Gruppe bietet nur die Modi ihrer Partition an, und ein Sensor kann nur die Gruppen seiner eigenen Partition benutzen. Eine neue Partition beginnt ohne Gruppen: Nutze *Standardgruppen erstellen* in ihrer Tabelle. Bestätigungsregeln werden ebenfalls pro Partition aufgelistet (alle Sensoren einer Regel müssen in einer Partition sein).
 - **Das Protokoll** hat eine Spalte *Partition*; ein Feuer-, Gas-, Wasser- oder 24-Stunden-Ereignis hat keine (es gilt für das ganze Haus).
 - **Touch-Bedienteile und die Tablet-Karte** zeigen immer, welche Partition (oder *Alle*) sie bedienen, auch wenn es nur eine sein darf, zusammen mit *Vigil Alarm* und dem Logo. Ein Bedienteil, das mehrere Partitionen bedienen darf, hat eine Reihe von Schaltflächen zum Wechseln (und eine Schaltfläche oben auf der Seite *Sensoren*, die wählt, wessen Sensoren aufgelistet werden); *Alle* schaltet jede Partition scharf oder unscharf. Nach der Rückkehrzeit ohne Berührung springt es auf seine Standardpartition zurück, nicht aber, solange die Sensorliste offen ist. Der Dienst `vigil_alarm.select_partition` macht denselben Wechsel aus einer Automatisierung.
-- **Immer aktive Sensoren getrennt.** Brand-, Gas-, Wasser-, Sabotage- und 24-Stunden-Sensoren gehören zu keiner Partition, deshalb lässt die Sensorliste einer Partition (auf der Vigil-Karte und am Touch-Bedienteil) sie weg. Sie sind eine eigene Auswahl neben den Partitionen, *Immer aktiv*: auf der Karte eine weitere Schaltfläche in der Reihe auf der Seite *Sensoren*, am Touch-Bedienteil ein weiterer Schritt der Partitionsschaltfläche oben auf dieser Seite. Bei mehr als vier Partitionen zeigt das Touch-Bedienteil drei auf einmal mit einem Pfeil auf jeder Seite (die Schaltfläche *Alle* bleibt); eine anderswo gewählte Partition bringt ihre eigene Seite ins Bild.
+- **Immer aktive Sensoren getrennt.** Brand-, Gas-, Wasser-, Sabotage- und 24-Stunden-Sensoren gehören zu keiner Partition, deshalb lässt die Sensorliste einer Partition (auf der Vigil-Karte und am Touch-Bedienteil) sie weg. Sie sind eine eigene Auswahl neben den Partitionen, *Immer aktiv*: auf der Karte eine weitere Schaltfläche in der Reihe auf der Seite *Sensoren*, am Touch-Bedienteil ein weiterer Schritt der Partitionsschaltfläche oben auf dieser Seite. Bei mehr als vier Partitionen zeigt das Touch-Bedienteil vier auf einmal mit einem Pfeil auf jeder Seite (der rechte Pfeil bleibt ganz rechts; *Alle* kommt nach der letzten Partition, auf der letzten Seite, oder auf einer eigenen Seite, wenn diese voll ist); eine anderswo gewählte Partition bringt ihre eigene Seite ins Bild.
 
 ## Automatisierungen und Blueprints
 
@@ -308,14 +308,14 @@ Die mitgelieferten [Blueprints](../README.md#blueprints) decken die häufigen F�
 
 - **Lichter bei einem Alarm blinken lassen** speichert den Zustand deiner Lichter, lässt sie blinken, solange der Alarm
   ausgelöst ist, und stellt sie danach wieder her, auch wenn der Alarm ausgeschaltet wird. Wähle, welche
-  Ursachen blinken (Gas ist standardmäßig aus). Der Standard von 2 Sekunden an und 2 Sekunden aus bleibt
+  Ursachen blinken (Gas ist standardmäßig aus) und, bei mehr als einer Partition, für welche Partitionen (*Only for these partitions*). Der Standard von 2 Sekunden an und 2 Sekunden aus bleibt
   weit unter der Frequenz, die für lichtempfindliche Personen eine Rolle spielt. Nimm für Hue einen Raum oder eine Zone
   (Gruppe) statt einzelner Lampen; Gruppen sind in Home Assistant standardmäßig deaktiviert, aktiviere
   sie also zuerst.
 - **Alarmereignisse per Sprache ansagen** spricht eine Nachricht, wenn die Anlage scharf- oder unscharfgeschaltet wird, die Eingangsverzögerung
-  beginnt oder sie auslöst. Lass eine Nachricht leer, um bei diesem Ereignis still zu bleiben.
+  beginnt oder sie auslöst. Lass eine Nachricht leer, um bei diesem Ereignis still zu bleiben. Bei mehr als einer Partition beginnt die Nachricht mit dem Namen der Partition (abschaltbar mit *Name the partition*; `partition_name` ist auch in deinem eigenen Text verfügbar).
 - **Eigene Aktionen bei Alarmereignissen ausführen** ist der allgemeine Baustein: Wähle Ereignisse und füge
-  beliebige Aktionen hinzu, mit `event_type` und `data` zur Verfügung.
+  beliebige Aktionen hinzu, mit `event_type` und `data` zur Verfügung. Dieser Blueprint und der Sprach-Blueprint haben *Only for these partitions* (mehrere wählbar; leer heißt alle); `data.partition_name` sagt, um welche Partition es geht.
 - **Erinnern beim Ankommen in einem scharfen Haus** sendet eine Nachricht, wenn jemand nach Hause kommt, während die
   Anlage scharf ist. Es schaltet nicht unscharf.
 
@@ -336,6 +336,37 @@ Möglichkeiten:
 Wird das Scharfschalten verweigert (zum Beispiel weil eine Tür offen ist), kannst du eine Nachricht bekommen, die sagt,
 warum. Lässt du das Nachrichtenfeld leer, wird nichts gesendet.
 
+### Laufen deine Automatisierungen noch?
+
+Ein Blueprint oder eine Automatisierung, die auf den Alarm reagiert, kann ausfallen, ohne dass es jemand merkt: Sie ist ausgeschaltet, hat einen Fehler oder eine Lampe, die es nicht gibt. Vigil behält das im Auge.
+
+- **Die Vigil-Blueprints** (Lampen blinken, Sprache, eigene Aktionen) melden Vigil mit der Aktion `vigil_alarm.handler_report`, wann ein Lauf beginnt und wann er fertig ist. Ein Lauf, der endet, **ohne** fertig zu sein (ein Fehler hat ihn gestoppt, oder er wurde ausgeschaltet), erzeugt das Ereignis `handler_stalled`, eine Nachricht an deine Störungskanäle, eine Zeile bei *Einsatzbereit?* und eine **Reparatur** in Home Assistant. Hat Home Assistant die Ablaufverfolgung noch, nennt die Reparatur den fehlgeschlagenen Schritt. Ein Handler, der einfach noch läuft, zum Beispiel eine Wiederholung, die wartet, bis du etwas umschaltest, ist nie eine Störung, egal wie lange es dauert: Vigil schaut auf die Automatisierung selbst (die Zahl der laufenden Läufe), nicht auf die Uhr.
+- **Die stille Prüfung:** Jeden Tag, beim Selbsttest, bittet Vigil jede Automatisierung, die auf den Alarm reagiert, zu melden, dass sie läuft (das Ereignis `handler_test` mit `dry_run`). Die Blueprints melden dann nur und tun sonst nichts: keine Lampe blinkt und nichts ertönt. Eine Automatisierung, die nicht innerhalb einer Minute antwortet, erzeugt `handler_stalled` (*nicht gestartet*). Dieselbe Prüfung findet eine Automatisierung eines Vigil-Blueprints, die ausgeschaltet, defekt oder verschwunden ist.
+- **Der wöchentliche Test mit den echten Aktionen** (*Einstellungen*, *Selbsttest*, standardmäßig aus): Einmal pro Woche, in den eingestellten Stunden und nur bei ausgeschaltetem Alarm, tun die Automatisierungen ihre echte Arbeit im **Übungsmodus**: Die Lampen blinken dreimal, aber es gibt keine Sirene und Vigil sendet keine Nachrichten. Jeder Blueprint hat die Wahl *Auch im Übungsmodus ausführen*: an für die Lampen, aus für Sprache und deine eigenen Aktionen (sie melden nur, dass sie liefen). Derselbe Test startet von der Karte *Selbsttest* (*Automatisierungen testen (still)* und *Mit den echten Aktionen testen*) oder mit der Aktion `vigil_alarm.test_handlers`.
+- **In deinen eigenen Aktionen** ist die Variable `practice` `true`, solange der Übungsmodus an ist, damit eine kombinierte Sirene und Blitzlampe die Sirene weglassen kann: Nutze ein `choose` mit der Bedingung `{{ not practice }}` um die Sirene. Mit dem Blueprint *Eigene Aktionen ausführen* kannst du auch das Ereignis `handler_test` wählen, damit deine Aktionen am wöchentlichen Test teilnehmen.
+- **Deine eigenen Automatisierungen** können auch mitmachen: Rufe `vigil_alarm.handler_report` am Anfang und am Ende mit derselben `run_id` auf:
+
+```yaml
+variables:
+  run_id: "{{ this.entity_id }}-{{ now().timestamp() }}"
+actions:
+  - action: vigil_alarm.handler_report
+    data:
+      run_id: "{{ run_id }}"
+      state: started
+      automation: "{{ this.entity_id }}"
+      handler: My own automation
+  # ... your actions ...
+  - action: vigil_alarm.handler_report
+    data:
+      run_id: "{{ run_id }}"
+      state: done
+```
+
+  Gib `waits_for_user: true` an, wenn der Lauf so lange dauern darf wie nötig, oder `max_duration` (Sekunden), wenn ein längerer Lauf eine Meldung verdient (einmalig, keine Reparatur).
+
+Vigil sieht eine Aktion nicht, die mit `continue_on_error` absichtlich scheitern durfte: Home Assistant hält das nicht in der Ablaufverfolgung fest. Und ein Handler, der bis zum Ende läuft, beweist, dass er lief, nicht dass die Lampe leuchtete oder das Handy die Nachricht bekam.
+
 ## Selbstüberwachung
 
 Echte Störungen (ein nicht erreichbarer Sensor, eine schwache Batterie, eine Sirene, die nicht verfügbar ist oder mit Batterie läuft) erscheinen auch unter *Einstellungen → System → Reparaturen* und verschwinden von selbst, wenn sie behoben sind. Fehlende Einstellungen sind keine Reparaturen; *Einsatzbereit?* zeigt diese.
@@ -346,7 +377,7 @@ Echte Störungen (ein nicht erreichbarer Sensor, eine schwache Batterie, eine Si
   mit `supervision_lost` und `supervision_restored` gemeldet.
 - **Sirenen:** Vigil meldet, wenn eine Sirene nicht verfügbar wird, und, mit einer Betriebsart-Entität,
   wenn sie mit ihrer Batterie läuft (der Wert, der „mit Batterie“ bedeutet, ist eine Einstellung, Standard
-  `battery`; prüfe, was dein Gerät meldet). Füge den Sabotagekontakt einer Sirene als Sabotagesensor hinzu.
+  `battery`; prüfe, was dein Gerät meldet). Gib einer Sirene ihren Sabotagekontakt im Formular der Sirene an (*Sabotage-Entität*): Vigil legt dafür einen Sabotagesensor an, immer überwachend in jeder Partition.
 - Probleme, die beim Start bestehen, stehen ohne Ereignis im Attribut `problems` der Anlage; bei Änderungen folgen Ereignisse. Die Übersicht zeigt sie unter *Achtung*.
 
 ### Selbsttest

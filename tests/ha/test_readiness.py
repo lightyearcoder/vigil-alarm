@@ -139,7 +139,7 @@ async def test_dashboard_has_this_installations_own_entity_ids(hass, hass_ws_cli
     text = res["result"]["yaml"]
     assert cards[0]["entity"] == "alarm_control_panel.vigil_alarm"
     for entity in ("binary_sensor.vigil_alarm_intrusion_alarm", "binary_sensor.vigil_alarm_water_alarm",
-                   "sensor.front_door_status", "switch.front_door_bypass", "event.vigil_alarm_alarm_events"):
+                   "sensor.front_door_status", "binary_sensor.front_door_bypassed", "event.vigil_alarm_alarm_events"):
         assert entity in text, entity
     registry = hass.data["entity_registry"]
     for card in cards:  # every entity the dashboard names exists

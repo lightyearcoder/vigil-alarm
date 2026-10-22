@@ -22,6 +22,7 @@ from .const import (
     DEFAULT_HEARTBEAT_INTERVAL,
     HEARTBEAT_INTERVAL_RANGE,
     CONF_SELFTEST_AUTO,
+    CONF_SELFTEST_HANDLERS,
     CONF_SELFTEST_FROM,
     CONF_SELFTEST_INTERVAL,
     CONF_SELFTEST_SECONDS,
@@ -159,6 +160,7 @@ def _entry_schema(d: dict[str, Any]) -> vol.Schema:
             selector.NumberSelectorConfig(min=low, max=high, step=1, mode=selector.NumberSelectorMode.BOX)
         )
     fields[vol.Required(CONF_SELFTEST_AUTO, default=d.get(CONF_SELFTEST_AUTO, DEFAULT_SELFTEST[CONF_SELFTEST_AUTO]))] = bool
+    fields[vol.Required(CONF_SELFTEST_HANDLERS, default=d.get(CONF_SELFTEST_HANDLERS, DEFAULT_SELFTEST[CONF_SELFTEST_HANDLERS]))] = bool
     for key in (CONF_SELFTEST_FROM, CONF_SELFTEST_TO):
         low, high = SELFTEST_RANGES[key]
         fields[vol.Required(key, default=d.get(key, DEFAULT_SELFTEST[key]))] = selector.NumberSelector(

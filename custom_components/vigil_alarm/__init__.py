@@ -36,7 +36,6 @@ PLATFORMS = [
     Platform.BINARY_SENSOR,
     Platform.EVENT,
     Platform.SENSOR,
-    Platform.SWITCH,
 ]
 
 type VigilConfigEntry = ConfigEntry[VigilManager]
@@ -217,6 +216,40 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         test_notification,
         schema=vol.Schema({vol.Optional("channel"): cv.string}),
     )
+    async def handler_report(call: ServiceCall) -> None:
+        for entry in hass.config_entries.async_loaded_entries(DOMAIN):
+            entry.runtime_data.handlers.report(dict(call.data))
+
+    hass.services.async_register(
+        DOMAIN,
+        "handler_report",
+        handler_report,
+        schema=vol.Schema(
+            {
+                vol.Required("run_id"): cv.string,
+                vol.Required("state"): vol.In(["started", "done", "failed"]),
+                vol.Optional("handler"): cv.string,
+                vol.Optional("automation"): cv.string,
+                vol.Optional("event"): cv.string,
+                vol.Optional("waits_for_user", default=False): cv.boolean,
+                vol.Optional("max_duration"): vol.All(vol.Coerce(float), vol.Range(min=1)),
+                vol.Optional("error"): cv.string,
+            }
+        ),
+    )
+
+    async def test_handlers(call: ServiceCall) -> None:
+        found = False
+        for entry in hass.config_entries.async_loaded_entries(DOMAIN):
+            found = True
+            entry.runtime_data.handlers.start_test(quiet=call.data["quiet"])
+        if not found:
+            raise VigilError(translation_domain=DOMAIN, translation_key="no_channels")
+
+    hass.services.async_register(
+        DOMAIN, "test_handlers", test_handlers, schema=vol.Schema({vol.Optional("quiet", default=True): cv.boolean})
+    )
+
     async def clear_alarm_memory(call: ServiceCall) -> None:
         _verify_key(call)
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
@@ -249,6 +282,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> boo
     _align_profile_ids(hass, entry, manager)
     await manager.selftest.async_start()
     entry.async_on_unload(manager.selftest.stop)
+    await manager.handlers.async_start()
+    entry.async_on_unload(manager.handlers.stop)
     manager.heartbeat.start()
     entry.async_on_unload(manager.heartbeat.stop)
     entry.async_on_unload(VigilRepairs(hass, manager).start())
@@ -264,6 +299,10 @@ def _remove_orphans(hass: HomeAssistant, entry: VigilConfigEntry, manager) -> No
     ent_reg = er.async_get(hass)
     for ent in er.async_entries_for_config_entry(ent_reg, entry.entry_id):
         uid = ent.unique_id
+        # Before 0.7.0 every sensor had a bypass switch; bypassing is no longer possible from a switch.
+        if ent.domain == "switch" and uid.endswith("_bypass"):
+            ent_reg.async_remove(ent.entity_id)
+            continue
         # The alarm entities of a partition that was removed, and the "all" entity once there is one partition left.
         if ent.domain == "alarm_control_panel" and uid != entry.entry_id:
             wanted = {f"{entry.entry_id}_partition_{pid}" for pid in manager.partitions}
@@ -274,7 +313,7 @@ def _remove_orphans(hass: HomeAssistant, entry: VigilConfigEntry, manager) -> No
             continue
         if uid.startswith(prefix) and uid.count("_") >= 2:
             sid = uid[len(prefix):].rsplit("_", 1)[0]
-            if sid not in known and (uid.endswith("_status") or uid.endswith("_bypass") or uid.endswith("_profile")):
+            if sid not in known and (uid.endswith("_status") or uid.endswith("_bypassed") or uid.endswith("_profile")):
                 ent_reg.async_remove(ent.entity_id)
     dev_reg = dr.async_get(hass)
     for dev in dr.async_entries_for_config_entry(dev_reg, entry.entry_id):
@@ -323,3 +362,4 @@ async def async_remove_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> No
     await Store(hass, BACKUPS_STORAGE_VERSION, backups_store_key(entry.entry_id)).async_remove()
     await Store(hass, 1, f"{DOMAIN}.newsensors.{entry.entry_id}").async_remove()
     await Store(hass, 1, f"{DOMAIN}.alarmmemory.{entry.entry_id}").async_remove()
+    await Store(hass, 1, f"{DOMAIN}.handlers.{entry.entry_id}").async_remove()

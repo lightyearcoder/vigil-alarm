@@ -149,6 +149,21 @@ int main(){
   assert(part_rows(true)[2].id=="all" && part_rows(true)[2].mixed && part_rows(true)[2].state=="armed_away" && part_rows(true)[0].name=="Home");
   assert(state_title()=="Garage: Disarmed" && sel_name()=="Garage");
   ctx.sel=""; assert(sel_id()=="main");  // Vigil says nothing: the first
+  // Six partitions: arrows, four per page, "All" after the last partition (here on the second page, in third place)
+  ctx.partition_list="a|A|disarmed\nb|B|disarmed\nc|C|disarmed\nd|D|disarmed\ne|E|disarmed\nf|F|disarmed\nall||disarmed"; ctx.sel="a"; ctx.chip_page=0; ctx.page_sel="";
+  assert(parts_paged() && part_pages()==2 && chip_target(0)=="a" && chip_target(3)=="d" && chip_target(4)=="");
+  ctx.chip_page=1; assert(chip_target(0)=="e" && chip_target(1)=="f" && chip_target(2)=="" && chip_target(4)=="all");
+  ctx.sel="all"; ctx.chip_page=0; ctx.page_sel=""; sync_chip_page(); assert(chip_page_now()==1 && chip_target(4)=="all");  // "All" chosen elsewhere: its page comes into view
+  // Eight: the last page is full of partitions, so "All" is alone on a third
+  ctx.partition_list="a|A|disarmed\nb|B|disarmed\nc|C|disarmed\nd|D|disarmed\ne|E|disarmed\nf|F|disarmed\ng|G|disarmed\nh|H|disarmed\nall||disarmed"; ctx.sel="a"; ctx.chip_page=1; ctx.page_sel="";
+  assert(part_pages()==3 && chip_target(3)=="h" && chip_target(4)=="");
+  ctx.chip_page=2; assert(chip_target(0)=="" && chip_target(4)=="all");
+  ctx.partition_list="main|Home|armed_away\np_gar|Garage|disarmed\nall||armed_away|mixed"; ctx.sel="p_gar"; ctx.chip_page=0; ctx.page_sel="";
+  // The button on the sensors page: the partitions, then "Always on", then "All", round again
+  ctx.sensors_always="x"; ctx.sel="main"; ctx.sens_always=false;
+  assert(next_part_id()=="p_gar"); ctx.sel="p_gar"; assert(next_part_id()=="always");
+  ctx.sens_always=true; assert(next_part_id()=="all"); ctx.sens_always=false; ctx.sel="all"; assert(next_part_id()=="main");
+  ctx.sensors_always=""; ctx.sel="p_gar"; assert(next_part_id()=="all");
   ctx.sel="all"; assert(sel_name()=="All" && !mixed_now());  // only with the flag
   // "All" with the partitions in different states: Mixed, arm what is not armed, and disarm; not while it is going off
   ctx.mixed=true; ctx.state="armed_away"; ctx.modes_mask=3;

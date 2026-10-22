@@ -35,6 +35,7 @@
           "selftest_interval_days": "Dagen tussen herinneringen voor de siretest (0 = uit)",
           "selftest_siren_seconds": "Seconden dat de sirene klinkt bij een test",
           "selftest_auto": "Sirene zelf laten klinken voor de test",
+          "selftest_handlers": "Elke week de automatiseringen testen die op het alarm reageren",
           "selftest_window_start": "Vroegste uur voor de test",
           "selftest_window_end": "Laatste uur voor de test",
           "heartbeat_url": "Hartslag-adres (optioneel)",
@@ -75,6 +76,7 @@
           "selftest_interval_days": "Dagen tussen herinneringen voor de siretest (0 = uit)",
           "selftest_siren_seconds": "Seconden dat de sirene klinkt bij een test",
           "selftest_auto": "Sirene zelf laten klinken voor de test",
+          "selftest_handlers": "Elke week de automatiseringen testen die op het alarm reageren",
           "selftest_window_start": "Vroegste uur voor de test",
           "selftest_window_end": "Laatste uur voor de test",
           "heartbeat_url": "Hartslag-adres (optioneel)",
@@ -166,7 +168,11 @@
               "panel_key_created": "Paneelsleutel gemaakt",
               "panel_key_removed": "Paneelsleutel verwijderd",
               "panel_offline": "Paneel niet bereikbaar",
-              "panel_online": "Paneel weer bereikbaar"
+              "panel_online": "Paneel weer bereikbaar",
+              "handler_stalled": "Automatisering vroegtijdig gestopt",
+              "handler_slow": "Automatisering duurt lang",
+              "handler_test": "Handlertest",
+              "handler_test_done": "Handlertest klaar"
             }
           }
         }
@@ -242,16 +248,15 @@
           "panel_key_created": "Paneelsleutel gemaakt",
           "panel_key_removed": "Paneelsleutel verwijderd",
           "panel_offline": "Paneel niet bereikbaar",
-          "panel_online": "Paneel weer bereikbaar"
+          "panel_online": "Paneel weer bereikbaar",
+          "handler_stalled": "Automatisering vroegtijdig gestopt",
+          "handler_slow": "Automatisering duurt lang",
+          "handler_test": "Handlertest",
+          "handler_test_done": "Handlertest klaar"
         }
       },
       "panel_profile": {
         "name": "Profiel"
-      }
-    },
-    "switch": {
-      "bypass": {
-        "name": "Omzeilen"
       }
     },
     "binary_sensor": {
@@ -272,6 +277,9 @@
       },
       "active_alarm24": {
         "name": "24-uursalarm"
+      },
+      "sensor_bypassed": {
+        "name": "Omzeild"
       }
     },
     "alarm_control_panel": {
@@ -381,6 +389,12 @@
     },
     "panel_key_wrong": {
       "message": "Het paneel {panel} stuurde zijn sleutel niet mee, of de verkeerde."
+    },
+    "handler_test_running": {
+      "message": "Er loopt al een handlertest."
+    },
+    "handler_test_needs_disarmed": {
+      "message": "Een handlertest met de echte acties kan alleen als het alarm uit staat."
     }
   },
   "services": {
@@ -597,6 +611,54 @@
           "description": "De id van de partitie, of all."
         }
       }
+    },
+    "handler_report": {
+      "name": "Een handler melden",
+      "description": "Voor automatiseringen die op Vigil Alarm reageren: laat Vigil weten dat een run begint of eindigt, zodat Vigil ziet wanneer er een voortijdig stopt.",
+      "fields": {
+        "run_id": {
+          "name": "Run",
+          "description": "Een naam die bij begin en einde van één run gelijk is."
+        },
+        "state": {
+          "name": "Status",
+          "description": "started, done of failed."
+        },
+        "handler": {
+          "name": "Naam",
+          "description": "Hoe de automatisering in meldingen heet."
+        },
+        "automation": {
+          "name": "Automatisering",
+          "description": "De entiteit van de automatisering, zodat Vigil kan zien of hij nog draait."
+        },
+        "event": {
+          "name": "Gebeurtenis",
+          "description": "De Vigil-gebeurtenis die de run afhandelt."
+        },
+        "waits_for_user": {
+          "name": "Wacht op jou",
+          "description": "De run mag zo lang duren als nodig, bijvoorbeeld een herhaling die wacht tot je iets omzet."
+        },
+        "max_duration": {
+          "name": "Langste tijd",
+          "description": "Seconden. Langer dan dit geeft eenmalig een melding."
+        },
+        "error": {
+          "name": "Fout",
+          "description": "Wat er misging, bij de status failed."
+        }
+      }
+    },
+    "test_handlers": {
+      "name": "De handlers testen",
+      "description": "Laat de automatiseringen die op Vigil Alarm reageren laten zien dat ze draaien. Stil (ze melden alleen) of, in oefenmodus, echt.",
+      "fields": {
+        "quiet": {
+          "name": "Stil",
+          "description": "Aan: de automatiseringen melden alleen. Uit: ze doen hun werk, in oefenmodus (geen sirene, geen berichten van Vigil)."
+        }
+      }
     }
   },
   "issues": {
@@ -635,6 +697,26 @@
     "panel_offline": {
       "title": "Paneel niet bereikbaar: {name}",
       "description": "Vigil Alarm kan het paneel {name} al tien minuten niet bereiken. Controleer de voeding en de wifi van het paneel. Het alarm zelf blijft werken. Deze melding verdwijnt vanzelf als het paneel terug is."
+    },
+    "handler_stalled": {
+      "title": "Automatisering vroegtijdig gestopt: {name}",
+      "description": "De automatisering {name} reageert op Vigil Alarm maar stopte voordat hij klaar was: {detail}. Open de automatisering en zijn spoor (Instellingen, Automatiseringen, de drie puntjes, Sporen) om te zien wat er misging. Deze melding verdwijnt als de automatisering weer tot het einde is gekomen."
+    },
+    "handler_not_started": {
+      "title": "Automatisering niet gestart: {name}",
+      "description": "Bij de handlertest is de automatisering {name} niet gestart. Controleer of hij aan staat en of zijn trigger de gebeurtenis-entiteit van Vigil Alarm is. Deze melding verdwijnt als hij weer gestart is."
+    },
+    "handler_disabled": {
+      "title": "Automatisering staat uit: {name}",
+      "description": "De automatisering {name} reageert op Vigil Alarm maar staat uit en doet dus niets. Zet hem aan, of verwijder hem als je hem niet meer nodig hebt."
+    },
+    "handler_unavailable": {
+      "title": "Automatisering werkt niet: {name}",
+      "description": "De automatisering {name} reageert op Vigil Alarm maar kan niet werken, waarschijnlijk door een fout in zijn configuratie. Open hem om de fout te zien. Deze melding verdwijnt vanzelf."
+    },
+    "handler_missing": {
+      "title": "Automatisering ontbreekt: {name}",
+      "description": "De automatisering {name} reageerde op Vigil Alarm maar is niet meer te vinden. Herstel hem, of verwijder hem uit de entiteitenlijst als je hem met opzet hebt weggehaald."
     }
   }
 }

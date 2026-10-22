@@ -43,7 +43,7 @@ Deze handleiding legt uit hoe je Vigil Alarm instelt en gebruikt. Voor het insta
 | **Gas** | Bewaakt altijd. Kies de soort gas: koolmonoxide, aardgas, lpg of overig. Bij aardgas en lpg schakelt Vigil nooit het flitslicht, vanwege het risico op vonken. |
 | **Sabotage** | Bewaakt altijd. Een sabotagecontact dat opengaat geeft alarm. |
 | **24 uur hoorbaar** | Bewaakt altijd, in elke toestand, ook als het alarm uit staat, net als een sabotagecontact: als hij opengaat loopt de sirene en krijgen de alarmkanalen een melding (oorzaak *24-uursalarm*). Voor een paniekknop of een kluis. Zolang hij open is, weigert inschakelen. |
-| **24 uur stil** | Bewaakt altijd, zonder sirene: een *technisch alarm* zoals water, met een melding naar de *Technisch*-kanalen en een regel in het logboek. Voor een stille paniekknop of een diepvries die te warm wordt. |
+| **24 uur stil** | Bewaakt altijd, zonder sirene: een *technisch alarm* zoals water, met een melding naar de *Technisch*-kanalen en een regel in het logboek. Voor een stille paniekknop, of voor een getal: kies een sensor met een getal (temperatuur, spanning, vermogen, stroom) en stel een ondergrens en/of een bovengrens in, en een tijd. Een waarde langer dan die tijd buiten de grenzen is een open sensor; terug binnen de grenzen is meteen dicht. Voorbeelden: diepvries boven -15 gedurende 30 minuten, koelkast boven 8, een terrarium of aquarium buiten zijn bereik, een ruimte waar de airco niet meer werkt, netspanning een minuut onder 180. Een waarde die geen getal is (`unavailable`) volgt de keuze die je voor niet beschikbare sensoren maakte. |
 | **Water** | Bewaakt altijd. Een *technisch alarm*: het verandert de alarmstand nooit, maar geeft alleen events en een "alarm actief"-sensor. |
 
 ### Sensorgroepen: welke sensoren bewaken in welke modus
@@ -77,7 +77,7 @@ opnieuw; de alarmstand blijft behouden.
    - Kies de `binary_sensor`. Bij een deurcontact of bewegingssensor stelt het paneel zelf de
      juiste sensorgroep voor.
    - Kies de klasse en, bij inbraak, het type en de sensorgroepen.
-   - Heeft het apparaat ook een sabotagecontact (de meeste Zigbee-deurcontacten wel)? Vul het in bij *Sabotage-entiteit*. Vigil voegt dan zelf een sabotagesensor toe, "Voordeur (sabotage)": altijd actief, met een eigen omzeilschakelaar. Hij volgt de sensor bij hernoemen, wijzigen en verwijderen en heeft geen eigen regel in de tabel.
+   - Heeft het apparaat ook een sabotagecontact (de meeste Zigbee-deurcontacten wel)? Vul het in bij *Sabotage-entiteit*. Vigil voegt dan zelf een sabotagesensor toe, "Voordeur (sabotage)": altijd actief, met een eigen indicator *Omzeild*. Hij volgt de sensor bij hernoemen, wijzigen en verwijderen en heeft geen eigen regel in de tabel.
    - *Als open bij einde uitlooptijd* bepaalt wat er gebeurt met een deur die nog open staat als het
      alarm inschakelt: **omzeilen met melding** (standaard; hij wordt weer bewaakt zodra hij dicht
      is), **wachten tot dicht**, **inschakelen weigeren** of **inlooptijd starten**.
@@ -153,7 +153,7 @@ omzeilen opheft).
 
 **Permanent omzeilen.** Vink bij een sensor *Omzeiling blijft staan na uitschakelen (permanent)* aan (niet mogelijk bij brand- en gassensoren) en een handmatige omzeiling van die sensor blijft staan nadat het alarm is uitgeschakeld, ook na een herstart van Home Assistant, tot iemand hem met de hand herstelt. Handig voor een sensor die al een tijd stuk is. De sensor blijft in de lijst staan als *omzeild*, het tabblad *Overzicht* heeft een kaart **Permanent omzeild** met een knop *Herstellen*, en de Vigil-kaart en het aanraakpaneel tonen onder *Uitgeschakeld* de regel *Omzeild: Stuk raam*, zodat je hem niet vergeet; in het logboek staat `sensor_bypassed` bij het begin en `sensor_unbypassed` (reden *manual*) bij het einde. Zonder vinkje verandert er niets: de omzeiling vervalt bij het uitschakelen.
 
-- In het paneel en op het dashboard: de schakelaar **Omzeilen** van de sensor (alleen beheerders).
+- In het Vigil-paneel: de knop **Omzeilen** van de sensor (alleen beheerders). In de Vigil-kaart en op het aanraakpaneel hetzelfde, met een code. De entiteit `binary_sensor.<sensor>_bypassed` laat het zien (alleen lezen; er is geen schakelaar).
 - Met een actie: `vigil_alarm.bypass` en `vigil_alarm.unbypass` met de sensor-entiteit en, voor mensen die geen
   beheerder zijn, een code. Die code is alleen nodig als ook inschakelen een code vraagt
   (instelling *code vereist bij inschakelen*). Sabotagesensoren kunnen alleen door beheerders en door gebruikers met
@@ -296,7 +296,7 @@ Standaard heeft Vigil één alarm. Onder **Partities** voeg je er meer toe, voor
 - **Een sensorgroep hoort bij één partitie.** Bij meer dan één partitie heeft het tabblad *Sensorgroepen* een tabel per partitie. Een groep biedt alleen de modi van zijn partitie, en een sensor kan alleen de groepen van zijn eigen partitie gebruiken. Een nieuwe partitie begint zonder groepen: gebruik *Standaardgroepen maken* in haar tabel. Bevestigingsregels staan ook per partitie (alle sensoren van een regel moeten in één partitie zitten).
 - **Het logboek** heeft een kolom *Partitie*; een brand-, gas-, water-, sabotage- of 24-uursgebeurtenis heeft er geen (die is voor het hele huis).
 - **Aanraakpanelen en de tabletkaart** tonen altijd welke partitie (of *Alle*) ze bedienen, ook als het er maar één mag, samen met *Vigil Alarm* en het logo. Een paneel dat meerdere partities mag bedienen heeft een rij knoppen om te wisselen (en een knop bovenaan de pagina *Sensoren* die kiest van welke partitie de sensoren staan); *Alle* schakelt alle partities in of uit. Na de terugspringtijd zonder aanraking springt het terug naar zijn standaardpartitie. De service `vigil_alarm.select_partition` doet dezelfde wissel vanuit een automatisering.
-- **Altijd-aan-sensoren apart.** Brand-, gas-, water-, sabotage- en 24-uurssensoren horen bij geen partitie, dus de sensorlijst van een partitie (op de Vigil-kaart en op het aanraakpaneel) laat ze weg. Ze zijn een eigen keuze naast de partities, *Altijd aan*: op de kaart nog een knop in de rij op de pagina *Sensoren*, op het aanraakpaneel nog een stap van de partitieknop bovenaan die pagina. Bij meer dan vier partities toont het aanraakpaneel er drie tegelijk met links en rechts een pijltje (de knop *Alles* blijft staan); een partitie die ergens anders gekozen is, brengt haar eigen pagina in beeld.
+- **Altijd-aan-sensoren apart.** Brand-, gas-, water-, sabotage- en 24-uurssensoren horen bij geen partitie, dus de sensorlijst van een partitie (op de Vigil-kaart en op het aanraakpaneel) laat ze weg. Ze zijn een eigen keuze naast de partities, *Altijd aan*: op de kaart nog een knop in de rij op de pagina *Sensoren*, op het aanraakpaneel nog een stap van de partitieknop bovenaan die pagina. Bij meer dan vier partities toont het aanraakpaneel er vier tegelijk met links en rechts een pijltje (het rechter pijltje blijft helemaal rechts; *Alles* komt na de laatste partitie, op de laatste pagina, of op een eigen pagina als die vol is); een partitie die ergens anders gekozen is, brengt haar eigen pagina in beeld.
 
 ## Automatiseringen en blueprints
 
@@ -308,14 +308,14 @@ De meegeleverde [blueprints](../README.md#blueprints) dekken de gewone gevallen:
 
 - **Flash lights during an alarm** bewaart de toestand van je lampen, laat ze knipperen zolang het
   alarm actief is en zet ze daarna terug, ook als het alarm wordt uitgeschakeld. Kies welke
-  oorzaken knipperen (gas staat standaard uit). De standaard van 2 seconden aan en 2 seconden uit
+  oorzaken knipperen (gas staat standaard uit) en, bij meer dan één partitie, voor welke partities (*Only for these partitions*). De standaard van 2 seconden aan en 2 seconden uit
   blijft ruim onder de snelheid die voor lichtgevoelige mensen telt. Gebruik bij Hue een kamer of
   zone (groep) in plaats van losse lampen; groepen staan standaard uit in Home Assistant, zet ze
   eerst aan.
 - **Announce alarm events with speech** spreekt een bericht uit als het alarm in- of uitschakelt, de
-  inlooptijd start of afgaat. Laat een bericht leeg om bij dat event stil te blijven.
+  inlooptijd start of afgaat. Laat een bericht leeg om bij dat event stil te blijven. Bij meer dan één partitie begint het bericht met de naam van de partitie (uit te zetten met *Name the partition*; `partition_name` kun je ook in je eigen tekst gebruiken).
 - **Run your own actions on alarm events** is de algemene bouwsteen: kies events en voeg
-  willekeurige acties toe, met `event_type` en `data` beschikbaar.
+  willekeurige acties toe, met `event_type` en `data` beschikbaar. Deze blueprint en die voor spraak hebben *Only for these partitions* (meer keuzes mogelijk; leeg = alle); `data.partition_name` zegt om welke partitie het gaat.
 - **Remind when arriving at an armed home** stuurt een bericht als iemand thuiskomt terwijl het
   alarm aan staat. Het schakelt niets uit.
 
@@ -339,6 +339,37 @@ hebt twee keuzes:
 Wordt inschakelen geweigerd (bijvoorbeeld omdat een deur openstaat), dan kun je een bericht krijgen
 met de reden. Laat je het berichtveld leeg, dan wordt er niets gestuurd.
 
+### Draaien je automatiseringen nog?
+
+Een blueprint of automatisering die op het alarm reageert, kan falen zonder dat iemand het merkt: hij staat uit, heeft een fout, of een lamp bestaat niet. Vigil houdt dat in de gaten.
+
+- **De Vigil-blueprints** (lampen laten flitsen, spraak, eigen acties) melden met de actie `vigil_alarm.handler_report` aan Vigil wanneer een run begint en wanneer hij klaar is. Een run die eindigt **zonder** klaar te zijn (een fout hield hem tegen, of hij werd uitgezet) geeft de gebeurtenis `handler_stalled`, een melding naar je storingskanalen, een regel bij *Klaar voor gebruik?* en een **reparatie** in Home Assistant. Heeft Home Assistant het spoor nog, dan zegt de reparatie welke stap faalde. Een handler die gewoon nog draait, bijvoorbeeld een herhaling die wacht tot je iets omzet, is nooit een storing, hoe lang het ook duurt: Vigil kijkt naar de automatisering zelf (het aantal lopende runs) en niet naar de klok.
+- **De stille controle:** elke dag, bij de zelftest, vraagt Vigil elke automatisering die op het alarm reageert om te melden dat hij draait (de gebeurtenis `handler_test` met `dry_run`). De blueprints melden dan alleen en doen verder niets: geen lamp die flitst en niets dat klinkt. Een automatisering die binnen een minuut niet antwoordt, geeft `handler_stalled` (*niet gestart*). Dezelfde controle vindt een automatisering van een Vigil-blueprint die uitstaat, kapot is of weg is.
+- **De wekelijkse test met de echte acties** (*Instellingen*, *Zelftest*, standaard uit): één keer per week, binnen de ingestelde uren en alleen als het alarm uit staat, doen de automatiseringen hun echte werk in **oefenmodus**: de lampen flitsen drie keer, maar er is geen sirene en Vigil stuurt geen berichten. Elke blueprint heeft de keuze *Ook in oefenmodus uitvoeren*: aan voor de lampen, uit voor spraak en voor je eigen acties (die melden alleen dat ze draaiden). Dezelfde test start je vanaf de kaart *Zelftest* (*Automatiseringen testen (stil)* en *Testen met de echte acties*) of met de actie `vigil_alarm.test_handlers`.
+- **In je eigen acties** is de variabele `practice` `true` zolang oefenmodus aan staat, zodat een gecombineerde sirene en flitslamp de sirene kan weglaten: gebruik een `choose` met de voorwaarde `{{ not practice }}` om de sirene. Met de blueprint *Eigen acties uitvoeren* kun je ook de gebeurtenis `handler_test` kiezen, zodat je acties meedoen aan de wekelijkse test.
+- **Je eigen automatiseringen** kunnen ook meedoen: roep `vigil_alarm.handler_report` aan bij het begin en het einde, met dezelfde `run_id`:
+
+```yaml
+variables:
+  run_id: "{{ this.entity_id }}-{{ now().timestamp() }}"
+actions:
+  - action: vigil_alarm.handler_report
+    data:
+      run_id: "{{ run_id }}"
+      state: started
+      automation: "{{ this.entity_id }}"
+      handler: My own automation
+  # ... your actions ...
+  - action: vigil_alarm.handler_report
+    data:
+      run_id: "{{ run_id }}"
+      state: done
+```
+
+  Geef `waits_for_user: true` als de run zo lang mag duren als nodig, of `max_duration` (seconden) als een langere run een melding verdient (eenmalig, geen reparatie).
+
+Vigil ziet een actie die met `continue_on_error` bewust mocht falen niet: Home Assistant legt dat niet vast in het spoor. En een handler die tot het einde draait bewijst dat hij draaide, niet dat de lamp aanging of dat de telefoon het bericht kreeg.
+
 ## Zelfbewaking
 
 Echte storingen (een onbereikbare sensor, een bijna lege batterij, een sirene die niet beschikbaar is of op batterij werkt) staan ook onder *Instellingen → Systeem → Reparaties* en verdwijnen vanzelf als ze zijn opgelost. Ontbrekende instellingen zijn geen reparaties; die staan in *Klaar voor gebruik?*.
@@ -349,8 +380,8 @@ Echte storingen (een onbereikbare sensor, een bijna lege batterij, een sirene di
   met `supervision_lost` en `supervision_restored`.
 - **Sirenes:** Vigil meldt als een sirene onbereikbaar wordt en, met een voedingsmodus-entiteit,
   als hij op batterij draait (de waarde die "op batterij" betekent is een instelling, standaard
-  `battery`; controleer wat jouw apparaat meldt). Voeg het sabotagecontact van een sirene toe als
-  sabotagesensor.
+  `battery`; controleer wat jouw apparaat meldt). Geef een sirene haar sabotagecontact in het formulier van de sirene
+  (*Sabotage-entiteit*): Vigil maakt er een sabotagesensor bij, altijd actief in elke partitie.
 - Problemen die bij het opstarten al bestaan staan in het attribuut `problems` van het alarm, zonder
   event; events volgen bij veranderingen. Het overzicht toont ze onder *Aandachtspunten*.
 

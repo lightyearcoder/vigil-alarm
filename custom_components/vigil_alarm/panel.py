@@ -32,6 +32,7 @@ from .const import (
     DEFAULT_HEARTBEAT_INTERVAL,
     HEARTBEAT_INTERVAL_RANGE,
     CONF_SELFTEST_AUTO,
+    CONF_SELFTEST_HANDLERS,
     DEFAULT_SELFTEST,
     SELFTEST_RANGES,
     DEFAULT_LOG_RETENTION_DAYS,
@@ -46,6 +47,9 @@ from .const import (
     DEFAULT_ABORT_SECONDS,
     ABORT_SECONDS_RANGE,
     CONF_PERMANENT_BYPASS,
+    CONF_MIN_VALUE,
+    CONF_MAX_VALUE,
+    CONF_FOR,
     CONF_CHIME_ENTITY,
     CONF_CHIME_SECONDS,
     DEFAULT_CHIME_SECONDS,
@@ -169,7 +173,7 @@ def form_schema(modes: list[str], house: Mapping[str, Any] | None = None) -> dic
     return {
         "sensor": [
             _f("name", "text", required=True),
-            _f("entity_id", "entity", domains=["binary_sensor"], required=True),
+            _f("entity_id", "entity", domains=["binary_sensor", "sensor"], required=True),
             _f("cls", "select", options=list(CLASSES), default="intrusion", required=True),
             _f("type", "select", options=list(SENSOR_TYPES), default="instant", show_if=intrusion),
             _f("partition", "partition", default=PRIMARY_PARTITION, show_if=intrusion),
@@ -178,6 +182,9 @@ def form_schema(modes: list[str], house: Mapping[str, Any] | None = None) -> dic
             _f("at_arm_open", "select", options=list(AT_ARM_OPEN), default="bypass", show_if=intrusion),
             _f("entry_delay", "number", unit="s", min=0, max=600, show_if=intrusion),
             _f("gas_type", "select", options=list(GAS_TYPES), default="other", show_if={"cls": ["gas"]}),
+            _f(CONF_MIN_VALUE, "number", show_if={"cls": ["silent24"]}),
+            _f(CONF_MAX_VALUE, "number", show_if={"cls": ["silent24"]}),
+            _f(CONF_FOR, "number", unit="s", min=0, default=0, show_if={"cls": ["silent24"]}),
             _f("on_unavailable", "select", options=["default", *ON_UNAVAILABLE], default="default"),
             _f(CONF_BATTERY_ENTITY, "entity", domains=["sensor", "binary_sensor"]),
             _f(CONF_TAMPER_ENTITY, "entity", domains=["binary_sensor"], show_if={"cls": ["intrusion", "fire", "gas", "water", "alarm24", "silent24"]}),
@@ -254,6 +261,7 @@ def form_schema(modes: list[str], house: Mapping[str, Any] | None = None) -> dic
             _f("tone_entity", "entity", domains=["select", "input_select"]),
             _f("volume_entity", "entity", domains=["number", "input_number", "select", "input_select"]),
             _f("battery_entity", "entity", domains=["sensor"]),
+            _f(CONF_TAMPER_ENTITY, "entity", domains=["binary_sensor"]),
             _f("power_entity", "entity", domains=["sensor", "select"]),
             _f("power_battery_value", "text"),
             *[_f(f"{cause}.tone", "text", group=cause) for cause in PROFILE_CAUSES],
@@ -287,8 +295,9 @@ def settings_schema() -> list[dict[str, Any]]:
         _f("selftest_interval_days", "number", unit="d", min=st["selftest_interval_days"][0], max=st["selftest_interval_days"][1], section="selftest"),
         _f("selftest_siren_seconds", "number", unit="s", min=st["selftest_siren_seconds"][0], max=st["selftest_siren_seconds"][1], section="selftest"),
         _f("selftest_auto", "boolean", default=False, section="selftest"),
-        _f("selftest_window_start", "number", unit="h", min=st["selftest_window_start"][0], max=st["selftest_window_start"][1], show_if={"selftest_auto": [True]}, section="selftest"),
-        _f("selftest_window_end", "number", unit="h", min=st["selftest_window_end"][0], max=st["selftest_window_end"][1], show_if={"selftest_auto": [True]}, section="selftest"),
+        _f("selftest_handlers", "boolean", default=False, section="selftest"),
+        _f("selftest_window_start", "number", unit="h", min=st["selftest_window_start"][0], max=st["selftest_window_start"][1], section="selftest"),
+        _f("selftest_window_end", "number", unit="h", min=st["selftest_window_end"][0], max=st["selftest_window_end"][1], section="selftest"),
         _f("heartbeat_url", "text", section="heartbeat"),
         _f("heartbeat_interval_minutes", "number", unit="min", min=HEARTBEAT_INTERVAL_RANGE[0], max=HEARTBEAT_INTERVAL_RANGE[1], section="heartbeat"),
     ]
@@ -348,7 +357,7 @@ def _snapshot(hass: HomeAssistant, entry: ConfigEntry, users: list[Any]) -> dict
         if sub.subentry_type != SUBENTRY_SENSOR:
             continue
         sensor_entities[sid] = {
-            "bypass": registry.async_get_entity_id("switch", DOMAIN, f"{entry.entry_id}_{sid}_bypass"),
+            "bypass": registry.async_get_entity_id("binary_sensor", DOMAIN, f"{entry.entry_id}_{sid}_bypassed"),
             "status": registry.async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}_{sid}_status"),
         }
     return {
@@ -829,7 +838,7 @@ async def ws_save(hass: HomeAssistant, connection: websocket_api.ActiveConnectio
     stored_all = stored_items(entry)
     new_id = sub.subentry_id if sub else new_item_id()
     stored_all[new_id] = stored(TYPE_OF[msg["kind"]], title, data)
-    if msg["kind"] == "sensor":  # the tamper contact that belongs to this sensor follows it
+    if msg["kind"] in ("sensor", "siren"):  # the tamper contact that belongs to this sensor or siren follows it
         try:
             companion = plan_companion(hass, entry, new_id, title, data)
         except EditError as err:
@@ -945,7 +954,7 @@ async def ws_delete(hass: HomeAssistant, connection: websocket_api.ActiveConnect
                     item["data"] = {**item["data"], CONF_PARTITIONS: left}
                 else:
                     item["data"] = {k: v for k, v in item["data"].items() if k != CONF_PARTITIONS}
-    if sub.subentry_type == SUBENTRY_SENSOR:
+    if sub.subentry_type in (SUBENTRY_SENSOR, SUBENTRY_SIREN):
         stored_all.pop(companion_id(entry, sub.subentry_id), None)  # its tamper contact goes with it
     save_stored(hass, entry, stored_all)
     connection.send_result(msg["id"], {"ok": True})
@@ -1081,6 +1090,7 @@ async def ws_save_settings(
         connection.send_result(msg["id"], _failure(EditError({"selftest_window_end": "selftest_window"})))
         return
     data[CONF_SELFTEST_AUTO] = bool(data.get(CONF_SELFTEST_AUTO, False))
+    data[CONF_SELFTEST_HANDLERS] = bool(data.get(CONF_SELFTEST_HANDLERS, False))
     url = str(data.get(CONF_HEARTBEAT_URL) or "").strip()
     if url and not valid_url(url):
         connection.send_result(msg["id"], _failure(EditError({CONF_HEARTBEAT_URL: "heartbeat_url_invalid"})))

@@ -35,6 +35,7 @@
           "selftest_interval_days": "Jours entre les rappels de test de la sirène (0 = désactivé)",
           "selftest_siren_seconds": "Secondes pendant lesquelles la sirène sonne lors d'un test",
           "selftest_auto": "Faire sonner la sirène automatiquement pour le test",
+          "selftest_handlers": "Tester chaque semaine les automatisations qui réagissent à l'alarme",
           "selftest_window_start": "Heure la plus précoce pour le test",
           "selftest_window_end": "Heure la plus tardive pour le test",
           "heartbeat_url": "Adresse du signal de vie (facultatif)",
@@ -75,6 +76,7 @@
           "selftest_interval_days": "Jours entre les rappels de test de la sirène (0 = désactivé)",
           "selftest_siren_seconds": "Secondes pendant lesquelles la sirène sonne lors d'un test",
           "selftest_auto": "Faire sonner la sirène automatiquement pour le test",
+          "selftest_handlers": "Tester chaque semaine les automatisations qui réagissent à l'alarme",
           "selftest_window_start": "Heure la plus précoce pour le test",
           "selftest_window_end": "Heure la plus tardive pour le test",
           "heartbeat_url": "Adresse du signal de vie (facultatif)",
@@ -166,7 +168,11 @@
               "panel_key_created": "Clé du clavier créée",
               "panel_key_removed": "Clé du clavier supprimée",
               "panel_offline": "Clavier injoignable",
-              "panel_online": "Clavier de nouveau joignable"
+              "panel_online": "Clavier de nouveau joignable",
+              "handler_stalled": "Automatisation arrêtée trop tôt",
+              "handler_slow": "Automatisation longue",
+              "handler_test": "Test des gestionnaires",
+              "handler_test_done": "Test des gestionnaires terminé"
             }
           }
         }
@@ -242,16 +248,15 @@
           "panel_key_created": "Clé du clavier créée",
           "panel_key_removed": "Clé du clavier supprimée",
           "panel_offline": "Clavier injoignable",
-          "panel_online": "Clavier de nouveau joignable"
+          "panel_online": "Clavier de nouveau joignable",
+          "handler_stalled": "Automatisation arrêtée trop tôt",
+          "handler_slow": "Automatisation longue",
+          "handler_test": "Test des gestionnaires",
+          "handler_test_done": "Test des gestionnaires terminé"
         }
       },
       "panel_profile": {
         "name": "Profil"
-      }
-    },
-    "switch": {
-      "bypass": {
-        "name": "Inhibition"
       }
     },
     "binary_sensor": {
@@ -272,6 +277,9 @@
       },
       "active_alarm24": {
         "name": "Alarme 24 h"
+      },
+      "sensor_bypassed": {
+        "name": "Inhibé"
       }
     },
     "alarm_control_panel": {
@@ -381,6 +389,12 @@
     },
     "panel_key_wrong": {
       "message": "Le clavier {panel} n'a pas envoyé sa clé, ou a envoyé la mauvaise."
+    },
+    "handler_test_running": {
+      "message": "Un test des gestionnaires est déjà en cours."
+    },
+    "handler_test_needs_disarmed": {
+      "message": "Un test des gestionnaires avec les vraies actions n'est possible que lorsque l'alarme est désactivée."
     }
   },
   "services": {
@@ -597,6 +611,54 @@
           "description": "L'identifiant de la partition, ou all."
         }
       }
+    },
+    "handler_report": {
+      "name": "Signaler un gestionnaire",
+      "description": "Pour les automatisations qui réagissent à Vigil Alarm : indiquer à Vigil qu'une exécution commence ou se termine, pour qu'il voie quand l'une s'arrête trop tôt.",
+      "fields": {
+        "run_id": {
+          "name": "Exécution",
+          "description": "Un nom identique au début et à la fin d'une exécution."
+        },
+        "state": {
+          "name": "État",
+          "description": "started, done ou failed."
+        },
+        "handler": {
+          "name": "Nom",
+          "description": "Comment l'automatisation s'appelle dans les messages."
+        },
+        "automation": {
+          "name": "Automatisation",
+          "description": "L'entité de l'automatisation, pour que Vigil voie si elle tourne encore."
+        },
+        "event": {
+          "name": "Événement",
+          "description": "L'événement Vigil que l'exécution traite."
+        },
+        "waits_for_user": {
+          "name": "Attend vous",
+          "description": "L'exécution peut durer autant qu'il faut, par exemple une répétition qui attend que vous changiez quelque chose."
+        },
+        "max_duration": {
+          "name": "Durée maximale",
+          "description": "Secondes. Au-delà, un avis est donné, une seule fois."
+        },
+        "error": {
+          "name": "Erreur",
+          "description": "Ce qui a mal tourné, avec l'état failed."
+        }
+      }
+    },
+    "test_handlers": {
+      "name": "Tester les gestionnaires",
+      "description": "Faire montrer aux automatisations qui réagissent à Vigil Alarm qu'elles tournent. En silence (elles signalent seulement) ou, en mode d'entraînement, pour de vrai.",
+      "fields": {
+        "quiet": {
+          "name": "Silencieux",
+          "description": "Activé : les automatisations signalent seulement. Désactivé : elles font leur travail, en mode d'entraînement (pas de sirène, pas de messages de Vigil)."
+        }
+      }
     }
   },
   "issues": {
@@ -635,6 +697,26 @@
     "panel_offline": {
       "title": "Clavier injoignable : {name}",
       "description": "Vigil Alarm n'a pas pu joindre le clavier {name} pendant dix minutes. Vérifiez l'alimentation et le wifi du clavier. L'alarme elle-même continue de fonctionner. Ce message disparaît de lui-même lorsque le clavier est de retour."
+    },
+    "handler_stalled": {
+      "title": "Automatisation arrêtée trop tôt : {name}",
+      "description": "L'automatisation {name} réagit à Vigil Alarm mais s'est arrêtée avant la fin : {detail}. Ouvrez l'automatisation et sa trace (Paramètres, Automatisations, les trois points, Traces) pour voir ce qui a mal tourné. Ce message disparaît quand l'automatisation est de nouveau allée jusqu'au bout."
+    },
+    "handler_not_started": {
+      "title": "Automatisation non démarrée : {name}",
+      "description": "Lors du test des gestionnaires, l'automatisation {name} n'a pas démarré. Vérifiez qu'elle est activée et que son déclencheur est l'entité d'événements de Vigil Alarm. Ce message disparaît quand elle a de nouveau démarré."
+    },
+    "handler_disabled": {
+      "title": "Automatisation désactivée : {name}",
+      "description": "L'automatisation {name} réagit à Vigil Alarm mais est désactivée, donc elle ne fait rien. Activez-la, ou supprimez-la si vous n'en avez plus besoin."
+    },
+    "handler_unavailable": {
+      "title": "Automatisation hors service : {name}",
+      "description": "L'automatisation {name} réagit à Vigil Alarm mais ne peut pas fonctionner, probablement à cause d'une erreur dans sa configuration. Ouvrez-la pour voir l'erreur. Ce message disparaît tout seul."
+    },
+    "handler_missing": {
+      "title": "Automatisation absente : {name}",
+      "description": "L'automatisation {name} réagissait à Vigil Alarm mais est introuvable. Restaurez-la, ou supprimez-la de la liste des entités si vous l'avez retirée exprès."
     }
   }
 }

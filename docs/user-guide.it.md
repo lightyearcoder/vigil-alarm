@@ -49,7 +49,7 @@ Questa guida spiega come configurare e usare Vigil Alarm. Per l'installazione ve
 | **Antimanomissione** | Sorveglia sempre. Un contatto antimanomissione che si apre fa scattare un allarme. |
 | **Acqua** | Sorveglia sempre. Un *allarme tecnico*: non cambia mai lo stato dell'allarme, pubblica solo eventi e un sensore «allarme attivo». |
 | **24 ore con suono** | Sorveglia sempre, in ogni stato, anche con l'allarme disattivato, come un contatto antimanomissione: quando si apre, la sirena suona e i canali di allarme ricevono un messaggio (causa *allarme 24 h*). Per un pulsante antipanico o una cassaforte. Finché è aperto, l'inserimento viene rifiutato. |
-| **24 ore silenzioso** | Sorveglia sempre, senza sirena: un *allarme tecnico* come l'acqua, con un messaggio ai canali *Tecnico* e una riga nel registro. Per un pulsante antipanico silenzioso o un congelatore che si scalda. |
+| **24 ore silenzioso** | Sorveglia sempre, senza sirena: un *allarme tecnico* come l'acqua, con un messaggio ai canali *Tecnico* e una riga nel registro. Per un pulsante antipanico silenzioso, o per un numero: scegli un sensore con un numero (temperatura, tensione, potenza, corrente) e imposta un limite inferiore e/o superiore e un tempo. Un valore fuori dai limiti per più di quel tempo è un sensore aperto; di nuovo entro i limiti è chiuso subito. Esempi: congelatore sopra -15 per 30 minuti, frigorifero sopra 8, un terrario o acquario fuori dal suo intervallo, un locale dove l'aria condizionata si è fermata, tensione di rete sotto 180 per un minuto. Un valore che non è un numero (`unavailable`) segue la scelta fatta per i sensori non disponibili. |
 
 ### Gruppi di sensori: quali sensori sorvegliano in quale modalità
 
@@ -82,7 +82,7 @@ lo stato dell'allarme viene mantenuto.
    - Scegli il `binary_sensor`. Per un contatto porta o un rilevatore di movimento, il pannello propone da solo il gruppo
      di sensori giusto.
    - Scegli la classe e, per l'intrusione, il tipo e i gruppi di sensori.
-   - Il dispositivo ha anche un contatto antimanomissione (la maggior parte dei contatti porta Zigbee lo ha)? Indicalo in *Entità antimanomissione*. Vigil aggiunge da sé un sensore antimanomissione chiamato «Porta d'ingresso (antimanomissione)»: sempre in sorveglianza, con il proprio interruttore di esclusione. Segue il sensore quando lo rinomini, lo modifichi o lo elimini, e non ha una riga propria nella tabella.
+   - Il dispositivo ha anche un contatto antimanomissione (la maggior parte dei contatti porta Zigbee lo ha)? Indicalo in *Entità antimanomissione*. Vigil aggiunge da sé un sensore antimanomissione chiamato «Porta d'ingresso (antimanomissione)»: sempre in sorveglianza, con il proprio indicatore *Escluso*. Segue il sensore quando lo rinomini, lo modifichi o lo elimini, e non ha una riga propria nella tabella.
    - *Se aperto alla fine del ritardo d'uscita* decide cosa succede a una porta ancora aperta al momento dell'inserimento: **escludere con un avviso** (predefinito; torna sorvegliata appena si chiude), **attendere la chiusura**, **rifiutare l'inserimento** o **avviare il ritardo d'ingresso**.
    - *Quando il sensore diventa irraggiungibile*: **bloccare l'inserimento** (predefinito per intrusione e
      antimanomissione), **solo notificare** (predefinito per incendio, gas e acqua), **far scattare l'allarme** o **inserire
@@ -152,7 +152,7 @@ L'esclusione mette da parte un sensore fino alla disattivazione dell'allarme (o 
 
 **Esclusione permanente.** Spunta *Mantieni l'esclusione dopo la disattivazione (permanente)* su un sensore (non disponibile per sensori di incendio e gas) e un'esclusione manuale di quel sensore resta dopo la disattivazione dell'allarme, anche dopo un riavvio di Home Assistant, finché qualcuno non la ripristina a mano. Utile per un sensore guasto da tempo. Il sensore resta nell'elenco come *escluso*, la scheda *Panoramica* ha una scheda **Esclusi in modo permanente** con un pulsante *Ripristina*, e la scheda Vigil e la tastiera touch mostrano *Escluso: finestra rotta* sotto *Disattivato*, così non viene dimenticato; il registro ha `sensor_bypassed` all'inizio e `sensor_unbypassed` (motivo *manuale*) alla fine. Senza la spunta non cambia nulla: l'esclusione termina alla disattivazione.
 
-- Nel pannello e nella dashboard: l'interruttore **Escludi** del sensore (solo amministratori).
+- Nel pannello Vigil: il pulsante **Escludi** del sensore (solo amministratori). Nella scheda Vigil e sul pannello touch lo stesso, con un codice. L'entità `binary_sensor.<sensore>_bypassed` lo mostra (sola lettura; non c'è un interruttore).
 - Tramite azione: `vigil_alarm.bypass` e `vigil_alarm.unbypass` con l'entità del sensore e, per chi non è
   amministratore, un codice. Questo codice serve solo se anche l'inserimento ne richiede uno (l'impostazione
   *codice richiesto per inserire*). I sensori antimanomissione possono essere esclusi solo dagli amministratori e dagli utenti
@@ -296,7 +296,7 @@ Per impostazione predefinita Vigil ha un solo allarme. In **Partizioni** puoi ag
 - **I gruppi di sensori appartengono a una partizione.** Con più di una partizione, la scheda *Gruppi di sensori* ha una tabella per partizione. Un gruppo propone solo le modalità della sua partizione, e un sensore può usare solo i gruppi della propria partizione. Una nuova partizione parte senza gruppi: usa *Crea i gruppi predefiniti* nella sua tabella. Anche le regole di conferma sono elencate per partizione (tutti i sensori di una regola devono essere in una partizione).
 - **Il registro** ha una colonna *Partizione*; un evento di incendio, gas, acqua o 24 ore non ne ha (vale per tutta la casa).
 - **Le tastiere touch e la scheda del tablet** mostrano sempre quale partizione (o *Tutte*) usano, anche quando ce n'è una sola, con *Vigil Alarm* e il logo. Una tastiera che può usare più partizioni ha una riga di pulsanti per cambiare (e un pulsante in alto nella pagina *Sensori* che sceglie di quale partizione sono elencati i sensori); *Tutte* inserisce o disattiva ogni partizione. Dopo il ritardo di ritorno senza tocchi torna alla sua partizione predefinita, ma non finché l'elenco dei sensori è aperto. Il servizio `vigil_alarm.select_partition` fa lo stesso cambio da un'automazione.
-- **Sensori sempre attivi a parte.** I sensori antincendio, gas, acqua, manomissione e 24 ore non appartengono ad alcuna partizione, quindi l'elenco dei sensori di una partizione (sulla scheda Vigil e sulla tastiera touch) non li mostra. Sono una scelta a sé accanto alle partizioni, *Sempre attivo*: sulla scheda un pulsante in più nella riga della pagina *Sensori*, sulla tastiera touch un passo in più del pulsante della partizione in alto in quella pagina. Con più di quattro partizioni la tastiera touch ne mostra tre alla volta con una freccia per lato (il pulsante *Tutto* resta); una partizione scelta altrove porta in vista la propria pagina.
+- **Sensori sempre attivi a parte.** I sensori antincendio, gas, acqua, manomissione e 24 ore non appartengono ad alcuna partizione, quindi l'elenco dei sensori di una partizione (sulla scheda Vigil e sulla tastiera touch) non li mostra. Sono una scelta a sé accanto alle partizioni, *Sempre attivo*: sulla scheda un pulsante in più nella riga della pagina *Sensori*, sulla tastiera touch un passo in più del pulsante della partizione in alto in quella pagina. Con più di quattro partizioni la tastiera touch ne mostra quattro alla volta con una freccia per lato (la freccia destra resta all'estrema destra; *Tutto* viene dopo l'ultima partizione, nell'ultima pagina, o in una pagina a parte se quella è piena); una partizione scelta altrove porta in vista la propria pagina.
 
 ## Automazioni e blueprint
 
@@ -308,14 +308,14 @@ I [blueprint](../README.md#blueprints) forniti coprono i casi comuni:
 
 - **Far lampeggiare le luci durante un allarme** salva lo stato delle tue luci, le fa lampeggiare finché l'allarme
   è scattato e le ripristina dopo, anche quando l'allarme viene disattivato. Scegli quali
-  cause fanno lampeggiare (il gas è disattivato per impostazione predefinita). Il valore predefinito di 2 secondi acceso e 2 secondi spento resta
+  cause fanno lampeggiare (il gas è disattivato per impostazione predefinita) e, con più di una partizione, per quali partizioni (*Only for these partitions*). Il valore predefinito di 2 secondi acceso e 2 secondi spento resta
   ben al di sotto della frequenza che conta per le persone fotosensibili. Per Hue usa una stanza o una zona
   (gruppo) invece di singole lampade; i gruppi sono disattivati per impostazione predefinita in Home Assistant, quindi attivali
   prima.
 - **Annunciare gli eventi di allarme a voce** pronuncia un messaggio quando l'allarme si inserisce, si disattiva, avvia
-  il ritardo d'ingresso o scatta. Lascia vuoto un messaggio per restare in silenzio per quell'evento.
+  il ritardo d'ingresso o scatta. Lascia vuoto un messaggio per restare in silenzio per quell'evento. Con più di una partizione il messaggio inizia con il nome della partizione (si disattiva con *Name the partition*; `partition_name` è disponibile anche nel tuo testo).
 - **Eseguire azioni tue sugli eventi di allarme** è il mattone generale: scegli gli eventi e aggiungi
-  qualsiasi azione, con `event_type` e `data` disponibili.
+  qualsiasi azione, con `event_type` e `data` disponibili. Questo blueprint e quello vocale hanno *Only for these partitions* (se ne possono scegliere più d'una; vuoto = tutte); `data.partition_name` dice di quale partizione si tratta.
 - **Ricordare all'arrivo in una casa inserita** invia un messaggio quando qualcuno rientra mentre l'
   allarme è inserito. Non disattiva.
 
@@ -336,6 +336,37 @@ scelte:
 Se l'inserimento viene rifiutato (per esempio perché una porta è aperta), puoi ricevere un messaggio che dice
 perché. Se lasci vuoto il campo del messaggio, non viene inviato nulla.
 
+### Le tue automazioni girano ancora?
+
+Un blueprint o un'automazione che reagisce all'allarme può fallire senza che nessuno se ne accorga: è disattivata, ha un errore, o una lampada che non esiste. Vigil lo tiene d'occhio.
+
+- **I blueprint di Vigil** (far lampeggiare le luci, voce, azioni proprie) dicono a Vigil con l'azione `vigil_alarm.handler_report` quando un'esecuzione inizia e quando è finita. Un'esecuzione che finisce **senza** essere finita (un errore l'ha fermata, o è stata disattivata) dà l'evento `handler_stalled`, un messaggio ai tuoi canali di guasto, una riga in *Pronto all'uso?* e una **riparazione** in Home Assistant. Se Home Assistant ha ancora la traccia, la riparazione dice quale passaggio è fallito. Un gestore che semplicemente gira ancora, per esempio una ripetizione che aspetta che tu cambi qualcosa, non è mai un guasto, per quanto duri: Vigil guarda l'automazione stessa (il numero di esecuzioni in corso), non l'orologio.
+- **Il controllo silenzioso:** ogni giorno, con l'autotest, Vigil chiede a ogni automazione che reagisce all'allarme di segnalare che gira (l'evento `handler_test` con `dry_run`). I blueprint allora segnalano soltanto e non fanno altro: nessuna luce lampeggia e nulla suona. Un'automazione che non risponde entro un minuto dà `handler_stalled` (*non partita*). Lo stesso controllo trova un'automazione di un blueprint di Vigil che è disattivata, rotta o sparita.
+- **Il test settimanale con le azioni vere** (*Impostazioni*, *Autotest*, disattivato di default): una volta a settimana, nelle ore impostate e solo con l'allarme spento, le automazioni fanno il loro lavoro vero in **modalità prova**: le luci lampeggiano tre volte, ma niente sirena e Vigil non invia messaggi. Ogni blueprint ha la scelta *Agisci anche in modalità prova*: attiva per le luci, disattiva per la voce e per le tue azioni (segnalano soltanto che hanno girato). Lo stesso test parte dalla scheda *Autotest* (*Testare le automazioni (in silenzio)* e *Testare con le azioni vere*) o con l'azione `vigil_alarm.test_handlers`.
+- **Nelle tue azioni** la variabile `practice` è `true` finché la modalità prova è attiva, così una sirena e una luce lampeggiante combinate possono lasciare fuori la sirena: usa un `choose` con la condizione `{{ not practice }}` attorno alla sirena. Con il blueprint *Esegui le tue azioni* puoi anche scegliere l'evento `handler_test`, così le tue azioni partecipano al test settimanale.
+- **Le tue automazioni** possono partecipare: chiama `vigil_alarm.handler_report` all'inizio e alla fine, con lo stesso `run_id`:
+
+```yaml
+variables:
+  run_id: "{{ this.entity_id }}-{{ now().timestamp() }}"
+actions:
+  - action: vigil_alarm.handler_report
+    data:
+      run_id: "{{ run_id }}"
+      state: started
+      automation: "{{ this.entity_id }}"
+      handler: My own automation
+  # ... your actions ...
+  - action: vigil_alarm.handler_report
+    data:
+      run_id: "{{ run_id }}"
+      state: done
+```
+
+  Indica `waits_for_user: true` se l'esecuzione può durare quanto serve, o `max_duration` (secondi) se un'esecuzione più lunga merita un avviso (una sola volta, nessuna riparazione).
+
+Vigil non vede un'azione che poteva fallire di proposito con `continue_on_error`: Home Assistant non la registra nella traccia. E un gestore che arriva fino in fondo prova che ha girato, non che la lampada si sia accesa o che il telefono abbia ricevuto il messaggio.
+
 ## Autosorveglianza
 
 I veri guasti (un sensore irraggiungibile, una batteria scarica, una sirena non disponibile o a batteria) compaiono anche in *Impostazioni → Sistema → Riparazioni* e scompaiono da soli una volta risolti. Le impostazioni mancanti non sono riparazioni; *Pronto all'uso?* le mostra.
@@ -346,7 +377,7 @@ I veri guasti (un sensore irraggiungibile, una batteria scarica, una sirena non 
   con `supervision_lost` e `supervision_restored`.
 - **Sirene:** Vigil segnala quando una sirena diventa non disponibile e, con un'entità per la modalità di alimentazione,
   quando funziona a batteria (il valore che significa «a batteria» è un'impostazione, predefinito
-  `battery`; controlla cosa riporta il tuo dispositivo). Aggiungi il contatto antimanomissione di una sirena come sensore antimanomissione.
+  `battery`; controlla cosa riporta il tuo dispositivo). Indica il contatto antimanomissione di una sirena nel modulo della sirena (*Entità antimanomissione*): Vigil aggiunge un sensore antimanomissione, sempre in sorveglianza in ogni partizione.
 - I problemi presenti all'avvio sono elencati nell'attributo `problems` dell'allarme senza evento; seguono eventi alle variazioni. La panoramica li mostra sotto *Attenzione*.
 
 ### Autotest

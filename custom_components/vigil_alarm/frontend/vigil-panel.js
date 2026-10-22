@@ -646,8 +646,34 @@ class VigilPanel extends HTMLElement {
     // What the last start of each siren came to: confirmed on, command sent only, or failed.
     const starts = st.siren_starts || [];
     for (const s of starts) rows.push(row(fill(t.lastStart, { name: s.name }), `${t.startResult[s.result] || s.result} (${when(s.at)})`));
+    // The automations that react to the alarm: how many, the last test, what is wrong, and the two test buttons.
+    const hd = st.handlers;
+    let handlerBlock = null;
+    if (hd) {
+      const last = hd.last_test;
+      const ok = last ? Object.values(last.result).filter((r) => r === "ok").length : 0;
+      const total = last ? Object.keys(last.result).length : 0;
+      const line = hd.handlers
+        ? fill(t.handlersLine, { n: hd.handlers, when: last ? when(new Date(last.at * 1000).toISOString()) : t.never, ok, total })
+        : t.handlersNone;
+      const test = (quiet) => async () => {
+        try {
+          await this._hass.callService("vigil_alarm", "test_handlers", { quiet });
+          this._toast(quiet ? t.startedQuiet : t.startedReal);
+          for (const wait of [5000, 65000]) setTimeout(async () => { await this._load(); this._renderBody(); }, wait);
+        } catch (err) { this._toast(String((err && err.message) || err)); }
+      };
+      handlerBlock = el("div", {},
+        el("div", { style: "font-weight:600;margin:14px 0 4px", text: t.handlers }),
+        el("div", { class: "muted", text: line }),
+        ...(hd.problems || []).map((p) => el("div", { class: "badge bad", text: fill(t.handlerProblem, { name: p.name || p.automation, why: (t.handlerWhy || {})[p.code] || p.code }) })),
+        st.handlers_weekly ? el("div", { class: "muted", text: t.handlerWeekly }) : null,
+        hd.handlers ? el("button", { class: "btn", style: "margin-top:8px", text: t.testQuiet, disabled: hd.testing, onclick: test(true) }) : null,
+        hd.handlers ? el("button", { class: "btn", text: t.testReal, disabled: hd.testing, onclick: test(false) }) : null);
+    }
     return el("div", { class: "card" }, el("h2", { text: t.title }),
       el("div", { class: "tablewrap" }, el("table", {}, el("tbody", {}, rows))),
+      handlerBlock,
       ...(st.problems || []).map((p) => el("div", { class: "muted", text: fill(t.problems, { name: p.name }) })),
       st.overdue_days != null ? el("div", { class: "badge bad", text: fill(t.overdue, { days: st.overdue_days }) }) : null,
       !st.siren ? el("div", { class: "muted", text: t.noSiren }) : (!st.enabled ? el("div", { class: "muted", text: t.off }) : null),

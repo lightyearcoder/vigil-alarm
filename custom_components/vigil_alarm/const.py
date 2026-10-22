@@ -74,6 +74,9 @@ SIREN_CAUSES = ("intrusion", "fire", "gas", "tamper", "fault")
 PROFILE_CAUSES = ("intrusion", "fire", "gas", "tamper")
 FLAMMABLE_GAS = ("natural_gas", "lpg")
 
+CONF_MIN_VALUE = "min_value"  # on a sensor that holds a number: the lower limit
+CONF_MAX_VALUE = "max_value"  # ... the upper limit
+CONF_FOR = "for_seconds"  # ... how long outside the limits before it counts
 CONF_BATTERY_ENTITY = "battery_entity"
 CONF_TAMPER_ENTITY = "tamper_entity"  # on a sensor: its own tamper contact, kept as a companion sensor
 CONF_COMPANION_OF = "companion_of"  # on the companion: the id of the sensor it belongs to
@@ -85,12 +88,14 @@ DEFAULT_BATTERY_THRESHOLD = 20
 CONF_SELFTEST_INTERVAL = "selftest_interval_days"  # 0 = no reminders
 CONF_SELFTEST_SECONDS = "selftest_siren_seconds"
 CONF_SELFTEST_AUTO = "selftest_auto"
+CONF_SELFTEST_HANDLERS = "selftest_handlers"  # test the automations that react to the alarm every week
 CONF_SELFTEST_FROM = "selftest_window_start"  # hour of the day
 CONF_SELFTEST_TO = "selftest_window_end"
 DEFAULT_SELFTEST = {
     CONF_SELFTEST_INTERVAL: 30,
     CONF_SELFTEST_SECONDS: 2,
     CONF_SELFTEST_AUTO: False,
+    CONF_SELFTEST_HANDLERS: False,
     CONF_SELFTEST_FROM: 9,
     CONF_SELFTEST_TO: 20,
 }
@@ -207,6 +212,10 @@ EVENT_TYPES = [
     "panel_key_removed",
     "panel_offline",
     "panel_online",
+    "handler_stalled",
+    "handler_slow",
+    "handler_test",
+    "handler_test_done",
 ]
 
 # Control points (panels, tablets): the register and the profile each one gets.

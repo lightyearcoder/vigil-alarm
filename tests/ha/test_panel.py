@@ -50,7 +50,7 @@ async def test_get_lists_everything_without_secrets(hass, hass_ws_client):
     assert anna["has_code"] is True
     assert "code_hash" not in anna["data"] and "code_salt" not in anna["data"] and "1234" not in plain(result)
     assert "code_hash" not in str(result) and "code_salt" not in str(result)
-    assert result["sensor_entities"]["front"]["bypass"] == "switch.front_door_bypass"
+    assert result["sensor_entities"]["front"]["bypass"] == "binary_sensor.front_door_bypassed"
     assert result["sensor_entities"]["front"]["status"] == "sensor.front_door_status"
     assert result["alarm_entity"] == "alarm_control_panel.vigil_alarm"
     assert [f["key"] for f in result["forms"]["sensor"]][:3] == ["name", "entity_id", "cls"]

@@ -2,13 +2,27 @@ blueprint:
   name: Vigil - Announce alarm events with speech
   description: >
     Speaks a message on one or more speakers when the alarm changes state. Leave a message empty to
-    stay silent for that event. In the messages you can use these values:
-    `{{ trigger.to_state.attributes.mode }}`, `user`, `sensor_name` and `cause`.
+    stay silent for that event. This automation also tells Vigil Alarm when a run starts and ends, so Vigil can see
+    if one stops early. In the messages you can use these values:
+    `{{ trigger.to_state.attributes.mode }}`, `user`, `sensor_name`, `cause` and `partition_name` (only there when you have more than one partition).
   domain: automation
+  author: lightyearcoder
   homeassistant:
     min_version: 2024.10.0
   source_url: https://github.com/lightyearcoder/vigil-alarm/blob/main/blueprints/automation/vigil_alarm/announce_with_speech.yaml
   input:
+    partitions:
+      name: Only for these partitions
+      description: >
+        Pick at least one partition: the messages are spoken for events of those partitions only. Pick the entity
+        for all partitions to react to every partition. Events that belong to no partition, and the weekly test,
+        always count.
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - integration: vigil_alarm
+              domain: alarm_control_panel
     events:
       name: Vigil events
       selector:
@@ -54,6 +68,29 @@ blueprint:
       default: "Alarm! {{ trigger.to_state.attributes.sensor_name | default('') }}"
       selector:
         text:
+    msg_handler_test:
+      name: Test
+      description: Spoken during the weekly test with the real actions (only if you also act in practice mode). Leave empty to stay silent.
+      default: "This is a test of the alarm."
+      selector:
+        text:
+    say_partition:
+      name: Name the partition
+      description: >
+        With more than one partition, start each message with the name of the partition it is about ("Garage. Alarm armed.").
+        Switch this off if your messages already have it (`partition_name`) or you do not want it.
+      default: true
+      selector:
+        boolean:
+    in_practice:
+      name: Also act in practice mode
+      description: >
+        In practice mode and in the weekly test with the real actions Vigil keeps its siren and its own messages
+        quiet. Switch this on if this automation may still do its work then (lights flashing, say) and off if it
+        must stay quiet (speech, a siren, messages). The automation always tells Vigil that it ran.
+      default: false
+      selector:
+        boolean:
 
 mode: queued
 max_exceeded: silent
@@ -66,7 +103,24 @@ variables:
     disarmed: !input msg_disarmed
     pending_started: !input msg_pending_started
     triggered: !input msg_triggered
-  text: "{{ messages.get(event_type, '') | trim }}"
+    handler_test: !input msg_handler_test
+  in_practice: !input in_practice
+  partition_pick: !input partitions
+  partition_ids: "{{ partition_pick | map('state_attr', 'partition') | select('string') | list }}"
+  every_partition: >
+    {{ partition_pick | length == 0
+       or partition_pick | map('state_attr', 'partitions') | select('mapping') | list | length > 0 }}
+  event_partition: "{{ trigger.to_state.attributes.get('partition', '') or '' }}"
+  in_scope: "{{ every_partition or event_partition == '' or event_partition in partition_ids }}"
+  say_partition: !input say_partition
+  message: "{{ messages.get(event_type, '') | trim }}"
+  partition_name: "{{ trigger.to_state.attributes.get('partition_name', '') or '' }}"
+  text: "{{ (partition_name ~ '. ' ~ message) if (say_partition and partition_name and message) else message }}"
+  practice: "{{ trigger.to_state.attributes.get('practice', false) }}"
+  dry_run: "{{ trigger.to_state.attributes.get('dry_run', false) }}"
+  is_test: "{{ event_type == 'handler_test' }}"
+  run_id: "{{ this.entity_id }}-{{ now().timestamp() }}"
+  skip: "{{ dry_run or (practice and not in_practice) or message == '' }}"
 
 triggers:
   - trigger: state
@@ -74,12 +128,34 @@ triggers:
 
 conditions:
   - condition: template
-    value_template: "{{ text != '' }}"
+    value_template: "{{ (message != '' and in_scope) or is_test }}"
 
 actions:
-  - action: tts.speak
-    target:
-      entity_id: !input tts
+  - alias: Tell Vigil this run has started
+    action: vigil_alarm.handler_report
+    continue_on_error: true
     data:
-      media_player_entity_id: !input speakers
-      message: "{{ text }}"
+      run_id: "{{ run_id }}"
+      state: started
+      handler: "{{ state_attr(this.entity_id, 'friendly_name') or this.entity_id }}"
+      automation: "{{ this.entity_id }}"
+      event: "{{ event_type }}"
+  - alias: Speak
+    if:
+      - condition: template
+        value_template: "{{ not skip }}"
+    then:
+      - action: tts.speak
+        target:
+          entity_id: !input tts
+        data:
+          media_player_entity_id: !input speakers
+          message: "{{ text }}"
+  - alias: Tell Vigil this run is done
+    action: vigil_alarm.handler_report
+    continue_on_error: true
+    data:
+      run_id: "{{ run_id }}"
+      state: done
+      automation: "{{ this.entity_id }}"
+

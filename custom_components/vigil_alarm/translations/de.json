@@ -35,6 +35,7 @@
           "selftest_interval_days": "Tage zwischen Erinnerungen an den Sirenentest (0 = aus)",
           "selftest_siren_seconds": "Sekunden, die die Sirene beim Test ertönt",
           "selftest_auto": "Sirene für den Test selbstständig ertönen lassen",
+          "selftest_handlers": "Jede Woche die Automatisierungen testen, die auf den Alarm reagieren",
           "selftest_window_start": "Früheste Uhrzeit für den Test",
           "selftest_window_end": "Späteste Uhrzeit für den Test",
           "heartbeat_url": "Heartbeat-Adresse (optional)",
@@ -75,6 +76,7 @@
           "selftest_interval_days": "Tage zwischen Erinnerungen an den Sirenentest (0 = aus)",
           "selftest_siren_seconds": "Sekunden, die die Sirene beim Test ertönt",
           "selftest_auto": "Sirene für den Test selbstständig ertönen lassen",
+          "selftest_handlers": "Jede Woche die Automatisierungen testen, die auf den Alarm reagieren",
           "selftest_window_start": "Früheste Uhrzeit für den Test",
           "selftest_window_end": "Späteste Uhrzeit für den Test",
           "heartbeat_url": "Heartbeat-Adresse (optional)",
@@ -166,7 +168,11 @@
               "panel_key_created": "Bedienteil-Schlüssel erstellt",
               "panel_key_removed": "Bedienteil-Schlüssel entfernt",
               "panel_offline": "Bedienteil nicht erreichbar",
-              "panel_online": "Bedienteil wieder erreichbar"
+              "panel_online": "Bedienteil wieder erreichbar",
+              "handler_stalled": "Automatisierung vorzeitig beendet",
+              "handler_slow": "Automatisierung läuft lange",
+              "handler_test": "Handler-Test",
+              "handler_test_done": "Handler-Test beendet"
             }
           }
         }
@@ -242,16 +248,15 @@
           "panel_key_created": "Bedienteil-Schlüssel erstellt",
           "panel_key_removed": "Bedienteil-Schlüssel entfernt",
           "panel_offline": "Bedienteil nicht erreichbar",
-          "panel_online": "Bedienteil wieder erreichbar"
+          "panel_online": "Bedienteil wieder erreichbar",
+          "handler_stalled": "Automatisierung vorzeitig beendet",
+          "handler_slow": "Automatisierung läuft lange",
+          "handler_test": "Handler-Test",
+          "handler_test_done": "Handler-Test beendet"
         }
       },
       "panel_profile": {
         "name": "Profil"
-      }
-    },
-    "switch": {
-      "bypass": {
-        "name": "Überbrückung"
       }
     },
     "binary_sensor": {
@@ -272,6 +277,9 @@
       },
       "active_alarm24": {
         "name": "24-Stunden-Alarm"
+      },
+      "sensor_bypassed": {
+        "name": "Überbrückt"
       }
     },
     "alarm_control_panel": {
@@ -381,6 +389,12 @@
     },
     "panel_key_wrong": {
       "message": "Das Bedienteil {panel} hat seinen Schlüssel nicht gesendet oder den falschen."
+    },
+    "handler_test_running": {
+      "message": "Es läuft bereits ein Handler-Test."
+    },
+    "handler_test_needs_disarmed": {
+      "message": "Ein Handler-Test mit den echten Aktionen geht nur, wenn der Alarm aus ist."
     }
   },
   "services": {
@@ -597,6 +611,54 @@
           "description": "Die ID der Partition oder all."
         }
       }
+    },
+    "handler_report": {
+      "name": "Einen Handler melden",
+      "description": "Für Automatisierungen, die auf Vigil Alarm reagieren: Vigil mitteilen, dass ein Lauf beginnt oder endet, damit Vigil sieht, wann einer vorzeitig stoppt.",
+      "fields": {
+        "run_id": {
+          "name": "Lauf",
+          "description": "Ein Name, der bei Beginn und Ende eines Laufs gleich ist."
+        },
+        "state": {
+          "name": "Status",
+          "description": "started, done oder failed."
+        },
+        "handler": {
+          "name": "Name",
+          "description": "Wie die Automatisierung in Meldungen heißt."
+        },
+        "automation": {
+          "name": "Automatisierung",
+          "description": "Die Entität der Automatisierung, damit Vigil sehen kann, ob sie noch läuft."
+        },
+        "event": {
+          "name": "Ereignis",
+          "description": "Das Vigil-Ereignis, das der Lauf behandelt."
+        },
+        "waits_for_user": {
+          "name": "Wartet auf dich",
+          "description": "Der Lauf darf so lange dauern wie nötig, zum Beispiel eine Wiederholung, die wartet, bis du etwas umschaltest."
+        },
+        "max_duration": {
+          "name": "Längste Zeit",
+          "description": "Sekunden. Länger als das gibt einmalig eine Meldung."
+        },
+        "error": {
+          "name": "Fehler",
+          "description": "Was schiefging, beim Status failed."
+        }
+      }
+    },
+    "test_handlers": {
+      "name": "Die Handler testen",
+      "description": "Die Automatisierungen, die auf Vigil Alarm reagieren, zeigen lassen, dass sie laufen. Still (sie melden nur) oder im Übungsmodus echt.",
+      "fields": {
+        "quiet": {
+          "name": "Still",
+          "description": "An: die Automatisierungen melden nur. Aus: sie tun ihre Arbeit, im Übungsmodus (keine Sirene, keine Nachrichten von Vigil)."
+        }
+      }
     }
   },
   "issues": {
@@ -635,6 +697,26 @@
     "panel_offline": {
       "title": "Bedienteil nicht erreichbar: {name}",
       "description": "Vigil Alarm konnte das Bedienteil {name} zehn Minuten lang nicht erreichen. Prüfe Strom und WLAN des Bedienteils. Die Alarmanlage selbst funktioniert weiter. Diese Meldung verschwindet von selbst, wenn das Bedienteil wieder da ist."
+    },
+    "handler_stalled": {
+      "title": "Automatisierung vorzeitig beendet: {name}",
+      "description": "Die Automatisierung {name} reagiert auf Vigil Alarm, wurde aber beendet, bevor sie fertig war: {detail}. Öffne die Automatisierung und ihre Ablaufverfolgung (Einstellungen, Automatisierungen, die drei Punkte, Abläufe), um zu sehen, was schiefging. Diese Meldung verschwindet, wenn die Automatisierung wieder bis zum Ende gelaufen ist."
+    },
+    "handler_not_started": {
+      "title": "Automatisierung nicht gestartet: {name}",
+      "description": "Beim Handler-Test ist die Automatisierung {name} nicht gestartet. Prüfe, ob sie eingeschaltet ist und ob ihr Auslöser die Ereignis-Entität von Vigil Alarm ist. Diese Meldung verschwindet, wenn sie wieder gestartet ist."
+    },
+    "handler_disabled": {
+      "title": "Automatisierung ausgeschaltet: {name}",
+      "description": "Die Automatisierung {name} reagiert auf Vigil Alarm, ist aber ausgeschaltet und tut daher nichts. Schalte sie ein oder lösche sie, wenn du sie nicht mehr brauchst."
+    },
+    "handler_unavailable": {
+      "title": "Automatisierung funktioniert nicht: {name}",
+      "description": "Die Automatisierung {name} reagiert auf Vigil Alarm, kann aber nicht arbeiten, wahrscheinlich wegen eines Fehlers in ihrer Konfiguration. Öffne sie, um den Fehler zu sehen. Diese Meldung verschwindet von selbst."
+    },
+    "handler_missing": {
+      "title": "Automatisierung fehlt: {name}",
+      "description": "Die Automatisierung {name} hat auf Vigil Alarm reagiert, ist aber nicht mehr zu finden. Stelle sie wieder her oder lösche sie aus der Entitätenliste, wenn du sie absichtlich entfernt hast."
     }
   }
 }

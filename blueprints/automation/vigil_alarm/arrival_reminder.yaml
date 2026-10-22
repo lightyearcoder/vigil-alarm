@@ -4,6 +4,7 @@ blueprint:
     Sends a message when someone arrives home while the alarm is still armed, so nobody walks in
     and sets it off. It does not disarm anything.
   domain: automation
+  author: lightyearcoder
   homeassistant:
     min_version: 2024.10.0
   source_url: https://github.com/lightyearcoder/vigil-alarm/blob/main/blueprints/automation/vigil_alarm/arrival_reminder.yaml

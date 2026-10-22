@@ -286,7 +286,7 @@ def test_the_panel_has_arrows_for_many_partitions_and_a_list_of_always_on_sensor
     # arrows on both sides of the partition buttons, shown only when there are more partitions than fit
     for name in ("chip_prev", "chip_next"):
         assert f"id: {name}" in yaml and f"id({name})" in yaml
-    assert "parts_paged()" in header and "PARTS_PER_PAGE = 3" in header and "sync_chip_page()" in yaml
+    assert "parts_paged()" in header and "PARTS_PER_PAGE = 4" in header and "sync_chip_page()" in yaml
     # the always-on sensors: their own attribute, own list, and a step of the button on the sensors page
     assert "attribute: sensors_always" in yaml and "ctx.sensors_always" in yaml
     assert 'order.push_back("always")' in header and 'partition == "always"' in yaml
@@ -303,3 +303,19 @@ def test_the_card_lists_the_always_on_sensors_apart():
     assert "_sensorChips()" in card and '"salways"' in card and card.count("always_on:") == 6
     # the list of a partition has no row without a partition; those are the "Always on" choice
     assert "_inPartition(r, sel)" in card and "filter((r) => !r.partition)" in card
+
+
+def test_homeassistant_action_data_does_not_call_the_panel_code():
+    """ESPHome 2026.10 generates these lambdas before the includes, so `vigil::` is not known there."""
+    lines = (FIRMWARE_DIR / "vigil-panel.yaml").read_text().splitlines()
+    found = 0
+    for n, line in enumerate(lines):
+        if "homeassistant.action:" not in line:
+            continue
+        found += 1
+        indent = len(line) - len(line.lstrip(" -"))
+        for body in lines[n + 1:]:
+            if body.strip() and len(body) - len(body.lstrip()) < indent:
+                break
+            assert "vigil::" not in body, body
+    assert found

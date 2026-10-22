@@ -24,7 +24,7 @@ substitutions:
   # key made under Panels in Vigil). Set it in your device file, from secrets.yaml. Empty: no key is sent.
   panel_key: ""
   # The version of this firmware, reported to Vigil.
-  firmware_version: "0.6.10"
+  firmware_version: "0.7.0"
   # The width of the cards and buttons: the screen minus a margin on both sides.
   content_w: ${ screen_width | int - 24 }
   # The sizes follow the screen: the ring is a bit over a quarter of the shortest side, the keys fill the keypad.
@@ -117,6 +117,16 @@ globals:
     type: int
     initial_value: "0"
   - id: pending_entity  # the sensor for a bypass
+    type: std::string
+  # What run_action sends. ESPHome 2026.10 builds the data of a homeassistant.action before it includes our header,
+  # so the data may not call vigil:: functions itself: run_action works the values out first and the data reads them.
+  - id: act_mode
+    type: std::string
+  - id: act_partition
+    type: std::string
+  - id: act_bypass
+    type: std::string
+  - id: act_scope
     type: std::string
   - id: pending_name
     type: std::string
@@ -730,6 +740,7 @@ script:
           const bool paged = show && switching && parts_paged();
           hide(id(chip_prev), !paged);
           hide(id(chip_next), !paged);
+          hide(id(chip_spacer), !paged);
           if (paged) {
             // an arrow is dim when there is nothing further that way
             lv_obj_set_style_opa(id(chip_prev), chip_page_now() > 0 ? LV_OPA_COVER : LV_OPA_40, 0);
@@ -750,7 +761,8 @@ script:
           int n = 0;
           for (int i = 0; i < 5; i++) if (!chip_target(i).empty()) n++;  // (the first loop of the buttons)
           const int arrows = paged ? 2 : 0;  // an arrow on each side takes 34 and a gap of 8
-          const int fit = n > 0 ? (${content_w} - 8 * (n - 1 + arrows) - 34 * arrows) / n : 0;  // room for one button
+          const int gaps = n - 1 + (paged ? 3 : 0);  // between the buttons, and the arrows and the filler
+          const int fit = n > 0 ? (${content_w} - 8 * gaps - 34 * arrows) / n : 0;  // room for one button
           const int pad = paged ? 8 : 12;    // the buttons are a little tighter when there are arrows
           const lv_font_t *font = n <= 3 && !paged ? &lv_font_montserrat_20 : &lv_font_montserrat_14;
           const std::string sel = sel_id();
@@ -1129,6 +1141,11 @@ script:
   # Do the action. The result decides what the screen does next.
   - id: run_action
     then:
+      - lambda: |-
+          id(act_mode) = vigil::is_arm_action(id(pending_action)) ? std::string(vigil::arm_mode_name(id(pending_action))) : std::string();
+          id(act_partition) = vigil::sel_id();
+          id(act_bypass) = vigil::ctx.force ? "true" : "false";
+          id(act_scope) = id(pending_action) == vigil::INFO ? "info" : "sensors";
       - if:
           condition:
             lambda: return vigil::is_arm_action(id(pending_action));
@@ -1136,13 +1153,12 @@ script:
             - homeassistant.action:
                 action: vigil_alarm.arm
                 data:
-                  mode: !lambda |-
-                    return std::string(vigil::arm_mode_name(id(pending_action)));
+                  mode: !lambda 'return id(act_mode);'
                   source: ${name}
                   key: ${panel_key}
                   code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
-                  bypass_open: !lambda 'return std::string(vigil::ctx.force ? "true" : "false");'
-                  partition: !lambda 'return vigil::sel_id();'
+                  bypass_open: !lambda 'return id(act_bypass);'
+                  partition: !lambda 'return id(act_partition);'
                 on_success:
                   - script.execute: action_done
                 on_error:
@@ -1158,7 +1174,7 @@ script:
                 data:
                   source: ${name}
                   key: ${panel_key}
-                  partition: !lambda 'return vigil::sel_id();'
+                  partition: !lambda 'return id(act_partition);'
                   code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
                 on_success:
                   - script.execute: action_done
@@ -1175,7 +1191,7 @@ script:
                 data:
                   source: ${name}
                   key: ${panel_key}
-                  scope: !lambda 'return id(pending_action) == vigil::INFO ? "info" : "sensors";'
+                  scope: !lambda 'return id(act_scope);'
                   code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
                 on_success:
                   - script.execute: action_done
@@ -1502,7 +1518,7 @@ lvgl:
               - label:
                   id: lbl_time
                   text: "--:--"
-                  text_font: montserrat_28
+                  text_font: montserrat_24
                   text_color: 0x8A94A6
                   align: LEFT_MID
                   x: 8
@@ -1838,30 +1854,6 @@ lvgl:
                         text_color: 0x8A94A6
                         hidden: true
               - button:
-                  id: chip_next
-                  width: 34
-                  height: 40
-                  radius: 20
-                  bg_color: 0x151A22
-                  border_width: 1
-                  border_color: 0x232A35
-                  shadow_width: 0
-                  pad_all: 0
-                  hidden: true
-                  pressed:
-                    bg_color: 0x1E2631
-                  on_click:
-                    then:
-                      - lambda: |-
-                          vigil::ctx.chip_page = vigil::chip_page_now() + 1;
-                      - script.execute: refresh_parts
-                  widgets:
-                    - label:
-                        text: "\U000F0142"
-                        text_font: font_icons_30
-                        text_color: 0xC5CCD8
-                        align: CENTER
-              - button:
                   id: chip_all
                   height: 40
                   width: SIZE_CONTENT
@@ -1913,6 +1905,42 @@ lvgl:
                         text_font: montserrat_14
                         text_color: 0x8A94A6
                         hidden: true
+              # Fills what is left, so the right arrow stays at the far right of the row
+              - obj:
+                  id: chip_spacer
+                  width: 0
+                  height: 1
+                  flex_grow: 1
+                  hidden: true
+                  bg_opa: TRANSP
+                  border_width: 0
+                  pad_all: 0
+                  scrollable: false
+                  clickable: false
+              - button:
+                  id: chip_next
+                  width: 34
+                  height: 40
+                  radius: 20
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pad_all: 0
+                  hidden: true
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - lambda: |-
+                          vigil::ctx.chip_page = vigil::chip_page_now() + 1;
+                      - script.execute: refresh_parts
+                  widgets:
+                    - label:
+                        text: "\U000F0142"
+                        text_font: font_icons_30
+                        text_color: 0xC5CCD8
+                        align: CENTER
         # The state: the ring, what it is, what is the matter
         - obj:
             id: card_ring

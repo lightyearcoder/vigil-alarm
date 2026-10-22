@@ -58,6 +58,8 @@ EVENT_MESSAGES = {
     "battery_ok": ("fault", "battery_ok"),
     "code_locked": ("fault", "code_locked"),
     "code_locked_permanent": ("fault", "code_locked_permanent"),
+    "handler_stalled": ("fault", "handler_stalled"),
+    "handler_slow": ("fault", "handler_slow"),
     "panel_offline": ("fault", "panel_offline"),
     "panel_online": ("fault", "panel_online"),
     "alarm_silenced": ("arming", "silenced"),
@@ -199,12 +201,16 @@ class Notifier:
             "source": event.get("source") or "-",
             "panel": event.get("panel") or event.get("source") or "-",
             "minutes": event.get("minutes", "-"),
+            "handler": event.get("handler") or event.get("automation") or "-",
+            "detail": event.get("detail") or "-",
             "end": self._time(event.get("end")),
             "cause": self._translated(f"cause.{event.get('cause')}", event.get("cause")),
             "reason": self._translated(f"reason.{event.get('reason')}", event.get("reason")),
         }
         if key == "battery_low" and "level" not in event:  # a device that only says "battery low"
             key = "battery_low_flag"
+        if key == "handler_stalled" and event.get("reason") == "not_started":
+            key = "handler_not_started"
         if key == "unconfirmed":
             params["rule"] = self.manager.rule_name(event.get("rule"))
         if key == "unconfirmed_escalated":

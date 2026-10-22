@@ -14,6 +14,7 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
 from .const import DOMAIN
+from .handlers import SIGNAL_HANDLERS
 from .heartbeat import SIGNAL_HEARTBEAT
 from .manager import SIGNAL_EVENT, VigilManager
 from .selftest import SIGNAL_SELFTEST
@@ -47,6 +48,7 @@ class VigilRepairs:
                 )
         wanted.update(self.manager.selftest.issues())
         wanted.update(self.manager.heartbeat.issues())
+        wanted.update(self.manager.handlers.issues())
         wanted.update(self.manager.panels.issues())
         return wanted
 
@@ -70,6 +72,7 @@ class VigilRepairs:
             async_dispatcher_connect(self.hass, SIGNAL_EVENT.format(entry_id), self.sync),
             async_dispatcher_connect(self.hass, SIGNAL_SELFTEST.format(entry_id), self.sync),
             async_dispatcher_connect(self.hass, SIGNAL_HEARTBEAT.format(entry_id), self.sync),
+            async_dispatcher_connect(self.hass, SIGNAL_HANDLERS.format(entry_id), self.sync),
         ]
         self.sync()
 

@@ -29,8 +29,8 @@ async def test_the_tamper_contact_becomes_a_sensor_of_its_own(hass, hass_ws_clie
     assert tamper.title == "Garage door (tamper)" and tamper.data["cls"] == "tamper"
     assert tamper.data["entity_id"] == "binary_sensor.garage_tamper" and tamper.data["companion_of"] == res["id"]
     assert items_of(entry)[res["id"]].data["tamper_entity"] == "binary_sensor.garage_tamper"
-    # its own status and bypass switch: tamper stays separately bypassable
-    assert hass.states.get("switch.garage_door_tamper_bypass") is not None
+    # its own status and bypassed indicator: tamper stays separately bypassable
+    assert hass.states.get("binary_sensor.garage_door_tamper_bypassed") is not None
     assert hass.states.get("sensor.garage_door_tamper_status") is not None
 
 
@@ -121,3 +121,42 @@ async def test_one_entity_is_one_sensor(hass, hass_ws_client):
     # saving a sensor again with its own entity is fine
     sid = [s.subentry_id for s in items_of(entry).values() if s.title == "Garage door"][0]
     assert (await _save(client, subentry_id=sid, data=DOOR))["ok"] is True
+
+
+SIREN = {"name": "Hall siren", "control": "siren.hall", "causes": ["intrusion"], "max_duration": 120, "repeat_every": 0,
+         "tamper_entity": "binary_sensor.hall_siren_tamper"}
+
+
+async def _siren(client, sub=None, **kw):
+    msg = {"subentry_id": sub} if sub else {}
+    return (await _ws(client, type="vigil_alarm/save", kind="siren", data={**SIREN, **kw}, **msg))["result"]
+
+
+async def test_a_siren_has_its_tamper_contact_as_a_sensor_of_its_own(hass, hass_ws_client):
+    entry, client = await _client(hass, hass_ws_client)
+    res = await _siren(client)
+    assert res["ok"] is True
+    await hass.async_block_till_done()
+    [tamper] = _companions(entry)
+    assert tamper.title == "Hall siren (tamper)" and tamper.data["cls"] == "tamper"
+    assert tamper.data["entity_id"] == "binary_sensor.hall_siren_tamper" and tamper.data["companion_of"] == res["id"]
+    assert hass.states.get("binary_sensor.hall_siren_tamper_bypassed") is not None
+    # renaming follows, removing the contact removes the sensor, deleting the siren deletes it too
+    res2 = await _siren(client, res["id"], name="Garage siren")
+    assert res2["ok"] and [c.title for c in _companions(entry)] == ["Garage siren (tamper)"]
+    await _siren(client, res["id"], tamper_entity="")
+    assert _companions(entry) == []
+    await _siren(client, res["id"])
+    assert len(_companions(entry)) == 1
+    await _ws(client, type="vigil_alarm/delete", subentry_id=res["id"])
+    assert _companions(entry) == []
+
+
+async def test_mistakes_with_the_tamper_entity_of_a_siren(hass, hass_ws_client):
+    entry, client = await _client(hass, hass_ws_client)
+    assert (await _siren(client, tamper_entity="siren.hall"))["errors"] == {"tamper_entity": "tamper_same_entity"}
+    assert (await _siren(client, tamper_entity="sensor.hall"))["errors"] == {"tamper_entity": "tamper_entity_domain"}
+    assert (await _siren(client, tamper_entity="binary_sensor.front_door"))["errors"] == {"tamper_entity": "tamper_entity_in_use"}
+    assert (await _siren(client))["ok"]
+    other = await _siren(client, name="Other", control="siren.other")
+    assert other["errors"] == {"tamper_entity": "tamper_entity_in_use"}  # one contact, one siren

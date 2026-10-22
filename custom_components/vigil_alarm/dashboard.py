@@ -46,7 +46,7 @@ def async_dashboard(hass: HomeAssistant, entry: ConfigEntry) -> str:
         if item.subentry_type != SUBENTRY_SENSOR or item.data.get(CONF_COMPANION_OF):
             continue
         status = find("sensor", f"{eid}_{sid}_status")
-        bypass = find("switch", f"{eid}_{sid}_bypass")
+        bypass = find("binary_sensor", f"{eid}_{sid}_bypassed")
         if status:
             status_rows.append({"entity": status, "name": item.title})
         if bypass:
@@ -77,7 +77,7 @@ def async_dashboard(hass: HomeAssistant, entry: ConfigEntry) -> str:
     if status_rows:
         rows = [{"type": "section", "label": "Status"}, *status_rows]
         if bypass_rows:
-            rows += [{"type": "section", "label": "Bypass (leave a sensor out for now)"}, *bypass_rows]
+            rows += [{"type": "section", "label": "Bypassed (left out until the alarm is disarmed)"}, *bypass_rows]
         cards.append({"type": "entities", "title": "Sensors", "show_header_toggle": False, "entities": rows})
     if events:
         cards.append({"type": "logbook", "title": "History", "hours_to_show": 48, "target": {"entity_id": events}})

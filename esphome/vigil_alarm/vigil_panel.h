@@ -393,7 +393,7 @@ inline std::vector<PartRow> part_rows(bool with_all) {
 }
 
 constexpr int MAX_PARTITIONS_SHOWN = 4;  // as many buttons fit in the row (and "All" besides)
-constexpr int PARTS_PER_PAGE = 3;        // with more partitions than that the row has arrows and shows three at a time
+constexpr int PARTS_PER_PAGE = 4;        // with more partitions than that the row has arrows and shows four at a time
 
 inline int part_count() { return (int) part_rows(false).size(); }
 // Can the screen switch? More than one partition on this panel.
@@ -423,11 +423,24 @@ inline bool mixed_now() {
                                              ctx.state == "armed_night" || ctx.state == "armed_vacation" || ctx.state == "armed_custom_bypass");
 }
 
-// More partitions than fit: the row gets an arrow on each side and shows PARTS_PER_PAGE of them at a time.
+// More partitions than fit: the row gets an arrow on each side and shows PARTS_PER_PAGE items at a time. "All" counts as
+// the last item, so it comes after the last partition: on the last page, or on a page of its own if that one is full.
 inline bool parts_paged() { return part_count() > MAX_PARTITIONS_SHOWN; }
 inline int parts_per_page() { return parts_paged() ? PARTS_PER_PAGE : MAX_PARTITIONS_SHOWN; }
+inline bool has_all_row() {
+  for (const PartRow &r : part_rows(true))
+    if (r.id == "all") return true;
+  return false;
+}
+// What the buttons page through: the partitions, then "all" (if there is one).
+inline std::vector<std::string> chip_items() {
+  std::vector<std::string> items;
+  for (const PartRow &r : part_rows(false)) items.push_back(r.id);
+  if (has_all_row()) items.push_back("all");
+  return items;
+}
 inline int part_pages() {
-  const int n = part_count(), pp = parts_per_page();
+  const int n = (int) chip_items().size(), pp = parts_per_page();
   return n <= 0 ? 1 : (n + pp - 1) / pp;
 }
 inline int chip_page_now() {
@@ -438,34 +451,36 @@ inline int chip_page_now() {
 inline void sync_chip_page() {
   if (!parts_paged() || ctx.page_sel == sel_id()) return;
   ctx.page_sel = sel_id();
-  const std::vector<PartRow> rows = part_rows(false);
-  for (size_t i = 0; i < rows.size(); i++)
-    if (rows[i].id == ctx.page_sel) ctx.chip_page = (int) i / parts_per_page();
+  const std::vector<std::string> items = chip_items();
+  for (size_t i = 0; i < items.size(); i++)
+    if (items[i] == ctx.page_sel) ctx.chip_page = (int) i / parts_per_page();
 }
 
-// The partition a button at the top stands for, "" if that button is not there: 0 to 3 the partitions (0 to 2 with
-// arrows, on the page shown), 4 "all".
+// The partition a button at the top stands for, "" if that button is not there: 0 to 3 the partitions on the page shown,
+// 4 "all" (it sits after the partitions, wherever it comes in the paging).
 inline std::string chip_target(int index) {
   if (!parts_switch()) return "";
+  const std::vector<std::string> items = chip_items();
+  const int pp = parts_per_page();
   if (index == MAX_PARTITIONS_SHOWN) {
-    for (const PartRow &r : part_rows(true))
-      if (r.id == "all") return "all";
-    return "";
+    if (!has_all_row()) return "";
+    if (!parts_paged()) return "all";
+    const int at = (int) items.size() - 1;
+    return at / pp == chip_page_now() ? "all" : "";
   }
-  std::vector<PartRow> rows = part_rows(false);
-  const int at = chip_page_now() * parts_per_page() + index;
-  return index >= 0 && index < parts_per_page() && at < (int) rows.size() ? rows[at].id : "";
+  const int at = chip_page_now() * pp + index;
+  return index >= 0 && index < pp && at < (int) items.size() && items[at] != "all" ? items[at] : "";
 }
 
-// The partition after the one on screen, in the order of the buttons (the partitions, then "all"), round again: the
+// The partition after the one on screen, in the order of the buttons (the partitions, "always", then "all"), round again: the
 // button on the sensors page steps through them. "" when there is nothing to step to.
 inline std::string next_part_id() {
   std::vector<std::string> order;
   for (const PartRow &r : part_rows(false)) order.push_back(r.id);
+  if (!ctx.sensors_always.empty()) order.push_back("always");  // the sensors that belong to no partition
   if (order.size() > 1)
     for (const PartRow &r : part_rows(true))
-      if (r.id == "all") order.push_back("all");
-  if (!ctx.sensors_always.empty()) order.push_back("always");  // the sensors that belong to no partition
+      if (r.id == "all") order.push_back("all");  // "All" is the last step
   if (order.size() < 2) return "";
   const std::string now = ctx.sens_always ? std::string("always") : sel_id();
   for (size_t i = 0; i < order.size(); i++)

@@ -12,6 +12,7 @@ blueprint:
 
     This blueprint never disarms. Disarming always needs a person with a code.
   domain: automation
+  author: lightyearcoder
   homeassistant:
     min_version: 2024.10.0
   source_url: https://github.com/lightyearcoder/vigil-alarm/blob/main/blueprints/automation/vigil_alarm/arm_when_everyone_leaves.yaml

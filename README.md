@@ -119,12 +119,12 @@ blueprint**. HACS does not install blueprints, so the buttons are the easy way.
 
 | Blueprint | What it does | |
 |---|---|---|
-| **Flash lights during an alarm** | Flashes lights while the alarm is triggered and puts them back as they were. Choose which causes flash; gas is off by default for safety. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil_alarm%2Fflash_lights_on_alarm.yaml) |
-| **Announce alarm events with speech** | Speaks a message on your speakers when the alarm arms, disarms, starts the entry delay or goes off. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil_alarm%2Fannounce_with_speech.yaml) |
+| **Flash lights during an alarm** | Flashes lights while the alarm is triggered and puts them back as they were. Choose which causes flash (gas is off by default for safety) and for which partitions. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil_alarm%2Fflash_lights_on_alarm.yaml) |
+| **Announce alarm events with speech** | Speaks a message on your speakers when the alarm arms, disarms, starts the entry delay or goes off, for the partitions you choose (with more than one partition the message names it). | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil_alarm%2Fannounce_with_speech.yaml) |
 | **Arm when everyone has left** | Arms the alarm when everyone has been away for a while, and tells you if arming was refused. Never disarms. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil_alarm%2Farm_when_everyone_leaves.yaml) |
 | **Arm at a set time** | Arms (for example Night) at a set time on chosen days. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil_alarm%2Farm_on_schedule.yaml) |
 | **Remind when arriving at an armed home** | Sends a message when someone arrives while the alarm is still armed. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil_alarm%2Farrival_reminder.yaml) |
-| **Run your own actions on alarm events** | The general building block: pick events, add any actions. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil_alarm%2Frun_actions_on_events.yaml) |
+| **Run your own actions on alarm events** | The general building block: pick partitions and events, add any actions. | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Flightyearcoder%2Fvigil-alarm%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fvigil_alarm%2Frun_actions_on_events.yaml) |
 
 Arming from an automation needs a code unless *Code required to arm* is switched off in the
 panel. See the note in the [user guide](docs/user-guide.md#automatic-arming) before putting a
@@ -135,7 +135,7 @@ code in an automation.
 Presets fill in the settings of a known device. Today there is one: **Sonoff SNZB-09P
 (Zigbee2MQTT)** for sirens. In the panel, add a siren, pick its on/off entity, then choose the
 preset: tone, volume and duration are filled in, and Vigil looks for the other entities of the
-same device (tone, volume, flash light, battery, power mode). Everything stays editable.
+same device (tone, volume, flash light, battery, power mode; a tamper contact of the siren you choose yourself). Everything stays editable.
 Zigbee2MQTT exposes these entities; other setups (such as ZHA) can use any `siren`, `switch`
 or `light` entity as the on/off control and fill in the rest by hand.
 
@@ -143,7 +143,7 @@ or `light` entity as the on/off control and fill in the rest by hand.
 
 [`examples/dashboard.yaml`](examples/dashboard.yaml) is a complete dashboard with the standard
 cards: the alarm panel, a status card, a card that only shows when something needs attention,
-alarms, sensors with their bypass switches, a history and a *Silence the siren* button. Paste it
+alarms, sensors with their status and a *Bypassed* indicator, a history and a *Silence the siren* button. Paste it
 in the raw configuration editor of a new dashboard and change the example sensor names.
 
 ## For automations
@@ -190,6 +190,10 @@ actions:
 | `selftest_checked` | The quiet daily check ran (it never changes `last_event`) | `result` (`ok` or `problems`), `problems` |
 | `selftest_reminder` | A reminder to test the siren was sent | `number` (1 or 2) |
 | `selftest_siren_tested` | The siren was tested | `how` (`manual`, `notification` or `auto`) |
+| `handler_stalled` | An automation that reacts to the alarm stopped before it finished, or did not start during a test (also a Repair, and a message to the fault channels) | `handler`, `automation`, `reason` (`stalled` or `not_started`), `detail` |
+| `handler_slow` | An automation that said how long it may take is still running after that time (told once, no Repair) | `handler`, `automation`, `minutes` |
+| `handler_test` | The test of the automations that react to the alarm started (it never changes `last_event`). The Vigil blueprints answer it; with `dry_run` they only report | `dry_run`, `handlers` |
+| `handler_test_done` | The test is over (it never changes `last_event`) | `dry_run`, `ok`, `total` |
 | `practice_started` | Practice mode was switched on (no siren, no messages) | `minutes` |
 | `practice_ended` | Practice mode ended | `reason` (`manual`, `expired`) |
 | `walktest_started` | A walk test started | `total` (sensors in the test) |
@@ -205,11 +209,11 @@ Entities per alarm: `alarm_control_panel.<name>` (with attributes `cause`, `open
 `faults`, `bypassed_sensors`, `problems`, `delay_end`, `refuse_reason`, `mode`, and text versions
 for displays),
 `binary_sensor.<name>_<class>_alarm` (the ids always end on the English name, also on a Dutch Home Assistant; always there for intrusion, fire, gas, tamper and water), `sensor.<name>_last_event`, and per sensor
-`sensor.<sensor>_status` and `switch.<sensor>_bypass`.
+`sensor.<sensor>_status` and (for a sensor that can be bypassed) the read-only `binary_sensor.<sensor>_bypassed`. There is no switch to bypass a sensor: use the Vigil card, a panel or the action `vigil_alarm.bypass`, which asks for a code unless an administrator calls it.
 
 Actions: `vigil_alarm.arm`, `vigil_alarm.disarm`, `vigil_alarm.silence`, `vigil_alarm.acknowledge`, `vigil_alarm.bypass`, `vigil_alarm.unbypass`, `vigil_alarm.check_code` (only checks a code, changes nothing)
 (all take an optional `source`, the name of a control point such as a panel),
-`vigil_alarm.test_siren`, `vigil_alarm.test_notification`, plus the standard `alarm_control_panel` actions.
+`vigil_alarm.test_siren`, `vigil_alarm.test_notification`, `vigil_alarm.test_handlers` (`quiet`: the automations only report) and `vigil_alarm.handler_report` (for the automations themselves: `run_id`, `state` `started`, `done` or `failed`, `handler`, `automation`, `event`, `waits_for_user`, `max_duration`, `error`), plus the standard `alarm_control_panel` actions.
 
 ## Development
 

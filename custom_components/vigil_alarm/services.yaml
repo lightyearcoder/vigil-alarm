@@ -209,3 +209,50 @@ select_partition:
       required: true
       selector:
         text:
+handler_report:
+  fields:
+    run_id:
+      required: true
+      selector:
+        text:
+    state:
+      required: true
+      selector:
+        select:
+          options: [started, done, failed]
+    handler:
+      required: false
+      selector:
+        text:
+    automation:
+      required: false
+      selector:
+        entity:
+          domain: automation
+    event:
+      required: false
+      selector:
+        text:
+    waits_for_user:
+      required: false
+      default: false
+      selector:
+        boolean:
+    max_duration:
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 86400
+          unit_of_measurement: s
+    error:
+      required: false
+      selector:
+        text:
+test_handlers:
+  fields:
+    quiet:
+      required: false
+      default: true
+      selector:
+        boolean:

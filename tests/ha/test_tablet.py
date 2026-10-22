@@ -79,9 +79,7 @@ async def test_a_tablet_is_never_an_administrator_for_vigil(hass):
     await _house(hass, tablet(user), code_arm_required=False)
     with pytest.raises(ServiceValidationError, match="code is required"):  # bypass from a panel always needs a code
         await _as(hass, user, "bypass", sensor="binary_sensor.front_door")
-    with pytest.raises(ServiceValidationError, match="code is required"):  # also through the bypass switch
-        await hass.services.async_call("switch", "turn_on", {"entity_id": "switch.front_door_bypass"},
-                                       blocking=True, context=Context(user_id=user.id))
+    assert hass.states.async_entity_ids("switch") == []  # and there is no switch to get round it
 
 
 async def test_a_blocked_tablet_is_refused(hass):

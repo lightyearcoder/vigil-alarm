@@ -12,11 +12,29 @@ blueprint:
 
     **Flashing:** the default (2 seconds on, 2 seconds off) stays well below the rate that is a
     concern for photosensitive people. Think twice before making it faster.
+
+
+    This automation also tells Vigil Alarm when a run starts and ends, so Vigil can see if one stops early. In
+    the weekly test with the real actions the lights flash three times.
   domain: automation
+  author: lightyearcoder
   homeassistant:
     min_version: 2024.10.0
   source_url: https://github.com/lightyearcoder/vigil-alarm/blob/main/blueprints/automation/vigil_alarm/flash_lights_on_alarm.yaml
   input:
+    partitions:
+      name: Only for these partitions
+      description: >
+        Pick one or more partitions to react to events of those partitions only. Leave it empty (or pick the
+        entity for all partitions) to react to every partition. Events that belong to no partition, and the
+        weekly test, always count.
+      default: []
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - integration: vigil_alarm
+              domain: alarm_control_panel
     events:
       name: Vigil events
       description: The "Alarm events" entity of Vigil Alarm.
@@ -25,13 +43,6 @@ blueprint:
           filter:
             - integration: vigil_alarm
               domain: event
-    alarm:
-      name: Vigil alarm
-      selector:
-        entity:
-          filter:
-            - integration: vigil_alarm
-              domain: alarm_control_panel
     lights:
       name: Lights
       description: >
@@ -88,6 +99,15 @@ blueprint:
       default: vigil_lights_before
       selector:
         text:
+    in_practice:
+      name: Also act in practice mode
+      description: >
+        In practice mode and in the weekly test with the real actions Vigil keeps its siren and its own messages
+        quiet. Switch this on if this automation may still do its work then (lights flashing, say) and off if it
+        must stay quiet (speech, a siren, messages). The automation always tells Vigil that it ran.
+      default: true
+      selector:
+        boolean:
 
 mode: restart
 max_exceeded: silent
@@ -97,11 +117,27 @@ variables:
   causes: !input causes
   interval: !input interval
   max_duration: !input max_duration
-  alarm: !input alarm
   snapshot: !input snapshot
   scene_entity: "{{ 'scene.' ~ snapshot }}"
   event_type: "{{ trigger.to_state.attributes.get('event_type', '') }}"
   cause: "{{ trigger.to_state.attributes.cause | default('') }}"
+  in_practice: !input in_practice
+  partition_pick: !input partitions
+  partition_ids: "{{ partition_pick | map('state_attr', 'partition') | select('string') | list }}"
+  every_partition: >
+    {{ partition_pick | length == 0
+       or partition_pick | map('state_attr', 'partitions') | select('mapping') | list | length > 0 }}
+  event_partition: "{{ trigger.to_state.attributes.get('partition', '') or '' }}"
+  in_scope: "{{ every_partition or event_partition == '' or event_partition in partition_ids }}"
+  # The alarm entities this automation looks at: the chosen partitions, or all of Vigil's
+  watched: >
+    {{ partition_pick if not every_partition
+       else integration_entities('vigil_alarm') | select('match', 'alarm_control_panel[.]') | list }}
+  practice: "{{ trigger.to_state.attributes.get('practice', false) }}"
+  dry_run: "{{ trigger.to_state.attributes.get('dry_run', false) }}"
+  is_test: "{{ event_type == 'handler_test' }}"
+  run_id: "{{ this.entity_id }}-{{ now().timestamp() }}"
+  skip: "{{ dry_run or (practice and not in_practice) }}"
 
 triggers:
   - trigger: state
@@ -109,54 +145,78 @@ triggers:
 
 conditions:
   - condition: template
-    value_template: "{{ event_type in ['triggered', 'trigger_ended', 'disarmed'] }}"
+    value_template: "{{ is_test or (in_scope and (event_type == 'triggered'
+                              or (event_type in ['trigger_ended', 'disarmed']
+                                  and not (watched | select('is_state', 'triggered') | list)))) }}"
 
 actions:
-  - choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ event_type == 'triggered' and cause in causes }}"
-        sequence:
-          - action: scene.create
-            data:
-              scene_id: "{{ snapshot }}"
-              snapshot_entities: "{{ lights }}"
-          - repeat:
-              sequence:
-                - action: light.turn_on
-                  target:
-                    entity_id: !input lights
-                  data:
-                    brightness_pct: !input brightness
-                    rgb_color: !input color
-                - delay:
-                    seconds: "{{ interval }}"
-                - action: light.turn_off
-                  target:
-                    entity_id: !input lights
-                - delay:
-                    seconds: "{{ interval }}"
-              until:
-                - condition: template
-                  value_template: >
-                    {{ not is_state(alarm, 'triggered')
-                       or repeat.index * interval * 2 >= max_duration }}
-          - alias: Put the lights back
-            action: scene.turn_on
-            target:
-              entity_id: "{{ scene_entity }}"
-          - action: scene.delete
-            target:
-              entity_id: "{{ scene_entity }}"
-    default:
-      # The alarm ended or was switched off: this run replaced the flashing one, so restore here.
-      - if:
-          - condition: template
-            value_template: "{{ states[scene_entity] is not none }}"
-        then:
-          - action: scene.turn_on
-            target:
-              entity_id: "{{ scene_entity }}"
-          - action: scene.delete
-            target:
-              entity_id: "{{ scene_entity }}"
+  - alias: Tell Vigil this run has started
+    action: vigil_alarm.handler_report
+    continue_on_error: true
+    data:
+      run_id: "{{ run_id }}"
+      state: started
+      handler: "{{ state_attr(this.entity_id, 'friendly_name') or this.entity_id }}"
+      automation: "{{ this.entity_id }}"
+      event: "{{ event_type }}"
+  - alias: The lights
+    if:
+      - condition: template
+        value_template: "{{ not skip }}"
+    then:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ (event_type == 'triggered' and cause in causes) or is_test }}"
+            sequence:
+              - action: scene.create
+                data:
+                  scene_id: "{{ snapshot }}"
+                  snapshot_entities: "{{ lights }}"
+              - repeat:
+                  sequence:
+                    - action: light.turn_on
+                      target:
+                        entity_id: !input lights
+                      data:
+                        brightness_pct: !input brightness
+                        rgb_color: !input color
+                    - delay:
+                        seconds: "{{ interval }}"
+                    - action: light.turn_off
+                      target:
+                        entity_id: !input lights
+                    - delay:
+                        seconds: "{{ interval }}"
+                  until:
+                    - condition: template
+                      value_template: >
+                        {{ (is_test and repeat.index >= 3)
+                           or (not is_test and (not (watched | select('is_state', 'triggered') | list)
+                               or repeat.index * interval * 2 >= max_duration)) }}
+              - alias: Put the lights back
+                action: scene.turn_on
+                target:
+                  entity_id: "{{ scene_entity }}"
+              - action: scene.delete
+                target:
+                  entity_id: "{{ scene_entity }}"
+        default:
+          # The alarm ended or was switched off: this run replaced the flashing one, so restore here.
+          - if:
+              - condition: template
+                value_template: "{{ states[scene_entity] is not none }}"
+            then:
+              - action: scene.turn_on
+                target:
+                  entity_id: "{{ scene_entity }}"
+              - action: scene.delete
+                target:
+                  entity_id: "{{ scene_entity }}"
+  - alias: Tell Vigil this run is done
+    action: vigil_alarm.handler_report
+    continue_on_error: true
+    data:
+      run_id: "{{ run_id }}"
+      state: done
+      automation: "{{ this.entity_id }}"

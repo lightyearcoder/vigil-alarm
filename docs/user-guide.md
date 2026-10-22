@@ -44,7 +44,7 @@ This guide explains how to set up and use Vigil Alarm. For installation see the
 | **Tamper** | Always watches. A tamper contact that opens raises an alarm. |
 | **Water** | Always watches. A *technical alarm*: it never changes the alarm state, it only publishes events and an "alarm active" sensor. |
 | **24 hours audible** | Always watches, in every state, also with the alarm off, like a tamper contact: when it opens the siren sounds and the alarm channels get a message (cause *24-hour alarm*). For a panic button or a safe. While it is open, arming is refused. |
-| **24 hours silent** | Always watches, no siren: a *technical alarm* like water, with a message to the *Technical* channels and a line in the log. For a silent panic button or a freezer that gets too warm. |
+| **24 hours silent** | Always watches, no siren: a *technical alarm* like water, with a message to the *Technical* channels and a line in the log. For a silent panic button, or for a number: pick a sensor with a number (temperature, voltage, power, current) and set a lower and/or an upper limit and a time. A value outside the limits for longer than that time is an open sensor; back inside is closed at once. Examples: freezer above -15 for 30 minutes, fridge above 8, a terrarium or fish tank outside its range, a room where the air conditioning has stopped, mains voltage below 180 for a minute. A value that is not a number (`unavailable`) follows the choice you made for unavailable sensors. |
 
 ### Sensor groups: which sensors watch in which mode
 
@@ -77,7 +77,7 @@ the alarm state is kept.
    - Pick the `binary_sensor`. For a door contact or motion sensor the panel suggests the right
      sensor group by itself.
    - Choose the class and, for intrusion, the type and the sensor groups.
-   - Has the device a tamper contact as well (most Zigbee door contacts do)? Fill it in under *Tamper entity*. Vigil adds a tamper sensor named "Front door (tamper)" by itself: always watching, with its own bypass switch. It follows the sensor when you rename, change or delete it, and has no row of its own in the table.
+   - Has the device a tamper contact as well (most Zigbee door contacts do)? Fill it in under *Tamper entity*. Vigil adds a tamper sensor named "Front door (tamper)" by itself: always watching, with its own *Bypassed* indicator. It follows the sensor when you rename, change or delete it, and has no row of its own in the table.
    - *If open when exit delay ends* decides what happens to a door that is still open when the
      alarm arms: **bypass with a notice** (default; it is guarded again once it closes), **wait
      until closed**, **refuse to arm**, or **start entry delay**.
@@ -150,7 +150,7 @@ Bypass leaves one sensor out until the alarm is switched off (or until you un-by
 
 **Permanent bypass.** Tick *Keep the bypass after disarming (permanent)* on a sensor (not available for fire and gas sensors) and a manual bypass of that sensor stays after the alarm is disarmed, also through a restart of Home Assistant, until someone restores it by hand. Handy for a sensor that has been broken for some time. The sensor stays in the list as *bypassed*, the *Overview* tab has a card **Permanently bypassed** with a *Restore* button, and the Vigil card and the touch panel show *Bypassed: Broken window* under *Disarmed*, so it is not forgotten; the log has `sensor_bypassed` when it starts and `sensor_unbypassed` (reason *manual*) when it ends. Without the tick nothing changes: the bypass ends at disarming.
 
-- In the panel and dashboard: the **Bypass** switch of the sensor (administrators only).
+- In the Vigil panel: the **Bypass** button of the sensor (administrators only). In the Vigil card and on the touch panel the same, with a code. The entity `binary_sensor.<sensor>_bypassed` shows it (read only; there is no switch).
 - By action: `vigil_alarm.bypass` and `vigil_alarm.unbypass` with the sensor entity and, for people who are
   not administrators, a code. That code is only needed if arming needs one too (the setting
   *code required to arm*). Tamper sensors can only be bypassed by administrators and by users
@@ -294,7 +294,7 @@ By default Vigil has one alarm. Under **Partitions** you can add more, for a gar
 - **Sensor groups belong to one partition.** With more than one partition, the *Sensor groups* tab has a table per partition. A group offers only the modes of its partition, and a sensor can only use the groups of its own partition. A new partition starts without groups: use *Create default groups* in its table. Confirmation rules are listed per partition as well (a rule's sensors must all be in one partition).
 - **The log** has a *Partition* column; a fire, gas, water, tamper or 24-hour event has none (it is for the whole house).
 - **Touch panels and the tablet card** always show which partition (or *All*) they operate, also when it may be only one, together with *Vigil Alarm* and the logo. A panel that may operate several partitions has a row of buttons to switch (and a button at the top of the *Sensors* page that chooses whose sensors are listed); *All* arms or disarms every partition. After the return time without touch it jumps back to its default partition. The service `vigil_alarm.select_partition` does the same switch from an automation.
-- **Always-on sensors apart.** Fire, gas, water, tamper and 24-hour sensors belong to no partition, so the sensor list of a partition (on the Vigil card and on the touch panel) leaves them out. They are a choice of their own next to the partitions, *Always on*: on the card one more button in the row on the *Sensors* page, on the touch panel one more step of the partition button at the top of that page. With more than four partitions the touch panel shows three at a time with an arrow on each side (the *All* button stays); a partition chosen elsewhere brings its own page into view.
+- **Always-on sensors apart.** Fire, gas, water, tamper and 24-hour sensors belong to no partition, so the sensor list of a partition (on the Vigil card and on the touch panel) leaves them out. They are a choice of their own next to the partitions, *Always on*: on the card one more button in the row on the *Sensors* page, on the touch panel one more step of the partition button at the top of that page. With more than four partitions the touch panel shows four at a time with an arrow on each side (the right arrow stays at the far right; *All* comes after the last partition, on the last page, or on a page of its own if that one is full); a partition chosen elsewhere brings its own page into view.
 
 ## Automations and blueprints
 
@@ -306,14 +306,14 @@ The included [blueprints](../README.md#blueprints) cover the common cases:
 
 - **Flash lights during an alarm** saves the state of your lights, flashes them while the alarm
   is triggered and restores them afterwards, also when the alarm is switched off. Choose which
-  causes flash (gas is off by default). The default of 2 seconds on and 2 seconds off stays
+  causes flash (gas is off by default) and, with more than one partition, for which partitions (*Only for these partitions*). The default of 2 seconds on and 2 seconds off stays
   well below the rate that matters for photosensitive people. For Hue, use a room or zone
   (group) instead of single lamps; groups are disabled by default in Home Assistant, so enable
   them first.
 - **Announce alarm events with speech** speaks a message when the alarm arms, disarms, starts
-  the entry delay or goes off. Leave a message empty to stay silent for that event.
+  the entry delay or goes off. Leave a message empty to stay silent for that event. With more than one partition the message starts with the name of the partition (switch it off with *Name the partition*; `partition_name` is also available in your own text).
 - **Run your own actions on alarm events** is the general building block: choose events and add
-  any actions, with `event_type` and `data` available.
+  any actions, with `event_type` and `data` available. This blueprint and the speech one have *Only for these partitions* (pick several; empty means all); `data.partition_name` says which partition an event is about.
 - **Remind when arriving at an armed home** sends a message when someone comes home while the
   alarm is armed. It does not disarm.
 
@@ -334,6 +334,37 @@ choices:
 If arming is refused (for example because a door is open), you can get a message that says
 why. If you leave the message field empty, nothing is sent.
 
+### Do your automations still run?
+
+A blueprint or automation that reacts to the alarm can fail without anyone noticing: it is switched off, it has an error, or a lamp that does not exist. Vigil keeps an eye on that.
+
+- **The Vigil blueprints** (flash lights, speech, run your own actions) tell Vigil with the action `vigil_alarm.handler_report` when a run starts and when it is done. A run that ends **without** being done (an error stopped it, or it was switched off) gives the event `handler_stalled`, a message to your fault channels, a line in *Ready for use?* and a **Repair** in Home Assistant. If Home Assistant still has its trace, the repair says which step failed. A handler that is simply still running, for example a repeat that waits until you switch something, is never a fault, however long it takes: Vigil looks at the automation itself (its number of running runs), not at the clock.
+- **The quiet check:** every day, with the self-test, Vigil asks every automation that reacts to the alarm to report that it runs (the event `handler_test` with `dry_run`). The blueprints only report and do nothing else: no light flashes and nothing sounds. An automation that does not answer within a minute gives `handler_stalled` (*did not start*). The same check finds an automation of a Vigil blueprint that is switched off, broken or gone.
+- **The weekly test with the real actions** (*Settings*, *Self-test*, off by default): once a week, in the set hours and only while the alarm is off, the automations do their real work in **practice mode**: the lights flash three times, but there is no siren and Vigil sends no messages. Each blueprint has the choice *Also act in practice mode*: on for the lights, off for speech and for your own actions (they only report that they ran). The same test starts from the *Self-test* card (*Test the automations (quiet)* and *Test with the real actions*) or with the action `vigil_alarm.test_handlers`.
+- **In your own actions** the variable `practice` is `true` while practice mode is on, so a combined siren and flash light can leave the siren out: use a `choose` with the condition `{{ not practice }}` around the siren. With the blueprint *Run your own actions* you can also choose the event `handler_test`, so your actions take part in the weekly test.
+- **Your own automations** can take part too: call `vigil_alarm.handler_report` at the start and the end, with the same `run_id`:
+
+```yaml
+variables:
+  run_id: "{{ this.entity_id }}-{{ now().timestamp() }}"
+actions:
+  - action: vigil_alarm.handler_report
+    data:
+      run_id: "{{ run_id }}"
+      state: started
+      automation: "{{ this.entity_id }}"
+      handler: My own automation
+  # ... your actions ...
+  - action: vigil_alarm.handler_report
+    data:
+      run_id: "{{ run_id }}"
+      state: done
+```
+
+  Give `waits_for_user: true` if the run may take as long as it needs, or `max_duration` (seconds) if a longer run deserves a notice (told once, no repair).
+
+Vigil cannot see an action that failed on purpose with `continue_on_error`: Home Assistant does not record that in the trace. And a handler that runs to the end proves that it ran, not that the lamp lit or the phone received the message.
+
 ## Self-monitoring
 
 Real faults (an unreachable sensor, a low battery, a siren that is unavailable or on battery power) also appear under *Settings → System → Repairs* and go away by themselves when fixed. Missing settings are not repairs; *Ready for use?* shows those.
@@ -344,8 +375,8 @@ Real faults (an unreachable sensor, a low battery, a siren that is unavailable o
   with `supervision_lost` and `supervision_restored`.
 - **Sirens:** Vigil reports when a siren becomes unavailable and, with a power-mode entity,
   when it runs on its battery (the value that means "on battery" is a setting, default
-  `battery`; check what your device reports). Add the tamper contact of a siren as a tamper
-  sensor.
+  `battery`; check what your device reports). Give a siren its tamper contact in the form of the siren
+  (*Tamper entity*): Vigil adds a tamper sensor for it, always watching in every partition.
 - Problems that exist at startup are listed in the `problems` attribute of the alarm without an
   event; events follow on changes. The overview shows them under *Attention*.
 

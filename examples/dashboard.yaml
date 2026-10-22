@@ -6,7 +6,7 @@
 #   3. Paste everything below this comment block and save.
 #   4. Change the example sensor names (front_door, living_pir, smoke, tamper) in the
 #      "Sensors" card to your own. The entity ids are the name you gave the sensor, lower case,
-#      with underscores: sensor "Back door" gives sensor.back_door_status and switch.back_door_bypass.
+#      with underscores: sensor "Back door" gives sensor.back_door_status and binary_sensor.back_door_bypassed.
 #
 # The alarm itself is called "Vigil Alarm" here. If you gave it another name, replace
 # "vigil_alarm" in the entity ids (alarm_control_panel.vigil_alarm and so on).
@@ -94,10 +94,10 @@ views:
           - entity: sensor.tamper_status
             name: Tamper
           - type: section
-            label: Bypass (leave a sensor out for now)
-          - entity: switch.front_door_bypass
+            label: Bypassed (left out until the alarm is disarmed)
+          - entity: binary_sensor.front_door_bypassed
             name: Front door
-          - entity: switch.living_pir_bypass
+          - entity: binary_sensor.living_pir_bypassed
             name: Living room PIR
 
       - type: logbook

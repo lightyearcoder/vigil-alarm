@@ -25,6 +25,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_SELFTEST_AUTO,
+    CONF_SELFTEST_HANDLERS,
     CONF_SELFTEST_FROM,
     CONF_SELFTEST_INTERVAL,
     CONF_SELFTEST_SECONDS,
@@ -34,6 +35,7 @@ from .const import (
     SUBENTRY_NOTIFICATION,
     SUBENTRY_SIREN,
 )
+from .errors import VigilError
 from .eventlog import rfc3339
 from .items import channel_services, items_of
 
@@ -107,7 +109,19 @@ class SelfTest:
                     problems.append({"code": "siren_unavailable", "name": item.title})
         return problems
 
+    def _check_handlers(self) -> None:
+        """The automations that react to the alarm: are they there and on, and do they answer? Quietly: they only
+        report that they ran, nothing flashes or sounds."""
+        handlers = self.manager.handlers
+        handlers.check()
+        if handlers.handler_automations() and not handlers.testing:
+            try:
+                handlers.start_test(quiet=True)
+            except VigilError:
+                pass
+
     async def async_run_check(self) -> None:
+        self._check_handlers()
         problems = self.check()
         previous = {(p["code"], p["name"]) for p in self.state.get("problems", [])}
         self.state["last_check"] = self._now()
@@ -151,6 +165,21 @@ class SelfTest:
         if event.data.get("action") == ACTION and not self.manager.any_triggered:
             await self.async_sound("notification")
 
+    def _weekly_handler_test(self, now: float) -> None:
+        """Once a week, in the time window, the handlers do their real work in practice mode (if switched on)."""
+        if not self.setting(CONF_SELFTEST_HANDLERS) or not self._in_window():
+            return
+        if now - float(self.state.get("last_handler_test") or 0) < 7 * DAY - 3600:
+            return
+        if self.manager.handlers.testing or not self.manager.all_disarmed or not self.manager.handlers.handler_automations():
+            return
+        try:
+            self.manager.handlers.start_test(quiet=False)
+        except VigilError:
+            return
+        self.state["last_handler_test"] = now
+        self._save()
+
     async def _tick(self, _now: datetime | None = None) -> None:
         if self._checking:
             return
@@ -159,6 +188,7 @@ class SelfTest:
             now = self._now()
             if now - float(self.state.get("last_check") or 0) >= CHECK_EVERY:
                 await self.async_run_check()
+            self._weekly_handler_test(now)
             due = self.due_at()
             if due is None or now < due or not self._in_window():
                 return
@@ -204,6 +234,8 @@ class SelfTest:
             "enabled": due is not None,
             "seconds": float(self.setting(CONF_SELFTEST_SECONDS)),
             "auto": bool(self.setting(CONF_SELFTEST_AUTO)),
+            "handlers_weekly": bool(self.setting(CONF_SELFTEST_HANDLERS)),
+            "handlers": self.manager.handlers.status(),
         }
 
     def issues(self) -> dict[str, tuple[str, dict[str, str]]]:

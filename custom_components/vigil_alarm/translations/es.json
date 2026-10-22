@@ -35,6 +35,7 @@
           "selftest_interval_days": "Días entre recordatorios de la prueba de la sirena (0 = desactivado)",
           "selftest_siren_seconds": "Segundos que suena la sirena en una prueba",
           "selftest_auto": "Hacer sonar la sirena por sí sola para la prueba",
+          "selftest_handlers": "Probar cada semana las automatizaciones que reaccionan a la alarma",
           "selftest_window_start": "Hora más temprana para la prueba",
           "selftest_window_end": "Hora más tardía para la prueba",
           "heartbeat_url": "Dirección del latido (opcional)",
@@ -75,6 +76,7 @@
           "selftest_interval_days": "Días entre recordatorios de la prueba de la sirena (0 = desactivado)",
           "selftest_siren_seconds": "Segundos que suena la sirena en una prueba",
           "selftest_auto": "Hacer sonar la sirena por sí sola para la prueba",
+          "selftest_handlers": "Probar cada semana las automatizaciones que reaccionan a la alarma",
           "selftest_window_start": "Hora más temprana para la prueba",
           "selftest_window_end": "Hora más tardía para la prueba",
           "heartbeat_url": "Dirección del latido (opcional)",
@@ -166,7 +168,11 @@
               "panel_key_created": "Clave del panel creada",
               "panel_key_removed": "Clave del panel eliminada",
               "panel_offline": "Panel no accesible",
-              "panel_online": "Panel de nuevo accesible"
+              "panel_online": "Panel de nuevo accesible",
+              "handler_stalled": "Automatización detenida antes de tiempo",
+              "handler_slow": "Automatización larga",
+              "handler_test": "Prueba de manejadores",
+              "handler_test_done": "Prueba de manejadores terminada"
             }
           }
         }
@@ -242,16 +248,15 @@
           "panel_key_created": "Clave del panel creada",
           "panel_key_removed": "Clave del panel eliminada",
           "panel_offline": "Panel no accesible",
-          "panel_online": "Panel de nuevo accesible"
+          "panel_online": "Panel de nuevo accesible",
+          "handler_stalled": "Automatización detenida antes de tiempo",
+          "handler_slow": "Automatización larga",
+          "handler_test": "Prueba de manejadores",
+          "handler_test_done": "Prueba de manejadores terminada"
         }
       },
       "panel_profile": {
         "name": "Perfil"
-      }
-    },
-    "switch": {
-      "bypass": {
-        "name": "Anulación"
       }
     },
     "binary_sensor": {
@@ -272,6 +277,9 @@
       },
       "active_alarm24": {
         "name": "Alarma de 24 horas"
+      },
+      "sensor_bypassed": {
+        "name": "Anulado"
       }
     },
     "alarm_control_panel": {
@@ -381,6 +389,12 @@
     },
     "panel_key_wrong": {
       "message": "El panel {panel} no envió su clave, o envió una incorrecta."
+    },
+    "handler_test_running": {
+      "message": "Ya hay una prueba de manejadores en curso."
+    },
+    "handler_test_needs_disarmed": {
+      "message": "Una prueba de manejadores con las acciones reales solo es posible con la alarma apagada."
     }
   },
   "services": {
@@ -597,6 +611,54 @@
           "description": "El id de la partición, o all."
         }
       }
+    },
+    "handler_report": {
+      "name": "Informar de un manejador",
+      "description": "Para automatizaciones que reaccionan a Vigil Alarm: avisar a Vigil de que una ejecución empieza o termina, para que vea cuándo una se detiene antes de tiempo.",
+      "fields": {
+        "run_id": {
+          "name": "Ejecución",
+          "description": "Un nombre igual al principio y al final de una ejecución."
+        },
+        "state": {
+          "name": "Estado",
+          "description": "started, done o failed."
+        },
+        "handler": {
+          "name": "Nombre",
+          "description": "Cómo se llama la automatización en los mensajes."
+        },
+        "automation": {
+          "name": "Automatización",
+          "description": "La entidad de la automatización, para que Vigil vea si sigue en marcha."
+        },
+        "event": {
+          "name": "Evento",
+          "description": "El evento de Vigil que gestiona la ejecución."
+        },
+        "waits_for_user": {
+          "name": "Espera por ti",
+          "description": "La ejecución puede durar lo que haga falta, por ejemplo una repetición que espera a que cambies algo."
+        },
+        "max_duration": {
+          "name": "Tiempo máximo",
+          "description": "Segundos. Más que esto da un aviso, una sola vez."
+        },
+        "error": {
+          "name": "Error",
+          "description": "Qué salió mal, con el estado failed."
+        }
+      }
+    },
+    "test_handlers": {
+      "name": "Probar los manejadores",
+      "description": "Hacer que las automatizaciones que reaccionan a Vigil Alarm muestren que funcionan. En silencio (solo informan) o, en modo de práctica, de verdad.",
+      "fields": {
+        "quiet": {
+          "name": "Silencioso",
+          "description": "Activado: las automatizaciones solo informan. Desactivado: hacen su trabajo, en modo de práctica (sin sirena, sin mensajes de Vigil)."
+        }
+      }
     }
   },
   "issues": {
@@ -635,6 +697,26 @@
     "panel_offline": {
       "title": "Panel no accesible: {name}",
       "description": "Vigil Alarm no ha podido acceder al panel {name} durante diez minutos. Revisa la alimentación y el wifi del panel. La alarma en sí sigue funcionando. Este mensaje desaparece solo cuando el panel vuelva."
+    },
+    "handler_stalled": {
+      "title": "Automatización detenida antes de tiempo: {name}",
+      "description": "La automatización {name} reacciona a Vigil Alarm pero se detuvo antes de terminar: {detail}. Abre la automatización y su traza (Ajustes, Automatizaciones, los tres puntos, Trazas) para ver qué salió mal. Este mensaje desaparece cuando la automatización vuelva a llegar hasta el final."
+    },
+    "handler_not_started": {
+      "title": "Automatización no iniciada: {name}",
+      "description": "Durante la prueba de manejadores la automatización {name} no se inició. Comprueba que esté activada y que su disparador sea la entidad de eventos de Vigil Alarm. Este mensaje desaparece cuando se haya iniciado de nuevo."
+    },
+    "handler_disabled": {
+      "title": "Automatización desactivada: {name}",
+      "description": "La automatización {name} reacciona a Vigil Alarm pero está desactivada, así que no hace nada. Actívala, o elimínala si ya no la necesitas."
+    },
+    "handler_unavailable": {
+      "title": "Automatización que no funciona: {name}",
+      "description": "La automatización {name} reacciona a Vigil Alarm pero no puede funcionar, probablemente por un error en su configuración. Ábrela para ver el error. Este mensaje desaparece solo."
+    },
+    "handler_missing": {
+      "title": "Automatización ausente: {name}",
+      "description": "La automatización {name} reaccionaba a Vigil Alarm pero ya no se encuentra. Restáurala, o elimínala de la lista de entidades si la quitaste a propósito."
     }
   }
 }

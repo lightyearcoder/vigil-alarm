@@ -35,6 +35,7 @@
           "selftest_interval_days": "Days between siren test reminders (0 = off)",
           "selftest_siren_seconds": "Seconds the siren sounds in a test",
           "selftest_auto": "Sound the siren by itself for the test",
+          "selftest_handlers": "Test the automations that react to the alarm every week",
           "selftest_window_start": "Earliest hour for the test",
           "selftest_window_end": "Latest hour for the test",
           "heartbeat_url": "Heartbeat address (optional)",
@@ -75,6 +76,7 @@
           "selftest_interval_days": "Days between siren test reminders (0 = off)",
           "selftest_siren_seconds": "Seconds the siren sounds in a test",
           "selftest_auto": "Sound the siren by itself for the test",
+          "selftest_handlers": "Test the automations that react to the alarm every week",
           "selftest_window_start": "Earliest hour for the test",
           "selftest_window_end": "Latest hour for the test",
           "heartbeat_url": "Heartbeat address (optional)",
@@ -166,7 +168,11 @@
               "panel_key_created": "Panel key created",
               "panel_key_removed": "Panel key removed",
               "panel_offline": "Panel not reachable",
-              "panel_online": "Panel reachable again"
+              "panel_online": "Panel reachable again",
+              "handler_stalled": "Automation stopped early",
+              "handler_slow": "Automation runs long",
+              "handler_test": "Handler test",
+              "handler_test_done": "Handler test done"
             }
           }
         }
@@ -242,16 +248,15 @@
           "panel_key_created": "Panel key created",
           "panel_key_removed": "Panel key removed",
           "panel_offline": "Panel not reachable",
-          "panel_online": "Panel reachable again"
+          "panel_online": "Panel reachable again",
+          "handler_stalled": "Automation stopped early",
+          "handler_slow": "Automation runs long",
+          "handler_test": "Handler test",
+          "handler_test_done": "Handler test done"
         }
       },
       "panel_profile": {
         "name": "Profile"
-      }
-    },
-    "switch": {
-      "bypass": {
-        "name": "Bypass"
       }
     },
     "binary_sensor": {
@@ -272,6 +277,9 @@
       },
       "active_alarm24": {
         "name": "24-hour alarm"
+      },
+      "sensor_bypassed": {
+        "name": "Bypassed"
       }
     },
     "alarm_control_panel": {
@@ -381,6 +389,12 @@
     },
     "panel_key_wrong": {
       "message": "The panel {panel} did not send its key, or sent the wrong one."
+    },
+    "handler_test_running": {
+      "message": "A handler test is already running."
+    },
+    "handler_test_needs_disarmed": {
+      "message": "A handler test with the real actions needs the alarm to be off."
     }
   },
   "services": {
@@ -597,6 +611,54 @@
           "description": "The id of the partition, or all."
         }
       }
+    },
+    "handler_report": {
+      "name": "Report a handler",
+      "description": "Used by automations that react to Vigil Alarm: tell Vigil that a run has started or ended, so Vigil can see when one stops early.",
+      "fields": {
+        "run_id": {
+          "name": "Run",
+          "description": "A name that is the same for the start and the end of one run."
+        },
+        "state": {
+          "name": "State",
+          "description": "started, done or failed."
+        },
+        "handler": {
+          "name": "Name",
+          "description": "What to call the automation in messages."
+        },
+        "automation": {
+          "name": "Automation",
+          "description": "The entity of the automation, so Vigil can see whether it still runs."
+        },
+        "event": {
+          "name": "Event",
+          "description": "The Vigil event the run handles."
+        },
+        "waits_for_user": {
+          "name": "Waits for you",
+          "description": "The run may take as long as it needs, for example a repeat that waits until you switch something."
+        },
+        "max_duration": {
+          "name": "Longest time",
+          "description": "Seconds. Longer than this gives a notice, once."
+        },
+        "error": {
+          "name": "Error",
+          "description": "What went wrong, with the state failed."
+        }
+      }
+    },
+    "test_handlers": {
+      "name": "Test the handlers",
+      "description": "Let the automations that react to Vigil Alarm show that they run. Quietly (they only report) or, in practice mode, for real.",
+      "fields": {
+        "quiet": {
+          "name": "Quiet",
+          "description": "On: the automations only report. Off: they do their work, in practice mode (no siren, no messages from Vigil)."
+        }
+      }
     }
   },
   "issues": {
@@ -635,6 +697,26 @@
     "panel_offline": {
       "title": "Panel not reachable: {name}",
       "description": "Vigil Alarm has not been able to reach the panel {name} for ten minutes. Check the power and the wifi of the panel. The alarm itself keeps working. This message disappears by itself when the panel is back."
+    },
+    "handler_stalled": {
+      "title": "Automation stopped early: {name}",
+      "description": "The automation {name} reacts to Vigil Alarm but stopped before it finished: {detail}. Open the automation and its trace (Settings, Automations, the three dots, Traces) to see what went wrong. This message disappears when the automation has run to the end again."
+    },
+    "handler_not_started": {
+      "title": "Automation did not start: {name}",
+      "description": "During the handler test the automation {name} did not start. Check that it is switched on and that its trigger is the events entity of Vigil Alarm. This message disappears when it has started again."
+    },
+    "handler_disabled": {
+      "title": "Automation switched off: {name}",
+      "description": "The automation {name} reacts to Vigil Alarm but is switched off, so it does nothing. Switch it on, or delete it if you no longer need it."
+    },
+    "handler_unavailable": {
+      "title": "Automation not working: {name}",
+      "description": "The automation {name} reacts to Vigil Alarm but cannot work, probably because of an error in its configuration. Open it to see the error. This message disappears by itself."
+    },
+    "handler_missing": {
+      "title": "Automation missing: {name}",
+      "description": "The automation {name} reacted to Vigil Alarm but cannot be found any more. Restore it, or delete it from the entity list if you removed it on purpose."
     }
   }
 }

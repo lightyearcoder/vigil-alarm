@@ -60,6 +60,7 @@ def test_every_blueprint_is_valid_and_documented():
         data = yaml.load(path.read_text(), Loader)  # noqa: S506 (our own files)
         bp = data["blueprint"]
         assert bp["domain"] == "automation" and bp["name"].startswith("Vigil - ") and bp["description"], path
+        assert bp["author"] == "lightyearcoder", path
         assert bp["source_url"].endswith(f"blueprints/automation/vigil_alarm/{path.name}"), path
         used = set()
         text = path.read_text()
@@ -74,7 +75,7 @@ def test_every_blueprint_is_valid_and_documented():
 async def test_lights_flash_during_an_alarm_and_come_back(hass, freezer):
     await _setup(hass)
     await _automation(hass, "flash_lights_on_alarm.yaml", {
-        "events": EVENTS, "alarm": PANEL, "lights": ["light.hall"], "causes": ["fire"], "interval": 2})
+        "events": EVENTS, "lights": ["light.hall"], "causes": ["fire"], "interval": 2})
     on = async_mock_service(hass, "light", "turn_on")
     off = async_mock_service(hass, "light", "turn_off")
     create = async_mock_service(hass, "scene", "create")
@@ -105,7 +106,7 @@ async def test_lights_flash_during_an_alarm_and_come_back(hass, freezer):
 async def test_lights_ignore_causes_that_were_not_chosen_and_stop_at_the_limit(hass, freezer):
     await _setup(hass)
     await _automation(hass, "flash_lights_on_alarm.yaml", {
-        "events": EVENTS, "alarm": PANEL, "lights": ["light.hall"], "causes": ["intrusion"],
+        "events": EVENTS, "lights": ["light.hall"], "causes": ["intrusion"],
         "interval": 1, "max_duration": 10})
     on = async_mock_service(hass, "light", "turn_on")
     async_mock_service(hass, "light", "turn_off")
@@ -141,7 +142,7 @@ async def test_speech_messages(hass, freezer):
     speak = async_mock_service(hass, "tts", "speak")
     await _setup(hass)
     await _automation(hass, "announce_with_speech.yaml", {
-        "events": EVENTS, "tts": "tts.home", "speakers": ["media_player.kitchen"],
+        "partitions": [PANEL], "events": EVENTS, "tts": "tts.home", "speakers": ["media_player.kitchen"],
         "msg_arming_started": "", "msg_armed": "Armed in {{ trigger.to_state.attributes.mode }} by {{ trigger.to_state.attributes.user }}",
         "msg_disarmed": "Disarmed", "msg_pending_started": "", "msg_triggered": "Alarm {{ trigger.to_state.attributes.cause }}"})
     await _call(hass, "alarm_arm_away", code="1234")
@@ -156,6 +157,75 @@ async def test_speech_messages(hass, freezer):
     await _call(hass, "alarm_disarm", code="1234")
     await _settle(hass)
     assert speak[-1].data["message"] == "Disarmed"
+
+
+async def test_speech_names_the_partition_when_there_is_more_than_one(hass, freezer):
+    speak = async_mock_service(hass, "tts", "speak")
+    await _setup(hass)
+    inputs = {"partitions": [PANEL], "events": EVENTS, "tts": "tts.home", "speakers": ["media_player.kitchen"], "msg_arming_started": "",
+              "msg_armed": "", "msg_disarmed": "Disarmed", "msg_pending_started": "", "msg_triggered": ""}
+    await _automation(hass, "announce_with_speech.yaml", inputs)
+    # With one partition the event has no partition_name: the message is spoken as it is
+    await _call(hass, "alarm_arm_away", code="1234")
+    await _tick(hass, freezer, 60)
+    await _call(hass, "alarm_disarm", code="1234")
+    await _settle(hass)
+    assert speak[-1].data["message"] == "Disarmed"
+    # With more than one the name comes first
+    hass.states.async_set(EVENTS, "2030-01-01T00:00:00.000+00:00", {"event_type": "disarmed", "partition_name": "Garage"})
+    await _settle(hass)
+    assert speak[-1].data["message"] == "Garage. Disarmed"
+
+
+@pytest.mark.parametrize("name", ["announce_with_speech.yaml", "run_actions_on_events.yaml"])
+async def test_blueprints_can_be_limited_to_partitions(hass, freezer, name):
+    calls = async_mock_service(hass, "tts", "speak") if "speech" in name else async_mock_service(hass, "test", "ran")
+    await _setup(hass)
+    hass.states.async_set("alarm_control_panel.garage", "disarmed", {"partition": "p_gar", "partition_name": "Garage"})
+    if "speech" in name:
+        inputs = {"partitions": [PANEL], "events": EVENTS, "tts": "tts.home", "speakers": ["media_player.kitchen"], "msg_arming_started": "",
+                  "msg_armed": "", "msg_disarmed": "Disarmed", "msg_pending_started": "", "msg_triggered": "",
+                  "say_partition": False}
+    else:
+        inputs = {"events": EVENTS, "event_types": ["disarmed"], "actions": [{"action": "test.ran"}]}
+    await _automation(hass, name, {**inputs, "partitions": ["alarm_control_panel.garage"]})
+    n = 0
+
+    async def event(partition):
+        nonlocal n
+        n += 1
+        attrs = {"event_type": "disarmed"}
+        if partition:
+            attrs["partition"] = partition
+        hass.states.async_set(EVENTS, f"2030-01-01T00:00:0{n}.000+00:00", attrs)
+        await _settle(hass)
+
+    await event("main")
+    assert calls == []  # another partition
+    await event("p_gar")
+    assert len(calls) == 1
+    await event("")
+    assert len(calls) == 2  # no partition: house-wide, always counts
+
+
+async def test_flash_lights_only_for_the_chosen_partitions(hass, freezer):
+    on = async_mock_service(hass, "light", "turn_on")
+    async_mock_service(hass, "light", "turn_off")
+    for name in ("create", "turn_on", "delete"):
+        async_mock_service(hass, "scene", name)
+    await _setup(hass)
+    hass.states.async_set("alarm_control_panel.garage", "triggered", {"partition": "p_gar", "partition_name": "Garage"})
+    await _automation(hass, "flash_lights_on_alarm.yaml", {
+        "events": EVENTS, "lights": ["light.hall"], "causes": ["intrusion"], "interval": 1,
+        "partitions": ["alarm_control_panel.garage"]})
+    hass.states.async_set(EVENTS, "2030-01-01T00:00:01.000+00:00", {"event_type": "triggered", "cause": "intrusion", "partition": "main"})
+    await _settle(hass)
+    assert on == []  # an alarm in another partition
+    hass.states.async_set(EVENTS, "2030-01-01T00:00:02.000+00:00", {"event_type": "triggered", "cause": "intrusion", "partition": "p_gar"})
+    await _flash_tick(hass, freezer, 1)
+    assert on  # the garage
+    hass.states.async_set("alarm_control_panel.garage", "disarmed", {"partition": "p_gar"})
+    await _flash_tick(hass, freezer, 3)
 
 
 async def test_arm_when_everyone_has_left(hass, freezer):
@@ -256,7 +326,7 @@ async def test_run_your_own_actions_on_chosen_events(hass, freezer):
     calls = async_mock_service(hass, "test", "seen")
     await _setup(hass)
     await _automation(hass, "run_actions_on_events.yaml", {
-        "events": EVENTS, "event_types": ["triggered", "disarmed"],
+        "events": EVENTS, "partitions": [PANEL], "event_types": ["triggered", "disarmed"],
         "actions": [{"action": "test.seen", "data": {"what": "{{ event_type }}", "cause": "{{ data.cause | default('') }}"}}]})
     await _call(hass, "alarm_arm_home", code="1234")
     await _settle(hass)

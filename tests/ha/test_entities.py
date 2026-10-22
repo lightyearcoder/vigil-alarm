@@ -23,10 +23,11 @@ async def test_sensor_devices_and_entities(hass):
 
     entry = await _house(hass)
     assert hass.states.get("sensor.front_door_status").state == "closed"
-    assert hass.states.get("switch.front_door_bypass").state == "off"
-    assert hass.states.get("switch.tamper_bypass") is not None
-    assert hass.states.get("switch.smoke_bypass") is None  # fire cannot be bypassed
-    assert hass.states.get("switch.kitchen_gas_bypass") is None  # neither can gas
+    assert hass.states.get("binary_sensor.front_door_bypassed").state == "off"
+    assert hass.states.get("binary_sensor.tamper_bypassed") is not None
+    assert hass.states.get("binary_sensor.smoke_bypassed") is None  # fire cannot be bypassed
+    assert hass.states.get("binary_sensor.kitchen_gas_bypassed") is None  # neither can gas
+    assert hass.states.async_entity_ids("switch") == []  # no bypass switches since 0.7.0
     devices = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
     assert {d.name for d in devices} >= {"Vigil Alarm", "Front door", "Smoke", "Kitchen water"}
     reg = er.async_get(hass).async_get("sensor.front_door_status")
@@ -45,23 +46,32 @@ async def test_sensor_status_follows_the_sensor_and_bypass(hass):
     await hass.async_block_till_done()
     await hass.services.async_call("vigil_alarm", "bypass", {"sensor": "binary_sensor.living_pir", "code": "1234"}, blocking=True)
     assert hass.states.get("sensor.living_pir_status").state == "bypassed"
-    assert hass.states.get("switch.living_pir_bypass").state == "on"
+    assert hass.states.get("binary_sensor.living_pir_bypassed").state == "on"
 
 
-async def test_bypass_switch_needs_an_admin(hass, hass_admin_user, hass_read_only_user):
+async def test_the_bypass_indicator_is_read_only_and_follows_the_bypass(hass):
+    from homeassistant.helpers import entity_registry as er
+
     await _house(hass)
-    target = {"entity_id": "switch.living_pir_bypass"}
-    with pytest.raises((Unauthorized, ServiceValidationError)):  # HA itself blocks read-only users
-        await hass.services.async_call("switch", "turn_on", target, blocking=True, context=Context(user_id=hass_read_only_user.id))
-    with pytest.raises(ServiceValidationError):  # automations carry no user either
-        await hass.services.async_call("switch", "turn_on", target, blocking=True)
-    await hass.services.async_call("switch", "turn_on", target, blocking=True, context=Context(user_id=hass_admin_user.id))
-    assert hass.states.get("switch.living_pir_bypass").state == "on"
-    await hass.services.async_call("switch", "turn_off", target, blocking=True, context=Context(user_id=hass_admin_user.id))
-    assert hass.states.get("switch.living_pir_bypass").state == "off"
-    # an administrator may bypass tamper from the UI
-    await hass.services.async_call("switch", "turn_on", {"entity_id": "switch.tamper_bypass"}, blocking=True, context=Context(user_id=hass_admin_user.id))
-    assert hass.states.get("switch.tamper_bypass").state == "on"
+    state = hass.states.get("binary_sensor.living_pir_bypassed")
+    assert state.state == "off"
+    assert er.async_get(hass).async_get("binary_sensor.living_pir_bypassed").entity_category == er.EntityCategory.DIAGNOSTIC
+    await hass.services.async_call("vigil_alarm", "bypass", {"sensor": "binary_sensor.living_pir", "code": "1234"}, blocking=True)
+    assert hass.states.get("binary_sensor.living_pir_bypassed").state == "on"
+
+
+async def test_the_switches_of_an_earlier_version_are_removed(hass):
+    from homeassistant.helpers import entity_registry as er
+    from pytest_homeassistant_custom_component.common import MockConfigEntry  # noqa: F401
+
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    old = er.async_get(hass).async_get_or_create(
+        "switch", "vigil_alarm", f"{entry.entry_id}_anything_bypass", config_entry=entry, suggested_object_id="front_door_bypass")
+    assert old.entity_id == "switch.front_door_bypass"
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert er.async_get(hass).async_get("switch.front_door_bypass") is None
 
 
 async def test_alarm_active_per_class(hass):
@@ -112,8 +122,8 @@ async def test_entity_ids_are_english_on_a_dutch_installation_but_the_names_are_
         "sensor.vigil_alarm_last_event",
         "event.vigil_alarm_alarm_events",
         "sensor.front_door_status",
-        "switch.front_door_bypass",
+        "binary_sensor.front_door_bypassed",
     ):
         assert hass.states.get(entity_id) is not None, entity_id
     assert hass.states.get("binary_sensor.vigil_alarm_fire_alarm").attributes["friendly_name"].endswith("Brandalarm")
-    assert hass.states.get("switch.front_door_bypass").attributes["friendly_name"].endswith("Omzeilen")
+    assert hass.states.get("binary_sensor.front_door_bypassed").attributes["friendly_name"].endswith("Omzeild")

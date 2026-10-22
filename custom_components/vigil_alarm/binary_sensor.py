@@ -1,13 +1,14 @@
-"""'Alarm active' per class, plus the technical (water) alarm."""
+"""'Alarm active' per class, the technical (water) alarm, and per sensor whether it is bypassed."""
 
 from __future__ import annotations
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass, BinarySensorEntity
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import VigilConfigEntry
-from .entity import VigilEntity, alarm_device
+from .entity import VigilEntity, VigilSensorEntity, alarm_device
 
 
 async def async_setup_entry(
@@ -17,6 +18,10 @@ async def async_setup_entry(
     # Always all of them, so dashboards and automations never point at an entity that is missing.
     entities = [VigilAlarmActive(manager, c) for c in ("intrusion", "fire", "gas", "tamper", "alarm24")]
     entities.append(VigilTechnicalActive(manager))
+    for sub in manager.sensor_items():
+        if manager.config.sensors[sub.subentry_id].cls in ("fire", "gas"):
+            continue  # life safety sensors cannot be bypassed
+        entities.append(VigilSensorBypassed(manager, sub.subentry_id, sub.title))
     async_add_entities(entities)
 
 
@@ -55,3 +60,19 @@ class VigilTechnicalActive(VigilEntity, BinarySensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, list[str]]:
         return {"sensors": self._manager.snapshot()["technical_alarms"]}
+
+
+class VigilSensorBypassed(VigilSensorEntity, BinarySensorEntity):
+    """On = the sensor is bypassed (ignored until the alarm is disarmed). Read only: bypassing is done from the Vigil
+    card, a panel or the `vigil_alarm.bypass` service, with a code or as an administrator, never by a switch."""
+
+    _attr_translation_key = "sensor_bypassed"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, manager, sensor_id: str, title: str) -> None:
+        super().__init__(manager, sensor_id, title)
+        self._attr_unique_id = f"{manager.entry.entry_id}_{sensor_id}_bypassed"
+
+    @property
+    def is_on(self) -> bool:
+        return self._manager.sensor_is_bypassed(self._sensor_id)

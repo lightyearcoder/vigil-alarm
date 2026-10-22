@@ -87,6 +87,7 @@ from .panels import PanelRegistry
 from .selftest import SelfTest
 from .sirens import SirenController
 from .supervisor import Supervisor
+from .valuewatch import Range, ValueWatch
 from .languages import ALL_NAMES, HOME_NAMES, language_of
 from .vigil_core import Config, ConfigError, Engine, aggregate
 
@@ -94,7 +95,7 @@ _LOGGER = logging.getLogger(__name__)
 
 SIGNAL_UPDATE = f"{DOMAIN}_update_{{}}"
 SIGNAL_EVENT = f"{DOMAIN}_event_{{}}"
-ROUTINE_EVENTS = {"selftest_checked", "selftest_reminder", "selftest_siren_tested", "startup_settled"}
+ROUTINE_EVENTS = {"selftest_checked", "selftest_reminder", "selftest_siren_tested", "startup_settled", "handler_test", "handler_test_done"}
 
 
 def partition_ids(entry: ConfigEntry, extra: dict[str, Item] | None = None) -> list[str]:
@@ -153,8 +154,9 @@ def build_configs(entry: ConfigEntry, extra: dict[str, Item] | None = None) -> d
             d = sub.data
             if sub.subentry_type == SUBENTRY_SENSOR:
                 owner = d
-                if d[CONF_CLS] == "tamper" and d.get(CONF_COMPANION_OF) in subentries:
-                    owner = subentries[d[CONF_COMPANION_OF]].data  # the tamper contact of a sensor is in its partition
+                parent = subentries.get(d.get(CONF_COMPANION_OF))
+                if d[CONF_CLS] == "tamper" and parent is not None and parent.subentry_type == SUBENTRY_SENSOR:
+                    owner = parent.data  # the tamper contact of a sensor is in its partition (one of a siren watches everywhere)
                 # an intrusion sensor is in one partition; so is a tamper contact (of a sensor, or one that was given a
                 # partition); every other safety sensor watches in all of them
                 bound = owner[CONF_CLS] == "intrusion" or (owner[CONF_CLS] == "tamper" and bool(owner.get(CONF_PARTITION)))
@@ -295,6 +297,12 @@ class VigilManager:
             for sid, sub in items_of(entry).items()
             if sub.subentry_type == SUBENTRY_SENSOR
         }
+        self._ranges: dict[str, Range] = {
+            sid: rng
+            for sid, sub in items_of(entry).items()
+            if sub.subentry_type == SUBENTRY_SENSOR and (rng := Range.from_data(sub.data)) is not None
+        }
+        self._values = ValueWatch(hass)
         self._sensor_name: dict[str, str] = {
             sid: sub.title
             for sid, sub in items_of(entry).items()
@@ -304,6 +312,8 @@ class VigilManager:
         self.sirens = SirenController(hass, self)
         self.selftest = SelfTest(hass, entry, self)
         self.heartbeat = Heartbeat(hass, entry)
+        from .handlers import HandlerMonitor
+        self.handlers = HandlerMonitor(hass, entry, self)
         from .backups import ConfigBackups  # here: backups.py reads build_config from this module
         self.backups = ConfigBackups(hass, entry)
         from .newsensors import NewSensors  # here: it reads from discovery, which reads from items
@@ -449,7 +459,31 @@ class VigilManager:
     @callback
     def _unavailable_sensors(self) -> list[str]:
         return [sid for sid, eid in self._sensor_entity.items()
-                if sensor_value(self.hass.states.get(eid)) == "unavailable"]
+                if self._raw(sid, self.hass.states.get(eid)) == "unavailable"]
+
+    def _raw(self, sid: str, state: Any) -> str:
+        """open, closed or unavailable; for a sensor that watches a number: outside, inside or no number."""
+        rng = self._ranges.get(sid)
+        return rng.classify(state) if rng else sensor_value(state)
+
+    @callback
+    def _value_for(self, sid: str, state: Any) -> str | None:
+        """What the engine gets for this state. None: a number outside its limits that has not been so long enough."""
+        raw = self._raw(sid, state)
+        rng = self._ranges.get(sid)
+        if rng is None:
+            return raw
+        return self._values.apply(sid, rng, raw, partial(self._range_time_up, sid))
+
+    @callback
+    def _range_time_up(self, sid: str) -> None:
+        eid = self._sensor_entity.get(sid)
+        if eid is None or self._raw(sid, self.hass.states.get(eid)) != "open":
+            return
+        self._values.confirm(sid)
+        self._sync()
+        self._feed(sid, "open")
+        self._after()
 
     @callback
     def _start_feeding(self, settle: bool = False) -> None:
@@ -462,8 +496,8 @@ class VigilManager:
         self._sync()
         self._settling = settle and bool(self._sensor_entity)
         for sid, entity_id in self._sensor_entity.items():
-            value = sensor_value(self.hass.states.get(entity_id))
-            if value == "unavailable" and self._settling:
+            value = self._value_for(sid, self.hass.states.get(entity_id))
+            if value is None or (value == "unavailable" and self._settling):
                 continue
             self._feed(sid, value)
         if self._sensor_entity:
@@ -518,6 +552,7 @@ class VigilManager:
         self.supervisor.stop()
         self.new_sensors.stop()
         self.practice.shutdown()
+        self._values.shutdown()
         self.walktest.shutdown()
         self.panels.stop()
         if self._unsub_timer:
@@ -594,12 +629,15 @@ class VigilManager:
     @callback
     def _sensor_changed(self, event: Event) -> None:
         entity_id = event.data["entity_id"]
-        value = sensor_value(event.data.get("new_state"))
-        if self._settling and value == "unavailable":
+        new_state = event.data.get("new_state")
+        if self._settling and self._raw(next((s for s, e in self._sensor_entity.items() if e == entity_id), ""), new_state) == "unavailable":
             return  # still starting up: wait for the end of the wait before calling it lost
         self._sync()
         for sid, eid in self._sensor_entity.items():
             if eid == entity_id:
+                value = self._value_for(sid, new_state)
+                if value is None:
+                    continue  # a number outside its limits, not long enough yet
                 self._feed(sid, value)
                 self.walktest.note(sid, value)
                 if not self.practice.active:

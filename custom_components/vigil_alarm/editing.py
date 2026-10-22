@@ -47,6 +47,9 @@ from .const import (
     CONF_DURESS_SALT,
     CONF_CHIME,
     CONF_PERMANENT_BYPASS,
+    CONF_MIN_VALUE,
+    CONF_MAX_VALUE,
+    CONF_FOR,
     CONF_DELAY,
     CONF_ENTRY_DELAY,
     CONF_GAS_TYPE,
@@ -218,6 +221,7 @@ def _sensor(entry: ConfigEntry, sub: Item | None, name: str, raw: dict[str, Any]
         raise EditError({"entity_id": "required"})
     if CONF_CLS not in data:
         raise EditError({CONF_CLS: "required"})
+    _value_limits(data)
     data.pop(CONF_COMPANION_OF, None)  # only Vigil sets this
     mine = {sub.subentry_id, *(c for c, _ in _companions(entry, sub.subentry_id))} if sub else set()
     if any(
@@ -243,6 +247,38 @@ def _sensor(entry: ConfigEntry, sub: Item | None, name: str, raw: dict[str, Any]
         raise EditError({CONF_NAME: "name_in_use"})
     _check_core(entry, SUBENTRY_SENSOR, sub, name, data)
     return data
+
+
+def _value_limits(data: dict[str, Any]) -> None:
+    """A sensor with a number (temperature, voltage, ...) is a technical sensor with limits and a time; an on/off
+    sensor has none of that."""
+    if str(data["entity_id"]).split(".")[0] != "sensor":
+        for key in (CONF_MIN_VALUE, CONF_MAX_VALUE, CONF_FOR):
+            data.pop(key, None)
+        return
+    if data[CONF_CLS] != "silent24":
+        raise EditError({CONF_CLS: "value_needs_technical"})
+    numbers: dict[str, float | None] = {}
+    for key in (CONF_MIN_VALUE, CONF_MAX_VALUE, CONF_FOR):
+        raw = data.pop(key, None)
+        if raw in (None, ""):
+            numbers[key] = None
+            continue
+        try:
+            numbers[key] = float(raw)
+        except (TypeError, ValueError):
+            raise EditError({key: "not_a_number"}) from None
+    low, high, hold = numbers[CONF_MIN_VALUE], numbers[CONF_MAX_VALUE], numbers[CONF_FOR]
+    if low is None and high is None:
+        raise EditError({CONF_MIN_VALUE: "value_needs_limit"})
+    if low is not None and high is not None and low >= high:
+        raise EditError({CONF_MAX_VALUE: "value_limits_order"})
+    if hold is not None and hold < 0:
+        raise EditError({CONF_FOR: "not_negative"})
+    for key, value in ((CONF_MIN_VALUE, low), (CONF_MAX_VALUE, high)):
+        if value is not None:
+            data[key] = value
+    data[CONF_FOR] = hold or 0.0
 
 
 def partition_names(entry: ConfigEntry) -> list[str]:
@@ -506,6 +542,20 @@ def _siren(entry: ConfigEntry, sub: Item | None, name: str, raw: dict[str, Any])
         raise EditError({CONF_CAUSES: "no_causes"})
     if any(o.title == name for o in _others(entry, SUBENTRY_SIREN, sub)):
         raise EditError({CONF_NAME: "name_in_use"})
+    # Its tamper contact: kept as a tamper sensor of its own (a companion), like the one of a door contact
+    tamper = data.get(CONF_TAMPER_ENTITY)
+    if tamper:
+        own = {c for c, _ in _companions(entry, sub.subentry_id)} if sub else set()
+        if tamper == data["control"] or tamper.split(".")[0] != "binary_sensor":
+            raise EditError({CONF_TAMPER_ENTITY: "tamper_same_entity" if tamper == data["control"] else "tamper_entity_domain"})
+        if any(
+            s.data.get("entity_id") == tamper
+            for sid, s in items_of(entry).items()
+            if s.subentry_type == SUBENTRY_SENSOR and sid not in own
+        ) or any(
+            o.data.get(CONF_TAMPER_ENTITY) == tamper for o in _others(entry, SUBENTRY_SIREN, sub)
+        ):
+            raise EditError({CONF_TAMPER_ENTITY: "tamper_entity_in_use"})
     if any(CONF_TONE in data.get(c, {}) for c in PROFILE_CAUSES) and CONF_TONE_ENTITY not in data:
         raise EditError({"base": "tone_without_entity"})
     if any(CONF_VOLUME in data.get(c, {}) for c in PROFILE_CAUSES) and CONF_VOLUME_ENTITY not in data:

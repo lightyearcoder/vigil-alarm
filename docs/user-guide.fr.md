@@ -49,7 +49,7 @@ Ce guide explique comment configurer et utiliser Vigil Alarm. Pour l'installatio
 | **Autoprotection** | Surveille toujours. Un contact d'autoprotection qui s'ouvre déclenche une alarme. |
 | **Eau** | Surveille toujours. Une *alarme technique* : elle ne change jamais l'état de l'alarme, elle publie seulement des événements et un capteur « alarme active ». |
 | **24 heures sonore** | Surveille toujours, dans tous les états, même alarme désactivée, comme un contact d'autoprotection : quand il s'ouvre, la sirène retentit et les canaux d'alarme reçoivent un message (cause *alarme 24 h*). Pour un bouton panique ou un coffre. Tant qu'il est ouvert, l'activation est refusée. |
-| **24 heures silencieuse** | Surveille toujours, sans sirène : une *alarme technique* comme l'eau, avec un message aux canaux *Technique* et une ligne dans le journal. Pour un bouton panique silencieux ou un congélateur qui se réchauffe. |
+| **24 heures silencieuse** | Surveille toujours, sans sirène : une *alarme technique* comme l'eau, avec un message aux canaux *Technique* et une ligne dans le journal. Pour un bouton panique silencieux, ou pour un nombre : choisissez un capteur avec un nombre (température, tension, puissance, courant) et réglez une limite basse et/ou haute et une durée. Une valeur hors des limites plus longtemps que cette durée est un capteur ouvert ; de retour dans les limites, c'est fermé tout de suite. Exemples : congélateur au-dessus de -15 pendant 30 minutes, réfrigérateur au-dessus de 8, un terrarium ou aquarium hors de sa plage, une pièce où la climatisation s'est arrêtée, tension du secteur sous 180 pendant une minute. Une valeur qui n'est pas un nombre (`unavailable`) suit le choix fait pour les capteurs indisponibles. |
 
 ### Groupes de capteurs : quels capteurs surveillent dans quel mode
 
@@ -82,7 +82,7 @@ l'état de l'alarme est conservé.
    - Choisissez le `binary_sensor`. Pour un contact de porte ou un détecteur de mouvement, le panneau propose lui-même le bon
      groupe de capteurs.
    - Choisissez la classe et, pour l'intrusion, le type et les groupes de capteurs.
-   - L'appareil a-t-il aussi un contact d'autoprotection (la plupart des contacts de porte Zigbee en ont un) ? Indiquez-le sous *Entité d'autoprotection*. Vigil ajoute de lui-même un capteur d'autoprotection nommé « Porte d'entrée (autoprotection) » : toujours en surveillance, avec son propre interrupteur de neutralisation. Il suit le capteur quand vous le renommez, le modifiez ou le supprimez, et n'a pas de ligne propre dans le tableau.
+   - L'appareil a-t-il aussi un contact d'autoprotection (la plupart des contacts de porte Zigbee en ont un) ? Indiquez-le sous *Entité d'autoprotection*. Vigil ajoute de lui-même un capteur d'autoprotection nommé « Porte d'entrée (autoprotection) » : toujours en surveillance, avec son propre indicateur *Inhibé*. Il suit le capteur quand vous le renommez, le modifiez ou le supprimez, et n'a pas de ligne propre dans le tableau.
    - *Si ouvert à la fin de la temporisation de sortie* décide de ce qui arrive à une porte encore ouverte au moment de l'activation : **neutraliser avec un avis** (par défaut ; elle est de nouveau surveillée dès qu'elle se ferme), **attendre la fermeture**, **refuser l'activation** ou **démarrer la temporisation d'entrée**.
    - *Quand le capteur devient injoignable* : **bloquer l'activation** (par défaut pour l'intrusion et
      l'autoprotection), **notifier seulement** (par défaut pour l'incendie, le gaz et l'eau), **déclencher l'alarme** ou **activer
@@ -152,7 +152,7 @@ La neutralisation laisse un capteur de côté jusqu'à la désactivation de l'al
 
 **Neutralisation permanente.** Cochez *Garder la neutralisation après la désactivation (permanente)* sur un capteur (indisponible pour les capteurs d'incendie et de gaz) et une neutralisation manuelle de ce capteur reste après la désactivation de l'alarme, même après un redémarrage de Home Assistant, jusqu'à ce que quelqu'un la rétablisse à la main. Pratique pour un capteur en panne depuis un moment. Le capteur reste dans la liste comme *neutralisé*, l'onglet *Aperçu* a une carte **Neutralisés en permanence** avec un bouton *Rétablir*, et la carte Vigil et le clavier tactile affichent *Neutralisé : fenêtre cassée* sous *Désactivée*, pour que cela ne soit pas oublié ; le journal a `sensor_bypassed` au début et `sensor_unbypassed` (raison *manuel*) à la fin. Sans la case, rien ne change : la neutralisation prend fin à la désactivation.
 
-- Dans le panneau et le tableau de bord : l'interrupteur **Neutraliser** du capteur (administrateurs seulement).
+- Dans le panneau Vigil : le bouton **Neutraliser** du capteur (administrateurs seulement). Dans la carte Vigil et sur le clavier tactile, de même, avec un code. L'entité `binary_sensor.<capteur>_bypassed` l'indique (lecture seule ; il n'y a pas d'interrupteur).
 - Par action : `vigil_alarm.bypass` et `vigil_alarm.unbypass` avec l'entité du capteur et, pour les personnes qui ne sont pas
   administrateurs, un code. Ce code n'est nécessaire que si l'activation en demande un aussi (le paramètre
   *code requis pour activer*). Les capteurs d'autoprotection ne peuvent être neutralisés que par les administrateurs et par les utilisateurs
@@ -296,7 +296,7 @@ Par défaut, Vigil a une seule alarme. Sous **Partitions**, vous pouvez en ajout
 - **Les groupes de capteurs appartiennent à une partition.** Avec plus d'une partition, l'onglet *Groupes de capteurs* a un tableau par partition. Un groupe ne propose que les modes de sa partition, et un capteur ne peut utiliser que les groupes de sa propre partition. Une nouvelle partition commence sans groupes : utilisez *Créer les groupes par défaut* dans son tableau. Les règles de confirmation sont aussi listées par partition (tous les capteurs d'une règle doivent être dans une partition).
 - **Le journal** a une colonne *Partition* ; un événement d'incendie, de gaz, d'eau ou 24 h n'en a pas (il vaut pour toute la maison).
 - **Les claviers tactiles et la carte de la tablette** affichent toujours quelle partition (ou *Toutes*) ils utilisent, même quand il n'y en a qu'une, avec *Vigil Alarm* et le logo. Un clavier qui peut utiliser plusieurs partitions a une rangée de boutons pour changer (et un bouton en haut de la page *Capteurs* qui choisit de quelle partition les capteurs sont listés) ; *Toutes* active ou désactive chaque partition. Après le délai de retour sans toucher, il revient à sa partition par défaut, mais pas tant que la liste des capteurs est ouverte. Le service `vigil_alarm.select_partition` fait le même changement depuis une automatisation.
-- **Capteurs toujours actifs à part.** Les capteurs d'incendie, de gaz, d'eau, de sabotage et de 24 heures n'appartiennent à aucune partition ; la liste des capteurs d'une partition (sur la carte Vigil et sur le clavier tactile) ne les montre donc pas. Ils forment un choix à part à côté des partitions, *Toujours actif* : sur la carte un bouton de plus dans la rangée de la page *Capteurs*, sur le clavier tactile une étape de plus du bouton de partition en haut de cette page. Avec plus de quatre partitions, le clavier tactile en montre trois à la fois, avec une flèche de chaque côté (le bouton *Tout* reste) ; une partition choisie ailleurs fait apparaître sa propre page.
+- **Capteurs toujours actifs à part.** Les capteurs d'incendie, de gaz, d'eau, de sabotage et de 24 heures n'appartiennent à aucune partition ; la liste des capteurs d'une partition (sur la carte Vigil et sur le clavier tactile) ne les montre donc pas. Ils forment un choix à part à côté des partitions, *Toujours actif* : sur la carte un bouton de plus dans la rangée de la page *Capteurs*, sur le clavier tactile une étape de plus du bouton de partition en haut de cette page. Avec plus de quatre partitions, le clavier tactile en montre quatre à la fois, avec une flèche de chaque côté (la flèche de droite reste tout à droite ; *Tout* vient après la dernière partition, sur la dernière page, ou sur une page à part si celle-ci est pleine) ; une partition choisie ailleurs fait apparaître sa propre page.
 
 ## Automatisations et blueprints
 
@@ -308,14 +308,14 @@ Les [blueprints](../README.md#blueprints) fournis couvrent les cas courants :
 
 - **Faire clignoter les lumières pendant une alarme** enregistre l'état de vos lumières, les fait clignoter tant que l'alarme
   est déclenchée et les rétablit ensuite, aussi quand l'alarme est désactivée. Choisissez quelles
-  causes font clignoter (le gaz est désactivé par défaut). La valeur par défaut de 2 secondes allumé et 2 secondes éteint reste
+  causes font clignoter (le gaz est désactivé par défaut) et, avec plus d'une partition, pour quelles partitions (*Only for these partitions*). La valeur par défaut de 2 secondes allumé et 2 secondes éteint reste
   bien en dessous de la fréquence qui compte pour les personnes photosensibles. Pour Hue, utilisez une pièce ou une zone
   (groupe) plutôt que des lampes seules ; les groupes sont désactivés par défaut dans Home Assistant, activez-les
   donc d'abord.
 - **Annoncer les événements d'alarme par la voix** prononce un message quand l'alarme s'active, se désactive, démarre
-  la temporisation d'entrée ou se déclenche. Laissez un message vide pour rester silencieux pour cet événement.
+  la temporisation d'entrée ou se déclenche. Laissez un message vide pour rester silencieux pour cet événement. Avec plus d'une partition, le message commence par le nom de la partition (désactivable avec *Name the partition* ; `partition_name` est aussi disponible dans votre texte).
 - **Exécuter vos propres actions sur les événements d'alarme** est le bloc de construction général : choisissez des événements et ajoutez
-  n'importe quelles actions, avec `event_type` et `data` disponibles.
+  n'importe quelles actions, avec `event_type` et `data` disponibles. Ce blueprint et celui de la voix ont *Only for these partitions* (plusieurs possibles ; vide = toutes) ; `data.partition_name` indique la partition concernée.
 - **Rappeler en arrivant dans une maison activée** envoie un message quand quelqu'un rentre alors que l'
   alarme est activée. Il ne désactive pas.
 
@@ -336,6 +336,37 @@ choix :
 Si l'activation est refusée (par exemple parce qu'une porte est ouverte), vous pouvez recevoir un message qui dit
 pourquoi. Si vous laissez le champ de message vide, rien n'est envoyé.
 
+### Vos automatisations tournent-elles encore ?
+
+Un blueprint ou une automatisation qui réagit à l'alarme peut échouer sans que personne ne le remarque : elle est désactivée, a une erreur, ou une lampe qui n'existe pas. Vigil y veille.
+
+- **Les blueprints Vigil** (faire clignoter les lampes, parole, actions personnelles) indiquent à Vigil avec l'action `vigil_alarm.handler_report` quand une exécution commence et quand elle est terminée. Une exécution qui se termine **sans** être terminée (une erreur l'a arrêtée, ou elle a été désactivée) donne l'événement `handler_stalled`, un message à vos canaux de panne, une ligne dans *Prêt à l'emploi ?* et une **réparation** dans Home Assistant. Si Home Assistant a encore la trace, la réparation dit quelle étape a échoué. Un gestionnaire qui tourne simplement encore, par exemple une répétition qui attend que vous changiez quelque chose, n'est jamais une panne, quelle que soit sa durée : Vigil regarde l'automatisation elle-même (son nombre d'exécutions en cours), pas l'horloge.
+- **Le contrôle silencieux :** chaque jour, avec l'autotest, Vigil demande à chaque automatisation qui réagit à l'alarme de signaler qu'elle tourne (l'événement `handler_test` avec `dry_run`). Les blueprints signalent alors seulement et ne font rien d'autre : aucune lampe ne clignote et rien ne sonne. Une automatisation qui ne répond pas en une minute donne `handler_stalled` (*non démarrée*). Le même contrôle trouve une automatisation d'un blueprint Vigil qui est désactivée, cassée ou disparue.
+- **Le test hebdomadaire avec les vraies actions** (*Paramètres*, *Autotest*, désactivé par défaut) : une fois par semaine, aux heures réglées et seulement alarme désactivée, les automatisations font leur vrai travail en **mode d'entraînement** : les lampes clignotent trois fois, mais pas de sirène et Vigil n'envoie aucun message. Chaque blueprint a le choix *Agir aussi en mode d'entraînement* : activé pour les lampes, désactivé pour la parole et pour vos propres actions (elles signalent seulement qu'elles ont tourné). Le même test se lance depuis la carte *Autotest* (*Tester les automatisations (en silence)* et *Tester avec les vraies actions*) ou avec l'action `vigil_alarm.test_handlers`.
+- **Dans vos propres actions**, la variable `practice` vaut `true` tant que le mode d'entraînement est actif, pour qu'une sirène et une lampe flash combinées puissent laisser la sirène de côté : utilisez un `choose` avec la condition `{{ not practice }}` autour de la sirène. Avec le blueprint *Exécuter vos propres actions* vous pouvez aussi choisir l'événement `handler_test`, pour que vos actions participent au test hebdomadaire.
+- **Vos propres automatisations** peuvent aussi participer : appelez `vigil_alarm.handler_report` au début et à la fin, avec le même `run_id` :
+
+```yaml
+variables:
+  run_id: "{{ this.entity_id }}-{{ now().timestamp() }}"
+actions:
+  - action: vigil_alarm.handler_report
+    data:
+      run_id: "{{ run_id }}"
+      state: started
+      automation: "{{ this.entity_id }}"
+      handler: My own automation
+  # ... your actions ...
+  - action: vigil_alarm.handler_report
+    data:
+      run_id: "{{ run_id }}"
+      state: done
+```
+
+  Donnez `waits_for_user: true` si l'exécution peut durer autant qu'il faut, ou `max_duration` (secondes) si une exécution plus longue mérite un avis (une seule fois, pas de réparation).
+
+Vigil ne voit pas une action qui avait le droit d'échouer avec `continue_on_error` : Home Assistant ne l'enregistre pas dans la trace. Et un gestionnaire qui va jusqu'au bout prouve qu'il a tourné, pas que la lampe s'est allumée ni que le téléphone a reçu le message.
+
 ## Autosurveillance
 
 Les vrais défauts (un capteur injoignable, une batterie faible, une sirène indisponible ou sur batterie) apparaissent aussi sous *Paramètres → Système → Réparations* et disparaissent d'eux-mêmes une fois corrigés. Les réglages manquants ne sont pas des réparations ; *Prêt à l'emploi ?* les montre.
@@ -346,7 +377,7 @@ Les vrais défauts (un capteur injoignable, une batterie faible, une sirène ind
   avec `supervision_lost` et `supervision_restored`.
 - **Sirènes :** Vigil signale quand une sirène devient indisponible et, avec une entité de mode d'alimentation,
   quand elle fonctionne sur sa batterie (la valeur qui signifie « sur batterie » est un paramètre, par défaut
-  `battery` ; vérifiez ce que votre appareil rapporte). Ajoutez le contact d'autoprotection d'une sirène comme capteur d'autoprotection.
+  `battery` ; vérifiez ce que votre appareil rapporte). Indiquez le contact d'autoprotection d'une sirène dans le formulaire de la sirène (*Entité d'autoprotection*) : Vigil ajoute un capteur d'autoprotection, toujours en surveillance dans toutes les partitions.
 - Les problèmes qui existent au démarrage sont listés dans l'attribut `problems` de l'alarme sans événement ; des événements suivent lors des changements. L'aperçu les montre sous *Attention*.
 
 ### Autotest
