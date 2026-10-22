@@ -1,6 +1,9 @@
 {
   "domain": "vigil_alarm",
   "name": "Vigil Alarm",
+  "after_dependencies": [
+    "trace"
+  ],
   "codeowners": [
     "@lightyearcoder"
   ],

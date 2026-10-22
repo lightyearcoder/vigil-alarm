@@ -31,6 +31,8 @@ from .panels import profile_object_id
 from .panel import async_register_commands, async_register_panel, async_remove_panel
 from .vigil_core import ConfigError
 
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
 PLATFORMS = [
     Platform.ALARM_CONTROL_PANEL,
     Platform.BINARY_SENSOR,
