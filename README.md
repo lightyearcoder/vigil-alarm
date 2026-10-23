@@ -46,8 +46,8 @@
   and an **alarm memory** that remembers every sensor that opened during the last alarm.
 - **Notifications** through any `notify` service, per kind of message, with optional
   escalation to a second channel when nobody reacts.
-- **Sirens** (optional) with tone and volume per cause, a maximum duration, and a preset for
-  the Sonoff SNZB-09P (Zigbee2MQTT).
+- **Sirens** (optional) with tone and volume per cause, a maximum duration, and presets for
+  the Sonoff SNZB-09P and the frient SMSZB-120 smoke alarm (Zigbee2MQTT).
 - **Self-monitoring:** unreachable sensors, low batteries, siren availability and mains power, a **self-test**, a
   **heartbeat**, and a *Ready for use?* card that names what is still missing. A **practice mode** and a **walk test**
   let you try everything without a siren or messages.
@@ -132,8 +132,8 @@ code in an automation.
 
 ## Presets
 
-Presets fill in the settings of a known device. Today there is one: **Sonoff SNZB-09P
-(Zigbee2MQTT)** for sirens. In the panel, add a siren, pick its on/off entity, then choose the
+Presets fill in the settings of a known device. Today there are two for sirens: **Sonoff SNZB-09P
+(Zigbee2MQTT)** and the **frient SMSZB-120 smoke alarm (Zigbee2MQTT)**, whose siren is a single switch (the preset fills in its duration of 240 seconds and finds its battery sensor). In the panel, add a siren, pick its on/off entity, then choose the
 preset: tone, volume and duration are filled in, and Vigil looks for the other entities of the
 same device (tone, volume, flash light, battery, power mode; a tamper contact of the siren you choose yourself). Everything stays editable.
 Zigbee2MQTT exposes these entities; other setups (such as ZHA) can use any `siren`, `switch`

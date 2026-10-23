@@ -1,7 +1,7 @@
 # Vigil Alarm touch panel: the screen, for any ESPHome device with an LVGL display and a touch screen.
 #
 # This file is the part that is the same for every panel. The hardware (display, touch, backlight)
-# is in a second file, for example guition-4848.yaml, and the device itself (name, Wi-Fi, keys) in
+# is in a second file, for example guition-esp32-s3-4840s40c_i.yaml, and the device itself (name, Wi-Fi, keys) in
 # a third, see ../example-garage.yaml. What the hardware file must provide:
 #   - the substitutions `hardware_id`, `screen_width` and `screen_height`
 #   - a light with the id `display_backlight`

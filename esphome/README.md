@@ -18,7 +18,7 @@ Other displays work with another hardware file, see below.
 esphome/
   example-garage.yaml      a device: name, Wi-Fi, keys  (copy this, one per panel)
   vigil_alarm/             the firmware and the hardware; the same for every panel, do not edit
-    guition-4848.yaml      the hardware: display, touch, backlight  (one per kind of panel)
+    guition-esp32-s3-4840s40c_i.yaml      the hardware: display, touch, backlight  (one per kind of panel)
     vigil-panel.yaml
     vigil-panel-row.yaml
     vigil-panel-row-script.yaml
@@ -125,7 +125,7 @@ registered.
 
 ## Another display
 
-`vigil_alarm/` is for the screen only. For other hardware make a file like `vigil_alarm/guition-4848.yaml` (or send it to us to add). It
+`vigil_alarm/` is for the screen only. For other hardware make a file like `vigil_alarm/guition-esp32-s3-4840s40c_i.yaml` (or send it to us to add). It
 must provide:
 
 - the substitutions `hardware_id`, `screen_width` and `screen_height` (reported to Vigil),

@@ -77,7 +77,7 @@ l'état de l'alarme est conservé.
 
 1. **Vérifiez la partition** (onglet *Partitions*, la première ligne est votre maison) : modes, temporisations de sortie, temporisation
    d'entrée par défaut et durée d'alarme. Sous *Paramètres*, vous vérifiez si un code est nécessaire pour activer.
-2. **Ajoutez vos capteurs.** Le moyen rapide est *Capteurs → Trouver des capteurs* : Vigil liste les capteurs de porte, de fenêtre, de mouvement, de fumée, de chaleur, de gaz, d'eau, de sécurité et d'autoprotection que Home Assistant connaît déjà, avec le capteur de batterie et d'autoprotection du même appareil. Cochez ceux que vous voulez, changez un nom si vous le souhaitez, cochez *Entrée* pour les portes que vous franchissez (elles reçoivent une temporisation d'entrée) et ajoutez-les d'un coup. Rien n'est enregistré avant que vous n'appuyiez sur le bouton en bas. Sans groupes de capteurs, appuyez d'abord sur *Créer les groupes par défaut* (Périmètre pour les portes et fenêtres, Intérieur pour le mouvement). Pour en ajouter un à la main, utilisez *Capteurs → Ajouter un capteur* :
+2. **Ajoutez vos capteurs.** Le moyen rapide est *Capteurs → Trouver des capteurs* : Vigil liste les capteurs de porte, de fenêtre, de mouvement, de fumée, de chaleur, de gaz, d'eau, de sécurité et d'autoprotection que Home Assistant connaît déjà, avec le capteur de batterie et d'autoprotection du même appareil. Au départ rien n'est coché et les capteurs déjà ajoutés ne sont pas affichés. Cochez ceux que vous voulez, changez un nom si vous le souhaitez, cochez *Entrée* pour les portes que vous franchissez (elles reçoivent une temporisation d'entrée) et ajoutez-les d'un coup. Dans la colonne *Groupes de capteurs* vous cochez d'autres groupes par capteur, ou vous utilisez *Définir le groupe pour les cochés…* pour plusieurs à la fois. Un capteur que vous ne voulez plus voir (par exemple une pièce Hue qui apparaît comme second capteur de mouvement) se masque avec *Ignorer* ; *Afficher N ignoré(s)* le rétablit. Rien n'est enregistré avant que vous n'appuyiez sur le bouton en bas. Sans groupes de capteurs, appuyez d'abord sur *Créer les groupes par défaut* (Périmètre pour les portes et fenêtres, Intérieur pour le mouvement). Pour en ajouter un à la main, utilisez *Capteurs → Ajouter un capteur* :
    - Donnez-lui un nom (« Porte d'entrée »). Le nom détermine les noms d'entités (`sensor.porte_d_entree_status`).
    - Choisissez le `binary_sensor`. Pour un contact de porte ou un détecteur de mouvement, le panneau propose lui-même le bon
      groupe de capteurs.
@@ -111,6 +111,8 @@ peut être rallumée toutes les N secondes.
 
 Beaucoup de sirènes ne peuvent pas indiquer si elles sont réellement allumées. Alors `siren_started` a
 `verified: false`, et une commande qui échoue donne `siren_failed` et une notification.
+
+**Préréglage pour le détecteur de fumée frient SMSZB-120 (Zigbee2MQTT) :** choisissez sous *Sirène* l'interrupteur *Alarm*, puis le préréglage. Vigil renseigne la durée (240 secondes, après quoi l'appareil s'arrête de lui-même) et trouve le capteur de batterie. L'appareil n'a ni tonalité, ni volume, ni feu clignotant à régler. Son interrupteur ne dit pas s'il est vraiment allumé : un test indique donc *commande envoyée, la sirène ne confirme pas* ; ajoutez le capteur de fumée à part comme capteur de type *Incendie*.
 
 **Préréglage pour la Sonoff SNZB-09P (Zigbee2MQTT) :** choisissez sous
 *Sirène* l'interrupteur marche/arrêt de la sirène, puis le préréglage. Vigil remplit les tonalités (classique pour l'intrusion, avertissement pour l'incendie,

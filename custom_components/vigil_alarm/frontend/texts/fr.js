@@ -352,7 +352,7 @@ export default {
     "partitionHelp": "Les capteurs d'intrusion ajoutés vont dans cette partition. Les capteurs d'incendie, de gaz, d'eau et 24 h n'ont pas de partition. Le contact d'autoprotection d'un capteur est dans la partition de ce capteur ; un capteur d'autoprotection que vous ajoutez vous-même se choisit ici (ou Toutes les partitions).",
     "button": "Chercher des capteurs",
     "title": "Chercher des capteurs",
-    "intro": "Ces capteurs ont été trouvés dans Home Assistant. Choisissez lesquels ajouter. Rien n'est enregistré avant que vous appuyiez sur le bouton en bas.",
+    "intro": "Ces capteurs ont été trouvés dans Home Assistant. Cochez ceux que vous voulez ajouter ; rien n'est coché au départ. Les capteurs déjà ajoutés ne sont pas affichés. Rien n'est enregistré avant que vous appuyiez sur le bouton en bas.",
     "none": "Aucun nouveau capteur trouvé. Les capteurs de porte, de fenêtre, de mouvement, de fumée, de gaz, d'eau et de sabotage d'un appareil intégré sont affichés.",
     "noGroups": "Certains capteurs d'intrusion n'ont pas encore de groupe de capteurs. Réglez « Proposer pour les nouveaux capteurs » d'un groupe de capteurs sur contacts ou mouvement ; vous pourrez alors les ajouter ici.",
     "cols": {
@@ -363,6 +363,13 @@ export default {
       "extra": "Inclus"
     },
     "entranceHelp": "Une entrée reçoit une temporisation d'entrée (type « temporisé »).",
+    "ignore": "Ignorer",
+    "unignore": "Rétablir",
+    "ignored": "Ignoré",
+    "ignoreHelp": "Masquer ce capteur dans la recherche de capteurs et dans l'avis de nouveaux capteurs. Le bouton sous la liste permet de le rétablir.",
+    "showIgnored": "Afficher {n} ignoré(s)",
+    "hideIgnored": "Masquer les ignorés",
+    "setGroup": "Définir le groupe pour les cochés…",
     "inUse": "déjà utilisé",
     "needsGroup": "aucun groupe de capteurs",
     "battery": "batterie",
@@ -706,7 +713,8 @@ export default {
   "opt": {
     "preset": {
       "": "—",
-      "sonoff_snzb_09p_z2m": "Sonoff SNZB-09P (Zigbee2MQTT)"
+      "sonoff_snzb_09p_z2m": "Sonoff SNZB-09P (Zigbee2MQTT)",
+      "frient_smszb_120_z2m": "détecteur de fumée frient SMSZB-120 (Zigbee2MQTT)"
     },
     "cls": {
       "intrusion": "Intrusion",

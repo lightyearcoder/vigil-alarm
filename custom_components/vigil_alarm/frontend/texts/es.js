@@ -352,7 +352,7 @@ export default {
     "partitionHelp": "Los sensores de intrusión que añadas van a esta partición. Los sensores de incendio, gas, agua y 24 horas no tienen partición. El contacto de sabotaje de un sensor está en la partición de ese sensor; un sensor de sabotaje que añades tú mismo lo eliges aquí (o Todas las particiones).",
     "button": "Buscar sensores",
     "title": "Buscar sensores",
-    "intro": "Estos sensores se encontraron en Home Assistant. Elige cuáles añadir. No se guarda nada hasta que pulses el botón de abajo.",
+    "intro": "Estos sensores se encontraron en Home Assistant. Marca los que quieras añadir; al principio no hay nada marcado. Los sensores ya añadidos no se muestran. No se guarda nada hasta que pulses el botón de abajo.",
     "none": "No se encontraron sensores nuevos. Se muestran los sensores de puerta, ventana, movimiento, humo, gas, agua y sabotaje de un dispositivo integrado.",
     "noGroups": "Algunos sensores de intrusión aún no tienen grupo de sensores. Pon «Sugerir para sensores nuevos» de un grupo de sensores en contactos o movimiento; así podrás añadirlos aquí.",
     "cols": {
@@ -363,6 +363,13 @@ export default {
       "extra": "Incluido"
     },
     "entranceHelp": "Una entrada recibe un retardo de entrada (tipo «retardado»).",
+    "ignore": "Ignorar",
+    "unignore": "Restaurar",
+    "ignored": "Ignorado",
+    "ignoreHelp": "Oculta este sensor en la búsqueda de sensores y en el aviso de sensores nuevos. Puedes recuperarlo con el botón bajo la lista.",
+    "showIgnored": "Mostrar {n} ignorados",
+    "hideIgnored": "Ocultar ignorados",
+    "setGroup": "Definir grupo para los marcados…",
     "inUse": "ya en uso",
     "needsGroup": "sin grupo de sensores",
     "battery": "batería",
@@ -706,7 +713,8 @@ export default {
   "opt": {
     "preset": {
       "": "—",
-      "sonoff_snzb_09p_z2m": "Sonoff SNZB-09P (Zigbee2MQTT)"
+      "sonoff_snzb_09p_z2m": "Sonoff SNZB-09P (Zigbee2MQTT)",
+      "frient_smszb_120_z2m": "detector de humo frient SMSZB-120 (Zigbee2MQTT)"
     },
     "cls": {
       "intrusion": "Intrusión",

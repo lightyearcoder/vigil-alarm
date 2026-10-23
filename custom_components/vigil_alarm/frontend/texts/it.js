@@ -352,7 +352,7 @@ export default {
     "partitionHelp": "I sensori di intrusione che aggiungi vanno in questa partizione. I sensori di incendio, gas, acqua e 24 ore non hanno partizione. Il contatto di manomissione di un sensore è nella partizione di quel sensore; un sensore di manomissione che aggiungi tu lo scegli qui (o Tutte le partizioni).",
     "button": "Cerca sensori",
     "title": "Cerca sensori",
-    "intro": "Questi sensori sono stati trovati in Home Assistant. Scegli quali aggiungere. Non viene salvato nulla finché non premi il pulsante in fondo.",
+    "intro": "Questi sensori sono stati trovati in Home Assistant. Spunta quelli che vuoi aggiungere; all'inizio non è selezionato nulla. I sensori già aggiunti non vengono mostrati. Non viene salvato nulla finché non premi il pulsante in fondo.",
     "none": "Nessun nuovo sensore trovato. Vengono mostrati i sensori di porta, finestra, movimento, fumo, gas, acqua e manomissione di un dispositivo integrato.",
     "noGroups": "Alcuni sensori di intrusione non hanno ancora un gruppo di sensori. Imposta «Suggerisci per i nuovi sensori» di un gruppo di sensori su contatti o movimento; poi puoi aggiungerli qui.",
     "cols": {
@@ -363,6 +363,13 @@ export default {
       "extra": "Incluso"
     },
     "entranceHelp": "Un ingresso riceve un ritardo d'ingresso (tipo «ritardato»).",
+    "ignore": "Ignora",
+    "unignore": "Ripristina",
+    "ignored": "Ignorato",
+    "ignoreHelp": "Nasconde questo sensore nella ricerca dei sensori e nell'avviso dei nuovi sensori. Puoi ripristinarlo con il pulsante sotto l'elenco.",
+    "showIgnored": "Mostra {n} ignorati",
+    "hideIgnored": "Nascondi ignorati",
+    "setGroup": "Imposta il gruppo per i selezionati…",
     "inUse": "già in uso",
     "needsGroup": "nessun gruppo di sensori",
     "battery": "batteria",
@@ -706,7 +713,8 @@ export default {
   "opt": {
     "preset": {
       "": "—",
-      "sonoff_snzb_09p_z2m": "Sonoff SNZB-09P (Zigbee2MQTT)"
+      "sonoff_snzb_09p_z2m": "Sonoff SNZB-09P (Zigbee2MQTT)",
+      "frient_smszb_120_z2m": "rilevatore di fumo frient SMSZB-120 (Zigbee2MQTT)"
     },
     "cls": {
       "intrusion": "Intrusione",

@@ -1586,38 +1586,56 @@ class VigilPanel extends HTMLElement {
     const rows = [
       ...res.candidates.map((c) => ({ c, tamperOnly: false })),
       ...(res.tamper_only || []).map((c) => ({ c: { ...c, cls: "tamper", groups: [], entrance: false }, tamperOnly: true })),
-    ].map((r) => {
+    ].filter((r) => !r.c.in_use).map((r) => {  // what is already in the list is not offered again
       const intrusion = r.c.cls === "intrusion";
-      r.blocked = r.c.in_use ? f.inUse : intrusion && !(r.c.groups || []).length ? f.needsGroup : "";
-      r.on = !r.blocked;
+      r.blocked = intrusion && !(r.c.groups || []).length ? f.needsGroup : "";
+      r.on = false;  // nothing is ticked at the start: you choose what you want (not the door of the car)
       r.name = r.c.name;
       r.entrance = !!r.c.entrance && intrusion;
       r.nameInput = null;
       r.isNew = newIds.has(r.c.entity_id);
       return r;
-    });
+    }).sort((x, y) => String(x.name).localeCompare(String(y.name), this._hass.language || undefined, { numeric: true, sensitivity: "base" }));
     let onlyNew = !!opts.onlyNew && newIds.size > 0;
     // With more than one partition the intrusion sensors found go to the partition chosen here (the first at the start).
     let part = "main";
-    const groupsOf = (r) => { const ok = new Set(this._groupsFor(part).map((g) => g.id)); return (r.c.groups || []).filter((g) => ok.has(g)); };
-    const shown = () => rows.filter((r) => !onlyNew || r.isNew);
+    // The groups of a sensor: what the person ticked in the row (r.manual), otherwise the proposal; only groups of this partition count.
+    const groupsOf = (r) => { const ok = new Set(this._groupsFor(part).map((g) => g.id)); return (r.manual || r.c.groups || []).filter((g) => ok.has(g)); };
+    const recheck = (r) => { if (r.c.cls !== "intrusion") return; r.blocked = groupsOf(r).length ? "" : f.needsGroup; r.on = r.on && !r.blocked; };
+    let showIgnored = false;
+    const shown = () => rows.filter((r) => (!onlyNew || r.isNew) && (showIgnored || !r.c.ignored));
     const base = el("div");
     const tableHost = el("div");
     let close = () => {};
     const addBtn = el("button", { class: "btn primary" });
-    const count = () => shown().filter((r) => r.on && !r.blocked).length;
+    const count = () => shown().filter((r) => r.on && !r.blocked && !r.c.ignored).length;
     const refresh = () => {
       const n = count();
       addBtn.textContent = fill(f.add, { n });
       addBtn.disabled = n === 0;
     };
+    // A tick per sensor group of the chosen partition; it starts at the proposal.
+    const groupPicker = (r) => {
+      const all = this._groupsFor(part);
+      if (!all.length) return t.none;
+      const have = new Set(groupsOf(r));
+      return el("div", { class: "groupticks" }, all.map((g) => {
+        const box = el("input", { type: "checkbox", checked: have.has(g.id), disabled: !!r.c.ignored, "aria-label": g.title });
+        box.addEventListener("change", () => {
+          if (box.checked) have.add(g.id); else have.delete(g.id);
+          r.manual = all.map((x) => x.id).filter((id) => have.has(id));
+          recheck(r); build();
+        });
+        return el("label", { style: "display:block;white-space:nowrap" }, box, " ", g.title);
+      }));
+    };
     const build = () => {
       const missingGroup = shown().some((r) => r.blocked === f.needsGroup);
       if (!shown().length) { tableHost.replaceChildren(el("div", { class: "empty", text: f.none })); refresh(); return; }
       const table = el("div", { class: "tablewrap" }, el("table", {},
-        el("thead", {}, el("tr", {}, el("th", {}), ...["name", "cls", "entrance", "groups", "extra"].map((k) => el("th", { text: f.cols[k] })))),
+        el("thead", {}, el("tr", {}, el("th", {}), ...["name", "cls", "entrance", "groups", "extra"].map((k) => el("th", { text: f.cols[k] })), el("th", {}))),
         el("tbody", {}, shown().map((r) => {
-          const check = el("input", { type: "checkbox", checked: r.on && !r.blocked, disabled: !!r.blocked, "aria-label": r.name });
+          const check = el("input", { type: "checkbox", checked: r.on && !r.blocked && !r.c.ignored, disabled: !!r.blocked || !!r.c.ignored, "aria-label": r.name });
           check.addEventListener("change", () => { r.on = check.checked; refresh(); });
           const nameInput = el("input", { type: "text", value: r.name, disabled: !!r.blocked, "aria-label": f.cols.name });
           nameInput.addEventListener("input", () => { r.name = nameInput.value; });
@@ -1629,20 +1647,45 @@ class VigilPanel extends HTMLElement {
           return el("tr", { class: "row" },
             el("td", { "data-label": "" }, check),
             el("td", { "data-label": f.cols.name }, nameInput, el("span", { class: "sub", text: r.c.platform ? `${r.c.entity_id} · ${r.c.platform}` : r.c.entity_id }),
-              r.blocked ? el("span", { class: "badge warn", text: r.blocked }) : null),
+              r.blocked ? el("span", { class: "badge warn", text: r.blocked }) : null,
+              r.c.ignored ? el("span", { class: "badge", text: f.ignored }) : null),
             el("td", { "data-label": f.cols.cls }, this._opt("cls", r.c.cls)),
             el("td", { "data-label": f.cols.entrance }, entrance),
-            el("td", { "data-label": f.cols.groups }, r.c.cls === "intrusion" ? groupsOf(r).map(groupName).join(", ") || t.none : t.alwaysOn),
-            el("td", { "data-label": f.cols.extra }, extras));
+            el("td", { "data-label": f.cols.groups }, r.c.cls === "intrusion" ? groupPicker(r) : t.alwaysOn),
+            el("td", { "data-label": f.cols.extra }, extras),
+            el("td", { "data-label": "" }, el("button", { class: "btn", text: r.c.ignored ? f.unignore : f.ignore, title: f.ignoreHelp, onclick: async () => {
+              const res = await this._call({ type: "vigil_alarm/discover_ignore", entity_ids: [r.c.entity_id], ignore: !r.c.ignored });
+              if (!res || !res.ok) return;
+              r.c.ignored = !r.c.ignored;
+              r.on = false;
+              if (!rows.some((x) => x.c.ignored)) showIgnored = false;
+              syncIgnored(); build();
+            } })));
         }))));
       const makeGroups = el("button", { class: "btn", text: f.createGroups, onclick: async () => {
         const made = await this._call({ type: "vigil_alarm/create_default_groups", partition: part });
         if (made.ok) { close(); await this._load(); this._openFind(); }
       } });
-      tableHost.replaceChildren(...[missingGroup ? el("div", {}, el("p", { class: "intro", text: f.noGroups }), makeGroups) : null, table].filter(Boolean));
+      const groupsHere = this._groupsFor(part);
+      const bulk = groupsHere.length && shown().some((r) => r.c.cls === "intrusion")
+        ? el("div", { class: "field" }, el("select", { "aria-label": f.setGroup, onchange: (e) => {
+            const id = e.target.value;
+            if (!id) return;
+            shown().filter((r) => r.on && !r.c.ignored && r.c.cls === "intrusion").forEach((r) => { r.manual = [id]; recheck(r); });
+            build();
+          } }, el("option", { value: "", text: f.setGroup }), ...groupsHere.map((g) => el("option", { value: g.id, text: g.title }))))
+        : null;
+      tableHost.replaceChildren(...[missingGroup ? el("div", {}, el("p", { class: "intro", text: f.noGroups }), makeGroups) : null, bulk, table].filter(Boolean));
       refresh();
     };
-    const setAll = (on) => { shown().forEach((r) => { r.on = on && !r.blocked; }); build(); };
+    const setAll = (on) => { shown().forEach((r) => { r.on = on && !r.blocked && !r.c.ignored; }); build(); };
+    const ignoredBtn = el("button", { class: "btn" });
+    const syncIgnored = () => {
+      const n = rows.filter((r) => r.c.ignored).length;
+      ignoredBtn.textContent = showIgnored ? f.hideIgnored : fill(f.showIgnored, { n });
+      ignoredBtn.style.display = n ? "" : "none";
+    };
+    ignoredBtn.addEventListener("click", () => { showIgnored = !showIgnored; syncIgnored(); build(); });
     const copy = el("button", { class: "btn", text: f.copy, title: f.copyHelp });
     copy.addEventListener("click", async () => {
       const report = await this._call({ type: "vigil_alarm/discover_report" });
@@ -1653,11 +1696,7 @@ class VigilPanel extends HTMLElement {
       ? el("div", { class: "field" }, el("label", { text: t.fields.partition }),
           el("select", { onchange: (e) => {
             part = e.target.value;
-            for (const r of rows) {  // a group of another partition cannot be used: such a sensor waits for a group
-              if (r.c.cls !== "intrusion" || r.c.in_use) continue;
-              r.blocked = groupsOf(r).length ? "" : f.needsGroup;
-              r.on = !r.blocked;
-            }
+            for (const r of rows) { r.manual = null; recheck(r); }  // another partition has other groups: back to the proposal
             build();
           } }, (this._data.partitions || []).map((p) => el("option", { value: p.id, text: p.name }))),
           el("div", { class: "help", text: f.partitionHelp }))
@@ -1671,14 +1710,15 @@ class VigilPanel extends HTMLElement {
     };
     filterBtn.addEventListener("click", () => { onlyNew = !onlyNew; syncFilter(); build(); });
     syncFilter();
+    syncIgnored();
     build();
     this._dialog(f.title, [el("p", { class: "intro", text: f.intro }), partitionPick, filterNote, base,
       el("div", { class: "bar" }, el("button", { class: "btn", text: f.all, onclick: () => setAll(true) }),
-        el("button", { class: "btn", text: f.nothing, onclick: () => setAll(false) }), filterBtn, copy),
+        el("button", { class: "btn", text: f.nothing, onclick: () => setAll(false) }), filterBtn, ignoredBtn, copy),
       tableHost], (closeDialog) => {
       close = closeDialog;
       addBtn.addEventListener("click", async () => {
-        const chosen = shown().filter((r) => r.on && !r.blocked);
+        const chosen = shown().filter((r) => r.on && !r.blocked && !r.c.ignored);
         const items = chosen.map((r) => {
           const c = r.c;
           const data = { name: (r.name || "").trim() || c.name, entity_id: c.entity_id, cls: c.cls };

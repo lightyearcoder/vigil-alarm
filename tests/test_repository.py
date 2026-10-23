@@ -316,3 +316,12 @@ def test_every_tab_of_the_admin_panel_has_an_address_of_its_own():
     assert "history.pushState(null" in panel and '"location-changed"' in panel and 'addEventListener("popstate"' in panel
     assert "removeEventListener(\"popstate\"" in panel and "set route(route)" in panel
     assert "this._tab = " not in panel.replace("this._tab = tab;", "").replace('this._tab = "overview";', "")
+
+
+def test_find_sensors_shows_the_title_of_a_sensor_group():
+    """A sensor group item has a `title` (not a `name`): the tick in Find sensors must show it."""
+    js = (ROOT / "custom_components/vigil_alarm/frontend/vigil-panel.js").read_text(encoding="utf-8")
+    start = js.index("const groupPicker")
+    block = js[start : js.index("const build = () =>", start)]
+    assert "g.title" in block and "g.name" not in block
+    assert "text: g.title" in js and "text: g.name" not in js

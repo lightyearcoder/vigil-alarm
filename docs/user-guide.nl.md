@@ -72,7 +72,7 @@ opnieuw; de alarmstand blijft behouden.
 
 1. **Controleer de partitie** (tabblad *Partities*, de eerste rij is je huis): modi, uitlooptijden, standaard
    inlooptijd en alarmduur. Onder *Instellingen* controleer je of er een code nodig is om in te schakelen.
-2. **Voeg je sensoren toe.** De snelle weg is *Sensoren → Sensoren zoeken*: Vigil toont de deur-, raam-, beweging-, rook-, hitte-, gas-, water-, veiligheids- en sabotagesensoren die Home Assistant al kent, met de batterij- en sabotagesensor van hetzelfde apparaat. Vink aan wat je wilt, pas zo nodig een naam aan, vink *Ingang* aan voor deuren waar je doorheen loopt (die krijgen een inlooptijd) en voeg ze in één keer toe. Er wordt niets opgeslagen voordat je op de knop onderaan drukt. Heb je nog geen sensorgroepen, klik dan eerst op *Standaardgroepen maken* (Buitenschil voor deuren en ramen, Binnen voor beweging). Zelf één toevoegen kan met *Sensoren → Sensor toevoegen*:
+2. **Voeg je sensoren toe.** De snelle weg is *Sensoren → Sensoren zoeken*: Vigil toont de deur-, raam-, beweging-, rook-, hitte-, gas-, water-, veiligheids- en sabotagesensoren die Home Assistant al kent, met de batterij- en sabotagesensor van hetzelfde apparaat. Er is aan het begin niets aangevinkt en sensoren die je al hebt toegevoegd worden niet getoond. Vink aan wat je wilt, pas zo nodig een naam aan, vink *Ingang* aan voor deuren waar je doorheen loopt (die krijgen een inlooptijd) en voeg ze in één keer toe. In de kolom *Sensorgroepen* vink je per sensor andere groepen aan, of gebruik je *Groep instellen voor aangevinkte…* voor meerdere tegelijk. Een sensor die je nooit meer wilt zien (bijvoorbeeld een Hue-kamer die als tweede bewegingssensor verschijnt) verberg je met *Negeren*; *N genegeerde tonen* haalt hem terug. Er wordt niets opgeslagen voordat je op de knop onderaan drukt. Heb je nog geen sensorgroepen, klik dan eerst op *Standaardgroepen maken* (Buitenschil voor deuren en ramen, Binnen voor beweging). Zelf één toevoegen kan met *Sensoren → Sensor toevoegen*:
    - Geef een naam ("Voordeur"). De naam bepaalt de entiteitsnamen (`sensor.voordeur_status`).
    - Kies de `binary_sensor`. Bij een deurcontact of bewegingssensor stelt het paneel zelf de
      juiste sensorgroep voor.
@@ -108,6 +108,8 @@ stopt kan elke N seconden opnieuw worden aangezet.
 
 Veel sirenes kunnen niet melden of ze echt aan staan. Dan heeft `siren_started` de waarde
 `verified: false`, en een commando dat mislukt geeft `siren_failed` en een melding. De kaart *Zelftest* op het *Overzicht* toont per sirene waar de laatste start op uitkwam: *bevestigd aan*, *commando verstuurd, de sirene bevestigt niet* of *mislukt*, zodat een sirene die niet kan bevestigen niet voor een bevestigde wordt aangezien. Vigil kan een sirene niet horen: test hem af en toe op gehoor.
+
+**Voorinstelling voor de frient SMSZB-120 rookmelder (Zigbee2MQTT):** kies bij *Sirene* de schakelaar *Alarm* en daarna de voorinstelling. Vigil vult de duur in (240 seconden, waarna het apparaat zelf stopt) en vindt de batterijsensor. Het apparaat heeft geen toon, volume of flitslamp om in te stellen. De schakelaar meldt niet terug of hij echt aan staat, dus een test zegt *commando verstuurd, de sirene bevestigt niet*; voeg de rooksensor apart toe als sensor van het type *Brand*.
 
 **Voorinstelling voor de Sonoff SNZB-09P (Zigbee2MQTT):** kies bij *Sirene* de aan/uit-schakelaar
 van de sirene en kies dan de voorinstelling. Vigil vult de tonen in (klassiek bij inbraak,

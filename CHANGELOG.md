@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.1
+
+- *Find sensors* lets you change the sensor groups per sensor right there (ticks in the column, starting at the proposal) or for all ticked sensors at once with *Set group for ticked…*.
+- *Find sensors* has an **Ignore** button per row: a sensor you never want to see again (for example a Hue room that appears as a second motion sensor) is hidden from the list and from the "new sensors" notice. *Show N ignored* brings it back.
+- *Find sensors* is sorted by sensor name.
+- *Find sensors* no longer shows sensors that are already in your list, and nothing is ticked at the start: you tick what you want, so the car door does not slip in by accident.
+- **Preset for the frient SMSZB-120 smoke alarm (Zigbee2MQTT).** Choose its *Alarm* switch as the siren and then the preset: Vigil fills in the duration (240 seconds, what the device itself stops after) and finds the battery sensor (the percentage, not the *battery low* indicator). The device has no tone, volume or flash light to set.
+- Passes hassfest: `trace` is listed as an after-dependency (it is only used to name the failed step of a handler) and the integration declares that it is set up from the interface only.
+- Removing Vigil now also removes the file with the state of the alarm (`.storage/vigil_alarm.<id>`), which used to stay behind.
+- The hardware file of the Guition panel is now `esphome/vigil_alarm/guition-esp32-s3-4840s40c_i.yaml` (it was `guition-4848.yaml`: there are several Guition panels with a 4848 screen). If you copied the folder, change the `hardware: !include` line in your device file; the panel still reports `guition-4848` as its hardware name.
+
 ## 0.7.0
 
 - **A sensor can watch a number.** For a freezer or a fridge that gets too warm, a room that gets too cold or too warm (an air conditioner that stopped, a terrarium, a fish tank), or a power outage. Pick a sensor with a number (temperature, voltage, power or current) for a sensor of the type *24 hours, silent* and set a lower and/or an upper limit and a time. A value outside the limits for longer than that time is a technical alarm: a message to the *Technical* channels and a line in the log, the alarm state does not change. Back within the limits it ends at once. A value that is not a number (`unavailable`) follows the choice made for unavailable sensors. Limits are in the unit of the sensor.
@@ -14,7 +25,6 @@
 - **Blueprints: author, and the partitions first.** All blueprints name `lightyearcoder` as author. In *Announce alarm events with speech*, *Run your own actions on alarm events* and *Flash lights during an alarm* the choice *Only for these partitions* is now the first input. *Flash lights* no longer asks for the *Vigil alarm* entity: it looks at the chosen partitions (or at all of Vigil's alarm entities), so an alarm in another partition no longer gets its lights put back when a different partition is disarmed. In *Run your own actions on alarm events* and *Announce alarm events with speech* the choice *Only for these partitions* is now required (pick the entity for all partitions to react to everything), so an automation made from the old version has to be saved once more. **Import the flash blueprint again and choose the partitions: an automation made from the old version has to be saved once more, because its *Vigil alarm* input is gone.**
 - **No bypass switches any more.** Every sensor that can be bypassed had a switch for it (*Settings, Devices & services*), which a dashboard or a voice assistant could flip with one tap, without a code. It is replaced by a read-only diagnostic indicator `binary_sensor.<sensor>_bypassed` (on while the sensor is bypassed). Bypassing is done from the Vigil card, a panel or the touch panel, or with the action `vigil_alarm.bypass`, with a code or as an administrator, as before. The old switches are removed at the update; an automation or dashboard that used `switch.<sensor>_bypass` has to use the action `vigil_alarm.bypass` / `vigil_alarm.unbypass` (to change it) or `binary_sensor.<sensor>_bypassed` (to read it). The generated dashboard and `examples/dashboard.yaml` are updated.
 - **A siren has its tamper contact.** The siren form has the field *Tamper entity* (a binary sensor), like a door contact: Vigil adds a tamper sensor "<siren> (tamper)" for it by itself, always watching in every partition, with its own *Bypassed* indicator. It follows the siren when you rename it and goes with it when you delete it. A tamper contact that you added by hand as a sensor keeps working; to move it into the siren form, delete the sensor first.
-- Passes hassfest: `trace` is listed as an after-dependency (it is only used to name the failed step of a handler) and the integration declares that it is set up from the interface only.
 
 ## 0.6.10
 

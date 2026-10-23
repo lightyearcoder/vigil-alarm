@@ -151,7 +151,7 @@ def test_the_panel_reports_what_vigil_reads():
 
 
 def test_the_hardware_file_names_the_hardware_and_the_screen():
-    hardware = (FIRMWARE_DIR / "guition-4848.yaml").read_text()
+    hardware = (FIRMWARE_DIR / "guition-esp32-s3-4840s40c_i.yaml").read_text()
     for needed in ("hardware_id:", "screen_width:", "screen_height:", "id: display_backlight"):
         assert needed in hardware
     assert "width: ${screen_width}" in hardware and "height: ${screen_height}" in hardware

@@ -77,7 +77,7 @@ der Alarmzustand bleibt erhalten.
 
 1. **Prüfe die Partition** (Tab *Partitionen*, die erste Zeile ist dein Haus): Modi, Ausgangsverzögerungen,
    Standard-Eingangsverzögerung und Alarmdauer. Unter *Einstellungen* prüfst du, ob zum Scharfschalten ein Code nötig ist.
-2. **Füge deine Sensoren hinzu.** Der schnelle Weg ist *Sensoren → Sensoren finden*: Vigil listet die Tür-, Fenster-, Bewegungs-, Rauch-, Hitze-, Gas-, Wasser-, Sicherheits- und Sabotagesensoren auf, die Home Assistant schon kennt, mit dem Batterie- und Sabotagesensor desselben Geräts. Wähle die gewünschten aus, ändere bei Bedarf einen Namen, setze bei Türen, durch die du gehst, den Haken *Eingang* (sie bekommen eine Eingangsverzögerung) und füge alle auf einmal hinzu. Gespeichert wird erst, wenn du unten auf die Schaltfläche drückst. Hast du noch keine Sensorgruppen, drücke zuerst *Standardgruppen erstellen* (Außenhaut für Türen und Fenster, Innenraum für Bewegung). Um einen von Hand hinzuzufügen, nimm *Sensoren → Sensor hinzufügen*:
+2. **Füge deine Sensoren hinzu.** Der schnelle Weg ist *Sensoren → Sensoren finden*: Vigil listet die Tür-, Fenster-, Bewegungs-, Rauch-, Hitze-, Gas-, Wasser-, Sicherheits- und Sabotagesensoren auf, die Home Assistant schon kennt, mit dem Batterie- und Sabotagesensor desselben Geräts. Zu Beginn ist nichts angehakt und bereits hinzugefügte Sensoren werden nicht angezeigt. Hake die gewünschten an, ändere bei Bedarf einen Namen, setze bei Türen, durch die du gehst, den Haken *Eingang* (sie bekommen eine Eingangsverzögerung) und füge alle auf einmal hinzu. In der Spalte *Sensorgruppen* hakst du pro Sensor andere Gruppen an, oder du nimmst *Gruppe für Angehakte festlegen…* für mehrere auf einmal. Einen Sensor, den du nie wieder sehen willst (zum Beispiel einen Hue-Raum, der als zweiter Bewegungssensor erscheint), blendest du mit *Ignorieren* aus; *N ignorierte anzeigen* holt ihn zurück. Gespeichert wird erst, wenn du unten auf die Schaltfläche drückst. Hast du noch keine Sensorgruppen, drücke zuerst *Standardgruppen erstellen* (Außenhaut für Türen und Fenster, Innenraum für Bewegung). Um einen von Hand hinzuzufügen, nimm *Sensoren → Sensor hinzufügen*:
    - Gib ihm einen Namen („Haustür“). Der Name bestimmt die Entitätsnamen (`sensor.haustuer_status`).
    - Wähle den `binary_sensor`. Bei einem Türkontakt oder Bewegungsmelder schlägt das Panel die passende
      Sensorgruppe selbst vor.
@@ -111,6 +111,8 @@ kann alle N Sekunden wieder eingeschaltet werden.
 
 Viele Sirenen können nicht melden, ob sie wirklich an sind. Dann hat `siren_started` den Wert
 `verified: false`, und ein fehlgeschlagener Befehl ergibt `siren_failed` und eine Benachrichtigung.
+
+**Voreinstellung für den frient SMSZB-120 Rauchmelder (Zigbee2MQTT):** wähle unter *Sirene* den Schalter *Alarm* und dann die Voreinstellung. Vigil trägt die Dauer ein (240 Sekunden, danach stoppt das Gerät selbst) und findet den Batteriesensor. Das Gerät hat keinen Ton, keine Lautstärke und kein Blitzlicht zum Einstellen. Der Schalter meldet nicht zurück, ob er wirklich an ist; ein Test sagt daher *Befehl gesendet, die Sirene bestätigt nicht*. Füge den Rauchsensor separat als Sensor vom Typ *Feuer* hinzu.
 
 **Voreinstellung für die Sonoff SNZB-09P (Zigbee2MQTT):** wähle unter
 *Sirene* den Ein/Aus-Schalter der Sirene und dann die Voreinstellung. Vigil trägt Töne ein (klassisch für Einbruch, Warnung für Feuer,

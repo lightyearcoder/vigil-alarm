@@ -77,7 +77,7 @@ el estado de la alarma se conserva.
 
 1. **Revisa la partición** (pestaña *Particiones*, la primera fila es tu casa): modos, retardos de salida, retardo
    de entrada predeterminado y duración de la alarma. En *Ajustes* compruebas si hace falta un código para activar.
-2. **Añade tus sensores.** La forma rápida es *Sensores → Buscar sensores*: Vigil lista los sensores de puerta, ventana, movimiento, humo, calor, gas, agua, seguridad y sabotaje que Home Assistant ya conoce, con el sensor de batería y de sabotaje del mismo dispositivo. Marca los que quieras, cambia un nombre si quieres, marca *Entrada* en las puertas por las que pasas (reciben un retardo de entrada) y añádelos de una vez. No se guarda nada hasta que pulses el botón de abajo. Sin grupos de sensores, pulsa primero *Crear los grupos predeterminados* (Perímetro para puertas y ventanas, Interior para el movimiento). Para añadir uno a mano, usa *Sensores → Añadir sensor*:
+2. **Añade tus sensores.** La forma rápida es *Sensores → Buscar sensores*: Vigil lista los sensores de puerta, ventana, movimiento, humo, calor, gas, agua, seguridad y sabotaje que Home Assistant ya conoce, con el sensor de batería y de sabotaje del mismo dispositivo. Al principio no hay nada marcado y los sensores ya añadidos no se muestran. Marca los que quieras, cambia un nombre si quieres, marca *Entrada* en las puertas por las que pasas (reciben un retardo de entrada) y añádelos de una vez. En la columna *Grupos de sensores* marcas otros grupos por sensor, o usas *Definir grupo para los marcados…* para varios a la vez. Un sensor que no quieras volver a ver (por ejemplo una habitación Hue que aparece como segundo sensor de movimiento) se oculta con *Ignorar*; *Mostrar N ignorados* lo recupera. No se guarda nada hasta que pulses el botón de abajo. Sin grupos de sensores, pulsa primero *Crear los grupos predeterminados* (Perímetro para puertas y ventanas, Interior para el movimiento). Para añadir uno a mano, usa *Sensores → Añadir sensor*:
    - Ponle un nombre («Puerta de entrada»). El nombre determina los nombres de las entidades (`sensor.puerta_de_entrada_status`).
    - Elige el `binary_sensor`. Para un contacto de puerta o un detector de movimiento, el panel propone solo el grupo
      de sensores correcto.
@@ -111,6 +111,8 @@ puede volver a encenderse cada N segundos.
 
 Muchas sirenas no pueden decir si están realmente encendidas. Entonces `siren_started` lleva
 `verified: false`, y un comando que falla produce `siren_failed` y una notificación.
+
+**Preajuste para el detector de humo frient SMSZB-120 (Zigbee2MQTT):** elige en *Sirena* el interruptor *Alarm* y luego el preajuste. Vigil rellena la duración (240 segundos, tras lo cual el aparato se detiene solo) y encuentra el sensor de batería. El aparato no tiene tono, volumen ni luz intermitente que ajustar. Su interruptor no informa de si realmente está encendido, así que una prueba dice *comando enviado, la sirena no confirma*; añade el sensor de humo aparte como sensor de tipo *Incendio*.
 
 **Preajuste para la Sonoff SNZB-09P (Zigbee2MQTT):** en
 *Sirena* elige el interruptor de encendido/apagado de la sirena y luego el preajuste. Vigil rellena los tonos (clásico para intrusión, advertencia para incendio,

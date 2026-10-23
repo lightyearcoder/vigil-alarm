@@ -352,7 +352,7 @@ export default {
     "partitionHelp": "The intrusion sensors you add go into this partition. Fire, gas, water and 24 hour sensors have no partition. The tamper contact of a sensor is in the partition of that sensor; a tamper sensor you add yourself you choose here (or All partitions).",
     "button": "Find sensors",
     "title": "Find sensors",
-    "intro": "These sensors were found in Home Assistant. Choose which ones to add. Nothing is saved until you press the button at the bottom.",
+    "intro": "These sensors were found in Home Assistant. Tick the ones you want to add; nothing is ticked yet. Sensors you already added are not shown. Nothing is saved until you press the button at the bottom.",
     "none": "No new sensors were found. Door, window, motion, smoke, gas, water and tamper sensors of an integrated device are shown.",
     "noGroups": "Some intrusion sensors have no sensor group yet. Set 'Suggest for new sensors' on a sensor group to contacts or motion; then you can add them here.",
     "cols": {
@@ -363,6 +363,13 @@ export default {
       "extra": "Included"
     },
     "entranceHelp": "An entrance gets an entry delay (type 'delayed').",
+    "ignore": "Ignore",
+    "unignore": "Restore",
+    "ignored": "Ignored",
+    "ignoreHelp": "Hide this sensor in Find sensors and in the new-sensor notice. You can bring it back with the button below the list.",
+    "showIgnored": "Show {n} ignored",
+    "hideIgnored": "Hide ignored",
+    "setGroup": "Set group for ticked…",
     "inUse": "already in use",
     "needsGroup": "no sensor group",
     "battery": "battery",
@@ -706,7 +713,8 @@ export default {
   "opt": {
     "preset": {
       "": "—",
-      "sonoff_snzb_09p_z2m": "Sonoff SNZB-09P (Zigbee2MQTT)"
+      "sonoff_snzb_09p_z2m": "Sonoff SNZB-09P (Zigbee2MQTT)",
+      "frient_smszb_120_z2m": "frient SMSZB-120 smoke alarm (Zigbee2MQTT)"
     },
     "cls": {
       "intrusion": "Intrusion",

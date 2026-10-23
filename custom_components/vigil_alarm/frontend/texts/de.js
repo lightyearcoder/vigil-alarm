@@ -352,7 +352,7 @@ export default {
     "partitionHelp": "Die Einbruchsensoren, die du hinzufügst, kommen in diese Partition. Brand-, Gas-, Wasser- und 24-Stunden-Sensoren haben keine Partition. Der Sabotagekontakt eines Sensors gehört zur Partition dieses Sensors; einen Sabotagesensor, den du selbst hinzufügst, wählst du hier (oder Alle Partitionen).",
     "button": "Sensoren suchen",
     "title": "Sensoren suchen",
-    "intro": "Diese Sensoren wurden in Home Assistant gefunden. Wähle, welche hinzugefügt werden. Nichts wird gespeichert, bis du unten auf die Schaltfläche drückst.",
+    "intro": "Diese Sensoren wurden in Home Assistant gefunden. Hake an, welche hinzugefügt werden sollen; es ist noch nichts angehakt. Bereits hinzugefügte Sensoren werden nicht angezeigt. Nichts wird gespeichert, bis du unten auf die Schaltfläche drückst.",
     "none": "Keine neuen Sensoren gefunden. Tür-, Fenster-, Bewegungs-, Rauch-, Gas-, Wasser- und Sabotagesensoren eines eingebundenen Geräts werden angezeigt.",
     "noGroups": "Einige Einbruchsensoren haben noch keine Sensorgruppe. Stelle bei einer Sensorgruppe „Für neue Sensoren vorschlagen“ auf Kontakte oder Bewegung; dann kannst du sie hier hinzufügen.",
     "cols": {
@@ -363,6 +363,13 @@ export default {
       "extra": "Aufgenommen"
     },
     "entranceHelp": "Ein Eingang bekommt eine Eingangsverzögerung (Typ „verzögert“).",
+    "ignore": "Ignorieren",
+    "unignore": "Wiederherstellen",
+    "ignored": "Ignoriert",
+    "ignoreHelp": "Diesen Sensor in „Sensoren suchen“ und in der Meldung über neue Sensoren ausblenden. Mit der Schaltfläche unter der Liste holst du ihn zurück.",
+    "showIgnored": "{n} ignorierte anzeigen",
+    "hideIgnored": "Ignorierte ausblenden",
+    "setGroup": "Gruppe für Angehakte festlegen…",
     "inUse": "bereits in Verwendung",
     "needsGroup": "keine Sensorgruppe",
     "battery": "Batterie",
@@ -706,7 +713,8 @@ export default {
   "opt": {
     "preset": {
       "": "—",
-      "sonoff_snzb_09p_z2m": "Sonoff SNZB-09P (Zigbee2MQTT)"
+      "sonoff_snzb_09p_z2m": "Sonoff SNZB-09P (Zigbee2MQTT)",
+      "frient_smszb_120_z2m": "frient SMSZB-120 Rauchmelder (Zigbee2MQTT)"
     },
     "cls": {
       "intrusion": "Einbruch",

@@ -72,7 +72,7 @@ the alarm state is kept.
 
 1. **Check the partition** (tab *Partitions*, the first row is your house): modes, exit delays, default entry
    delay and alarm duration. Under *Settings* you check whether a code is needed to arm.
-2. **Add your sensors.** The quick way is *Sensors → Find sensors*: Vigil lists the door, window, motion, smoke, heat, gas, water, safety and tamper sensors that Home Assistant already knows, with the battery and tamper sensor of the same device. Tick the ones you want, change a name if you like, tick *Entrance* for doors you walk through (they get an entry delay) and add them in one go. Nothing is saved until you press the button at the bottom. Without sensor groups, press *Create default groups* first (Perimeter for doors and windows, Interior for motion). To add one by hand use *Sensors → Add sensor*:
+2. **Add your sensors.** The quick way is *Sensors → Find sensors*: Vigil lists the door, window, motion, smoke, heat, gas, water, safety and tamper sensors that Home Assistant already knows, with the battery and tamper sensor of the same device. Nothing is ticked at the start and sensors you already added are not shown. Tick the ones you want, change a name if you like, tick *Entrance* for doors you walk through (they get an entry delay) and add them in one go. In the column *Sensor groups* you can tick other groups per sensor, or use *Set group for ticked…* for several at once. A sensor you never want to see again (for example a Hue room that appears as a second motion sensor) can be hidden with *Ignore*; *Show N ignored* brings it back. Nothing is saved until you press the button at the bottom. Without sensor groups, press *Create default groups* first (Perimeter for doors and windows, Interior for motion). To add one by hand use *Sensors → Add sensor*:
    - Name it ("Front door"). The name decides the entity names (`sensor.front_door_status`).
    - Pick the `binary_sensor`. For a door contact or motion sensor the panel suggests the right
      sensor group by itself.
@@ -108,6 +108,8 @@ itself can be switched on again every N seconds.
 
 Many sirens cannot report whether they are really on. Then `siren_started` has
 `verified: false`, and a command that fails gives `siren_failed` and a notification. The *Self-test* card on the *Overview* shows, per siren, what its last start came to: *confirmed on*, *command sent, the siren does not confirm* or *failed*, so a siren that cannot confirm is not mistaken for one that does. Vigil cannot hear a siren: test it by ear now and then.
+
+**Preset for the frient SMSZB-120 smoke alarm (Zigbee2MQTT):** pick its *Alarm* switch under *Siren*, then the preset. Vigil fills in the duration (240 seconds, what the device itself stops after) and finds the battery sensor. The device has no tone, volume or flash light to set. Its switch does not report whether it is really on, so a test says *command sent, the siren does not confirm*; add its smoke sensor separately as a *Fire* sensor.
 
 **Preset for the Sonoff SNZB-09P (Zigbee2MQTT):** pick the siren's on/off switch under
 *Siren*, then choose the preset. Vigil fills in tones (classic for intrusion, warning for fire,

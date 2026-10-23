@@ -77,7 +77,7 @@ lo stato dell'allarme viene mantenuto.
 
 1. **Controlla la partizione** (scheda *Partizioni*, la prima riga è la tua casa): modalità, ritardi d'uscita, ritardo
    d'ingresso predefinito e durata dell'allarme. In *Impostazioni* controlli se serve un codice per inserire.
-2. **Aggiungi i sensori.** Il modo rapido è *Sensori → Trova sensori*: Vigil elenca i sensori di porta, finestra, movimento, fumo, calore, gas, acqua, sicurezza e antimanomissione che Home Assistant già conosce, con il sensore di batteria e di antimanomissione dello stesso dispositivo. Spunta quelli che vuoi, cambia un nome se vuoi, spunta *Ingresso* per le porte da cui passi (ricevono un ritardo d'ingresso) e aggiungili tutti insieme. Non viene salvato nulla finché non premi il pulsante in basso. Senza gruppi di sensori, premi prima *Crea i gruppi predefiniti* (Perimetro per porte e finestre, Interno per il movimento). Per aggiungerne uno a mano usa *Sensori → Aggiungi sensore*:
+2. **Aggiungi i sensori.** Il modo rapido è *Sensori → Trova sensori*: Vigil elenca i sensori di porta, finestra, movimento, fumo, calore, gas, acqua, sicurezza e antimanomissione che Home Assistant già conosce, con il sensore di batteria e di antimanomissione dello stesso dispositivo. All'inizio non è selezionato nulla e i sensori già aggiunti non vengono mostrati. Spunta quelli che vuoi, cambia un nome se vuoi, spunta *Ingresso* per le porte da cui passi (ricevono un ritardo d'ingresso) e aggiungili tutti insieme. Nella colonna *Gruppi di sensori* spunti altri gruppi per sensore, oppure usi *Imposta il gruppo per i selezionati…* per più sensori insieme. Un sensore che non vuoi più vedere (per esempio una stanza Hue che compare come secondo sensore di movimento) si nasconde con *Ignora*; *Mostra N ignorati* lo riporta. Non viene salvato nulla finché non premi il pulsante in basso. Senza gruppi di sensori, premi prima *Crea i gruppi predefiniti* (Perimetro per porte e finestre, Interno per il movimento). Per aggiungerne uno a mano usa *Sensori → Aggiungi sensore*:
    - Dagli un nome («Porta d'ingresso»). Il nome determina i nomi delle entità (`sensor.porta_d_ingresso_status`).
    - Scegli il `binary_sensor`. Per un contatto porta o un rilevatore di movimento, il pannello propone da solo il gruppo
      di sensori giusto.
@@ -111,6 +111,8 @@ può essere riaccesa ogni N secondi.
 
 Molte sirene non sanno dire se sono davvero accese. In quel caso `siren_started` ha
 `verified: false`, e un comando che fallisce produce `siren_failed` e una notifica.
+
+**Preset per il rilevatore di fumo frient SMSZB-120 (Zigbee2MQTT):** scegli sotto *Sirena* l'interruttore *Alarm* e poi il preset. Vigil inserisce la durata (240 secondi, dopo i quali il dispositivo si ferma da solo) e trova il sensore della batteria. Il dispositivo non ha tono, volume o luce lampeggiante da impostare. Il suo interruttore non riferisce se è davvero acceso, quindi un test dice *comando inviato, la sirena non conferma*; aggiungi il sensore di fumo a parte come sensore di tipo *Incendio*.
 
 **Preset per la Sonoff SNZB-09P (Zigbee2MQTT):** sotto
 *Sirena* scegli l'interruttore on/off della sirena, poi il preset. Vigil compila i toni (classico per l'intrusione, avvertimento per l'incendio,

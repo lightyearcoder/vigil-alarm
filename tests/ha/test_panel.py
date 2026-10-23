@@ -339,7 +339,7 @@ async def test_the_siren_preset_fills_values_and_finds_the_entities_of_the_same_
             domain, "mqtt", f"0x00124b0012345678_{expose}_zigbee2mqtt", suggested_object_id=f"hall_siren_{expose}",
             device_id=device.id).entity_id
 
-    assert (await _ws(client, type="vigil_alarm/get"))["result"]["siren_presets"] == ["sonoff_snzb_09p_z2m"]
+    assert (await _ws(client, type="vigil_alarm/get"))["result"]["siren_presets"] == ["sonoff_snzb_09p_z2m", "frient_smszb_120_z2m"]
     res = await _ws(client, type="vigil_alarm/siren_preset", preset="sonoff_snzb_09p_z2m", control=ids["siren_on"])
     result = res["result"]
     assert result["values"]["tone_entity"] == ids["alarm_sound_type"]
@@ -350,6 +350,13 @@ async def test_the_siren_preset_fills_values_and_finds_the_entities_of_the_same_
     assert result["values"]["power_battery_value"] == "battery"
     assert result["values"]["fire"] == {"tone": "siren_warning", "volume": "max"}
     assert sorted(result["found"]) == ["battery_entity", "light", "power_entity", "tone_entity", "volume_entity"]
+
+    # the frient smoke alarm: only its battery percentage (not the battery_low indicator) and the duration
+    registry.async_get_or_create("binary_sensor", "mqtt", "0x00124b0012345678_battery_low_zigbee2mqtt",
+                                 suggested_object_id="hall_siren_battery_low", device_id=device.id)
+    res = await _ws(client, type="vigil_alarm/siren_preset", preset="frient_smszb_120_z2m", control=ids["siren_on"])
+    assert res["result"]["values"] == {"max_duration": 240, "battery_entity": ids["battery"]}
+    assert res["result"]["found"] == ["battery_entity"]
 
     # without a (known) control there are only values, no entities
     res = await _ws(client, type="vigil_alarm/siren_preset", preset="sonoff_snzb_09p_z2m")
@@ -401,3 +408,15 @@ async def test_the_minimum_code_length_is_a_setting_with_a_floor_of_four(hass, h
     assert res["result"]["errors"] == {"code": "code_too_short"} and res["result"]["placeholders"] == {"min": 6}
     res = await _ws(client, type="vigil_alarm/save", kind="user", data={"name": "Ok", "code": "246810"})
     assert res["result"]["ok"] is True
+
+
+async def test_removing_the_integration_removes_everything_it_stored(hass, hass_storage):
+    entry = await _setup(hass, make_entry())
+    await hass.services.async_call("alarm_control_panel", "alarm_arm_home", {"entity_id": "alarm_control_panel.vigil_alarm", "code": "1234"}, blocking=True)
+    await hass.async_block_till_done()
+    manager = entry.runtime_data
+    await manager._store.async_save({"state": "test"})  # write it now
+    assert f"vigil_alarm.{entry.entry_id}" in hass_storage
+    await hass.config_entries.async_remove(entry.entry_id)
+    await hass.async_block_till_done()
+    assert [k for k in hass_storage if k.startswith("vigil_alarm")] == []

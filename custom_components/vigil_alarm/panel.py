@@ -465,7 +465,28 @@ def ws_discover(hass: HomeAssistant, connection: websocket_api.ActiveConnection,
     if entry is None:
         _no_entry(connection, msg)
         return
-    connection.send_result(msg["id"], async_discover(hass, entry))
+    found = async_discover(hass, entry)
+    manager = getattr(entry, "runtime_data", None)
+    ignored = manager.new_sensors.ignored if manager is not None else set()
+    for c in [*found["candidates"], *found["tamper_only"]]:
+        c["ignored"] = c["entity_id"] in ignored
+    connection.send_result(msg["id"], found)
+
+
+@websocket_api.websocket_command(
+    {vol.Required("type"): "vigil_alarm/discover_ignore", vol.Required("entity_ids"): [str], vol.Required("ignore"): bool}
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_discover_ignore(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Ignore entities in Find sensors (or bring them back). Nothing else changes."""
+    entry = _entry_for(hass)
+    manager = getattr(entry, "runtime_data", None) if entry else None
+    if manager is None:
+        _no_entry(connection, msg)
+        return
+    await manager.new_sensors.async_set_ignored(msg["entity_ids"], msg["ignore"])
+    connection.send_result(msg["id"], {"ok": True})
 
 
 @websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/alarm_memory_clear"})
@@ -1230,7 +1251,7 @@ def ws_arm_check(hass: HomeAssistant, connection: websocket_api.ActiveConnection
 
 @callback
 def async_register_commands(hass: HomeAssistant) -> None:
-    for command in (ws_get, ws_about, ws_tablet, ws_discover, ws_new_sensors_dismiss, ws_alarm_memory_clear, ws_practice, ws_walktest, ws_discover_report, ws_readiness, ws_log, ws_log_export, ws_selftest, ws_heartbeat, ws_panel_unlock, ws_panel_clear_lock, ws_panel_key, ws_dashboard, ws_add_phone, ws_create_default_groups, ws_subscribe, ws_save, ws_save_many, ws_delete, ws_save_settings, ws_siren_preset, ws_backups, ws_backup_restore, ws_export, ws_import, ws_arm_check):
+    for command in (ws_get, ws_about, ws_tablet, ws_discover, ws_discover_ignore, ws_new_sensors_dismiss, ws_alarm_memory_clear, ws_practice, ws_walktest, ws_discover_report, ws_readiness, ws_log, ws_log_export, ws_selftest, ws_heartbeat, ws_panel_unlock, ws_panel_clear_lock, ws_panel_key, ws_dashboard, ws_add_phone, ws_create_default_groups, ws_subscribe, ws_save, ws_save_many, ws_delete, ws_save_settings, ws_siren_preset, ws_backups, ws_backup_restore, ws_export, ws_import, ws_arm_check):
         websocket_api.async_register_command(hass, command)
 
 

@@ -1,5 +1,5 @@
 # Example of a Vigil panel: a Guition 4848 in the garage. Copy this file and the
-# folder `vigil_alarm` (the firmware and the hardware file guition-4848.yaml) into your ESPHome
+# folder `vigil_alarm` (the firmware and the hardware file guition-esp32-s3-4840s40c_i.yaml) into your ESPHome
 # folder and change the name. For a
 # second panel copy this file again with another name.
 #
@@ -24,7 +24,7 @@ esphome:
   friendly_name: ${friendly_name}
 
 packages:
-  hardware: !include vigil_alarm/guition-4848.yaml
+  hardware: !include vigil_alarm/guition-esp32-s3-4840s40c_i.yaml
   vigil: !include vigil_alarm/vigil-panel.yaml
 
 api:

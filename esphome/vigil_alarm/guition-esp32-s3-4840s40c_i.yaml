@@ -1,4 +1,5 @@
 # Hardware of the Guition ESP32-S3-4848S040: 4 inch 480x480 RGB display (ST7701S) with GT911 touch.
+# Product page: https://www.guition.com/esp32-display-module/4-inch-esp32s3-display-module
 # Use together with vigil-panel.yaml (same folder), see ../example-garage.yaml.
 #
 # A hardware file for another panel starts the same way: it names the hardware and the size of the

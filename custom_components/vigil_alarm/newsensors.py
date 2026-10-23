@@ -39,6 +39,7 @@ class NewSensors:
         self.manager = manager
         self._store: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, newsensors_store_key(entry.entry_id))
         self._seen: set[str] = set()
+        self._ignored: set[str] = set()  # entities the person never wants to see again (a room, a duplicate)
         self._timer: CALLBACK_TYPE | None = None
         self._unsub: CALLBACK_TYPE | None = None
         self.entities: list[dict[str, str]] = []  # what is new now: entity_id and name
@@ -59,6 +60,7 @@ class NewSensors:
             await self._save()
         else:
             self._seen = set(stored.get("seen") or [])
+            self._ignored = set(stored.get("ignored") or [])
         self.recompute(notify=False)
         self._unsub = self.hass.bus.async_listen(er.EVENT_ENTITY_REGISTRY_UPDATED, self._registry_changed)
 
@@ -98,7 +100,7 @@ class NewSensors:
         self.entities = [
             {"entity_id": c["entity_id"], "name": c["name"]}
             for c in everything
-            if not c.get("in_use") and c["entity_id"] not in self._seen
+            if not c.get("in_use") and c["entity_id"] not in self._seen and c["entity_id"] not in self._ignored
         ]
         if notify and before != [e["entity_id"] for e in self.entities]:
             self.manager.notify_changed()
@@ -109,8 +111,21 @@ class NewSensors:
         await self._save()
         self.recompute()
 
+    @property
+    def ignored(self) -> set[str]:
+        return set(self._ignored)
+
+    async def async_set_ignored(self, entity_ids: list[str], ignored: bool) -> None:
+        """*Ignore* hides entities from Find sensors and from the "new sensors" notice; *restore* brings them back."""
+        if ignored:
+            self._ignored |= set(entity_ids)
+        else:
+            self._ignored -= set(entity_ids)
+        await self._save()
+        self.recompute()
+
     async def _save(self) -> None:
-        await self._store.async_save({"seen": sorted(self._seen)})
+        await self._store.async_save({"seen": sorted(self._seen), "ignored": sorted(self._ignored)})
 
     async def async_remove(self) -> None:
         await self._store.async_remove()

@@ -16,7 +16,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
-from .const import ATTR_SENSOR, DOMAIN, MODES, SERVICE_ACKNOWLEDGE, SERVICE_ARM, SERVICE_BYPASS, SERVICE_CHECK_CODE, SERVICE_DISARM, SERVICE_SILENCE, SERVICE_TEST_NOTIFICATION, SERVICE_TEST_SIREN, SERVICE_UNBYPASS, SERVICE_UNLOCK_PANEL, SERVICE_SELECT_PARTITION
+from .const import ATTR_SENSOR, DOMAIN, MODES, STORAGE_VERSION, SERVICE_ACKNOWLEDGE, SERVICE_ARM, SERVICE_BYPASS, SERVICE_CHECK_CODE, SERVICE_DISARM, SERVICE_SILENCE, SERVICE_TEST_NOTIFICATION, SERVICE_TEST_SIREN, SERVICE_UNBYPASS, SERVICE_UNLOCK_PANEL, SERVICE_SELECT_PARTITION
 from .errors import VigilError, async_prepare
 from .manager import SIGNAL_UPDATE, VigilManager
 from .migration import async_migrate_entry  # noqa: F401  (Home Assistant looks it up here)
@@ -365,3 +365,4 @@ async def async_remove_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> No
     await Store(hass, 1, f"{DOMAIN}.newsensors.{entry.entry_id}").async_remove()
     await Store(hass, 1, f"{DOMAIN}.alarmmemory.{entry.entry_id}").async_remove()
     await Store(hass, 1, f"{DOMAIN}.handlers.{entry.entry_id}").async_remove()
+    await Store(hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}").async_remove()  # the state of the alarm

@@ -35,6 +35,13 @@ SIREN_PRESETS: dict[str, dict[str, Any]] = {
     },
 }
 
+# The frient / Develco SMSZB-120 smoke alarm: its siren is one switch (`alarm`, the simple command); tone, volume, flash
+# light and power mode are not settable. It stops by itself after its own `max_duration` (240 s by default).
+SIREN_PRESETS["frient_smszb_120_z2m"] = {
+    "roles": {"battery_entity": ("sensor", "battery")},
+    "values": {"max_duration": 240},
+}
+
 
 def siren_preset_ids() -> list[str]:
     return list(SIREN_PRESETS)

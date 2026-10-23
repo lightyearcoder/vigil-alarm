@@ -352,7 +352,7 @@ export default {
     "partitionHelp": "De inbraaksensoren die je toevoegt komen in deze partitie. Brand-, gas-, water- en 24-uurssensoren hebben geen partitie. Een sabotagecontact bij een sensor zit in de partitie van die sensor; een sabotagesensor die je zelf toevoegt kies je hier (of Alle partities).",
     "button": "Sensoren zoeken",
     "title": "Sensoren zoeken",
-    "intro": "Deze sensoren zijn gevonden in Home Assistant. Kies welke je wilt toevoegen. Er wordt niets opgeslagen voordat je op de knop onderaan drukt.",
+    "intro": "Deze sensoren zijn gevonden in Home Assistant. Vink aan welke je wilt toevoegen; er is nog niets aangevinkt. Sensoren die je al hebt toegevoegd worden niet getoond. Er wordt niets opgeslagen voordat je op de knop onderaan drukt.",
     "none": "Er zijn geen nieuwe sensoren gevonden. Deur-, raam-, beweging-, rook-, gas-, water- en sabotagesensoren van een geïntegreerd apparaat worden getoond.",
     "noGroups": "Voor sommige inbraaksensoren is nog geen sensorgroep ingesteld. Zet bij een sensorgroep 'Voorstellen voor nieuwe sensoren' op deuren/ramen of beweging; dan kun je ze hier toevoegen.",
     "cols": {
@@ -363,6 +363,13 @@ export default {
       "extra": "Erbij"
     },
     "entranceHelp": "Een ingang geeft vertraging bij binnenkomst (type 'vertraagd').",
+    "ignore": "Negeren",
+    "unignore": "Terugzetten",
+    "ignored": "Genegeerd",
+    "ignoreHelp": "Verberg deze sensor in Sensoren zoeken en in de melding over nieuwe sensoren. Je haalt hem terug met de knop onder de lijst.",
+    "showIgnored": "{n} genegeerde tonen",
+    "hideIgnored": "Genegeerde verbergen",
+    "setGroup": "Groep instellen voor aangevinkte…",
     "inUse": "al in gebruik",
     "needsGroup": "geen sensorgroep",
     "battery": "batterij",
@@ -706,7 +713,8 @@ export default {
   "opt": {
     "preset": {
       "": "—",
-      "sonoff_snzb_09p_z2m": "Sonoff SNZB-09P (Zigbee2MQTT)"
+      "sonoff_snzb_09p_z2m": "Sonoff SNZB-09P (Zigbee2MQTT)",
+      "frient_smszb_120_z2m": "frient SMSZB-120 rookmelder (Zigbee2MQTT)"
     },
     "cls": {
       "intrusion": "Inbraak",
