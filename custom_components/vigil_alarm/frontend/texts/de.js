@@ -204,6 +204,7 @@ export default {
   },
   "whatsNew": "neu",
   "batteryLow": "schwach",
+  "mainsPowered": "Netzbetrieb",
   "batteryOk": "ok",
   "copySuffix": " (Kopie)",
   "permBypass": {
@@ -582,6 +583,7 @@ export default {
     "entry_delay": "Eingangsverzögerung (leer = Standard)",
     "gas_type": "Gasart",
     "on_unavailable": "Wenn der Sensor nicht mehr erreichbar ist",
+    "mains_powered": "Netzbetrieb (keine Batterie)",
     "battery_entity": "Batteriesensor",
     "tamper_entity": "Sabotage-Entität (optional)",
     "chime": "Türgong: Ton, wenn sich dieser Sensor bei unscharfer Anlage öffnet",
@@ -687,6 +689,7 @@ export default {
     "min_value": "Nur für einen Sensor mit einer Zahl, in seiner eigenen Einheit (zum Beispiel °C oder V). Ein Wert darunter gilt als offen. Leer lassen für keine Untergrenze. Tiefkühltruhe: nichts. Ein Raum, der warm bleiben muss (Terrarium, Aquarium): die niedrigste erlaubte Temperatur. Stromausfall: eine Spannung knapp unter der Netzspannung, zum Beispiel 180.",
     "max_value": "Nur für einen Sensor mit einer Zahl, in seiner eigenen Einheit. Ein Wert darüber gilt als offen. Leer lassen für keine Obergrenze. Tiefkühltruhe zum Beispiel -15, Kühlschrank 8, ein Raum mit Klimaanlage 28.",
     "for_seconds": "Wie lange der Wert außerhalb der Grenzen bleiben muss, bevor es zählt, damit eine kurz geöffnete Tür keinen Alarm auslöst. 0 heißt sofort. Tiefkühltruhe: 1800 (30 Minuten). Stromausfall: 60 (eine Minute). Zurück innerhalb der Grenzen ist sofort geschlossen.",
+    "mains_powered": "Hake dies für einen Sensor ohne Batterie an, etwa eine Kamera mit PoE. Das Feld für den Batteriesensor verschwindet dann und Vigil rät nicht mehr, einen zu wählen.",
     "tamper_entity": "Optional: der Sabotagekontakt dieses Geräts.",
     "at_arm_open": "Was mit diesem Sensor geschieht, wenn er beim Scharfschalten noch offen ist.",
     "type": "Sofort: Alarm sofort. Verzögert: erst Eingangsverzögerung. Folgesensor: löst nur aus, wenn zuvor ein verzögerter Sensor geöffnet wurde.",

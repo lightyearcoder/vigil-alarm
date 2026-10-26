@@ -140,6 +140,7 @@ CONF_MAY_BYPASS = "may_bypass"  # a user may bypass sensors; users saved before 
 CONF_MAY_BYPASS_TAMPER = "may_bypass_tamper"
 CONF_DURESS_HASH = "duress_hash"  # a second code per user: disarms like the normal one, and tells the channels quietly
 CONF_DURESS_SALT = "duress_salt"
+CONF_MAINS_POWERED = "mains_powered"  # on a sensor: no battery (a camera on PoE): no advice about a missing battery sensor
 CONF_PERMANENT_BYPASS = "permanent_bypass"  # on a sensor: a manual bypass stays after disarming
 CONF_CHIME = "chime"  # on a sensor: sound the chime when it opens while the alarm is off
 

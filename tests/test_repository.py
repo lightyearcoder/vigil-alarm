@@ -325,3 +325,20 @@ def test_find_sensors_shows_the_title_of_a_sensor_group():
     block = js[start : js.index("const build = () =>", start)]
     assert "g.title" in block and "g.name" not in block
     assert "text: g.title" in js and "text: g.name" not in js
+
+
+def test_the_lists_in_the_panel_are_sorted_by_name():
+    """The tables and the pick lists are sorted by name; only the partitions keep their order (the first is the alarm itself)."""
+    js = (ROOT / "custom_components/vigil_alarm/frontend/vigil-panel.js").read_text(encoding="utf-8")
+    assert "_byName(" in js
+    shown = js[js.index("  _shown(kind) {") :][:400]
+    assert 'kind === "partition") return this._partitionItems()' in shown and "sort(this._byName" in shown
+    for needle in ("sort(this._byName((g) => g.title))", "sort(this._byName((z) => z.title))", "sort(this._byName((u) => u.name))"):
+        assert needle in js, needle
+
+
+def test_the_custom_elements_are_defined_only_once():
+    """A refresh can load a module again: defining the same name twice throws an error in the log."""
+    for name, tag in (("vigil-panel.js", "vigil-panel"), ("vigil-card.js", "vigil-card")):
+        js = (ROOT / "custom_components/vigil_alarm/frontend" / name).read_text(encoding="utf-8")
+        assert f'customElements.get("{tag}")' in js, name

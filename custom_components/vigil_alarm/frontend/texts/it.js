@@ -204,6 +204,7 @@ export default {
   },
   "whatsNew": "nuovo",
   "batteryLow": "scarica",
+  "mainsPowered": "rete elettrica",
   "batteryOk": "ok",
   "copySuffix": " (copia)",
   "permBypass": {
@@ -582,6 +583,7 @@ export default {
     "entry_delay": "Ritardo d'ingresso (vuoto = predefinito)",
     "gas_type": "Tipo di gas",
     "on_unavailable": "Quando il sensore diventa non raggiungibile",
+    "mains_powered": "Alimentato dalla rete (senza batteria)",
     "battery_entity": "Sensore della batteria",
     "tamper_entity": "Entità antimanomissione (facoltativa)",
     "chime": "Campanello: suono quando questo sensore si apre ad allarme disinserito",
@@ -687,6 +689,7 @@ export default {
     "min_value": "Solo per un sensore con un numero, nella sua unità (per esempio °C o V). Un valore sotto conta come aperto. Lascia vuoto per nessun limite inferiore. Congelatore: niente. Un locale che deve restare caldo (terrario, acquario): la temperatura minima ammessa. Mancanza di corrente: una tensione appena sotto quella di rete, per esempio 180.",
     "max_value": "Solo per un sensore con un numero, nella sua unità. Un valore sopra conta come aperto. Lascia vuoto per nessun limite superiore. Congelatore per esempio -15, frigorifero 8, un locale con aria condizionata 28.",
     "for_seconds": "Per quanto tempo il valore deve restare fuori dai limiti prima che conti, così una porta aperta per un attimo non fa scattare l'allarme. 0 significa subito. Congelatore: 1800 (30 minuti). Mancanza di corrente: 60 (un minuto). Di nuovo entro i limiti è chiuso subito.",
+    "mains_powered": "Spunta per un sensore senza batteria, come una telecamera PoE. Il campo del sensore di batteria scompare e Vigil non consiglia più di sceglierne uno.",
     "tamper_entity": "Facoltativo: il contatto antimanomissione di questo dispositivo.",
     "at_arm_open": "Cosa succede a questo sensore se è ancora aperto quando l'allarme si inserisce.",
     "type": "Immediato: allarme subito. Ritardato: prima il ritardo d'ingresso. Seguace: scatta solo se prima è stato aperto un sensore ritardato.",

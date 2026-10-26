@@ -34,7 +34,7 @@
 - **Partitions:** the house and the garage as separate alarms, each with its own modes and delays, rights, sirens
   and channels; fire, gas and tamper stay for the whole house, plus an *All* entity.
 - **Sensors with a class:** intrusion (instant, delayed or follower), fire, gas, water and
-  tamper, and the 24-hour types (audible and silent). *Find sensors* proposes the door, window, motion, smoke, heat, gas, water and
+  tamper, and the 24-hour types (audible and silent). *Find sensors* (sorted by name, nothing ticked at the start, with *Ignore* and a choice of sensor groups per sensor) proposes the door, window, motion, smoke, heat, gas, water and
   safety sensors that Home Assistant already knows, with their battery and tamper contact. Fire, gas and the 24-hour types always watch; intrusion sensors watch in the modes of their
   **sensor groups**, for example *Perimeter* (doors and windows) in every mode and *Interior*
   (motion) in Away only.

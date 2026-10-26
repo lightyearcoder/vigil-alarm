@@ -46,6 +46,7 @@ from .const import (
     CONF_DURESS_HASH,
     CONF_DURESS_SALT,
     CONF_CHIME,
+    CONF_MAINS_POWERED,
     CONF_PERMANENT_BYPASS,
     CONF_MIN_VALUE,
     CONF_MAX_VALUE,
@@ -217,6 +218,11 @@ def _sensor(entry: ConfigEntry, sub: Item | None, name: str, raw: dict[str, Any]
         data[CONF_ENTRY_DELAY] = float(data[CONF_ENTRY_DELAY])
     if not data.get(CONF_BATTERY_ENTITY):
         data.pop(CONF_BATTERY_ENTITY, None)
+    # "Mains powered" only means something for a sensor that would be asked for a battery, and has none.
+    if data.get(CONF_CLS) not in ("intrusion", "fire", "gas", "water") or data.get(CONF_BATTERY_ENTITY) or not data.get(CONF_MAINS_POWERED):
+        data.pop(CONF_MAINS_POWERED, None)
+    else:
+        data[CONF_MAINS_POWERED] = True
     if not data.get("entity_id"):
         raise EditError({"entity_id": "required"})
     if CONF_CLS not in data:

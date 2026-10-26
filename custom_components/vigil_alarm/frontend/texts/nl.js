@@ -204,6 +204,7 @@ export default {
   },
   "whatsNew": "nieuw",
   "batteryLow": "laag",
+  "mainsPowered": "netspanning",
   "batteryOk": "ok",
   "copySuffix": " (kopie)",
   "permBypass": {
@@ -582,6 +583,7 @@ export default {
     "entry_delay": "Inlooptijd (leeg = standaard)",
     "gas_type": "Soort gas",
     "on_unavailable": "Als de sensor onbereikbaar wordt",
+    "mains_powered": "Op netspanning (geen batterij)",
     "battery_entity": "Batterijsensor",
     "tamper_entity": "Sabotage-entiteit (optioneel)",
     "chime": "Deurbel: laat een geluid horen als deze sensor opengaat terwijl het alarm uit is",
@@ -687,6 +689,7 @@ export default {
     "min_value": "Alleen voor een sensor met een getal, in zijn eigen eenheid (bijvoorbeeld °C of V). Een waarde eronder telt als open. Laat leeg voor geen ondergrens. Diepvries: niets. Een ruimte die warm moet blijven (terrarium, aquarium): de laagste toegestane temperatuur. Stroomuitval: een spanning net onder de netspanning, bijvoorbeeld 180.",
     "max_value": "Alleen voor een sensor met een getal, in zijn eigen eenheid. Een waarde erboven telt als open. Laat leeg voor geen bovengrens. Diepvries bijvoorbeeld -15, koelkast 8, een ruimte met airco 28.",
     "for_seconds": "Hoe lang de waarde buiten de grenzen moet blijven voordat het telt, zodat een deur die even open staat geen alarm geeft. 0 betekent meteen. Diepvries: 1800 (30 minuten). Stroomuitval: 60 (een minuut). Terug binnen de grenzen is meteen dicht.",
+    "mains_powered": "Vink dit aan voor een sensor zonder batterij, zoals een camera op PoE. Het veld voor de batterijsensor verdwijnt dan en Vigil adviseert niet meer om er een te kiezen.",
     "tamper_entity": "Optioneel: het sabotagecontact van dit apparaat.",
     "at_arm_open": "Wat er gebeurt met deze sensor als hij nog open staat bij het inschakelen.",
     "type": "Direct: meteen alarm. Vertraagd: eerst inlooptijd. Volger: alleen alarm als er eerst een vertraagde sensor open was.",

@@ -204,6 +204,7 @@ export default {
   },
   "whatsNew": "nuevo",
   "batteryLow": "baja",
+  "mainsPowered": "red eléctrica",
   "batteryOk": "ok",
   "copySuffix": " (copia)",
   "permBypass": {
@@ -582,6 +583,7 @@ export default {
     "entry_delay": "Retardo de entrada (vacío = predeterminado)",
     "gas_type": "Tipo de gas",
     "on_unavailable": "Cuando el sensor pasa a ser inaccesible",
+    "mains_powered": "Alimentado por red (sin batería)",
     "battery_entity": "Sensor de batería",
     "tamper_entity": "Entidad de sabotaje (opcional)",
     "chime": "Timbre: sonido cuando este sensor se abre con la alarma desactivada",
@@ -687,6 +689,7 @@ export default {
     "min_value": "Solo para un sensor con un número, en su propia unidad (por ejemplo °C o V). Un valor por debajo cuenta como abierto. Déjalo vacío para no tener límite inferior. Congelador: nada. Una sala que debe mantenerse caliente (terrario, acuario): la temperatura mínima permitida. Corte de corriente: una tensión justo por debajo de la de la red, por ejemplo 180.",
     "max_value": "Solo para un sensor con un número, en su propia unidad. Un valor por encima cuenta como abierto. Déjalo vacío para no tener límite superior. Congelador por ejemplo -15, nevera 8, una sala con aire acondicionado 28.",
     "for_seconds": "Cuánto tiempo debe estar el valor fuera de los límites antes de contar, para que una puerta abierta un momento no dispare la alarma. 0 significa de inmediato. Congelador: 1800 (30 minutos). Corte de corriente: 60 (un minuto). De vuelta dentro de los límites queda cerrado de inmediato.",
+    "mains_powered": "Márcalo para un sensor sin batería, como una cámara PoE. El campo del sensor de batería desaparece y Vigil deja de aconsejar que elijas uno.",
     "tamper_entity": "Opcional: el contacto de sabotaje de este dispositivo.",
     "at_arm_open": "Qué le ocurre a este sensor si sigue abierto cuando se activa la alarma.",
     "type": "Instantáneo: alarma de inmediato. Retardado: primero el retardo de entrada. Seguidor: solo salta si antes se abrió un sensor retardado.",

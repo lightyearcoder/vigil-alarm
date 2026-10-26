@@ -15,6 +15,7 @@ from homeassistant.helpers import entity_registry as er
 
 from .const import (
     CONF_BATTERY_ENTITY,
+    CONF_MAINS_POWERED,
     CONF_CODE_ARM_REQUIRED,
     CONF_CODE_HASH,
     CONF_GROUP_MODES,
@@ -116,7 +117,7 @@ def async_readiness(hass: HomeAssistant, entry: ConfigEntry) -> list[dict[str, A
         found.append(_finding("no_siren", "advice", "siren"))
 
     guarded = [s for s in sensors if s.data.get("cls") in ("intrusion", "fire", "gas", "water")]
-    no_battery = [s for s in guarded if not s.data.get(CONF_BATTERY_ENTITY)]
+    no_battery = [s for s in guarded if not s.data.get(CONF_BATTERY_ENTITY) and not s.data.get(CONF_MAINS_POWERED)]
     if no_battery:
         found.append(_finding("battery_missing", "advice", "sensor", n=len(no_battery), names=_names(no_battery)))
 

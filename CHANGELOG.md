@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.2
+
+- **Sensors on mains power.** A new tick *Mains powered (no battery)* on a sensor (for example a camera on PoE) stops the advice on the Overview to add a battery sensor for it. The field *Battery sensor* is then hidden, and the table shows "mains power" in the battery column.
+- Fixed the error "the name vigil-panel has already been used with this registry" in the Home Assistant log when the page is refreshed (the panel now registers itself only once, as the card already did).
+- **Lists are sorted by name.** The tables on the tabs (sensors, sensor groups, rules, users, notifications, panels, sirens) and the pick lists in the forms (sensors of a rule, sensor groups, Home Assistant users, entities) are sorted by name, with numbers by value ("Door 2" before "Door 10"). The partitions keep their own order: the first is the alarm itself and the panel shows them in that order.
+
 ## 0.7.1
 
 - *Find sensors* lets you change the sensor groups per sensor right there (ticks in the column, starting at the proposal) or for all ticked sensors at once with *Set group for ticked…*.

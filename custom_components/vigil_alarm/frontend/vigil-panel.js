@@ -456,7 +456,7 @@ class VigilPanel extends HTMLElement {
   // The groups a sensor of a partition can use: the groups of that partition.
   _groupsFor(pid) {
     const mine = pid || "main";
-    return this._data.items.sensor_group.filter((g) => (g.data.partition || "main") === mine);
+    return this._data.items.sensor_group.filter((g) => (g.data.partition || "main") === mine).sort(this._byName((g) => g.title));
   }
   // The modes of a partition (null: not known, so all of them).
   _partitionModes(pid) {
@@ -494,9 +494,15 @@ class VigilPanel extends HTMLElement {
   // The battery level of a sensor as a number, or null if it has no (readable) battery sensor.
   // The items of a kind that have a row in the tables. The tamper contact of a sensor is kept as a
   // sensor of its own, but it is edited with the sensor it belongs to.
+  // Lists are sorted by name (numbers by value: "Door 2" before "Door 10"), in the language of Home Assistant.
+  _byName(key = (x) => x) {
+    const lang = (this._hass && this._hass.language) || undefined;
+    return (a, b) => String(key(a)).localeCompare(String(key(b)), lang, { numeric: true, sensitivity: "base" });
+  }
+  // The partitions keep their order (the first is the alarm itself, and the panel shows them in this order); the rest is sorted by name.
   _shown(kind) {
     if (kind === "partition") return this._partitionItems();
-    return this._data.items[kind].filter((i) => !(i.data && i.data.companion_of));
+    return this._data.items[kind].filter((i) => !(i.data && i.data.companion_of)).sort(this._byName((i) => i.title));
   }
   // The first partition is the alarm itself, so it has no item of its own: a row is made from the settings.
   _partitionItems() {
@@ -524,7 +530,7 @@ class VigilPanel extends HTMLElement {
     if (level === null && flag && (flag.state === "on" || flag.state === "off")) {  // only "battery low", no percentage
       return el("span", { class: flag.state === "on" ? "badge warn" : "badge ok", text: flag.state === "on" ? this.t.batteryLow : this.t.batteryOk });
     }
-    if (level === null) return this.t.none;
+    if (level === null) return sensor.data.mains_powered && !sensor.data.battery_entity ? this.t.mainsPowered : this.t.none;
     const low = level <= Number(this._data.entry.data.battery_threshold ?? 20);
     return el("span", { class: low ? "badge warn" : "", text: `${level}%` });
   }
@@ -1992,7 +1998,7 @@ class VigilPanel extends HTMLElement {
           } }), this._opt(key, o)))));
       }
       case "sensors": {
-        let choices = this._data.items.sensor.filter((z) => z.data.cls === "intrusion" && (z.data.type || "instant") === "instant");
+        let choices = this._data.items.sensor.filter((z) => z.data.cls === "intrusion" && (z.data.type || "instant") === "instant").sort(this._byName((z) => z.title));
         const homeOf = (z) => z.data.partition || "main";
         const first = choices.find((z) => (state[key] || []).includes(z.id));
         const pid = this._multiple() ? (first ? homeOf(first) : opts.partition) : null;
@@ -2087,7 +2093,7 @@ class VigilPanel extends HTMLElement {
         return wrap(el("input", { type: "text", value: v, autocomplete: "off", oninput: (e) => { state[key] = e.target.value; } }));
       }
       case "ha_user": {
-        const users = [...(this._data.ha_users || [])];
+        const users = [...(this._data.ha_users || [])].sort(this._byName((u) => u.name));
         const select = el("select", { onchange: (e) => { state[key] = e.target.value; } },
           el("option", { value: "", text: "—" }),
           users.map((u) => el("option", { value: u.id, selected: state[key] === u.id, text: u.name })));
@@ -2107,7 +2113,7 @@ class VigilPanel extends HTMLElement {
       }
       case "entity": {
         const id = listId(key);
-        const options = Object.keys(this._hass.states).filter((e) => f.domains.includes(e.split(".")[0])).sort();
+        const options = Object.keys(this._hass.states).filter((e) => f.domains.includes(e.split(".")[0])).sort(this._byName((e) => this._friendly(e)));
         const input = el("input", { type: "text", class: "ent", list: id, value: state[key] || "", autocomplete: "off", placeholder: f.domains.map((d) => d + ".…").join(", "),
           oninput: (e) => { state[key] = e.target.value.trim(); },
           onchange: () => { if (opts.kind === "sensor" && key === "entity_id" && this._suggestGroups(state, opts)) rerender(); } });
@@ -2119,4 +2125,5 @@ class VigilPanel extends HTMLElement {
   }
 }
 
-customElements.define("vigil-panel", VigilPanel);
+// The module can be loaded twice (a refresh, or the panel registered again): a name may be defined only once.
+if (!customElements.get("vigil-panel")) customElements.define("vigil-panel", VigilPanel);

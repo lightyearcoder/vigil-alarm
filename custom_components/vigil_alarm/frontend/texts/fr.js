@@ -204,6 +204,7 @@ export default {
   },
   "whatsNew": "nouveau",
   "batteryLow": "faible",
+  "mainsPowered": "secteur",
   "batteryOk": "ok",
   "copySuffix": " (copie)",
   "permBypass": {
@@ -582,6 +583,7 @@ export default {
     "entry_delay": "Temporisation d'entrée (vide = par défaut)",
     "gas_type": "Type de gaz",
     "on_unavailable": "Quand le capteur devient injoignable",
+    "mains_powered": "Alimenté secteur (sans pile)",
     "battery_entity": "Capteur de batterie",
     "tamper_entity": "Entité de sabotage (facultatif)",
     "chime": "Carillon : son quand ce capteur s'ouvre alors que l'alarme est désactivée",
@@ -687,6 +689,7 @@ export default {
     "min_value": "Uniquement pour un capteur avec un nombre, dans sa propre unité (par exemple °C ou V). Une valeur en dessous compte comme ouvert. Laissez vide pour aucune limite basse. Congélateur : rien. Une pièce qui doit rester chaude (terrarium, aquarium) : la température minimale admise. Coupure de courant : une tension juste sous la tension du secteur, par exemple 180.",
     "max_value": "Uniquement pour un capteur avec un nombre, dans sa propre unité. Une valeur au-dessus compte comme ouvert. Laissez vide pour aucune limite haute. Congélateur par exemple -15, réfrigérateur 8, une pièce avec climatisation 28.",
     "for_seconds": "Combien de temps la valeur doit rester hors des limites avant de compter, pour qu'une porte ouverte un instant ne déclenche pas d'alarme. 0 signifie tout de suite. Congélateur : 1800 (30 minutes). Coupure de courant : 60 (une minute). De retour dans les limites, c'est fermé tout de suite.",
+    "mains_powered": "Cochez pour un capteur sans pile, comme une caméra en PoE. Le champ du capteur de pile disparaît alors et Vigil ne conseille plus d'en choisir un.",
     "tamper_entity": "Facultatif : le contact de sabotage de cet appareil.",
     "at_arm_open": "Ce qui arrive à ce capteur s'il est encore ouvert quand l'alarme s'active.",
     "type": "Immédiat : alarme aussitôt. Temporisé : d'abord la temporisation d'entrée. Suiveur : ne déclenche que si un capteur temporisé a été ouvert avant.",

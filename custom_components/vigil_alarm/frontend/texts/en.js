@@ -204,6 +204,7 @@ export default {
   },
   "whatsNew": "new",
   "batteryLow": "low",
+  "mainsPowered": "mains power",
   "batteryOk": "ok",
   "copySuffix": " (copy)",
   "permBypass": {
@@ -582,6 +583,7 @@ export default {
     "entry_delay": "Entry delay (empty = default)",
     "gas_type": "Type of gas",
     "on_unavailable": "When the sensor becomes unreachable",
+    "mains_powered": "Mains powered (no battery)",
     "battery_entity": "Battery sensor",
     "tamper_entity": "Tamper entity (optional)",
     "chime": "Chime: sound when this sensor opens while the alarm is off",
@@ -687,6 +689,7 @@ export default {
     "min_value": "Only for a sensor with a number, in its own unit (for example °C or V). A value below this counts as open. Leave empty for no lower limit. For a freezer: nothing. For a room that must stay warm (a terrarium, a fish tank): the lowest allowed temperature. For a power outage: a voltage just under the mains voltage, for example 180.",
     "max_value": "Only for a sensor with a number, in its own unit. A value above this counts as open. Leave empty for no upper limit. For a freezer for example -15, for a fridge 8, for a room with an air conditioner 28.",
     "for_seconds": "How long the value must stay outside the limits before it counts, so that a door that is open for a moment does not raise an alarm. 0 means at once. A freezer: 1800 (30 minutes). A power outage: 60 (one minute). Back within the limits is closed at once.",
+    "mains_powered": "Tick this for a sensor that has no battery, such as a camera on PoE. The battery sensor field then disappears and Vigil no longer advises you to add one.",
     "tamper_entity": "Optional: the tamper contact of this device.",
     "at_arm_open": "What happens to this sensor if it is still open when the alarm arms.",
     "type": "Instant: alarm at once. Delayed: entry delay first. Follower: only alarms if a delayed sensor was opened first.",

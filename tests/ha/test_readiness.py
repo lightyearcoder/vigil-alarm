@@ -179,3 +179,40 @@ async def test_arming_without_a_code_is_advised_against_once_there_is_a_user_wit
     entry3.add_to_hass(hass)
     codes = {f["code"] for f in async_readiness(hass, entry3)}
     assert "no_user_code" in codes and "arm_without_code" not in codes
+
+
+async def test_a_mains_powered_sensor_is_not_asked_for_a_battery(hass, hass_ws_client):
+    entry = make_entry()
+    zones = [it for it in entry.options["items"].values() if it["type"] == "zone"]
+    for it in zones[1:]:
+        it["data"]["battery_entity"] = "sensor.b"
+    zones[0]["data"]["mains_powered"] = True  # a camera on PoE
+    entry, client = await _client(hass, hass_ws_client, entry)
+    assert "battery_missing" not in await _codes(client)
+
+
+async def test_mains_powered_is_kept_only_for_a_sensor_without_a_battery(hass, hass_ws_client):
+    from custom_components.vigil_alarm.items import items_of
+
+    entry, client = await _client(hass, hass_ws_client)
+    sensor = {"name": "Camera zone", "entity_id": "binary_sensor.camera_person", "cls": "intrusion", "type": "instant",
+              "sensor_groups": ["g_away"], "at_arm_open": "bypass", "mains_powered": True}
+    res = await _ws(client, type="vigil_alarm/save", kind="sensor", data=sensor)
+    assert res["result"]["ok"] is True
+    sid = res["result"]["id"]
+    await hass.async_block_till_done()
+    assert items_of(entry)[sid].data["mains_powered"] is True
+    # with a battery sensor the tick has no meaning and is not kept
+    res = await _ws(client, type="vigil_alarm/save", kind="sensor", subentry_id=sid, data={**sensor, "battery_entity": "sensor.cam_battery"})
+    assert res["result"]["ok"] is True
+    await hass.async_block_till_done()
+    assert "mains_powered" not in items_of(entry)[sid].data
+
+
+async def test_the_battery_field_hides_when_the_sensor_is_mains_powered(hass, hass_ws_client):
+    entry, client = await _client(hass, hass_ws_client)
+    res = await _ws(client, type="vigil_alarm/get")
+    keys = [f["key"] for f in res["result"]["forms"]["sensor"]]
+    battery = next(f for f in res["result"]["forms"]["sensor"] if f["key"] == "battery_entity")
+    assert keys.index("mains_powered") < keys.index("battery_entity")
+    assert battery["show_if"] == {"mains_powered": [False]}
