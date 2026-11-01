@@ -26,6 +26,9 @@ esphome:
 packages:
   hardware: !include vigil_alarm/guition-esp32-s3-4840s40c_i.yaml
   vigil: !include vigil_alarm/vigil-panel.yaml
+  # A speaker on the connector of the panel: beeps for the exit and entry delay, arming, disarming and a wrong
+  # code. Remove the # to switch it on (see "Sound" in README.md for the one soldering step on this board).
+  # sound: !include vigil_alarm/vigil-panel-sound.yaml
 
 api:
   encryption:

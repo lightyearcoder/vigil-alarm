@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from homeassistant.setup import async_setup_component
 from custom_components.vigil_alarm.errors import VigilError as ServiceValidationError
@@ -27,9 +29,13 @@ async def test_the_message_is_in_the_language_of_home_assistant(hass, language, 
     assert err.value.translation_key == "mode_not_allowed" and err.value.translation_domain == "vigil_alarm"
 
 
-async def test_the_message_has_no_validation_error_in_front_of_it(hass, hass_ws_client):
-    """0.6.10: Home Assistant puts "Validation error: " before a ServiceValidationError; a refusal of Vigil says only
-    what is wrong (a card shows it in red), also over the websocket a card uses."""
+async def test_a_refusal_is_a_service_validation_error_so_an_esphome_panel_gets_the_answer(hass, hass_ws_client):
+    """0.7.3: the ESPHome integration answers a panel only for a ServiceValidationError (or a missing service). A refusal
+    of another kind never reached the panel, which therefore could not show a wrong code. Home Assistant puts
+    "Validation error: " before the text over the websocket; the Vigil card takes that off again."""
+    from homeassistant.exceptions import ServiceValidationError as HomeAssistantKind
+
+    assert issubclass(ServiceValidationError, HomeAssistantKind)
     hass.config.language = "nl"
     await _setup(hass)
     assert await async_setup_component(hass, "websocket_api", {})
@@ -38,5 +44,7 @@ async def test_the_message_has_no_validation_error_in_front_of_it(hass, hass_ws_
                             "target": {"entity_id": "alarm_control_panel.vigil_alarm"}, "service_data": {"code": "5678"}})
     reply = await client.receive_json()
     assert reply["success"] is False
-    assert reply["error"]["message"] == "Modus Weg is door u niet toegestaan om in te schakelen."
+    assert reply["error"]["message"] == "Validation error: Modus Weg is door u niet toegestaan om in te schakelen."
     assert reply["error"]["translation_key"] == "mode_not_allowed"
+    card = (Path(__file__).parent.parent.parent / "custom_components/vigil_alarm/frontend/vigil-card.js").read_text()
+    assert "Validation error:" in card  # the card removes it

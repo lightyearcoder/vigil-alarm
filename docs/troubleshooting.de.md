@@ -66,7 +66,7 @@ Such unten, was du siehst. Zu jedem Symptom: die wahrscheinlichen Ursachen, wo d
 
 ## Eine Ablehnung steht in einer anderen Sprache als erwartet
 
-Zeigt eine Standardkarte von Home Assistant (zum Beispiel die Kachel mit den Scharfschalt-Tasten) eine Ablehnung, steht der Text in der Sprache, auf die **Home Assistant eingestellt ist** (*Einstellungen, System, Allgemein*), nicht in der Sprache deines Profils, und ohne Benutzernamen: *Der Modus Benutzerdefiniert darf von Ihnen nicht scharfgeschaltet werden.* Vigil hat die Texte in sechs Sprachen (Englisch für jede andere). Die Vigil-Karte und das Touch-Bedienteil zeigen die Ablehnung in der Sprache des Bedienteils.
+Zeigt eine Standardkarte von Home Assistant (zum Beispiel die Kachel mit den Scharfschalt-Tasten) eine Ablehnung, steht der Text in der Sprache, auf die **Home Assistant eingestellt ist** (*Einstellungen, System, Allgemein*), nicht in der Sprache deines Profils, und ohne Benutzernamen: *Der Modus Benutzerdefiniert darf von Ihnen nicht scharfgeschaltet werden.* Vigil hat die Texte in sechs Sprachen (Englisch für jede andere). Die Vigil-Karte und das Touch-Bedienteil zeigen die Ablehnung in der Sprache des Bedienteils. Home Assistant selbst setzt auf seinen eigenen Karten *Validation error:* vor den Text; die Vigil-Karte entfernt das.
 
 ## Die Entitäten heißen anders als erwartet
 
@@ -75,6 +75,14 @@ Die Entitäts-IDs von Vigil enden immer auf den englischen Namen, auch wenn Home
 ## Das Panel ist leer
 
 Lade den Browser neu (Strg+F5) und prüfe unter *Geräte & Dienste*, dass die Integration läuft. Sonst schau ins Protokoll (*Einstellungen → System → Protokolle*, nach `vigil` suchen).
+
+## Das Dashboard zeigt *Konfigurationsfehler* bei der Vigil-Karte
+
+Zuerst F5 drücken. Kommt es wieder, das Dashboard im Bearbeitungsmodus öffnen: Der Text unter der roten Karte sagt, was nicht stimmt. `debug: true` in die Karte schreiben, neu laden und die Browserkonsole öffnen (F12, Reiter *Konsole*, Filter `vigil`). Die Zeile `VIGIL-CARD v…` sagt, dass die Karte geladen wurde; Zeilen mit `[vigil-card]` sagen, was sie tut und was schiefgeht. Fehlt die Zeile `VIGIL-CARD`, wurde die Datei nicht geladen: im Reiter *Netzwerk* nach `vigil-card.js` suchen.
+
+## Ein falscher Code am ESPHome-Bedienteil zeigt nichts
+
+Das Bedienteil bekommt die Antwort von Vigil nur, wenn Integration und Firmware dieselbe Version haben (0.7.3 oder neuer). Vigil aktualisieren, Home Assistant neu starten und das Bedienteil mit den Dateien dieser Version flashen. Im Log des Bedienteils steht eine abgelehnte Aktion als `Vigil refused the action: …`.
 
 ## Es funktioniert immer noch nicht?
 

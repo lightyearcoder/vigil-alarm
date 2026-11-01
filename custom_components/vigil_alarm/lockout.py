@@ -7,7 +7,9 @@ lock "other"; that cannot be avoided, because every code check can be abused as 
 
 The lock goes in steps (the numbers are settings of Vigil, see `LOCK_DEFAULTS`): the first lock after a few wrong
 codes, a longer second one after a few more, a third, and after that a permanent lock that only an administrator
-lifts (the *Clear lock* button of the panel). A right code starts all over. "other" has nobody to unlock it, so
+lifts (the *Clear lock* button of the panel). A right code starts all over. Wrong codes that did not lead to a lock
+are forgotten too once nobody has tried again for as long as the next lock would last: four wrong codes, an hour away
+and one more does not lock a panel that locks after five. "other" has nobody to unlock it, so
 there the last step repeats the longest wait instead of locking for good.
 
 The end of a lock, the step and the count are kept in storage, so a restart of Home Assistant, or a reload of
@@ -51,6 +53,7 @@ class CodeLockout:
         self._registered = registered
         self._store: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, f"{DOMAIN}.lockout.{entry.entry_id}")
         self._failures: dict[str, int] = {}  # wrong codes in the current step
+        self._last_failure: dict[str, float] = {}  # when the last of them was made
         self._step: dict[str, int] = {}  # locks so far (0 to 3)
         self._locked_until: dict[str, float] = {}
         self._permanent: set[str] = set()
@@ -89,6 +92,11 @@ class CodeLockout:
                     target[str(bucket)] = max(0, int(value))
                 except (TypeError, ValueError):
                     continue
+        for bucket, when in (saved.get("last_failure") or {}).items():
+            try:
+                self._last_failure[str(bucket)] = float(when)
+            except (TypeError, ValueError):
+                continue
 
     def _state(self) -> dict[str, Any]:
         return {
@@ -96,6 +104,7 @@ class CodeLockout:
             "permanent": sorted(self._permanent),
             "step": {b: v for b, v in self._step.items() if v},
             "failures": {b: v for b, v in self._failures.items() if v},
+            "last_failure": {b: v for b, v in self._last_failure.items() if self._failures.get(b)},
         }
 
     def _save(self) -> None:
@@ -131,19 +140,46 @@ class CodeLockout:
             return "code_locked"
         return None
 
+    def _forget_old_failures(self, bucket: str) -> None:
+        """Wrong codes older than the wait of the next lock no longer count (a lock itself is not touched).
+        A stored count without a time (from before this was kept) starts its period now."""
+        if not self._failures.get(bucket):
+            return
+        now = self._clock()
+        last = self._last_failure.setdefault(bucket, now)
+        step = min(self._step.get(bucket, 0), 3)
+        window = self._rules()[f"lock_wait_{min(step + 1, 3)}"] * 60.0
+        if now - last > window:
+            self._failures.pop(bucket, None)
+            self._last_failure.pop(bucket, None)
+            self._save()
+
+    def tries(self, bucket: str) -> tuple[int, int]:
+        """(wrong codes counted now, how many lead to the next lock) for one timer."""
+        self._forget_old_failures(bucket)
+        step = min(self._step.get(bucket, 0), 3)
+        return self._failures.get(bucket, 0), self._rules()[f"lock_tries_{step + 1}"]
+
+    def phase(self, bucket: str) -> int:
+        """How far the locks have gone: 0 none yet, 1 to 3 the locks so far, 4 locked for good."""
+        return 4 if bucket in self._permanent else min(self._step.get(bucket, 0), 3)
+
     def record_failure(self, source: str | None, bucket: str | None = None) -> Locked | None:
         """Count a wrong code. The lock that starts because of it, or None.
 
         `bucket` names a timer of its own, for the administrator code of a panel."""
         bucket = bucket or self.bucket_for(source)
         rules = self._rules()
+        self._forget_old_failures(bucket)
         step = min(self._step.get(bucket, 0), 3)
         count = self._failures.get(bucket, 0) + 1
         if count < rules[f"lock_tries_{step + 1}"]:
             self._failures[bucket] = count
+            self._last_failure[bucket] = self._clock()
             self._save()
             return None
         self._failures[bucket] = 0
+        self._last_failure.pop(bucket, None)
         now = self._clock()
         if step < 3:
             minutes = rules[f"lock_wait_{step + 1}"]
@@ -163,6 +199,7 @@ class CodeLockout:
     def record_success(self, source: str | None, bucket: str | None = None) -> None:
         """A right code: the count and the step start from zero again."""
         bucket = bucket or self.bucket_for(source)
+        self._last_failure.pop(bucket, None)
         if self._failures.pop(bucket, 0) | self._step.pop(bucket, 0):
             self._save()
 
@@ -173,12 +210,14 @@ class CodeLockout:
             had = bool(self._current()) or bool(self._permanent)
             self._locked_until.clear()
             self._failures.clear()
+            self._last_failure.clear()
             self._step.clear()
             self._permanent.clear()
         else:
             had = bucket in self._current() or bucket in self._permanent
             self._locked_until.pop(bucket, None)
             self._failures.pop(bucket, None)
+            self._last_failure.pop(bucket, None)
             self._step.pop(bucket, None)
             self._permanent.discard(bucket)
         self._save()

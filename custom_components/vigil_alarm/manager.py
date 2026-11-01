@@ -787,6 +787,7 @@ class VigilManager:
             self.publish("code_locked_permanent", source=source, action=action, timer=locked.bucket)
         else:
             self.publish("code_locked", source=source, action=action, timer=locked.bucket, minutes=locked.minutes)
+        self.notify_changed()  # the panel shows the lock at once, without waiting for the next try
 
     def _actor(self, user: Item | None, source: str | None) -> str | None:
         """Who or what did it: the user, the control point (a panel), or both. The two parts are remembered, so

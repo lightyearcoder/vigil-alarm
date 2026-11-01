@@ -64,7 +64,7 @@ Zoek hieronder wat je ziet. Per verschijnsel staan de meest waarschijnlijke oorz
 
 ## Een weigering staat in een andere taal dan ik verwachtte
 
-Toont een standaardkaart van Home Assistant (bijvoorbeeld de tegel met de inschakelknoppen) een weigering, dan staat de tekst in de taal waarop **Home Assistant is ingesteld** (*Instellingen, Systeem, Algemeen*), niet in de taal van je profiel, en zonder gebruikersnaam: *Modus Aangepast is door u niet toegestaan om in te schakelen.* Vigil heeft de teksten in zes talen (Engels voor een andere). De Vigil-kaart en het aanraakpaneel tonen de weigering in de taal van het paneel.
+Toont een standaardkaart van Home Assistant (bijvoorbeeld de tegel met de inschakelknoppen) een weigering, dan staat de tekst in de taal waarop **Home Assistant is ingesteld** (*Instellingen, Systeem, Algemeen*), niet in de taal van je profiel, en zonder gebruikersnaam: *Modus Aangepast is door u niet toegestaan om in te schakelen.* Vigil heeft de teksten in zes talen (Engels voor een andere). De Vigil-kaart en het aanraakpaneel tonen de weigering in de taal van het paneel. Home Assistant zelf zet *Validation error:* voor de tekst op zijn eigen kaarten; de Vigil-kaart haalt dat eraf.
 
 ## De entiteiten heten anders dan ik verwachtte
 
@@ -73,6 +73,14 @@ De entiteit-id's van Vigil eindigen altijd op de Engelse naam, ook als Home Assi
 ## Het paneel is leeg
 
 Ververs de browser hard (Ctrl+F5) en kijk of de integratie actief is onder *Apparaten en diensten*. Kijk anders in het logboek (*Instellingen → Systeem → Logboeken*, zoek op `vigil`).
+
+## Het dashboard toont *Configuratiefout* bij de Vigil-kaart
+
+Druk eerst op F5. Komt het terug, open dan het dashboard in bewerkmodus: de tekst onder de rode kaart zegt wat er mis is. Zet `debug: true` bij de kaart, laad opnieuw en open de browserconsole (F12, tabblad *Console*, filter `vigil`). De regel `VIGIL-CARD v…` zegt dat de kaart geladen is; regels met `[vigil-card]` zeggen wat de kaart doet en wat er misgaat. Staat de regel `VIGIL-CARD` er niet, dan is het bestand niet geladen: zoek `vigil-card.js` op het tabblad *Netwerk*.
+
+## Een foute code op het ESPHome-paneel toont niets
+
+Het paneel krijgt het antwoord van Vigil alleen als de integratie en de firmware dezelfde versie hebben (0.7.3 of nieuwer). Werk Vigil bij, herstart Home Assistant en flash het paneel met de bestanden van die versie. In het log van het paneel staat een geweigerde actie als `Vigil refused the action: …`.
 
 ## Nog steeds niet?
 

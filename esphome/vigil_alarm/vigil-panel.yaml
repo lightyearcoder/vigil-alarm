@@ -24,7 +24,7 @@ substitutions:
   # key made under Panels in Vigil). Set it in your device file, from secrets.yaml. Empty: no key is sent.
   panel_key: ""
   # The version of this firmware, reported to Vigil.
-  firmware_version: "0.7.0"
+  firmware_version: "0.7.3"
   # The width of the cards and buttons: the screen minus a margin on both sides.
   content_w: ${ screen_width | int - 24 }
   # The sizes follow the screen: the ring is a bit over a quarter of the shortest side, the keys fill the keypad.
@@ -128,8 +128,13 @@ globals:
     type: std::string
   - id: act_scope
     type: std::string
+  - id: act_code  # the code that was typed, for the action; the field itself is emptied the moment it is sent
+    type: std::string
   - id: pending_name
     type: std::string
+  - id: kp_error  # the keypad shows a wrong code: the red text stays until the next key
+    type: bool
+    initial_value: "false"
   - id: keypad_open
     type: bool
     initial_value: "false"
@@ -180,6 +185,44 @@ text_sensor:
     on_value:
       then:
         - lambda: vigil::ctx.blocked = vigil::truthy(x);
+        # Blocked in Vigil: whatever was open (keypad, sensors, info) goes away, only the message stays.
+        - if:
+            condition:
+              lambda: return vigil::ctx.blocked;
+            then:
+              - script.execute: reset_ui
+        - script.execute: refresh_ui
+  # Locked after wrong codes: Vigil tells how many seconds are left (empty: not locked), the panel counts down itself.
+  - platform: homeassistant
+    id: ha_profile_lock_left
+    entity_id: ${profile_entity}
+    attribute: lock_left
+    internal: true
+    on_value:
+      then:
+        - lambda: |-
+            const int left = vigil::to_int(x, 0);
+            vigil::ctx.lock_end = (left > 0 && !std::isnan(vigil::ctx.now)) ? vigil::ctx.now + left : NAN;
+        # Whatever is open (keypad, sensors, info) has nothing left to do while the panel is locked.
+        - if:
+            condition:
+              lambda: return vigil::locked_now();
+            then:
+              - script.execute: reset_ui
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_lock_permanent
+    entity_id: ${profile_entity}
+    attribute: lock_permanent
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.lock_permanent = vigil::truthy(x);
+        - if:
+            condition:
+              lambda: return vigil::locked_now();
+            then:
+              - script.execute: reset_ui
         - script.execute: refresh_ui
   - platform: homeassistant
     id: ha_profile_modes
@@ -226,6 +269,23 @@ text_sensor:
     on_value:
       then:
         - lambda: id(unlock_ms) = vigil::to_int(x, 60) * 1000;
+  # The speaker, if the panel has one (the sound package): on or off and how loud, as the administrator set it in Vigil.
+  - platform: homeassistant
+    id: ha_profile_sound
+    entity_id: ${profile_entity}
+    attribute: sound
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.sound_on = vigil::truthy(x);
+  - platform: homeassistant
+    id: ha_profile_sound_volume
+    entity_id: ${profile_entity}
+    attribute: sound_volume
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.sound_volume = std::max(10, std::min(100, vigil::to_int(x, 60)));
   - platform: homeassistant
     id: ha_profile_screen_off_seconds
     entity_id: ${profile_entity}
@@ -433,7 +493,9 @@ text_sensor:
     internal: true
     on_value:
       then:
-        - lambda: vigil::ctx.state = x;
+        - lambda: |-
+            vigil::sound_on_state(vigil::ctx.state, x);
+            vigil::ctx.state = x;
         - script.execute: wake_event
         - script.execute: refresh_ui
         - script.execute: route
@@ -544,6 +606,8 @@ interval:
       - lambda: |-
           auto t = id(ha_time).now();
           vigil::ctx.now = t.is_valid() ? (double) t.timestamp : NAN;
+          vigil::sound_tick(vigil::ctx.now);  // the beeps of the delays, if a speaker package is there to play them
+          // The lock after wrong codes lasts some minutes: the clock was not there yet when Vigil told how long.
       - lvgl.label.update:
           id: lbl_time
           text: !lambda |-
@@ -551,7 +615,7 @@ interval:
             return t.is_valid() ? t.strftime("%H:%M") : std::string("--:--");
       - if:
           condition:
-            lambda: return vigil::ctx.state == "arming" || vigil::ctx.state == "pending";
+            lambda: return vigil::ctx.state == "arming" || vigil::ctx.state == "pending" || vigil::lock_changed();
           then:
             - script.execute: refresh_ui
   # A screen that can switch goes back to its own partition after a while without touch (the time is set in Vigil),
@@ -733,7 +797,7 @@ script:
           auto hide = [](lv_obj_t *o, bool h) {
             if (h) lv_obj_add_flag(o, LV_OBJ_FLAG_HIDDEN); else lv_obj_remove_flag(o, LV_OBJ_FLAG_HIDDEN);
           };
-          const bool show = usable() && parts_visible();
+          const bool show = usable() && !locked_now() && parts_visible();
           const std::vector<PartRow> rows = part_rows(false);
           const bool switching = rows.size() > 1;
           sync_chip_page();
@@ -841,7 +905,8 @@ script:
           auto hide = [](lv_obj_t *o, bool h) {
             if (h) lv_obj_add_flag(o, LV_OBJ_FLAG_HIDDEN); else lv_obj_remove_flag(o, LV_OBJ_FLAG_HIDDEN);
           };
-          hide(id(nav), id(keypad_open));
+          // No tabs on a keypad, and none on a panel that is blocked in Vigil.
+          hide(id(nav), id(keypad_open) || screen_closed());
           const int tab = id(on_info_page) ? 2 : (id(on_sensors_page) ? 1 : 0);
           const lv_color_t on = lv_color_hex(ring_color());
           const lv_color_t off = lv_color_hex(COL_OFF);
@@ -1094,10 +1159,7 @@ script:
           id: lbl_kp_title
           text: !lambda 'return vigil::keypad_title(id(pending_action), id(pending_name));'
       # Under the code: which code is expected, in grey; an error replaces it, in red.
-      - lambda: lv_obj_set_style_text_color(id(lbl_kp_err), lv_color_hex(0x8A94A6), 0);
-      - lvgl.label.update:
-          id: lbl_kp_err
-          text: !lambda 'return vigil::keypad_hint(id(pending_action));'
+      - script.execute: keypad_calm
       - lvgl.textarea.update:
           id: pin_text
           text: ""
@@ -1109,6 +1171,7 @@ script:
       - lambda: |-
           vigil::ctx.force = false;
           id(keypad_open) = false;
+          id(kp_error) = false;
           id(pending_action) = 0;
           id(on_sensors_page) = false;
           id(on_info_page) = false;
@@ -1132,11 +1195,54 @@ script:
     parameters:
       d: string
     then:
+      - if:
+          condition:
+            lambda: return id(kp_error);
+          then:
+            - script.execute: keypad_calm
       - lambda: lv_textarea_add_text(id(pin_text), d.c_str());
 
   - id: delete_digit
     then:
+      - if:
+          condition:
+            lambda: return id(kp_error);
+          then:
+            - script.execute: keypad_calm
       - lambda: lv_textarea_delete_char(id(pin_text));
+
+  # Back to the normal look of the keypad: the grey hint under the code, a quiet border.
+  - id: keypad_calm
+    then:
+      - lambda: |-
+          id(kp_error) = false;
+          vigil::ctx.message = "";
+          lv_obj_set_style_text_font(id(lbl_kp_err), &lv_font_montserrat_14, 0);
+          lv_obj_set_style_text_color(id(lbl_kp_err), lv_color_hex(0x8A94A6), 0);
+          lv_obj_set_style_border_color(id(pin_text), lv_color_hex(0x232A35), 0);
+          lv_obj_set_style_border_width(id(pin_text), 1, 0);
+      - lvgl.label.update:
+          id: lbl_kp_err
+          text: !lambda 'return vigil::keypad_hint(id(pending_action));'
+
+  # A wrong code: the field shakes, a movement that dies out (three swings in 0.6 s). An LVGL animation, so it follows the
+  # refresh of the screen and does not depend on the speed of this loop.
+  - id: shake_pin
+    mode: restart
+    then:
+      - lambda: |-
+          lv_anim_delete(id(pin_text), nullptr);
+          lv_anim_t a;
+          lv_anim_init(&a);
+          lv_anim_set_var(&a, id(pin_text));
+          lv_anim_set_values(&a, 0, 100);
+          lv_anim_set_duration(&a, 600);
+          lv_anim_set_exec_cb(&a, [](void *obj, int32_t v) {
+            const float t = v / 100.0f;
+            const int32_t shift = (int32_t) (26.0f * std::sin(t * 6.2831853f * 3.0f) * (1.0f - t));
+            lv_obj_set_style_translate_x((lv_obj_t *) obj, shift, 0);
+          });
+          lv_anim_start(&a);
 
   # Do the action. The result decides what the screen does next.
   - id: run_action
@@ -1146,6 +1252,10 @@ script:
           id(act_partition) = vigil::sel_id();
           id(act_bypass) = vigil::ctx.force ? "true" : "false";
           id(act_scope) = id(pending_action) == vigil::INFO ? "info" : "sensors";
+          // The code goes in the action, and the field is empty at once: whatever Vigil answers, nobody has to
+          // delete the old code first, and a wrong one is never left on the screen.
+          id(act_code) = lv_textarea_get_text(id(pin_text));
+          lv_textarea_set_text(id(pin_text), "");
       - if:
           condition:
             lambda: return vigil::is_arm_action(id(pending_action));
@@ -1156,7 +1266,7 @@ script:
                   mode: !lambda 'return id(act_mode);'
                   source: ${name}
                   key: ${panel_key}
-                  code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
+                  code: !lambda 'return id(act_code);'
                   bypass_open: !lambda 'return id(act_bypass);'
                   partition: !lambda 'return id(act_partition);'
                 on_success:
@@ -1175,7 +1285,7 @@ script:
                   source: ${name}
                   key: ${panel_key}
                   partition: !lambda 'return id(act_partition);'
-                  code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
+                  code: !lambda 'return id(act_code);'
                 on_success:
                   - script.execute: action_done
                 on_error:
@@ -1192,7 +1302,7 @@ script:
                   source: ${name}
                   key: ${panel_key}
                   scope: !lambda 'return id(act_scope);'
-                  code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
+                  code: !lambda 'return id(act_code);'
                 on_success:
                   - script.execute: action_done
                 on_error:
@@ -1209,7 +1319,7 @@ script:
                   sensor: !lambda 'return id(pending_entity);'
                   source: ${name}
                   key: ${panel_key}
-                  code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
+                  code: !lambda 'return id(act_code);'
                 on_success:
                   - script.execute: action_done
                 on_error:
@@ -1226,7 +1336,7 @@ script:
                   sensor: !lambda 'return id(pending_entity);'
                   source: ${name}
                   key: ${panel_key}
-                  code: !lambda 'return std::string(lv_textarea_get_text(id(pin_text)));'
+                  code: !lambda 'return id(act_code);'
                 on_success:
                   - script.execute: action_done
                 on_error:
@@ -1237,6 +1347,7 @@ script:
   - id: action_done
     then:
       - lambda: |-
+          id(act_code) = "";
           vigil::ctx.message = "";
           vigil::ctx.force = false;
           vigil::ctx.refused_action = 0;
@@ -1289,6 +1400,11 @@ script:
     parameters:
       message: string
     then:
+      # The answer of Vigil in the log of the panel: with it a screen that does not react can be traced.
+      - lambda: |-
+          ESP_LOGW("vigil", "Vigil refused the action: %s", message.c_str());
+          id(act_code) = "";
+          lv_textarea_set_text(id(pin_text), "");  // empty, also if the keypad is not open
       # Arming refused because something stops it (not a wrong code): say what, close the keypad, and offer
       # "Bypass and arm" in place of the tiles (not when that was just tried).
       - lambda: |-
@@ -1302,6 +1418,9 @@ script:
             id(pending_action) = 0;
           } else {
             vigil::ctx.message = vigil::localize_error(message, arm ? vigil::tr(vigil::arm_mode_name(id(pending_action))) : std::string());
+            vigil::request_sound(vigil::SOUND_WRONG, false);
+            // The panel got locked by this wrong code: no keypad to show the error on, the lock screen says it.
+            if (vigil::is_lock_error(message)) { id(keypad_open) = false; id(pending_action) = 0; id(kp_error) = false; }
           }
       - lvgl.textarea.update:
           id: pin_text
@@ -1310,12 +1429,20 @@ script:
           condition:
             lambda: return id(keypad_open);
           then:
-            - lambda: lv_obj_set_style_text_color(id(lbl_kp_err), lv_color_hex(0xF0605D), 0);
+            # Wrong code: red border, a big red text that stays until the next key, and the field shakes.
+            - lambda: |-
+                id(kp_error) = true;
+                lv_obj_set_style_text_font(id(lbl_kp_err), &lv_font_montserrat_20, 0);
+                lv_obj_set_style_text_color(id(lbl_kp_err), lv_color_hex(0xF0605D), 0);
+                lv_obj_set_style_border_color(id(pin_text), lv_color_hex(0xF0605D), 0);
+                lv_obj_set_style_border_width(id(pin_text), 3, 0);
             - lvgl.label.update:
                 id: lbl_kp_err
                 text: !lambda 'return vigil::ctx.message;'
+            - script.execute: shake_pin
           else:
             - lvgl.page.show: page_main
+            - script.execute: nav_update
       - script.execute: refresh_ui
       - script.execute: clear_message
 
@@ -1323,14 +1450,19 @@ script:
     mode: restart
     then:
       - delay: 8s
-      - lambda: |-
-          vigil::ctx.message = "";
-          vigil::ctx.refused_action = 0;
-          lv_obj_set_style_text_color(id(lbl_kp_err), lv_color_hex(0x8A94A6), 0);
-      - lvgl.label.update:
-          id: lbl_kp_err
-          text: !lambda 'return id(keypad_open) ? vigil::keypad_hint(id(pending_action)) : std::string("");'
-      - script.execute: refresh_ui
+      # A wrong code on the keypad stays until the next key; only the message on the main page goes away.
+      - if:
+          condition:
+            lambda: return !(id(keypad_open) && id(kp_error));
+          then:
+            - lambda: |-
+                vigil::ctx.message = "";
+                vigil::ctx.refused_action = 0;
+                lv_obj_set_style_text_color(id(lbl_kp_err), lv_color_hex(0x8A94A6), 0);
+            - lvgl.label.update:
+                id: lbl_kp_err
+                text: !lambda 'return id(keypad_open) ? vigil::keypad_hint(id(pending_action)) : std::string("");'
+            - script.execute: refresh_ui
 
 # --------------------------------------------------------------------------------------- screen
 # The look of Vigil: dark ground, calm cards, one colour per state (see vigil_panel.h). The sizes follow the size of

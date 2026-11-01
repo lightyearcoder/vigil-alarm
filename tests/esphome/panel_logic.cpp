@@ -1,4 +1,5 @@
 #include "vigil_panel.h"
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 using namespace vigil;
@@ -106,7 +107,7 @@ int main(){
   ctx.state="armed_home"; assert(state_color()==COL_HOME && tint_of(COL_HOME)==0x17233A);
   ctx.state="armed_night"; assert(state_color()==COL_NIGHT);
   ctx.ha_connected=false; assert(state_color()==COL_OFF && state_icon()==VIGIL_ICON_WIFI_OFF);
-  ctx.ha_connected=true; ctx.blocked=true; assert(state_color()==COL_OFF && state_icon()==VIGIL_ICON_CANCEL);
+  ctx.ha_connected=true; ctx.blocked=true; assert(state_color()==COL_WARN && state_icon()==VIGIL_ICON_LOCK);
   ctx.blocked=false; ctx.profile_version=0; assert(state_icon()==VIGIL_ICON_LINK_OFF);
   // Arming refused because something stops it: the text in the panel's language, and a button to bypass and arm
   ctx=Context(); ctx.lang=NL; ctx.ha_connected=true; ctx.profile_version=PROFILE_VERSION; ctx.modes_mask=7; ctx.state="disarmed";
@@ -183,5 +184,68 @@ int main(){
   ctx.default_part="p_gar"; ctx.partition_list="p_gar|Garage|disarmed"; ctx.sel="p_gar"; assert(!should_return_to_default(60000));  // one partition: nothing to switch
   // the sensor list of a panel with partitions has a fifth field (the partition): the panel reads the first four
   ctx.sensors="Door|binary_sensor.door|open|1|main\nSmoke|binary_sensor.smoke|closed|0|\n"; assert(sensor_count()==2 && row_at(0,0).bypassable && !row_at(0,1).bypassable && row_at(0,0).status=="open");
+  // Sounds: arming and disarming, the countdowns, a wrong code. Nothing for a panel that is not usable.
+  ctx.profile_version=1; ctx.blocked=false; ctx.modes_mask=7; ctx.sound=0;
+  { bool night=false;
+    sound_on_state("disarmed","arming"); assert(take_sound(&night)==SOUND_NONE);  // the countdown has its own beeps
+    sound_on_state("arming","armed_away"); assert(take_sound(&night)==SOUND_ARMED && !night);
+    sound_on_state("disarmed","armed_night"); assert(take_sound(&night)==SOUND_ARMED && night);
+    sound_on_state("armed_away","disarmed"); assert(take_sound(&night)==SOUND_DISARMED && !night);
+    sound_on_state("armed_night","disarmed"); assert(take_sound(&night)==SOUND_DISARMED && night);  // Night can be quiet, also leaving it
+    sound_on_state("pending","disarmed"); assert(take_sound(&night)==SOUND_DISARMED);
+    sound_on_state("triggered","disarmed"); assert(take_sound(&night)==SOUND_DISARMED);
+    sound_on_state("armed_home","armed_away"); assert(take_sound(&night)==SOUND_NONE);  // a change of mode is not arming
+    sound_on_state("disarmed","disarmed"); sound_on_state("","disarmed"); sound_on_state("unavailable","disarmed"); sound_on_state("disarmed","unavailable");
+    assert(take_sound(&night)==SOUND_NONE);  // nothing at a start or when the alarm comes back
+    ctx.blocked=true; sound_on_state("armed_away","disarmed"); assert(take_sound(&night)==SOUND_NONE); ctx.blocked=false;
+    // the countdowns
+    ctx.state="pending"; ctx.mode="away"; ctx.delay_end=100;
+    sound_tick(80); assert(take_sound(&night)==SOUND_ENTRY && !night);
+    sound_tick(95); assert(take_sound(&night)==SOUND_ENTRY_FAST);
+    sound_tick(100); assert(take_sound(&night)==SOUND_NONE);  // the end of the delay: the alarm takes over
+    ctx.mode="night"; sound_tick(80); assert(take_sound(&night)==SOUND_ENTRY && night);
+    ctx.state="arming"; ctx.mode="away"; ctx.delay_end=100;
+    sound_tick(80); assert(take_sound(&night)==SOUND_EXIT);  // 20 left: an even number
+    sound_tick(81); assert(take_sound(&night)==SOUND_NONE);  // 19 left: every second second
+    sound_tick(95); assert(take_sound(&night)==SOUND_EXIT_FAST);  // the last 5 seconds: every second
+    sound_tick(NAN); assert(take_sound(&night)==SOUND_NONE);  // no clock: no beeps
+    ctx.state="armed_home"; sound_tick(96); assert(take_sound(&night)==SOUND_NONE);
+    // an event is not pushed out by a beep, and a wrong code cuts one off
+    request_sound(SOUND_ARMED,false); request_sound(SOUND_ENTRY,false); assert(take_sound(&night)==SOUND_ARMED);
+    request_sound(SOUND_ENTRY,false); request_sound(SOUND_WRONG,false); assert(take_sound(&night)==SOUND_WRONG);
+    assert(sound_is_event(SOUND_WRONG) && !sound_is_event(SOUND_EXIT) && std::string(sound_rtttl(SOUND_WRONG)).find("wrong:")==0);
+    for (int k=SOUND_ENTRY;k<=SOUND_WRONG;k++) { std::string r=sound_rtttl(k); assert(std::count(r.begin(),r.end(),':')==2); }  // name:settings:notes
+  }
+  {
+    // locked after wrong codes: a countdown, the buttons that need a code are gone, and it ends by itself
+    ctx = Context(); ctx.lang=NL; ctx.profile_version=1; ctx.ha_connected=true; ctx.state="disarmed"; ctx.modes_mask=7; ctx.can_disarm=true; ctx.now=1000;
+    assert(!locked_now() && !lock_changed() && show_away() && can_arm_now());
+    ctx.lock_end=1272;
+    assert(locked_now() && lock_seconds_left()==272 && minutes_seconds(272)=="4:32" && minutes_seconds(5)=="0:05" && minutes_seconds(-3)=="0:00");
+    assert(state_title()=="Vergrendeld" && state_sub(ctx.now)=="Te veel foute codes.\nProbeer het opnieuw over 4:32");
+    assert(state_icon()==VIGIL_ICON_LOCK && state_color()==COL_WARN && !can_arm_now() && !show_disarm());
+    ctx.code_arm_required=false; assert(can_arm_now()); ctx.code_arm_required=true;  // arming without a code is still possible
+    assert(lock_changed());  // drawn again while it lasts
+    ctx.now=1272; assert(!locked_now() && lock_seconds_left()==0 && lock_changed() && !lock_changed());  // once more at the end, then quiet
+    ctx.state="armed_away"; assert(state_title()!="Vergrendeld" && show_disarm()); ctx.state="disarmed"; assert(can_arm_now());
+    ctx.lock_end=NAN; ctx.lock_permanent=true;
+    assert(locked_now() && state_sub(ctx.now).find("beheerder")!=std::string::npos && state_icon()==VIGIL_ICON_LOCK);
+    ctx.lang=EN; assert(state_title()=="Locked" && state_sub(ctx.now).find("administrator")!=std::string::npos);
+    ctx.lock_permanent=false; ctx.lock_end=1300; ctx.now=NAN; assert(!locked_now());  // no clock: no lock to count down
+    // the screen is closed (no partitions, no tabs) while it is locked or blocked, and open again after
+    ctx.blocked=false; ctx.now=1000; ctx.lock_end=1272; ctx.lock_permanent=false;
+    assert(screen_closed() && locked_now());
+    ctx.now=1272; assert(!screen_closed());
+    ctx.lock_permanent=true; assert(screen_closed()); ctx.lock_permanent=false;
+    ctx.blocked=true; assert(screen_closed()); ctx.blocked=false; ctx.profile_version=0; assert(!screen_closed()); ctx.profile_version=1;
+    ctx.lock_end=1272; ctx.now=1000;
+    // a blocked panel goes before a lock
+    ctx.now=1000; ctx.blocked=true; assert(state_title()=="Blocked" && !locked_now());
+    for (int l=0;l<LANGUAGE_COUNT;l++) { ctx.lang=(Language)l; assert(std::string(tr("locked"))!="" && std::string(tr("lock_try"))!=""); }
+    // the answers of Vigil that mean a lock
+    assert(is_lock_error("Too many wrong codes. Try again in 5 min"));
+    assert(is_lock_error("Te veel foute codes. Vergrendeld totdat een beheerder dit opheft"));
+    assert(!is_lock_error("Invalid code") && !is_lock_error("Ongeldige code"));
+  }
   std::cout << "ok\n";
 }

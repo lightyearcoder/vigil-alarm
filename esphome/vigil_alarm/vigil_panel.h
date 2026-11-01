@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -93,6 +94,8 @@ static const Text TEXTS[] = {
     {"key_not_set", {"niet ingesteld", "not set", "nicht gesetzt", "non definie", "non impostata", "no definida"}},
     {"n_open", {" open", " open", " offen", " ouverts", " aperti", " abiertos"}},
     {"blocked", {"Geblokkeerd", "Blocked", "Gesperrt", "Bloque", "Bloccato", "Bloqueado"}},
+    {"locked", {"Vergrendeld", "Locked", "Tastatur gesperrt", "Clavier verrouille", "Tastiera bloccata", "Teclado bloqueado"}},
+    {"lock_try", {"Te veel foute codes.\nProbeer het opnieuw over ", "Too many wrong codes.\nTry again in ", "Zu viele falsche Codes.\nErneut versuchen in ", "Trop de codes errones.\nReessayez dans ", "Troppi codici errati.\nRiprova tra ", "Demasiados codigos erroneos.\nVuelve a intentarlo en "}},
     {"blocked_sub", {"Dit paneel is geblokkeerd in Vigil", "This panel is blocked in Vigil", "Dieses Bedienteil ist in Vigil gesperrt", "Ce clavier est bloque dans Vigil", "Questo pannello e bloccato in Vigil", "Este panel esta bloqueado en Vigil"}},
     {"not_linked", {"Niet gekoppeld", "Not linked", "Nicht verknuepft", "Non associe", "Non collegato", "Sin vincular"}},
     {"not_linked_sub", {"Voeg dit paneel toe in Vigil (paneel-id: ", "Add this panel in Vigil (panel id: ", "Bedienteil in Vigil hinzufuegen (Bedienteil-ID: ", "Ajoutez ce clavier dans Vigil (ID du clavier : ", "Aggiungi questo pannello in Vigil (ID pannello: ", "Anade este panel en Vigil (ID del panel: "}},
@@ -217,6 +220,13 @@ struct Context {
   int part_total = 1;             // how many partitions the whole house has
   bool mixed = false;             // "all" on screen and the partitions are not in the same state
   uint32_t last_touch_ms = 0;     // the last touch (or choice of a partition), for the way back to the default
+  double lock_end = NAN;          // epoch seconds when the lock after wrong codes ends (NAN: not locked)
+  bool lock_permanent = false;    // locked until an administrator lifts it in Vigil
+  bool lock_was = false;          // was the lock on the screen at the last look, so the end of it is drawn too
+  bool sound_on = true;           // the speaker may beep (set per panel in Vigil)
+  int sound_volume = 60;          // percent, set per panel in Vigil
+  int sound = 0;                  // a sound waiting to be played (see Sound), taken by the speaker package if there is one
+  bool sound_night = false;       // that sound belongs to the mode Night (it can be switched off there)
 };
 
 inline Context ctx;
@@ -282,6 +292,18 @@ inline std::string localize_error(const std::string &raw, const std::string &mod
     return tr("err_locked_pre") + raw.substr(start, end == std::string::npos ? std::string::npos : end - start) + tr("err_locked_post");
   }
   return raw;
+}
+
+// Is this the answer of Vigil for a panel that is locked after wrong codes (for a while or for good)?
+inline bool is_lock_error(const std::string &raw) {
+  size_t count = 0;
+  const ErrorRow *rows = error_rows(count);
+  for (size_t i = 0; i < count; i++) {
+    const std::string key = rows[i].key;
+    if (key != "err_locked" && key != "err_locked_permanent") continue;
+    for (int l = 0; l < LANGUAGE_COUNT; l++) if (raw.find(rows[i].phrase[l]) != std::string::npos) return true;
+  }
+  return false;
 }
 
 // "Arming refused: alarm_condition (Front door)." (or the same text in another language): the same in the panel's language, and
@@ -353,6 +375,34 @@ inline bool linked() { return ctx.profile_version == PROFILE_VERSION; }
 
 // May the panel work at all: connected, known to Vigil, a profile it understands, not blocked.
 inline bool usable() { return state_known() && linked() && !ctx.blocked; }
+
+// Locked after too many wrong codes (Vigil tells how long; the panel counts down on its own clock).
+inline bool locked_now() {
+  if (!usable()) return false;
+  if (ctx.lock_permanent) return true;
+  return !std::isnan(ctx.lock_end) && !std::isnan(ctx.now) && ctx.now < ctx.lock_end;
+}
+inline int lock_seconds_left() {
+  if (std::isnan(ctx.lock_end) || std::isnan(ctx.now)) return 0;
+  const double left = ctx.lock_end - ctx.now;
+  return left > 0 ? (int) std::ceil(left) : 0;
+}
+// The screen shows only the message (blocked in Vigil, or locked after wrong codes): no partitions, no tabs, no buttons.
+inline bool screen_closed() { return state_known() && linked() && (ctx.blocked || locked_now()); }
+// "4:32"
+inline std::string minutes_seconds(int seconds) {
+  if (seconds < 0) seconds = 0;
+  char buf[16];
+  std::snprintf(buf, sizeof(buf), "%d:%02d", seconds / 60, seconds % 60);
+  return buf;
+}
+// Once a second: does the lock need to be drawn again? While it lasts (the countdown) and once more when it ends.
+inline bool lock_changed() {
+  const bool now = locked_now();
+  const bool redraw = now || ctx.lock_was;
+  ctx.lock_was = now;
+  return redraw;
+}
 
 // ------------------------------------------------------------------------------------------- partitions
 
@@ -632,6 +682,7 @@ inline std::string state_title() {
   if (!state_known()) return tr("offline");
   if (ctx.profile_version == 0 || !linked()) return tr("not_linked");
   if (ctx.blocked) return tr("blocked");
+  if (locked_now()) return tr("locked");
   const std::string own = parts_switch() && !sel_name().empty() ? sel_name() + ": " : "";
   if (mixed_now()) return own + tr("mixed");
   if (ctx.state == "disarmed" || ctx.state == "arming" || ctx.state == "pending" || ctx.state == "triggered" ||
@@ -656,6 +707,8 @@ inline uint32_t color_of_state(const std::string &s) {
 }
 
 inline uint32_t state_color() {
+  // A blocked panel and a locked one are amber, with a lock: grey looked like a panel that was simply off.
+  if (screen_closed()) return COL_WARN;
   if (!usable()) return COL_OFF;
   if (mixed_now()) return COL_WARN;
   return color_of_state(ctx.state);
@@ -709,7 +762,7 @@ inline uint32_t state_tint() { return tint_of(state_color()); }
 inline std::string state_icon() {
   if (!state_known()) return VIGIL_ICON_WIFI_OFF;
   if (!linked()) return VIGIL_ICON_LINK_OFF;
-  if (ctx.blocked) return VIGIL_ICON_CANCEL;
+  if (ctx.blocked || locked_now()) return VIGIL_ICON_LOCK;
   const std::string &s = ctx.state;
   if (mixed_now()) return VIGIL_ICON_SHIELD_ALERT;
   if (s == "disarmed") return open_total_count() > 0 || ctx.faults_total > 0 || ctx.problems > 0 ? VIGIL_ICON_SHIELD_ALERT : VIGIL_ICON_SHIELD_CHECK;
@@ -791,6 +844,7 @@ inline std::string state_sub(double /*now: the ring shows the countdown*/) {
   }
   if (!linked()) return tr("old_profile");
   if (ctx.blocked) return tr("blocked_sub");
+  if (locked_now()) return ctx.lock_permanent ? tr("err_locked_permanent") : tr("lock_try") + minutes_seconds(lock_seconds_left());
   std::string out;
   const std::string &s = ctx.state;
   if (mixed_now()) {
@@ -836,7 +890,8 @@ inline std::string state_sub(double /*now: the ring shows the countdown*/) {
 // Which buttons are there? Only the modes that are switched on in Vigil, and while the alarm is
 // off. As soon as it is on, there is one button: disarm.
 // Buttons to arm: while disarmed, or on "all" with some partitions armed and some not (the rest gets armed).
-inline bool can_arm_now() { return ctx.state == "disarmed" || mixed_now(); }
+// While the keypad is locked the buttons that need a code are gone: they would only open a keypad that refuses.
+inline bool can_arm_now() { return (ctx.state == "disarmed" || mixed_now()) && !(locked_now() && ctx.code_arm_required); }
 inline bool show_home() { return usable() && can_arm_now() && (ctx.modes_mask & 1); }
 inline bool show_away() { return usable() && can_arm_now() && (ctx.modes_mask & 2); }
 inline bool show_night() { return usable() && can_arm_now() && (ctx.modes_mask & 4); }
@@ -849,7 +904,7 @@ inline int mode_count() {
 }
 // After a refused arm that bypassing could solve: one button instead of the tiles, until the message is gone.
 inline bool show_force() { return usable() && ctx.state == "disarmed" && ctx.refused_action != 0 && ctx.can_bypass; }
-inline bool show_disarm() { return usable() && (ctx.state != "disarmed" || mixed_now()) && ctx.can_disarm; }
+inline bool show_disarm() { return usable() && (ctx.state != "disarmed" || mixed_now()) && ctx.can_disarm && !locked_now(); }
 
 // May sensors be bypassed from this panel? Only a panel that is allowed to, and only while it works.
 inline bool bypass_allowed() { return usable() && ctx.can_bypass; }
@@ -932,6 +987,79 @@ inline bool should_return_to_default(uint32_t idle_ms) {
   if (sel_id() == ctx.default_part) return false;
   if (ctx.state == "arming" || ctx.state == "pending" || ctx.state == "triggered") return false;
   return idle_ms >= (uint32_t) ctx.return_seconds * 1000U;
+}
+
+// ---------------------------------------------------------------------------- sounds (a panel with a speaker)
+// The panel asks for a sound; the optional package vigil-panel-sound.yaml plays it. Without a speaker nothing
+// takes the request, so this costs nothing.
+enum Sound {
+  SOUND_NONE = 0,
+  SOUND_ENTRY,       // entry delay: one short beep a second
+  SOUND_ENTRY_FAST,  // the last 10 seconds of the entry delay: two beeps a second
+  SOUND_EXIT,        // exit delay: one short beep every two seconds
+  SOUND_EXIT_FAST,   // the last 5 seconds of the exit delay: one beep a second
+  SOUND_ARMED,       // armed: two rising tones
+  SOUND_DISARMED,    // disarmed: two falling tones
+  SOUND_WRONG,       // a wrong code (or an action that failed): a low double buzz
+};
+
+// RTTTL, the little song format ESPHome plays. Small speakers carry best around 1 to 2.5 kHz.
+inline const char *sound_rtttl(int sound) {
+  switch (sound) {
+    case SOUND_ENTRY: return "entry:d=16,o=6,b=200:a6";
+    case SOUND_ENTRY_FAST: return "entryfast:d=32,o=6,b=200:a6,p,a6";
+    case SOUND_EXIT: return "exit:d=16,o=6,b=200:e6";
+    case SOUND_EXIT_FAST: return "exitfast:d=16,o=6,b=200:e6";
+    case SOUND_ARMED: return "armed:d=16,o=6,b=180:c6,g6";
+    case SOUND_DISARMED: return "disarmed:d=16,o=6,b=180:g6,c6";
+    case SOUND_WRONG: return "wrong:d=16,o=5,b=160:e5,p,e5";
+  }
+  return "";
+}
+
+// Armed, disarmed and wrong code are events: they cut off a beep that is playing. The beeps of a countdown do not.
+inline bool sound_is_event(int sound) { return sound == SOUND_ARMED || sound == SOUND_DISARMED || sound == SOUND_WRONG; }
+
+inline void request_sound(int sound, bool night) {
+  if (sound == SOUND_NONE) return;
+  if (ctx.sound != SOUND_NONE && sound_is_event(ctx.sound) && !sound_is_event(sound)) return;  // an event waits for its turn
+  ctx.sound = sound;
+  ctx.sound_night = night;
+}
+
+// The speaker package takes the request: what it was, and whether it belongs to Night. Nothing waits afterwards.
+inline int take_sound(bool *night) {
+  const int sound = ctx.sound;
+  if (night != nullptr) *night = ctx.sound_night;
+  ctx.sound = SOUND_NONE;
+  ctx.sound_night = false;
+  return sound;
+}
+
+inline bool known_state(const std::string &s) {
+  return s == "disarmed" || s == "arming" || s == "pending" || s == "triggered" || is_armed_state(s);
+}
+
+// The state changed from `from` to `to`: a sound for arming or disarming. Not for the first state after a start,
+// and not when the alarm only becomes available or unavailable.
+inline void sound_on_state(const std::string &from, const std::string &to) {
+  if (!usable() || from == to || !known_state(from) || !known_state(to)) return;
+  if (is_armed_state(to) && !is_armed_state(from)) request_sound(SOUND_ARMED, to == "armed_night");
+  else if (to == "disarmed") request_sound(SOUND_DISARMED, from == "armed_night");
+}
+
+// Once a second: the beeps of the exit and the entry delay.
+inline void sound_tick(double now) {
+  if (!usable()) return;
+  const int left = seconds_left(now);
+  if (left <= 0) return;
+  const bool night = ctx.mode == "night";
+  if (ctx.state == "pending") {
+    request_sound(left <= 10 ? SOUND_ENTRY_FAST : SOUND_ENTRY, night);
+  } else if (ctx.state == "arming") {
+    if (left <= 5) request_sound(SOUND_EXIT_FAST, night);
+    else if (left % 2 == 0) request_sound(SOUND_EXIT, night);
+  }
 }
 
 }  // namespace vigil

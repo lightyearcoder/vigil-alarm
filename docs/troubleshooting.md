@@ -64,7 +64,7 @@ Find what you see below. For each symptom: the likely causes, where to check, an
 
 ## A refusal is in English, or in another language than I expected
 
-When a standard Home Assistant card (for example the tile with the arm buttons) shows a refusal, the text is in the language **Home Assistant is set to** (*Settings, System, General*), not in the language of your profile, and without a user name: *Mode Custom is not allowed to be armed by you.* Vigil has the texts in six languages (English for any other). The Vigil card and the touch panel show the refusal in the language of the panel.
+When a standard Home Assistant card (for example the tile with the arm buttons) shows a refusal, the text is in the language **Home Assistant is set to** (*Settings, System, General*), not in the language of your profile, and without a user name: *Mode Custom is not allowed to be armed by you.* Vigil has the texts in six languages (English for any other). The Vigil card and the touch panel show the refusal in the language of the panel. Home Assistant itself puts *Validation error:* before the text on its own cards; the Vigil card takes that off.
 
 ## The entities are named differently than I expected
 
@@ -73,6 +73,14 @@ Vigil's entity ids always end in the English name, also when Home Assistant is s
 ## The panel is empty
 
 Hard refresh the browser (Ctrl+F5) and check that the integration is running under *Devices & services*. Otherwise look in the log (*Settings → System → Logs*, search for `vigil`).
+
+## The dashboard shows *Configuration error* for the Vigil card
+
+Press F5 first. If it comes back, open the dashboard in edit mode: the text under the red card says what is wrong. Add `debug: true` to the card, reload and open the browser console (F12, tab *Console*, filter `vigil`). The line `VIGIL-CARD v…` says that the card loaded; lines with `[vigil-card]` say what it does and what goes wrong. Without the `VIGIL-CARD` line the file did not load: look for `vigil-card.js` in the tab *Network*.
+
+## A wrong code on the ESPHome panel shows nothing
+
+The panel only gets the answer of Vigil when the integration and the firmware are of the same version (0.7.3 or later). Update Vigil, restart Home Assistant and flash the panel with the files of that version. In the log of the panel a refused action shows as `Vigil refused the action: …`.
 
 ## Still not working?
 

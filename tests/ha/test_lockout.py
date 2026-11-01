@@ -128,8 +128,8 @@ async def test_the_lock_the_step_and_a_permanent_lock_survive_a_restart(hass):
     clock[0] += LOCK_DEFAULTS["lock_wait_1"] * MIN + 1
     # it is still in the second step: 2 wrong codes, not 3
     assert _fail(again, "garage", 2)[-1] == Locked("garage", LOCK_DEFAULTS["lock_wait_2"])
-    # and "other" remembered its one wrong code
-    assert _fail(again, None, 2)[-1] == Locked(OTHER, LOCK_DEFAULTS["lock_wait_1"])
+    # "other" had one wrong code, but nobody tried again for the whole wait: it starts from zero (3 tries)
+    assert _fail(again, None, 3)[-1] == Locked(OTHER, LOCK_DEFAULTS["lock_wait_1"])
     # a permanent lock is kept, and a stored end far away is cut back
     again._permanent.add("garage")
     await again.async_flush()
@@ -157,3 +157,34 @@ async def test_reloading_vigil_keeps_the_lock_and_a_permanent_lock_is_reported(h
     clock[0] += LOCK_DEFAULTS["lock_wait_1"] * MIN + 1
     await _vigil(hass, "arm", mode="home", code="1234")  # a right code: the step starts over
     assert entry.runtime_data.lockout._step.get(OTHER, 0) == 0
+
+
+async def test_wrong_codes_are_forgotten_when_nobody_tries_for_as_long_as_the_next_lock_lasts(hass):
+    clock = [1000.0]
+    lock = _lockout(hass, clock, registered={"garage"})
+    d = LOCK_DEFAULTS
+    _fail(lock, "garage", d["lock_tries_1"] - 1)
+    assert lock.tries("garage") == (d["lock_tries_1"] - 1, d["lock_tries_1"]) and lock.phase("garage") == 0
+    clock[0] += d["lock_wait_1"] * MIN - 1  # not yet: it counts
+    assert lock.tries("garage")[0] == d["lock_tries_1"] - 1
+    clock[0] += 2  # an hour away is enough, so is the wait of the lock
+    assert lock.tries("garage")[0] == 0
+    # the next wrong code is the first again, not the one that locks
+    assert lock.record_failure("garage") is None and lock.tries("garage")[0] == 1
+    # a try within the time keeps the count growing, and the time starts from that try
+    clock[0] += d["lock_wait_1"] * MIN - 5
+    assert lock.record_failure("garage") is None and lock.tries("garage")[0] == 2
+    clock[0] += d["lock_wait_1"] * MIN - 5
+    assert lock.record_failure("garage") == Locked("garage", d["lock_wait_1"]) and lock.phase("garage") == 1
+    # the step (how many locks so far) stays: only a right code or an administrator takes it away
+    clock[0] += 5 * 24 * 3600
+    assert lock.phase("garage") == 1
+    # the time of the last wrong code is kept over a restart
+    _fail(lock, "garage", 1)
+    await lock.async_flush()
+    again = CodeLockout(hass, make_entry(), lambda: clock[0], lambda: {"garage"})
+    again._store = lock._store
+    await again.async_load()
+    assert again.tries("garage")[0] == 1
+    clock[0] += d["lock_wait_2"] * MIN + 1
+    assert again.tries("garage")[0] == 0

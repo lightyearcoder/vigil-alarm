@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import ServiceValidationError
 
 from .languages import DEFAULT_LANGUAGE, language_of
 from .messages import MODE_NAMES
@@ -40,11 +40,12 @@ async def async_prepare(hass: HomeAssistant) -> None:
             _MESSAGES[language] = await hass.async_add_executor_job(_read, language)
 
 
-class VigilError(HomeAssistantError):
+class VigilError(ServiceValidationError):
     """A refusal whose message is in the language of Home Assistant.
 
-    Not a ServiceValidationError on purpose: for that one Home Assistant puts "Validation error: " before the text of
-    the message, and the refusal is already clear (a card shows it in red)."""
+    It has to be a ServiceValidationError: only for that kind (and a missing service) the ESPHome integration sends the
+    answer back to the panel, so a wrong code reaches the panel and it can show it. The websocket puts "Validation
+    error: " before the text for it; the card takes that off again."""
 
     def __str__(self) -> str:
         if self._message:

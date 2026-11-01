@@ -10,6 +10,12 @@ substitutions:
   hardware_id: guition-4848
   screen_width: "480"
   screen_height: "480"
+  # The speaker (see vigil-panel-sound.yaml): the pins of the amplifier chip (NS4168) next to the connector. On this
+  # board GPIO1, GPIO2 and GPIO40 go to the three relay outputs as delivered. To use the speaker, move the three 0 ohm
+  # resistors R25, R26 and R27 to the places R21, R22 and R23 (the relays stop working then; Vigil does not use them).
+  sound_bclk_pin: GPIO1
+  sound_lrclk_pin: GPIO2
+  sound_dout_pin: GPIO40
 
 esp32:
   board: esp32-s3-devkitc-1

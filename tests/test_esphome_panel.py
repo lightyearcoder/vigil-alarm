@@ -96,6 +96,35 @@ def test_the_example_panel_is_valid_esphome(tmp_path):
     assert result.returncode == 0, result.stdout[-3000:] + result.stderr[-3000:]
 
 
+@pytest.mark.skipif(not _esphome_installed(), reason="ESPHome is not installed")
+def test_the_example_panel_with_the_sound_package_is_valid_esphome(tmp_path):
+    work = tmp_path / "config"
+    shutil.copytree(ESPHOME_DIR, work)
+    (work / "secrets.yaml").write_text(SECRETS)
+    example = (work / "example-garage.yaml").read_text()
+    assert "  # sound: !include vigil_alarm/vigil-panel-sound.yaml" in example  # off until the person switches it on
+    (work / "example-garage.yaml").write_text(example.replace("  # sound: !include", "  sound: !include"))
+    result = subprocess.run(
+        [sys.executable, "-I", "-m", "esphome", "config", str(work / "example-garage.yaml")],
+        capture_output=True, text=True, cwd=work,
+    )
+    assert result.returncode == 0, result.stdout[-3000:] + result.stderr[-3000:]
+
+
+def test_the_sound_package_takes_what_the_firmware_asks_for():
+    """The firmware only asks (vigil::request_sound); the package plays. Pins come from the hardware file."""
+    package = (FIRMWARE_DIR / "vigil-panel-sound.yaml").read_text()
+    hardware = (FIRMWARE_DIR / "guition-esp32-s3-4840s40c_i.yaml").read_text()
+    firmware = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    for pin in ("sound_bclk_pin", "sound_lrclk_pin", "sound_dout_pin"):
+        assert "${" + pin + "}" in package and f"  {pin}: GPIO" in hardware, pin
+    assert "vigil::take_sound(" in package and "sound_is_event" in package
+    assert "vigil::ctx.sound_on" in package and "vigil::ctx.sound_volume" in package  # on and volume come from Vigil
+    for call in ("vigil::sound_on_state(", "vigil::sound_tick(", "vigil::request_sound(vigil::SOUND_WRONG"):
+        assert call in firmware, call
+    assert "i2s_audio" not in firmware and "rtttl" not in firmware  # a panel without a speaker needs none of it
+
+
 def test_label_lambdas_return_a_std_string_not_a_plain_literal():
     """ESPHome calls `.c_str()` on what a label `text:` lambda returns; `const char *` does not compile."""
     import re
@@ -235,7 +264,7 @@ def test_the_look_and_the_layout_follow_the_size_of_the_screen():
     assert "screen_width" in yaml.split("esphome:")[0] and "480" not in yaml.split("lvgl:")[1].replace("0x", "")
     # the main page is a column that grows with the screen; the tabs are on top of every page
     assert "flex_grow: 1" in yaml and "id: nav\n" in yaml
-    assert "hide(id(nav), id(keypad_open))" in yaml  # no tabs on the keypad
+    assert "hide(id(nav), id(keypad_open) || " in yaml  # no tabs on the keypad (nor on a blocked panel)
 
 
 def test_the_colours_of_the_panel_are_the_colours_of_the_card():
@@ -319,3 +348,21 @@ def test_homeassistant_action_data_does_not_call_the_panel_code():
                 break
             assert "vigil::" not in body, body
     assert found
+
+
+def test_the_code_field_of_the_panel_is_emptied_when_the_code_is_sent():
+    """A wrong code must not stay in the field: the code goes into act_code and the field is cleared at once."""
+    yaml = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    assert "lv_textarea_get_text" in yaml and yaml.count("lv_textarea_get_text") == 1  # only run_action reads the field
+    run = yaml.split("  - id: run_action")[1].split("  - id: action_done")[0]
+    assert 'id(act_code) = lv_textarea_get_text(id(pin_text));' in run and 'lv_textarea_set_text(id(pin_text), "");' in run
+    assert run.count("code: !lambda 'return id(act_code);'") == 5
+    failed = yaml.split("  - id: action_failed")[1].split("  - id: clear_message")[0]
+    assert 'lv_textarea_set_text(id(pin_text), "")' in failed
+
+
+def test_the_wrong_code_shake_is_an_lvgl_animation():
+    yaml = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    shake = yaml.split("  - id: shake_pin")[1].split("  # Do the action.")[0]
+    assert "lv_anim_start" in shake and "lv_obj_set_style_translate_x" in shake
+    assert "script.execute: shake_pin" in yaml.split("  - id: action_failed")[1]

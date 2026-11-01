@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.7.3
+
+**ESPHome touch panel**
+
+- **Sound (optional).** A panel with a speaker beeps for the exit and entry delay (faster at the end), arming, disarming and a wrong code. Include `vigil_alarm/vigil-panel-sound.yaml` in your device file. Whether a panel beeps and how loud is set per panel in Vigil (*Sound on the panel*, *Sound volume*); the device itself gets *Quiet in Night mode* and *Test sound*. The speaker starts silently at boot, so it does not hiss until the first sound. On the Guition 4848S040 the amplifier needs three 0 ohm resistors moved or bridged first, see `esphome/README.md`. Panels without the package stay silent.
+- **Clear feedback on a wrong code.** The code field shakes (three swings that die out), gets a red border and a larger red message that stays until the next key. The field is empty the moment the code is sent, so the person types the code again from the start.
+- **The panel now gets the answer of Vigil** to a wrong code, a lock or any other refusal. Home Assistant only sends the answer to an ESPHome device for a *ServiceValidationError*; Vigil's refusals were another kind of error, so the panel never heard of a wrong code. They are a *ServiceValidationError* now. Home Assistant's own cards show "Validation error: " before the text of a refusal (the Vigil card removes it).
+- **A locked panel shows a lock with the time left** ("Try again in 4:32", counting down) and no partitions, no Alarm, Sensors and Info tabs and no buttons; with a permanent lock it says an administrator has to lift it in Vigil. Vigil tells the panel at once, without another try. A panel **blocked in Vigil** shows an amber lock and "Blocked" in the same way. Whatever was open (keypad, sensors, info) closes.
+- **Wrong codes are forgotten after a while.** Wrong codes that did not lead to a lock no longer wait for the next try for ever: if nobody tries again for as long as the next lock would last, the count starts from zero. The steps of the lock (1 to 3, 4 for good) stay until a right code or an administrator resets them.
+- The ESPHome panel also writes the answer of Vigil in its log when an action is refused (`Vigil refused the action: …`). Flash the panel again to get all of this.
+
+**Vigil**
+
+- **Locks in the panel list.** A locked panel shows its phase (1 to 3, or 4 for good) and the time the lock lasts until; an unlocked panel with wrong codes shows how many were counted. The *Unlock* button also lifts a lock after wrong codes, with its counts (*Clear lock* does the same without unlocking the sensor list). A panel that unlocks itself with the installer code never lifts its own lock.
+- **"All modes" first in the choice of modes, like "All partitions".** For the modes a user or panel may use (and the modes of a sensor group or partition, the causes of a siren and the categories of a notification) the first choice is now *All modes* (or *All causes*, *All categories*), which ticks everything; "(empty = all)" is gone. A form that had nothing chosen (meaning all) opens with every mode ticked, and saving with every mode ticked still stores "all", so a mode added later is allowed too. Nothing ticked is refused.
+- **The status of a siren in the list is shown in the language of Home Assistant** (*Unknown*, *Unavailable*, *On*, *Off*) instead of the raw English state.
+- **The Vigil card tells what it does in the browser console.** At start it prints `VIGIL-CARD v0.7.3` (and warns if another copy of the card is already defined). With `debug: true` in the card's configuration it also logs its configuration and Vigil's answer; failures to draw or to reach Vigil are always logged. Use it when a dashboard shows *Configuration error* for the card.
+
 ## 0.7.2
 
 - **Sensors on mains power.** A new tick *Mains powered (no battery)* on a sensor (for example a camera on PoE) stops the advice on the Overview to add a battery sensor for it. The field *Battery sensor* is then hidden, and the table shows "mains power" in the battery column.

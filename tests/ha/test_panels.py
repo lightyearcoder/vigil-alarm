@@ -182,7 +182,7 @@ async def test_clearing_the_lock_lifts_both_timers_and_is_logged(hass, monkeypat
         with pytest.raises(ServiceValidationError):
             await _vigil(hass, "disarm", code="0000", source="garage")
     panels = entry.runtime_data.panels
-    assert panels.status()[0]["locked_for"] > 0
+    assert panels.status()[0]["locked_for"] > 0 and panels.status()[0]["lock_phase"] == 1
     assert panels.clear_lock(panels.get("garage"), by="Admin") is True
     assert panels.status()[0]["locked_for"] == 0
     attrs = hass.states.get(EVENTS).attributes
@@ -300,6 +300,7 @@ async def test_the_admin_panel_registers_a_panel_and_checks_the_input(hass, hass
     item = next(i for i in items_of(entry).values() if i.subentry_type == "panel")
     assert item.data["panel_id"] == "hall" and item.data["allowed_modes"] == []  # all modes = "all"
     assert item.data["sensor_list"] == "code" and item.data["unlock_seconds"] == 60 and item.data["can_disarm"] is True
+    assert item.data["sound"] is True and item.data["sound_volume"] == 60  # a new panel: sound on, a normal volume
     assert "4321" not in plain(item.data) and item.data["code_hash"]
     got = (await _ws(client, type="vigil_alarm/get"))["result"]
     listed = got["items"]["panel"][0]
@@ -311,6 +312,8 @@ async def test_the_admin_panel_registers_a_panel_and_checks_the_input(hass, hass
         ({"name": "Hall", "panel_id": "other"}, {"name": "name_in_use"}),
         ({"name": "X", "panel_id": "x1", "unlock_seconds": 5}, {"unlock_seconds": "unlock_range"}),
         ({"name": "X", "panel_id": "x1", "sensor_list": "sometimes"}, {"sensor_list": "unknown_choice"}),
+        ({"name": "X", "panel_id": "x1", "sound_volume": 5}, {"sound_volume": "sound_volume_range"}),
+        ({"name": "X", "panel_id": "x1", "sound_volume": 101}, {"sound_volume": "sound_volume_range"}),
         ({"name": "X", "panel_id": "x1", "code": "12"}, {"code": "code_too_short"}),
     ):
         res = await _ws(client, type="vigil_alarm/save", kind="panel", data=data)
@@ -633,3 +636,74 @@ async def test_the_bypass_right_is_a_field_of_the_user_and_old_users_keep_it(has
     await _ws(client, type="vigil_alarm/save", kind="user", subentry_id=eve.subentry_id, data={"name": "Eve", "may_bypass": False})
     await hass.async_block_till_done()
     assert items_of(entry)[eve.subentry_id].data["may_bypass"] is False
+
+
+async def test_the_profile_tells_the_panel_about_a_lock_at_once_and_when_it_is_lifted(hass, monkeypatch):
+    entry = await _house(hass, panel_item())
+    clock = [1000.0]
+    monkeypatch.setattr(VigilManager, "_clock", staticmethod(lambda: clock[0]))
+    a = profile(hass).attributes
+    assert a["lock_left"] == "" and a["lock_permanent"] is False
+    for _ in range(3):
+        with pytest.raises(ServiceValidationError):
+            await _vigil(hass, "disarm", code="0000", source="garage")
+    await hass.async_block_till_done()
+    a = profile(hass).attributes  # no new try was needed: the lock shows up by itself
+    assert a["lock_left"] > 0 and a["lock_permanent"] is False
+    panels = entry.runtime_data.panels
+    panels.clear_lock(panels.get("garage"), by="Admin")
+    await hass.async_block_till_done()
+    a = profile(hass).attributes
+    assert a["lock_left"] == "" and a["lock_permanent"] is False
+
+
+
+async def test_the_sound_of_a_panel_is_set_in_vigil_and_reaches_the_profile(hass):
+    await _house(hass, panel_item(), panel_item("loud", "Loud", "p_loud", sound=False, sound_volume=35))
+    a = profile(hass).attributes
+    assert a["sound"] is True and a["sound_volume"] == 60  # nothing stored (a panel from before): the defaults
+    b = profile(hass, "sensor.loud_profile").attributes
+    assert b["sound"] is False and b["sound_volume"] == 35
+
+
+async def test_the_unlock_button_of_the_administrator_also_lifts_a_lock_after_wrong_codes(hass, hass_ws_client, monkeypatch):
+    entry, client = await _client(hass, hass_ws_client, panel_item())
+    clock = [1000.0]
+    monkeypatch.setattr(VigilManager, "_clock", staticmethod(lambda: clock[0]))
+    for _ in range(3):
+        with pytest.raises(ServiceValidationError):
+            await _vigil(hass, "disarm", code="0000", source="garage")
+    await hass.async_block_till_done()
+    assert profile(hass).attributes["lock_left"] and entry.runtime_data.panels.is_locked(entry.runtime_data.panels.get("garage"))
+    res = await _ws(client, type="vigil_alarm/panel_unlock", subentry_id="p_garage")
+    assert res["success"] and res["result"]["was_locked"] is True
+    await hass.async_block_till_done()
+    a = profile(hass).attributes
+    assert a["lock_left"] == "" and a["lock_permanent"] is False and a["unlocked"] is True
+    # the counts are gone too: a lock needs the full number of wrong codes again
+    with pytest.raises(ServiceValidationError):
+        await _vigil(hass, "disarm", code="0000", source="garage")
+    assert not entry.runtime_data.panels.is_locked(entry.runtime_data.panels.get("garage"))
+    # nothing locked: nothing lifted
+    await _ws(client, type="vigil_alarm/panel_clear_lock", subentry_id="p_garage")
+    assert (await _ws(client, type="vigil_alarm/panel_unlock", subentry_id="p_garage"))["result"]["was_locked"] is False
+
+
+async def test_modes_are_chosen_like_partitions_and_nothing_ticked_is_refused(hass, hass_ws_client):
+    from custom_components.vigil_alarm.items import items_of
+
+    entry, client = await _client(hass, hass_ws_client)
+    base = {"name": "Hall", "panel_id": "hall", "code": "4321"}
+    # the form sends "-" when no mode is ticked: refused, never "all"
+    res = await _ws(client, type="vigil_alarm/save", kind="panel", data={**base, "allowed_modes": ["-"]})
+    assert res["result"]["ok"] is False and res["result"]["errors"] == {"allowed_modes": "no_modes"}
+    res = await _ws(client, type="vigil_alarm/save", kind="user", data={"name": "Eve", "code": "2468", "allowed_modes": ["-"]})
+    assert res["result"]["ok"] is False and res["result"]["errors"] == {"allowed_modes": "no_modes"}
+    # every mode ticked is stored as "all", a part as that part
+    ok = await _ws(client, type="vigil_alarm/save", kind="user", data={"name": "Eve", "code": "2468", "allowed_modes": ["home", "away", "night"]})
+    assert ok["result"]["ok"] is True
+    ok = await _ws(client, type="vigil_alarm/save", kind="user", data={"name": "Fay", "code": "1357", "allowed_modes": ["home"]})
+    assert ok["result"]["ok"] is True
+    await hass.async_block_till_done()
+    users = {i.title: i.data for i in items_of(entry).values() if i.subentry_type == "user"}
+    assert users["Eve"]["allowed_modes"] == [] and users["Fay"]["allowed_modes"] == ["home"]

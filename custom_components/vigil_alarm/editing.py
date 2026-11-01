@@ -29,7 +29,12 @@ from .const import (
     CONF_PANEL_ID,
     CONF_SENSOR_LIST,
     CONF_UNLOCK_SECONDS,
+    CONF_SOUND,
+    CONF_SOUND_VOLUME,
+    DEFAULT_SOUND,
+    DEFAULT_SOUND_VOLUME,
     DEFAULT_UNLOCK_SECONDS,
+    SOUND_VOLUME_RANGE,
     SENSOR_LIST_CHOICES,
     UNLOCK_SECONDS_RANGE,
     MIN_CODE_LENGTH_FLOOR,
@@ -447,10 +452,20 @@ async def _user(
     errors: dict[str, str] = {}
     data: dict[str, Any] = {
         CONF_TAGS: [t.strip() for t in (raw.get(CONF_TAGS) or []) if t and t.strip()],
-        CONF_ALLOWED_MODES: list(raw.get(CONF_ALLOWED_MODES) or []),
+        CONF_ALLOWED_MODES: [],
         CONF_MAY_BYPASS: bool(raw.get(CONF_MAY_BYPASS, False)),
         CONF_MAY_BYPASS_TAMPER: bool(raw.get(CONF_MAY_BYPASS_TAMPER, False)),
     }
+    # Nothing sent is "all modes"; a list that names no existing mode is a mistake (the form sends "-" for nothing ticked).
+    # All modes ticked is stored as "all" (nothing), so a mode added later is allowed too.
+    house_modes = all_enabled_modes(entry)
+    asked = list(raw.get(CONF_ALLOWED_MODES) or [])
+    if asked:
+        chosen_modes = [m for m in house_modes if m in asked]
+        if not chosen_modes:
+            errors[CONF_ALLOWED_MODES] = "no_modes"
+        elif len(chosen_modes) != len(house_modes):
+            data[CONF_ALLOWED_MODES] = chosen_modes
     _partitions_filter(entry, raw, data)
     code = (raw.get(CONF_CODE) or "").strip()
     if code:
@@ -620,6 +635,12 @@ async def _panel(
         seconds = 0
     if not UNLOCK_SECONDS_RANGE[0] <= seconds <= UNLOCK_SECONDS_RANGE[1]:
         errors[CONF_UNLOCK_SECONDS] = "unlock_range"
+    try:
+        volume = int(raw.get(CONF_SOUND_VOLUME, DEFAULT_SOUND_VOLUME))
+    except (TypeError, ValueError):
+        volume = 0
+    if not SOUND_VOLUME_RANGE[0] <= volume <= SOUND_VOLUME_RANGE[1]:
+        errors[CONF_SOUND_VOLUME] = "sound_volume_range"
     ha_user = str(raw.get(CONF_HA_USER) or "").strip() if by_account or raw.get("device") is None else ""
     if by_account and not ha_user:
         errors[CONF_HA_USER] = "required"
@@ -642,6 +663,8 @@ async def _panel(
         CONF_CAN_SILENCE: bool(raw.get(CONF_CAN_SILENCE, True)),
         CONF_SENSOR_LIST: sensor_list,
         CONF_UNLOCK_SECONDS: seconds,
+        CONF_SOUND: bool(raw.get(CONF_SOUND, DEFAULT_SOUND)),
+        CONF_SOUND_VOLUME: volume,
         CONF_BLOCKED: bool(raw.get(CONF_BLOCKED, False)),
         CONF_WATCH: bool(raw.get(CONF_WATCH, True)),
     }

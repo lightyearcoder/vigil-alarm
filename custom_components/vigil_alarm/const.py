@@ -234,6 +234,11 @@ CONF_HA_USER = "ha_user"  # a tablet: the Home Assistant user it is logged in as
 SENSOR_LIST_CHOICES = ("always", "code", "never")
 DEFAULT_UNLOCK_SECONDS = 60
 UNLOCK_SECONDS_RANGE = (10, 600)
+CONF_SOUND = "sound"  # does the panel beep (ESPHome panel with the sound package)
+CONF_SOUND_VOLUME = "sound_volume"  # percent
+DEFAULT_SOUND = True
+DEFAULT_SOUND_VOLUME = 60
+SOUND_VOLUME_RANGE = (10, 100)
 PROFILE_VERSION = 1
 PANEL_OFFLINE_SECONDS = 600  # without a connection for this long: a Repair and a message
 

@@ -350,6 +350,7 @@ class VigilPanel extends HTMLElement {
     if (this._unsub) return;
     this._unsub = this._hass.connection.subscribeMessage((live) => {
       this._live = live;
+      this._liveAt = Date.now();
       this._renderHeader();
       this._renderBody();
       if (this._walkUpdate) this._walkUpdate();
@@ -1094,11 +1095,21 @@ class VigilPanel extends HTMLElement {
         ...(this._multiple() ? [[C.partitions, (i) => this._partitionList(i.data.partitions)]] : []),
         [C.status, (i) => {
           const s = state(i.data.control);
-          return el("span", { class: "badge " + (s === undefined || s === "unavailable" ? "bad" : "ok"), text: s === undefined ? "?" : s });
+          return el("span", { class: "badge " + (s === undefined || s === "unavailable" ? "bad" : "ok"), text: s === undefined ? "?" : this._entityStateText(i.data.control, s) });
         }],
       ];
     }
     return [];
+  }
+
+  // The state of an entity in the language Home Assistant is set to (its own translation of "unknown", "on", "idle" ...),
+  // else our own words for the common ones, else the state as it is.
+  _entityStateText(entityId, raw) {
+    const stateObj = this._hass.states[entityId];
+    try {
+      if (stateObj && typeof this._hass.formatEntityState === "function") return this._hass.formatEntityState(stateObj);
+    } catch (err) { /* an older Home Assistant: use our own words */ }
+    return (this.t.entityState && this.t.entityState[raw]) || raw;
   }
 
   // The live state of one register entry, from the subscription.
@@ -1134,7 +1145,11 @@ class VigilPanel extends HTMLElement {
     if (!item.data.ha_user && !item.data.blocked) out.push(badge(item.has_key ? "ok" : "warn", item.has_key ? P.keyYes : P.keyNo));
     if (live && live.unlocked) out.push(badge("", P.unlocked));
     if (live && live.locked_permanent) out.push(badge("bad", P.lockedPermanent));
-    else if (live && live.locked_for > 0) out.push(badge("warn", fill(P.locked, { s: Math.ceil(live.locked_for) })));
+    else if (live && live.locked_for > 0) {
+      // The end as a time of day: it stays right without the badge having to count down.
+      const end = new Date((this._liveAt || Date.now()) + live.locked_for * 1000);
+      out.push(badge("warn", fill(P.locked, { n: live.lock_phase || 1, t: end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) })));
+    } else if (live && live.lock_tries > 0) out.push(badge("", fill(P.tries, { n: live.lock_tries, max: live.lock_tries_max })));
     const seen = (live && live.reported) || {};
     const about = [seen.hardware, seen.firmware ? "v" + seen.firmware : null].filter(Boolean).join(" · ");
     return el("span", { class: "tags" }, out, about ? el("span", { class: "sub", text: about }) : null);
@@ -1151,7 +1166,7 @@ class VigilPanel extends HTMLElement {
     const res = await this._call({ type, subentry_id: item.id });
     if (!res || !res.ok) { this._toast(P.refused); return; }
     if (type === "vigil_alarm/panel_clear_lock" && !res.was_locked) { this._toast(P.nothingLocked); return; }
-    this._toast(doneText);
+    this._toast(type === "vigil_alarm/panel_unlock" && res.was_locked ? `${doneText} ${P.lockLifted}` : doneText);
   }
 
   _table(kind, items, cols, emptyText) {
@@ -1840,6 +1855,11 @@ class VigilPanel extends HTMLElement {
     if (opts.ctx === "panel" && (!opts.editing || !Object.keys(TXT).includes(state.language))) {
       state.language = panelLanguage((this._hass.locale && this._hass.locale.language) || this._hass.language);
     }
+    // The modes a person or panel may use: nothing stored meant "all", and that is what the form shows now, every mode ticked.
+    if (["user", "panel"].includes(opts.ctx) && !(state.allowed_modes || []).length) {
+      const field = schema.find((f) => f.key === "allowed_modes");
+      if (field) state.allowed_modes = [...field.options];
+    }
     if (schema.some((f) => f.type === "partitions")) {
       // The choice is always made: an item from before (nothing chosen meant all) starts with every partition ticked,
       // a new one with none.
@@ -1910,6 +1930,14 @@ class VigilPanel extends HTMLElement {
           let v = state[f.key];
           if (f.type === "number") v = v === "" || v === undefined || v === null ? undefined : Number(v);
           if (f.type === "tags") v = Array.isArray(v) ? v : String(v || "").split(",").map((x) => x.trim()).filter(Boolean);
+          if (f.key === "allowed_modes" && ["user", "panel"].includes(opts.ctx)) {
+            // Every mode that can be chosen ticked: stored as "all" (nothing), so a mode added later is allowed too.
+            // Nothing ticked is not "all": a mode that does not exist makes Vigil say that one has to be chosen.
+            const set = this._modesOfPartitions(state.partitions);
+            const shown = set ? f.options.filter((o) => set.has(o)) : f.options;
+            const ticked = (v || []).filter((o) => shown.includes(o));
+            v = !ticked.length ? ["-"] : ticked.length === shown.length ? [] : ticked;
+          }
           if (f.key.includes(".")) {
             const [a, b] = f.key.split(".");
             out[a] = out[a] || {};
@@ -1990,7 +2018,14 @@ class VigilPanel extends HTMLElement {
           have = set ? [...set] : null;
         }
         const shown = have ? f.options.filter((o) => have.includes(o)) : f.options;
-        return wrap(el("div", { class: "checks" }, shown.map((o) => el("label", {},
+        // "All" first, as with the partitions: it ticks everything, or clears everything.
+        const allText = { allowed_modes: t.partitions.allModes, modes: t.partitions.allModes, causes: t.partitions.allCauses, categories: t.partitions.allCategories }[key];
+        const everyone = allText && shown.length > 1 ? el("label", {}, el("input", { type: "checkbox", checked: shown.every((o) => current.has(o)), onchange: (e) => {
+          for (const o of shown) { if (e.target.checked) current.add(o); else current.delete(o); }
+          state[key] = f.options.filter((x) => current.has(x));
+          rerender();
+        } }), allText) : null;
+        return wrap(el("div", { class: "checks" }, everyone, shown.map((o) => el("label", {},
           el("input", { type: "checkbox", checked: current.has(o), onchange: (e) => {
             if (e.target.checked) current.add(o); else current.delete(o);
             state[key] = f.options.filter((x) => current.has(x));

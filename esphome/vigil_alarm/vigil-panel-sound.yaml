@@ -1,0 +1,78 @@
+# Sound for a Vigil panel with a speaker (optional). Add it to the device file next to the other two packages:
+#
+#   packages:
+#     hardware: !include vigil_alarm/guition-esp32-s3-4840s40c_i.yaml
+#     vigil: !include vigil_alarm/vigil-panel.yaml
+#     sound: !include vigil_alarm/vigil-panel-sound.yaml
+#
+# The hardware file names the pins of the amplifier (`sound_bclk_pin`, `sound_lrclk_pin`, `sound_dout_pin`). A panel
+# without a speaker leaves this file out and stays silent; the firmware only asks for sounds, this file plays them.
+#
+# What you hear (the panel decides, see sound_* in vigil_panel.h):
+#   entry delay   one short beep a second, two a second in the last 10 seconds
+#   exit delay    one beep every two seconds, one a second in the last 5 seconds
+#   armed         two rising tones
+#   disarmed      two falling tones
+#   wrong code    a low double buzz (also for another action that failed)
+# The alarm itself is the job of the sirens, not of this speaker.
+#
+# Sound on or off and the volume are set per panel in Vigil (Panels, the panel, "Sound on the panel"). In Home Assistant the
+# device gets: Quiet in Night mode and a Test sound button.
+
+esphome:
+  on_boot:
+    # Until the first sound the I2S lines of the amplifier float and the speaker hisses. A silent "song" at start-up
+    # makes the I2S driver run (zeros on the data line), the same as after the first beep.
+    - priority: -100
+      then:
+        - delay: 1s
+        - rtttl.play: "quiet:d=4,o=5,b=60:p"
+
+i2s_audio:
+  i2s_lrclk_pin: ${sound_lrclk_pin}
+  i2s_bclk_pin: ${sound_bclk_pin}
+
+speaker:
+  - platform: i2s_audio
+    id: panel_speaker
+    dac_type: external
+    i2s_dout_pin: ${sound_dout_pin}
+    channel: mono
+
+rtttl:
+  id: panel_beeper
+  speaker: panel_speaker
+
+switch:
+  - platform: template
+    name: Quiet in Night mode
+    id: sound_quiet_night
+    icon: mdi:volume-off
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    entity_category: config
+
+button:
+  - platform: template
+    name: Test sound
+    icon: mdi:bell-ring
+    entity_category: config
+    on_press:
+      - lambda: vigil::request_sound(vigil::SOUND_ARMED, false);
+
+interval:
+  # Plays what the firmware asked for. A beep of a countdown never cuts off a sound that is playing; arming,
+  # disarming and a wrong code do.
+  - interval: 100ms
+    then:
+      - lambda: |-
+          bool night = false;
+          const int sound = vigil::take_sound(&night);
+          if (sound == vigil::SOUND_NONE || !vigil::ctx.sound_on) return;
+          if (night && id(sound_quiet_night).state) return;
+          if (id(panel_beeper).is_playing()) {
+            if (!vigil::sound_is_event(sound)) return;
+            id(panel_beeper).stop();
+          }
+          id(panel_beeper).set_gain(vigil::ctx.sound_volume / 100.0f);
+          id(panel_beeper).play(vigil::sound_rtttl(sound));

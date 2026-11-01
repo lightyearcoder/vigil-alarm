@@ -20,6 +20,7 @@ esphome/
   vigil_alarm/             the firmware and the hardware; the same for every panel, do not edit
     guition-esp32-s3-4840s40c_i.yaml      the hardware: display, touch, backlight  (one per kind of panel)
     vigil-panel.yaml
+    vigil-panel-sound.yaml                the sound, only for a panel with a speaker (optional)
     vigil-panel-row.yaml
     vigil-panel-row-script.yaml
     vigil_panel.h
@@ -104,6 +105,39 @@ The device name is the `source` of every call, so the history shows *Anna (vigil
 just *vigil-panel-garage* when no code was needed. A wrong code is published as the event
 `code_rejected` with that source, never with the code itself.
 
+## Wrong codes, locks and blocked panels
+
+- **Wrong code:** the code field shakes and gets a red border, and a larger red message stays under it until the next key press (with the low double buzz if the sound package is there).
+- **Locked after too many wrong codes:** the keypad closes and the screen shows a lock with the time left counting down ("Try again in 4:32"). The buttons that need a code are gone until the lock ends. With a permanent lock the text says an administrator has to lift it in Vigil. Vigil tells the panel at once, so the lock shows without another try.
+- **Blocked in Vigil:** an amber lock with "Blocked" and "This panel is blocked in Vigil", without buttons or tabs.
+
+## Sound (optional)
+
+A panel with a speaker beeps for what you are doing at the door:
+
+| When | Sound |
+|---|---|
+| Entry delay | one short beep a second, two a second in the last 10 seconds |
+| Exit delay | one beep every two seconds, one a second in the last 5 seconds |
+| Armed | two rising tones |
+| Disarmed | two falling tones |
+| Wrong code (or an action that failed) | a low double buzz |
+
+To switch it on, remove the `#` before `sound:` in your device file, so it includes `vigil_alarm/vigil-panel-sound.yaml`.
+Whether this panel beeps and how loud is set by an administrator in Vigil, per panel (Panels, the panel, *Sound on the panel* and
+*Sound volume*). The device itself gets two entities in Home Assistant: **Quiet in Night mode** (no sound when arming to, in or
+leaving Night) and a **Test sound** button. A panel without the package stays silent.
+
+**Guition ESP32-S3-4848S040 (the hardware file in this folder).** The board has a small class D amplifier (NS4168) and a connector
+for a speaker (8 ohm, 1 to 3 W; a 28 mm 8 ohm 1 W speaker is fine). On a board like the one we looked at (the version without relays) the amplifier is not
+connected to the ESP32 as delivered: next to the amplifier chip three 0 ohm resistors (**R25, R26 and R27**) sit on one set of pads, and the
+three pads next to the chip (**R21, R22 and R23**) are empty. GPIO1, GPIO2 and GPIO40 are the I2S lines of the amplifier once the resistors
+are on the pads next to the chip. So to use the speaker, move each 0 ohm resistor one place over, to the empty pads in the same row (R25 to R21,
+R26 to R22, R27 to R23; small SMD soldering, check the markings on your own board first). On a board with relays they stop working then,
+which Vigil does not use. If a board differs, try the sound first: with the package included and *Test sound* silent, look at these resistors. The hardware file
+names the pins (`sound_bclk_pin: GPIO1`, `sound_lrclk_pin: GPIO2`, `sound_dout_pin: GPIO40`); another board sets its own. Keep the
+volume well below 100% for a small speaker.
+
 ## Options
 
 Set these as `substitutions:` in your device file, above the packages:
@@ -158,7 +192,7 @@ Use plain ASCII on the screen: the built-in fonts have no accented letters.
 
 ## What the panel reads from Vigil
 
-From the **profile sensor** of the panel: `language`, `blocked`, `modes_mask`, `can_disarm`,
+From the **profile sensor** of the panel: `language`, `blocked`, `lock_left` (seconds of lock after wrong codes), `lock_permanent`, `modes_mask`, `can_disarm`,
 `can_bypass`, `sensor_list`, `unlock_seconds`, `code_arm_required`, `has_admin_code`, `unlocked`,
 `open_count`, `faults_count`, `problems_count`, the partition view (`view_*`: name, state, mode, delay, cause of the partition shown, and `partition_list`), and (only while allowed) `open_now_text`,
 `open_sensors_text`, `faults_text` and `sensors`. The state, `mode`,
@@ -168,7 +202,7 @@ ESPHome cannot read lists. The panel calls `vigil_alarm.arm`, `disarm`, `bypass`
 
 ## Not on the panel
 
-Silencing a siren, a tag reader and a speaker. Disarming silences everything anyway.
+Silencing a siren and a tag reader. Disarming silences everything anyway. The panel makes no alarm sound: that is the job of the sirens.
 
 ## Tests
 

@@ -62,6 +62,9 @@ SCENES = [
     ("offline", "main", 'c.ha_connected = false; c.state = "";', 0, "", ""),
     ("not-linked", "main", 'c.profile_version = 0;', 0, "", ""),
     ("blocked", "main", 'c.blocked = true; c.modes_mask = 0;', 0, "", ""),
+    # Too many wrong codes: the code buttons are gone and the time left counts down; permanent until an administrator lifts it.
+    ("locked", "main", 'c.now = 1000; c.lock_end = 1272;', 0, "", ""),
+    ("locked-permanent", "main", 'c.lock_permanent = true;', 0, "", ""),
     # Arming was refused because a tamper contact is open: the text says so, and one button bypasses and arms.
     ("refused", "main", 'c.message = vigil::parse_refusal("Arming refused: alarm_condition (Sabotage voordeur).").text; '
      'c.refused_action = vigil::ARM_AWAY;', 0, "", ""),

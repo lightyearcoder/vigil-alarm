@@ -29,7 +29,7 @@ def test_manifest_points_at_the_repository():
     assert manifest["issue_tracker"] == f"https://github.com/{OWNER_REPO}/issues"
     assert manifest["codeowners"] == ["@lightyearcoder"]
     assert list(manifest)[:2] == ["domain", "name"] and list(manifest)[2:] == sorted(list(manifest)[2:])  # hassfest order
-    assert re.fullmatch(r"\d+\.\d+\.\d+", manifest["version"])
+    assert re.fullmatch(r"\d+\.\d+\.\d+(-beta\.\d+)?", manifest["version"])
 
 
 def test_hacs_metadata():
@@ -252,6 +252,8 @@ def test_every_version_field_says_the_same():
     pyproject = re.search(r'^version = "([^"]+)"', (ROOT / "pyproject.toml").read_text(), re.M).group(1)
     assert pyproject == manifest
     assert re.search(rf"^## {re.escape(manifest)}$", (ROOT / "CHANGELOG.md").read_text(), re.M)
+    card = (ROOT / "custom_components/vigil_alarm/frontend/vigil-card.js").read_text()
+    assert f'const VERSION = "{manifest}";' in card  # the card tells its version in the browser console
 
 
 def test_the_two_copies_of_the_changelog_are_identical():

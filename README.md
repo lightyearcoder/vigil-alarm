@@ -38,7 +38,7 @@
   safety sensors that Home Assistant already knows, with their battery and tamper contact. Fire, gas and the 24-hour types always watch; intrusion sensors watch in the modes of their
   **sensor groups**, for example *Perimeter* (doors and windows) in every mode and *Interior*
   (motion) in Away only.
-- **Panels everywhere:** an **ESPHome touch panel** on the wall (Guition 4848, with an optional key per panel), a **tablet or phone** with the
+- **Panels everywhere:** an **ESPHome touch panel** on the wall (Guition 4848, with an optional key per panel and an optional speaker for beeps, set per panel in Vigil; it shows wrong codes, a lock with the time left and a blocked panel clearly), a **tablet or phone** with the
   Vigil card, and the admin panel in Home Assistant. Each panel only shows and may do what you allow it.
 - **Confirmation rules:** an alarm only follows when, say, two different motion sensors trigger
   within a minute. Handy against a false alarm from one PIR.

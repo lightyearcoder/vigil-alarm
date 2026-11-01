@@ -8,12 +8,19 @@
  * It only reads. What the tablet may really do is enforced by Vigil on the server, whatever this card shows.
  * Narrow (a phone): one column. Wide (a tablet, 640 px and up): the state on the left, the modes or the keypad on the right.
  *
- * Optional setting:  idle_timeout: 30   (seconds without touch before a half typed code is forgotten)
+ * Optional settings:  idle_timeout: 30   (seconds without touch before a half typed code is forgotten)
+ *                     debug: true        (the card tells what it does in the browser console, filter on "vigil-card")
  *
  * The logic mirrors esphome/vigil_alarm/vigil_panel.h; keep the two in step.
  */
 (() => {
-  if (customElements.get("vigil-card")) return;
+  const VERSION = "0.7.3";
+  // Every start says so in the console: when this line is missing, the card did not load (yet).
+  console.info("%c VIGIL-CARD %c v" + VERSION + " ", "color:#fff;background:#3b6fd4;font-weight:bold", "color:#fff;background:#555");
+  if (customElements.get("vigil-card")) {
+    console.warn("[vigil-card] already defined by another copy of the card; this copy (v" + VERSION + ") is not used");
+    return;
+  }
 
   const TEXTS = {
     nl: {
@@ -217,8 +224,14 @@
       this._config = {};
     }
 
+    // Always for errors, and for everything else with `debug: true` in the card.
+    _log(...args) {
+      if (this._config && this._config.debug) console.info("[vigil-card]", ...args);
+    }
+
     setConfig(config) {
       this._config = config || {};
+      this._log("setConfig", JSON.stringify(this._config));
     }
     getCardSize() {
       return 8;
@@ -228,6 +241,7 @@
     }
 
     connectedCallback() {
+      this._log("connected, hass " + (this._hass ? "there" : "not there yet"));
       this._hello();
       this._helloTimer = setInterval(() => this._hello(), 60000);
       this._tick = setInterval(() => this._countdown(), 1000);
@@ -267,8 +281,10 @@
         const info = await this._hass.callWS({ type: "vigil_alarm/tablet" });
         this._info = info;
         this._failed = false;
+        this._log("answer of Vigil", JSON.stringify(info));
       } catch (err) {
         this._failed = true;
+        console.warn("[vigil-card] Vigil did not answer vigil_alarm/tablet", err);
       }
       this._key = "";
       this.hass = this._hass;
@@ -630,7 +646,8 @@
         this._done(action);
       } catch (err) {
         this._ui.busy = false;
-        const raw = (err && (err.message || err.error)) || String(err);
+        // Home Assistant puts "Validation error: " before the text of a refusal; the text itself is clear.
+        const raw = String((err && (err.message || err.error)) || err).replace(/^Validation error:\s*/i, "");
         const refused = action.startsWith("arm_") ? this._refusal(raw) : null;
         if (refused) {
           // Not a wrong code: something stops arming. Say what, and offer to bypass it and arm if that is allowed.
@@ -743,6 +760,14 @@
     }
 
     _render() {
+      try {
+        this._renderNow();
+      } catch (err) {
+        console.error("[vigil-card] drawing the card failed", err);
+        throw err;
+      }
+    }
+    _renderNow() {
       const root = this.shadowRoot;
       const keypad = this._ui.keypad;
       const sensorsView = this._ui.view === "sensors" && this._sensorsVisible() && this._usable();

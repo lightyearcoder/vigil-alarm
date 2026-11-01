@@ -93,7 +93,10 @@ from .const import (
     SUBENTRY_SIREN,
     SUBENTRY_PANEL,
     SENSOR_LIST_CHOICES,
+    DEFAULT_SOUND,
+    DEFAULT_SOUND_VOLUME,
     DEFAULT_UNLOCK_SECONDS,
+    SOUND_VOLUME_RANGE,
     UNLOCK_SECONDS_RANGE,
     SUBENTRY_USER,
     SUBENTRY_SENSOR,
@@ -239,6 +242,8 @@ def form_schema(modes: list[str], house: Mapping[str, Any] | None = None) -> dic
             _f("can_silence", "boolean", default=True),
             _f("sensor_list", "select", options=list(SENSOR_LIST_CHOICES), default="code"),
             _f("unlock_seconds", "number", unit="s", min=UNLOCK_SECONDS_RANGE[0], max=UNLOCK_SECONDS_RANGE[1], default=DEFAULT_UNLOCK_SECONDS),
+            _f("sound", "boolean", default=DEFAULT_SOUND, show_if={"device": ["esphome"]}),
+            _f("sound_volume", "number", unit="%", min=SOUND_VOLUME_RANGE[0], max=SOUND_VOLUME_RANGE[1], default=DEFAULT_SOUND_VOLUME, show_if={"device": ["esphome"], "sound": [True]}),
             _f("code", "password"),
             _f("watch", "boolean", default=True),
             _f("blocked", "boolean", default=False),
@@ -720,7 +725,12 @@ def ws_panel_unlock(hass: HomeAssistant, connection: websocket_api.ActiveConnect
     except Exception as err:  # a blocked panel is refused
         connection.send_error(msg["id"], "refused", str(err))
         return
-    connection.send_result(msg["id"], {"ok": True})
+    # The administrator unlocks the panel: a lock after wrong codes goes too, with its counts. (Not when a panel unlocks
+    # itself with the installer code: that must never lift its own lock.)
+    was_locked = False
+    if entry.runtime_data.panels.is_locked(item):
+        was_locked = entry.runtime_data.panels.clear_lock(item, by=connection.user.name)
+    connection.send_result(msg["id"], {"ok": True, "was_locked": was_locked})
 
 
 @websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/panel_clear_lock", vol.Required("subentry_id"): str})

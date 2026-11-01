@@ -42,6 +42,10 @@ from .const import (
     CONF_SENSOR_LIST,
     CONF_WATCH,
     CONF_UNLOCK_SECONDS,
+    CONF_SOUND,
+    CONF_SOUND_VOLUME,
+    DEFAULT_SOUND,
+    DEFAULT_SOUND_VOLUME,
     DEFAULT_UNLOCK_SECONDS,
     DOMAIN,
     PANEL_OFFLINE_SECONDS,
@@ -292,7 +296,14 @@ class PanelRegistry:
             "can_silence": not blocked and bool(d.get(CONF_CAN_SILENCE, True)),
             "sensor_list": sensor_list,
             "unlock_seconds": int(d.get(CONF_UNLOCK_SECONDS, DEFAULT_UNLOCK_SECONDS)),
+            # The speaker of an ESPHome panel (the sound package): on or off, and how loud, as set for this panel.
+            "sound": bool(d.get(CONF_SOUND, DEFAULT_SOUND)),
+            "sound_volume": int(d.get(CONF_SOUND_VOLUME, DEFAULT_SOUND_VOLUME)),
             "blocked": blocked,
+            # The lock after wrong codes of this panel: seconds left ("" when it may try), or locked until an
+            # administrator lifts it. The panel shows it before anybody tries again, and counts down on its own clock.
+            "lock_left": round(self.manager.lockout.remaining(pid)) or "",
+            "lock_permanent": self.manager.lockout.is_permanent(pid),
             "code_arm_required": self.manager.code_arm_required,
             "screen_off_seconds": int(self.manager.entry.data.get(CONF_SCREEN_OFF_SECONDS, DEFAULT_SCREEN_OFF_SECONDS)),
             "screen_off_on_alarm": bool(self.manager.entry.data.get(CONF_SCREEN_OFF_ON_ALARM, DEFAULT_SCREEN_OFF_ON_ALARM)),
@@ -511,6 +522,12 @@ class PanelRegistry:
         manager.lockout.record_success(source)
         self.unlock(panel, by=user.title if user else "installer")
 
+    def is_locked(self, panel: Item) -> bool:
+        """Is this panel locked after wrong codes (its user-code timer or its administrator-code timer)?"""
+        pid = panel.data[CONF_PANEL_ID]
+        lockout = self.manager.lockout
+        return any(lockout.remaining(None, bucket=b) or lockout.is_permanent(None, bucket=b) for b in (pid, admin_bucket(pid)))
+
     def clear_lock(self, panel: Item, by: str | None = None) -> bool:
         """Lift the stored lockout of this panel (both its user-code timer and its administrator-code timer)."""
         pid = panel.data[CONF_PANEL_ID]
@@ -638,6 +655,10 @@ class PanelRegistry:
                 "unlocked": self.unlocked(pid),
                 "locked_for": max(lockout.get(pid, 0), lockout.get(admin_bucket(pid), 0)),
                 "locked_permanent": pid in permanent or admin_bucket(pid) in permanent,
+                # How far the locks have gone (0 to 3, 4 for good) and the wrong codes counted towards the next one.
+                "lock_phase": max(self.manager.lockout.phase(pid), self.manager.lockout.phase(admin_bucket(pid))),
+                "lock_tries": max(self.manager.lockout.tries(pid)[0], self.manager.lockout.tries(admin_bucket(pid))[0]),
+                "lock_tries_max": self.manager.lockout.tries(pid)[1],
                 "reported": {} if panel.data.get(CONF_HA_USER) else self.reported(pid),
             })
         return out
