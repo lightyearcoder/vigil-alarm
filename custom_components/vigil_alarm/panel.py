@@ -6,6 +6,8 @@ rules are the same as in the config flows: both use `editing`.
 
 from __future__ import annotations
 
+import logging
+
 import hashlib
 import json
 from pathlib import Path
@@ -15,6 +17,8 @@ import voluptuous as vol
 
 from homeassistant.components import frontend, panel_custom, websocket_api
 from homeassistant.components.http import StaticPathConfig
+from homeassistant.components.lovelace.const import LOVELACE_DATA
+from homeassistant.components.lovelace.resources import ResourceStorageCollection
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from .errors import VigilError
@@ -94,6 +98,8 @@ from .const import (
     SUBENTRY_PANEL,
     SENSOR_LIST_CHOICES,
     DEFAULT_SOUND,
+    DEFAULT_SOUND_CHANGES,
+    DEFAULT_SOUND_DELAYS,
     DEFAULT_SOUND_VOLUME,
     DEFAULT_UNLOCK_SECONDS,
     SOUND_VOLUME_RANGE,
@@ -152,6 +158,7 @@ TYPE_OF = {
     "partition": SUBENTRY_PARTITION,
 }
 KINDS = tuple(TYPE_OF)
+_LOGGER = logging.getLogger(__name__)
 _DATA_KEY = f"{DOMAIN}_panel"
 _STATIC_KEY = f"{DOMAIN}_panel_static"
 
@@ -243,6 +250,8 @@ def form_schema(modes: list[str], house: Mapping[str, Any] | None = None) -> dic
             _f("sensor_list", "select", options=list(SENSOR_LIST_CHOICES), default="code"),
             _f("unlock_seconds", "number", unit="s", min=UNLOCK_SECONDS_RANGE[0], max=UNLOCK_SECONDS_RANGE[1], default=DEFAULT_UNLOCK_SECONDS),
             _f("sound", "boolean", default=DEFAULT_SOUND, show_if={"device": ["esphome"]}),
+            _f("sound_changes", "boolean", default=DEFAULT_SOUND_CHANGES, show_if={"device": ["esphome"], "sound": [True]}),
+            _f("sound_delays", "boolean", default=DEFAULT_SOUND_DELAYS, show_if={"device": ["esphome"], "sound": [True]}),
             _f("sound_volume", "number", unit="%", min=SOUND_VOLUME_RANGE[0], max=SOUND_VOLUME_RANGE[1], default=DEFAULT_SOUND_VOLUME, show_if={"device": ["esphome"], "sound": [True]}),
             _f("code", "password"),
             _f("watch", "boolean", default=True),
@@ -1281,6 +1290,43 @@ def _asset_version(version: str) -> str:
     return f"{version}-{digest.hexdigest()[:8]}"
 
 
+async def _async_register_card(hass: HomeAssistant, url: str) -> None:
+    """Make Home Assistant load the card the way every custom card is loaded: as a dashboard resource.
+
+    A resource is loaded before the dashboard is drawn, so `custom:vigil-card` always exists (a module that is added
+    as an "extra module" is loaded next to the dashboard, and a slow load gave "Custom element doesn't exist").
+    The resource is made, or moved to the new address after an update, once. A dashboard in YAML mode has resources
+    in its own file; there the card is added as an extra module instead, and the documentation says to add it there."""
+    resources = getattr(hass.data.get(LOVELACE_DATA), "resources", None)
+    if not isinstance(resources, ResourceStorageCollection):
+        frontend.add_extra_js_url(hass, url)
+        return
+    try:
+        if not resources.loaded:
+            await resources.async_load()
+            resources.loaded = True
+        ours = [i for i in resources.async_items() if str(i.get("url", "")).split("?")[0] == CARD_URL]
+        if not ours:
+            await resources.async_create_item({"res_type": "module", "url": url})
+            return
+        first, *others = ours
+        if first.get("url") != url or first.get("type") != "module":
+            await resources.async_update_item(first["id"], {"res_type": "module", "url": url})
+        for item in others:  # a second copy would load the card twice
+            await resources.async_delete_item(item["id"])
+    except Exception:  # noqa: BLE001 - the card is not worth a failed setup
+        _LOGGER.warning("Could not register the Vigil card as a dashboard resource; add %s as a JavaScript module", CARD_URL)
+        frontend.add_extra_js_url(hass, url)
+
+
+async def _async_remove_card(hass: HomeAssistant) -> None:
+    resources = getattr(hass.data.get(LOVELACE_DATA), "resources", None)
+    if isinstance(resources, ResourceStorageCollection):
+        for item in list(resources.async_items()):
+            if str(item.get("url", "")).split("?")[0] == CARD_URL:
+                await resources.async_delete_item(item["id"])
+
+
 async def async_register_panel(hass: HomeAssistant, version: str) -> None:
     if hass.data.get(_DATA_KEY):
         return
@@ -1296,7 +1342,7 @@ async def async_register_panel(hass: HomeAssistant, version: str) -> None:
             ]
         )
         hass.data[_STATIC_KEY] = True
-        frontend.add_extra_js_url(hass, f"{CARD_URL}?v={version}")
+        await _async_register_card(hass, f"{CARD_URL}?v={version}")
     await panel_custom.async_register_panel(
         hass,
         frontend_url_path=PANEL_URL,
@@ -1310,7 +1356,7 @@ async def async_register_panel(hass: HomeAssistant, version: str) -> None:
     hass.data[_DATA_KEY] = True
 
 
-@callback
-def async_remove_panel(hass: HomeAssistant) -> None:
+async def async_remove_panel(hass: HomeAssistant) -> None:
     if hass.data.pop(_DATA_KEY, None):
         frontend.async_remove_panel(hass, PANEL_URL)
+    await _async_remove_card(hass)

@@ -14,7 +14,7 @@ Puedes manejar Vigil con una tableta que muestre un panel de control de Home Ass
    type: custom:vigil-card
    ```
 
-   Vigil carga la tarjeta por sí mismo; no hay nada que instalar ni que añadir como recurso. La tarjeta no tiene ajustes salvo `idle_timeout` (segundos sin tocar antes de que olvide un código a medio teclear, predeterminado 30). Para una tableta de pared usa una vista de panel (una sola tarjeta) o un panel de control tipo quiosco, como el que puede mostrar Fully Kiosk Browser, para que la barra lateral quede oculta.
+   Vigil carga la tarjeta por sí mismo; no hay nada que instalar ni que añadir como recurso. Vigil añade la tarjeta por sí mismo a los recursos del panel (*Ajustes, Paneles, Recursos*), de modo que se carga antes de dibujar el panel. Solo si tus paneles están en modo YAML, añade tú mismo `/vigil_alarm_static/vigil-card.js` allí como *módulo JavaScript*. La tarjeta no tiene ajustes salvo `idle_timeout` (segundos sin tocar antes de que olvide un código a medio teclear, predeterminado 30). Para una tableta de pared usa una vista de panel (una sola tarjeta) o un panel de control tipo quiosco, como el que puede mostrar Fully Kiosk Browser, para que la barra lateral quede oculta.
 4. Usa **HTTPS** para Home Assistant. Con un simple `http://` el código viaja legible por tu Wi-Fi.
 
 ## Qué hace la tarjeta

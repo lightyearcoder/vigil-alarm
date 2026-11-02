@@ -29,13 +29,8 @@ async def test_the_message_is_in_the_language_of_home_assistant(hass, language, 
     assert err.value.translation_key == "mode_not_allowed" and err.value.translation_domain == "vigil_alarm"
 
 
-async def test_a_refusal_is_a_service_validation_error_so_an_esphome_panel_gets_the_answer(hass, hass_ws_client):
-    """0.7.3: the ESPHome integration answers a panel only for a ServiceValidationError (or a missing service). A refusal
-    of another kind never reached the panel, which therefore could not show a wrong code. Home Assistant puts
-    "Validation error: " before the text over the websocket; the Vigil card takes that off again."""
-    from homeassistant.exceptions import ServiceValidationError as HomeAssistantKind
-
-    assert issubclass(ServiceValidationError, HomeAssistantKind)
+async def test_a_standard_card_gets_the_text_without_a_prefix(hass, hass_ws_client):
+    """0.7.4: a plain HomeAssistantError, so Home Assistant does not put "Validation error: " before the text."""
     hass.config.language = "nl"
     await _setup(hass)
     assert await async_setup_component(hass, "websocket_api", {})
@@ -44,7 +39,19 @@ async def test_a_refusal_is_a_service_validation_error_so_an_esphome_panel_gets_
                             "target": {"entity_id": "alarm_control_panel.vigil_alarm"}, "service_data": {"code": "5678"}})
     reply = await client.receive_json()
     assert reply["success"] is False
-    assert reply["error"]["message"] == "Validation error: Modus Weg is door u niet toegestaan om in te schakelen."
+    assert reply["error"]["message"] == "Modus Weg is door u niet toegestaan om in te schakelen."
     assert reply["error"]["translation_key"] == "mode_not_allowed"
-    card = (Path(__file__).parent.parent.parent / "custom_components/vigil_alarm/frontend/vigil-card.js").read_text()
-    assert "Validation error:" in card  # the card removes it
+
+
+def test_a_panel_refusal_is_a_service_validation_error_with_the_same_text():
+    """The ESPHome integration answers a panel only for a ServiceValidationError, so the refusal for a call from a
+    panel is one; the text and the key are the same."""
+    from homeassistant.exceptions import HomeAssistantError, ServiceValidationError as Kind
+
+    from custom_components.vigil_alarm.errors import PanelRefusal
+
+    plain = ServiceValidationError(translation_domain="vigil_alarm", translation_key="invalid_code")
+    assert not isinstance(plain, Kind) and isinstance(plain, HomeAssistantError)
+    panel = PanelRefusal.of(plain)
+    assert isinstance(panel, Kind) and isinstance(panel, ServiceValidationError)
+    assert str(panel) == str(plain) and panel.translation_key == "invalid_code"

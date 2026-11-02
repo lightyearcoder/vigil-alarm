@@ -64,7 +64,7 @@ Find what you see below. For each symptom: the likely causes, where to check, an
 
 ## A refusal is in English, or in another language than I expected
 
-When a standard Home Assistant card (for example the tile with the arm buttons) shows a refusal, the text is in the language **Home Assistant is set to** (*Settings, System, General*), not in the language of your profile, and without a user name: *Mode Custom is not allowed to be armed by you.* Vigil has the texts in six languages (English for any other). The Vigil card and the touch panel show the refusal in the language of the panel. Home Assistant itself puts *Validation error:* before the text on its own cards; the Vigil card takes that off.
+When a standard Home Assistant card (for example the tile with the arm buttons) shows a refusal, the text is in the language **Home Assistant is set to** (*Settings, System, General*), not in the language of your profile, and without a user name: *Mode Custom is not allowed to be armed by you.* Vigil has the texts in six languages (English for any other). The Vigil card and the touch panel show the refusal in the language of the panel.
 
 ## The entities are named differently than I expected
 
@@ -76,7 +76,7 @@ Hard refresh the browser (Ctrl+F5) and check that the integration is running und
 
 ## The dashboard shows *Configuration error* for the Vigil card
 
-Press F5 first. If it comes back, open the dashboard in edit mode: the text under the red card says what is wrong. Add `debug: true` to the card, reload and open the browser console (F12, tab *Console*, filter `vigil`). The line `VIGIL-CARD v…` says that the card loaded; lines with `[vigil-card]` say what it does and what goes wrong. Without the `VIGIL-CARD` line the file did not load: look for `vigil-card.js` in the tab *Network*.
+Press F5 first. If the text under the red card says *Custom element doesn't exist: vigil-card*, the card script was not loaded: open *Settings, Dashboards, ⋮, Resources* and check that `/vigil_alarm_static/vigil-card.js` is there once as a *JavaScript module* (Vigil adds it itself; add it by hand with dashboards in YAML mode, and remove a second copy). Otherwise, open the dashboard in edit mode: the text under the red card says what is wrong. Add `debug: true` to the card, reload and open the browser console (F12, tab *Console*, filter `vigil`). The line `VIGIL-CARD v…` says that the card loaded; lines with `[vigil-card]` say what it does and what goes wrong. Without the `VIGIL-CARD` line the file did not load: look for `vigil-card.js` in the tab *Network*.
 
 ## A wrong code on the ESPHome panel shows nothing
 

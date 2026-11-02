@@ -300,7 +300,7 @@ async def test_the_admin_panel_registers_a_panel_and_checks_the_input(hass, hass
     item = next(i for i in items_of(entry).values() if i.subentry_type == "panel")
     assert item.data["panel_id"] == "hall" and item.data["allowed_modes"] == []  # all modes = "all"
     assert item.data["sensor_list"] == "code" and item.data["unlock_seconds"] == 60 and item.data["can_disarm"] is True
-    assert item.data["sound"] is True and item.data["sound_volume"] == 60  # a new panel: sound on, a normal volume
+    assert item.data["sound"] is True and item.data["sound_volume"] == 60 and item.data["sound_delays"] is True and item.data["sound_changes"] is True  # a new panel: sound on, a normal volume
     assert "4321" not in plain(item.data) and item.data["code_hash"]
     got = (await _ws(client, type="vigil_alarm/get"))["result"]
     listed = got["items"]["panel"][0]
@@ -659,11 +659,11 @@ async def test_the_profile_tells_the_panel_about_a_lock_at_once_and_when_it_is_l
 
 
 async def test_the_sound_of_a_panel_is_set_in_vigil_and_reaches_the_profile(hass):
-    await _house(hass, panel_item(), panel_item("loud", "Loud", "p_loud", sound=False, sound_volume=35))
+    await _house(hass, panel_item(), panel_item("loud", "Loud", "p_loud", sound=False, sound_volume=35, sound_delays=False, sound_changes=False))
     a = profile(hass).attributes
-    assert a["sound"] is True and a["sound_volume"] == 60  # nothing stored (a panel from before): the defaults
+    assert a["sound"] is True and a["sound_volume"] == 60 and a["sound_delays"] is True and a["sound_changes"] is True  # nothing stored (a panel from before): the defaults
     b = profile(hass, "sensor.loud_profile").attributes
-    assert b["sound"] is False and b["sound_volume"] == 35
+    assert b["sound"] is False and b["sound_volume"] == 35 and b["sound_delays"] is False and b["sound_changes"] is False
 
 
 async def test_the_unlock_button_of_the_administrator_also_lifts_a_lock_after_wrong_codes(hass, hass_ws_client, monkeypatch):

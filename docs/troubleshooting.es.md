@@ -66,7 +66,7 @@ Busca abajo lo que ves. Para cada síntoma: las causas probables, dónde comprob
 
 ## Un rechazo está en un idioma distinto del esperado
 
-Cuando una tarjeta estándar de Home Assistant (por ejemplo el mosaico con los botones de activación) muestra un rechazo, el texto está en el idioma **configurado en Home Assistant** (*Ajustes, Sistema, General*), no en el de tu perfil, y sin nombre de usuario: *El modo Personalizado no puede ser activado por usted.* Vigil tiene los textos en seis idiomas (inglés para cualquier otro). La tarjeta Vigil y el teclado táctil muestran el rechazo en el idioma del teclado. El propio Home Assistant pone *Validation error:* delante del texto en sus tarjetas; la tarjeta Vigil lo quita.
+Cuando una tarjeta estándar de Home Assistant (por ejemplo el mosaico con los botones de activación) muestra un rechazo, el texto está en el idioma **configurado en Home Assistant** (*Ajustes, Sistema, General*), no en el de tu perfil, y sin nombre de usuario: *El modo Personalizado no puede ser activado por usted.* Vigil tiene los textos en seis idiomas (inglés para cualquier otro). La tarjeta Vigil y el teclado táctil muestran el rechazo en el idioma del teclado.
 
 ## Las entidades se llaman distinto de lo que esperaba
 
@@ -78,7 +78,7 @@ Recarga el navegador forzando (Ctrl+F5) y comprueba que la integración se está
 
 ## El panel de control muestra *Error de configuración* en la tarjeta Vigil
 
-Pulsa primero F5. Si vuelve, abre el panel en modo edición: el texto bajo la tarjeta roja dice qué falla. Añade `debug: true` a la tarjeta, recarga y abre la consola del navegador (F12, pestaña *Consola*, filtro `vigil`). La línea `VIGIL-CARD v…` indica que la tarjeta se cargó; las líneas con `[vigil-card]` dicen qué hace y qué falla. Sin la línea `VIGIL-CARD` el archivo no se cargó: busca `vigil-card.js` en la pestaña *Red*.
+Pulsa primero F5. Si bajo la tarjeta roja pone *Custom element doesn't exist: vigil-card*, el script de la tarjeta no se cargó: abre *Ajustes, Paneles, ⋮, Recursos* y comprueba que `/vigil_alarm_static/vigil-card.js` está una sola vez como *módulo JavaScript* (Vigil lo añade solo; con paneles en modo YAML añádelo a mano y quita una segunda copia). Si no, abre el panel en modo edición: el texto bajo la tarjeta roja dice qué falla. Añade `debug: true` a la tarjeta, recarga y abre la consola del navegador (F12, pestaña *Consola*, filtro `vigil`). La línea `VIGIL-CARD v…` indica que la tarjeta se cargó; las líneas con `[vigil-card]` dicen qué hace y qué falla. Sin la línea `VIGIL-CARD` el archivo no se cargó: busca `vigil-card.js` en la pestaña *Red*.
 
 ## Un código erróneo en el panel ESPHome no muestra nada
 

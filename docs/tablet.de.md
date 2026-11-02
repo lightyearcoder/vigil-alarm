@@ -14,7 +14,7 @@ Du kannst Vigil mit einem Tablet bedienen, das ein Home-Assistant-Dashboard zeig
    type: custom:vigil-card
    ```
 
-   Vigil lädt die Karte selbst; es muss nichts installiert oder als Ressource hinzugefügt werden. Die Karte hat keine Einstellungen außer `idle_timeout` (Sekunden ohne Berührung, bis sie einen halb getippten Code vergisst, Standard 30). Für ein Wandtablet benutze eine Panel-Ansicht (einzelne Karte) oder ein Kiosk-Dashboard, wie es etwa der Fully Kiosk Browser zeigen kann, damit die Seitenleiste verborgen ist.
+   Vigil lädt die Karte selbst; es muss nichts installiert oder als Ressource hinzugefügt werden. Vigil trägt die Karte selbst bei den Dashboard-Ressourcen ein (*Einstellungen, Dashboards, Ressourcen*), damit sie geladen ist, bevor das Dashboard gezeichnet wird. Nur bei Dashboards im YAML-Modus fügst du `/vigil_alarm_static/vigil-card.js` dort selbst als *JavaScript-Modul* hinzu. Die Karte hat keine Einstellungen außer `idle_timeout` (Sekunden ohne Berührung, bis sie einen halb getippten Code vergisst, Standard 30). Für ein Wandtablet benutze eine Panel-Ansicht (einzelne Karte) oder ein Kiosk-Dashboard, wie es etwa der Fully Kiosk Browser zeigen kann, damit die Seitenleiste verborgen ist.
 4. Benutze **HTTPS** für Home Assistant. Über reines `http://` läuft der Code lesbar durch dein WLAN.
 
 ## Was die Karte tut

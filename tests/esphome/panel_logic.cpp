@@ -197,6 +197,7 @@ int main(){
     sound_on_state("armed_home","armed_away"); assert(take_sound(&night)==SOUND_NONE);  // a change of mode is not arming
     sound_on_state("disarmed","disarmed"); sound_on_state("","disarmed"); sound_on_state("unavailable","disarmed"); sound_on_state("disarmed","unavailable");
     assert(take_sound(&night)==SOUND_NONE);  // nothing at a start or when the alarm comes back
+    ctx.sound_changes=false; sound_on_state("disarmed","armed_away"); sound_on_state("armed_away","disarmed"); assert(take_sound(&night)==SOUND_NONE); ctx.sound_changes=true;  // quiet changes
     ctx.blocked=true; sound_on_state("armed_away","disarmed"); assert(take_sound(&night)==SOUND_NONE); ctx.blocked=false;
     // the countdowns
     ctx.state="pending"; ctx.mode="away"; ctx.delay_end=100;
@@ -209,6 +210,8 @@ int main(){
     sound_tick(81); assert(take_sound(&night)==SOUND_NONE);  // 19 left: every second second
     sound_tick(95); assert(take_sound(&night)==SOUND_EXIT_FAST);  // the last 5 seconds: every second
     sound_tick(NAN); assert(take_sound(&night)==SOUND_NONE);  // no clock: no beeps
+    ctx.sound_delays=false; sound_tick(80); assert(take_sound(&night)==SOUND_NONE);  // quiet delays: no beeps
+    sound_tick(95); assert(take_sound(&night)==SOUND_NONE); ctx.sound_delays=true;
     ctx.state="armed_home"; sound_tick(96); assert(take_sound(&night)==SOUND_NONE);
     // an event is not pushed out by a beep, and a wrong code cuts one off
     request_sound(SOUND_ARMED,false); request_sound(SOUND_ENTRY,false); assert(take_sound(&night)==SOUND_ARMED);

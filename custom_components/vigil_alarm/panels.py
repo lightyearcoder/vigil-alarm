@@ -43,8 +43,12 @@ from .const import (
     CONF_WATCH,
     CONF_UNLOCK_SECONDS,
     CONF_SOUND,
+    CONF_SOUND_CHANGES,
+    CONF_SOUND_DELAYS,
     CONF_SOUND_VOLUME,
     DEFAULT_SOUND,
+    DEFAULT_SOUND_CHANGES,
+    DEFAULT_SOUND_DELAYS,
     DEFAULT_SOUND_VOLUME,
     DEFAULT_UNLOCK_SECONDS,
     DOMAIN,
@@ -298,6 +302,8 @@ class PanelRegistry:
             "unlock_seconds": int(d.get(CONF_UNLOCK_SECONDS, DEFAULT_UNLOCK_SECONDS)),
             # The speaker of an ESPHome panel (the sound package): on or off, and how loud, as set for this panel.
             "sound": bool(d.get(CONF_SOUND, DEFAULT_SOUND)),
+            "sound_changes": bool(d.get(CONF_SOUND_CHANGES, DEFAULT_SOUND_CHANGES)),
+            "sound_delays": bool(d.get(CONF_SOUND_DELAYS, DEFAULT_SOUND_DELAYS)),
             "sound_volume": int(d.get(CONF_SOUND_VOLUME, DEFAULT_SOUND_VOLUME)),
             "blocked": blocked,
             # The lock after wrong codes of this panel: seconds left ("" when it may try), or locked until an

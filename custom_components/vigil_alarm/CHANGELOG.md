@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.7.4
+
+**Vigil**
+
+- **The card is loaded as a dashboard resource.** Some dashboards showed "Custom element doesn't exist: vigil-card": Home Assistant loaded the card next to the dashboard, and a slow load came too late. Vigil now adds the card to the dashboard resources itself (*Settings, Dashboards, Resources*), which Home Assistant loads before the dashboard is drawn, like every custom card. It is made once, moved to the new address after an update (a double copy is removed) and removed together with Vigil. Dashboards in YAML mode keep the old way of loading; add `/vigil_alarm_static/vigil-card.js` there as a *JavaScript module*.
+- **Refusals on the standard Home Assistant cards no longer start with "Validation error:".** Vigil's refusals are plain Home Assistant errors again, so the text appears as written, in the language Home Assistant is set to. The ESPHome touch panel still gets the answer (wrong code, lock, not allowed): for a call that comes from a registered panel the refusal has the kind the ESPHome integration needs to send it back, with the same text and key.
+
+**ESPHome touch panel**
+
+- **The panel announces itself again** (hardware, capabilities, firmware and profile version) when Home Assistant is reachable again after a break and whenever the state of the alarm comes in, also after Vigil was reloaded. Vigil no longer shows old or empty panel information until the next hourly update.
+- **Quiet panels.** Two new settings per panel (Panels, the panel, next to *Sound on the panel*): *Beeps during the exit and entry delay* and *Tones for arming and disarming*. Switch them off for a panel that nobody operates, for example in a hallway. A wrong code still sounds. Flash the panel again to use them.
+- Cleaner firmware file: the five actions of the keypad (arm, disarm, unlock, bypass, unbypass) share one definition of what happens on success or refusal. Nothing changes in behaviour.
+
+**Documentation**
+
+- Troubleshooting: *Custom element doesn't exist: vigil-card* and how the card is loaded (six languages). Test plan: rows 139 and 140, and the sound row.
+
 ## 0.7.3
 
 **ESPHome touch panel**

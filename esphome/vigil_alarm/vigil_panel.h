@@ -223,6 +223,8 @@ struct Context {
   double lock_end = NAN;          // epoch seconds when the lock after wrong codes ends (NAN: not locked)
   bool lock_permanent = false;    // locked until an administrator lifts it in Vigil
   bool lock_was = false;          // was the lock on the screen at the last look, so the end of it is drawn too
+  bool sound_changes = true;      // the tones of arming and disarming
+  bool sound_delays = true;       // the beeps of the exit and entry delay (a panel nobody operates can be quiet)
   bool sound_on = true;           // the speaker may beep (set per panel in Vigil)
   int sound_volume = 60;          // percent, set per panel in Vigil
   int sound = 0;                  // a sound waiting to be played (see Sound), taken by the speaker package if there is one
@@ -1043,14 +1045,14 @@ inline bool known_state(const std::string &s) {
 // The state changed from `from` to `to`: a sound for arming or disarming. Not for the first state after a start,
 // and not when the alarm only becomes available or unavailable.
 inline void sound_on_state(const std::string &from, const std::string &to) {
-  if (!usable() || from == to || !known_state(from) || !known_state(to)) return;
+  if (!usable() || !ctx.sound_changes || from == to || !known_state(from) || !known_state(to)) return;
   if (is_armed_state(to) && !is_armed_state(from)) request_sound(SOUND_ARMED, to == "armed_night");
   else if (to == "disarmed") request_sound(SOUND_DISARMED, from == "armed_night");
 }
 
 // Once a second: the beeps of the exit and the entry delay.
 inline void sound_tick(double now) {
-  if (!usable()) return;
+  if (!usable() || !ctx.sound_delays) return;
   const int left = seconds_left(now);
   if (left <= 0) return;
   const bool night = ctx.mode == "night";

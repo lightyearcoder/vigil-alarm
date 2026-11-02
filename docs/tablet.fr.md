@@ -14,7 +14,7 @@ Vous pouvez utiliser Vigil avec une tablette qui affiche un tableau de bord Home
    type: custom:vigil-card
    ```
 
-   Vigil charge la carte lui-même ; il n'y a rien à installer ni à ajouter comme ressource. La carte n'a aucun réglage hormis `idle_timeout` (secondes sans toucher avant qu'elle oublie un code à moitié saisi, 30 par défaut). Pour une tablette murale, utilisez une vue panneau (une seule carte) ou un tableau de bord de type kiosque, comme celui que Fully Kiosk Browser peut afficher, pour que la barre latérale soit masquée.
+   Vigil charge la carte lui-même ; il n'y a rien à installer ni à ajouter comme ressource. Vigil ajoute lui-même la carte aux ressources du tableau de bord (*Paramètres, Tableaux de bord, Ressources*), de sorte qu'elle est chargée avant que le tableau de bord ne soit dessiné. Seulement si vos tableaux de bord sont en mode YAML, ajoutez-y vous-même `/vigil_alarm_static/vigil-card.js` comme *module JavaScript*. La carte n'a aucun réglage hormis `idle_timeout` (secondes sans toucher avant qu'elle oublie un code à moitié saisi, 30 par défaut). Pour une tablette murale, utilisez une vue panneau (une seule carte) ou un tableau de bord de type kiosque, comme celui que Fully Kiosk Browser peut afficher, pour que la barre latérale soit masquée.
 4. Utilisez **HTTPS** pour Home Assistant. Avec un simple `http://`, le code circule en clair sur votre Wi-Fi.
 
 ## Ce que fait la carte

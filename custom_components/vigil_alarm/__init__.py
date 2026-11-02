@@ -17,7 +17,7 @@ from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
 from .const import ATTR_SENSOR, DOMAIN, MODES, STORAGE_VERSION, SERVICE_ACKNOWLEDGE, SERVICE_ARM, SERVICE_BYPASS, SERVICE_CHECK_CODE, SERVICE_DISARM, SERVICE_SILENCE, SERVICE_TEST_NOTIFICATION, SERVICE_TEST_SIREN, SERVICE_UNBYPASS, SERVICE_UNLOCK_PANEL, SERVICE_SELECT_PARTITION
-from .errors import VigilError, async_prepare
+from .errors import PanelRefusal, VigilError, async_prepare
 from .manager import SIGNAL_UPDATE, VigilManager
 from .migration import async_migrate_entry  # noqa: F401  (Home Assistant looks it up here)
 from homeassistant.helpers.storage import Store
@@ -56,6 +56,21 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Register the services (once, not per config entry)."""
+
+    def _register(domain: str, service: str, handler, **kwargs) -> None:
+        """Register a service; a refusal for a call from an ESPHome panel is one that panel gets the answer of."""
+
+        async def answering(call: ServiceCall):
+            try:
+                return await handler(call)
+            except VigilError as err:
+                source = call.data.get("source")
+                if call.context.user_id is None and any(e.runtime_data.panels.get(source) for e in hass.config_entries.async_loaded_entries(DOMAIN)):
+                    raise PanelRefusal.of(err) from err
+                raise
+
+        hass.services.async_register(domain, service, answering, **kwargs)
+
 
     def _verify_key(call: ServiceCall) -> None:
         """A panel that has a key proves itself with it on every call (see `PanelRegistry.verify_key`)."""
@@ -101,8 +116,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         await _control(call, "async_acknowledge")
 
     code_schema = vol.Schema({vol.Optional("code"): cv.string, vol.Optional("source"): cv.string, vol.Optional("key"): cv.string})
-    hass.services.async_register(DOMAIN, SERVICE_SILENCE, silence, schema=code_schema)
-    hass.services.async_register(DOMAIN, SERVICE_ACKNOWLEDGE, acknowledge, schema=code_schema)
+    _register(DOMAIN, SERVICE_SILENCE, silence, schema=code_schema)
+    _register(DOMAIN, SERVICE_ACKNOWLEDGE, acknowledge, schema=code_schema)
 
     async def arm(call: ServiceCall) -> None:
         _verify_key(call)
@@ -120,7 +135,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             )
 
     # Arm and disarm with the name of the control point (a panel, a keypad) in the log.
-    hass.services.async_register(
+    _register(
         DOMAIN, SERVICE_ARM, arm,
         schema=vol.Schema({
             vol.Required("mode"): vol.In(list(MODES)),
@@ -131,7 +146,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             vol.Optional("partition"): cv.string,  # the id of a partition, or "all"; none: the first partition
         }),
     )
-    hass.services.async_register(
+    _register(
         DOMAIN, SERVICE_DISARM, disarm,
         schema=code_schema.extend({vol.Optional("partition"): cv.string}),
     )
@@ -142,7 +157,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             await entry.runtime_data.async_check_code(call.data.get("code"), call.data.get("source"), call.context.user_id)
 
     # Only checks a code and changes nothing: a panel uses it to unlock the list of sensors.
-    hass.services.async_register(DOMAIN, SERVICE_CHECK_CODE, check_code, schema=code_schema)
+    _register(DOMAIN, SERVICE_CHECK_CODE, check_code, schema=code_schema)
 
     async def unlock_panel(call: ServiceCall) -> None:
         _verify_key(call)
@@ -157,7 +172,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     # The panel sends a code; Vigil checks it. A Home Assistant action, but it only opens the
     # sensor list and the information pages for a short time and never disarms.
-    hass.services.async_register(
+    _register(
         DOMAIN, SERVICE_UNLOCK_PANEL, unlock_panel,
         schema=vol.Schema({
             vol.Required("code"): cv.string,
@@ -180,7 +195,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     # A panel that can switch between partitions says which one it shows. It changes what the panel gets to see
     # (its profile) and nothing else: arming and disarming still name the partition and need a code.
-    hass.services.async_register(
+    _register(
         DOMAIN, SERVICE_SELECT_PARTITION, select_partition,
         schema=vol.Schema({vol.Required("source"): cv.string, vol.Required("partition"): cv.string, vol.Optional("key"): cv.string}),
     )
@@ -201,7 +216,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
             entry.runtime_data.selftest.record_siren_test("manual")
 
-    hass.services.async_register(
+    _register(
         DOMAIN,
         SERVICE_TEST_SIREN,
         test_siren,
@@ -212,7 +227,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             }
         ),
     )
-    hass.services.async_register(
+    _register(
         DOMAIN,
         SERVICE_TEST_NOTIFICATION,
         test_notification,
@@ -222,7 +237,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
             entry.runtime_data.handlers.report(dict(call.data))
 
-    hass.services.async_register(
+    _register(
         DOMAIN,
         "handler_report",
         handler_report,
@@ -248,7 +263,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         if not found:
             raise VigilError(translation_domain=DOMAIN, translation_key="no_channels")
 
-    hass.services.async_register(
+    _register(
         DOMAIN, "test_handlers", test_handlers, schema=vol.Schema({vol.Optional("quiet", default=True): cv.boolean})
     )
 
@@ -257,9 +272,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         for entry in hass.config_entries.async_loaded_entries(DOMAIN):
             await entry.runtime_data.async_clear_alarm_memory(call.data.get("source"))
 
-    hass.services.async_register(DOMAIN, "clear_alarm_memory", clear_alarm_memory, schema=vol.Schema({vol.Optional("source"): cv.string, vol.Optional("key"): cv.string}))
-    hass.services.async_register(DOMAIN, SERVICE_BYPASS, bypass, schema=SERVICE_SCHEMA)
-    hass.services.async_register(DOMAIN, SERVICE_UNBYPASS, unbypass, schema=SERVICE_SCHEMA)
+    _register(DOMAIN, "clear_alarm_memory", clear_alarm_memory, schema=vol.Schema({vol.Optional("source"): cv.string, vol.Optional("key"): cv.string}))
+    _register(DOMAIN, SERVICE_BYPASS, bypass, schema=SERVICE_SCHEMA)
+    _register(DOMAIN, SERVICE_UNBYPASS, unbypass, schema=SERVICE_SCHEMA)
     async_register_commands(hass)
     return True
 
@@ -356,7 +371,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> bo
 
 async def async_remove_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> None:
     """The panel stays through reloads (every panel save reloads the entry); it goes with the entry."""
-    async_remove_panel(hass)
+    await async_remove_panel(hass)
     await Store(hass, EVENTLOG_STORAGE_VERSION, f"{DOMAIN}.log.{entry.entry_id}").async_remove()
     await Store(hass, SELFTEST_STORAGE_VERSION, f"{DOMAIN}.selftest.{entry.entry_id}").async_remove()
     await Store(hass, LOCKOUT_STORAGE_VERSION, f"{DOMAIN}.lockout.{entry.entry_id}").async_remove()

@@ -125,7 +125,7 @@ A panel with a speaker beeps for what you are doing at the door:
 
 To switch it on, remove the `#` before `sound:` in your device file, so it includes `vigil_alarm/vigil-panel-sound.yaml`.
 Whether this panel beeps and how loud is set by an administrator in Vigil, per panel (Panels, the panel, *Sound on the panel* and
-*Sound volume*). The device itself gets two entities in Home Assistant: **Quiet in Night mode** (no sound when arming to, in or
+*Sound volume*, *Tones for arming and disarming* and *Beeps during the exit and entry delay* for a panel nobody operates). The device itself gets two entities in Home Assistant: **Quiet in Night mode** (no sound when arming to, in or
 leaving Night) and a **Test sound** button. A panel without the package stays silent.
 
 **Guition ESP32-S3-4848S040 (the hardware file in this folder).** The board has a small class D amplifier (NS4168) and a connector

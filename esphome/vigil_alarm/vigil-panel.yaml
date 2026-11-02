@@ -24,7 +24,7 @@ substitutions:
   # key made under Panels in Vigil). Set it in your device file, from secrets.yaml. Empty: no key is sent.
   panel_key: ""
   # The version of this firmware, reported to Vigil.
-  firmware_version: "0.7.3"
+  firmware_version: "0.7.4"
   # The width of the cards and buttons: the screen minus a margin on both sides.
   content_w: ${ screen_width | int - 24 }
   # The sizes follow the screen: the ring is a bit over a quarter of the shortest side, the keys fill the keypad.
@@ -279,6 +279,22 @@ text_sensor:
       then:
         - lambda: vigil::ctx.sound_on = vigil::truthy(x);
   - platform: homeassistant
+    id: ha_profile_sound_changes
+    entity_id: ${profile_entity}
+    attribute: sound_changes
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.sound_changes = vigil::truthy(x);
+  - platform: homeassistant
+    id: ha_profile_sound_delays
+    entity_id: ${profile_entity}
+    attribute: sound_delays
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.sound_delays = vigil::truthy(x);
+  - platform: homeassistant
     id: ha_profile_sound_volume
     entity_id: ${profile_entity}
     attribute: sound_volume
@@ -496,6 +512,7 @@ text_sensor:
         - lambda: |-
             vigil::sound_on_state(vigil::ctx.state, x);
             vigil::ctx.state = x;
+        - script.execute: announce
         - script.execute: wake_event
         - script.execute: refresh_ui
         - script.execute: route
@@ -559,21 +576,25 @@ text_sensor:
         - script.execute: refresh_ui
   # ---- what this panel tells Vigil about itself (Vigil reads these by name, see PanelRegistry)
   - platform: template
+    id: announce_hardware
     name: Hardware ID
     entity_category: diagnostic
     update_interval: 1h
     lambda: 'return std::string("${hardware_id}");'
   - platform: template
+    id: announce_capabilities
     name: Capabilities
     entity_category: diagnostic
     update_interval: 1h
     lambda: 'return std::string("lvgl,touch,${screen_width}x${screen_height}");'
   - platform: template
+    id: announce_firmware
     name: Firmware version
     entity_category: diagnostic
     update_interval: 1h
     lambda: 'return std::string("${firmware_version}");'
   - platform: template
+    id: announce_profile
     name: Profile version
     entity_category: diagnostic
     update_interval: 1h
@@ -709,6 +730,16 @@ script:
       - lvgl.widget.hide: wake_shield
       - script.execute: wake
 
+  # The panel tells Vigil who it is (hardware, capabilities, firmware, profile version) again. Besides the hourly
+  # update this happens when Home Assistant is back, and when the state of the alarm comes in (also after Vigil
+  # was reloaded), so Vigil does not show old or empty information until the next hour.
+  - id: announce
+    then:
+      - component.update: announce_hardware
+      - component.update: announce_capabilities
+      - component.update: announce_firmware
+      - component.update: announce_profile
+
   - id: set_connected
     parameters:
       up: bool
@@ -718,6 +749,11 @@ script:
             lambda: return vigil::ctx.ha_connected != up;
           then:
             - lambda: vigil::ctx.ha_connected = up;
+            - if:
+                condition:
+                  lambda: return up;
+                then:
+                  - script.execute: announce
             - script.execute: refresh_ui
             - script.execute: refresh_texts
 
@@ -1269,9 +1305,9 @@ script:
                   code: !lambda 'return id(act_code);'
                   bypass_open: !lambda 'return id(act_bypass);'
                   partition: !lambda 'return id(act_partition);'
-                on_success:
+                on_success: &action_succeeded
                   - script.execute: action_done
-                on_error:
+                on_error: &action_refused
                   - script.execute:
                       id: action_failed
                       message: !lambda 'return error;'
@@ -1286,12 +1322,9 @@ script:
                   key: ${panel_key}
                   partition: !lambda 'return id(act_partition);'
                   code: !lambda 'return id(act_code);'
-                on_success:
-                  - script.execute: action_done
-                on_error:
-                  - script.execute:
-                      id: action_failed
-                      message: !lambda 'return error;'
+                # The same answer for every action (see the first one).
+                on_success: *action_succeeded
+                on_error: *action_refused
       - if:
           condition:
             lambda: return vigil::is_unlock_action(id(pending_action));
@@ -1303,12 +1336,9 @@ script:
                   key: ${panel_key}
                   scope: !lambda 'return id(act_scope);'
                   code: !lambda 'return id(act_code);'
-                on_success:
-                  - script.execute: action_done
-                on_error:
-                  - script.execute:
-                      id: action_failed
-                      message: !lambda 'return error;'
+                # The same answer for every action (see the first one).
+                on_success: *action_succeeded
+                on_error: *action_refused
       - if:
           condition:
             lambda: return id(pending_action) == vigil::BYPASS;
@@ -1320,12 +1350,9 @@ script:
                   source: ${name}
                   key: ${panel_key}
                   code: !lambda 'return id(act_code);'
-                on_success:
-                  - script.execute: action_done
-                on_error:
-                  - script.execute:
-                      id: action_failed
-                      message: !lambda 'return error;'
+                # The same answer for every action (see the first one).
+                on_success: *action_succeeded
+                on_error: *action_refused
       - if:
           condition:
             lambda: return id(pending_action) == vigil::UNBYPASS;
@@ -1337,12 +1364,9 @@ script:
                   source: ${name}
                   key: ${panel_key}
                   code: !lambda 'return id(act_code);'
-                on_success:
-                  - script.execute: action_done
-                on_error:
-                  - script.execute:
-                      id: action_failed
-                      message: !lambda 'return error;'
+                # The same answer for every action (see the first one).
+                on_success: *action_succeeded
+                on_error: *action_refused
 
   - id: action_done
     then:

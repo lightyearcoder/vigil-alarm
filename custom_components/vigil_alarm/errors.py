@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ServiceValidationError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
 from .languages import DEFAULT_LANGUAGE, language_of
 from .messages import MODE_NAMES
@@ -40,12 +40,10 @@ async def async_prepare(hass: HomeAssistant) -> None:
             _MESSAGES[language] = await hass.async_add_executor_job(_read, language)
 
 
-class VigilError(ServiceValidationError):
+class VigilError(HomeAssistantError):
     """A refusal whose message is in the language of Home Assistant.
 
-    It has to be a ServiceValidationError: only for that kind (and a missing service) the ESPHome integration sends the
-    answer back to the panel, so a wrong code reaches the panel and it can show it. The websocket puts "Validation
-    error: " before the text for it; the card takes that off again."""
+    A plain HomeAssistantError: a standard card shows the text as it is, without "Validation error: " before it."""
 
     def __str__(self) -> str:
         if self._message:
@@ -65,3 +63,19 @@ class VigilError(ServiceValidationError):
                     self._message = text
                 return self._message
         return super().__str__()
+
+
+class PanelRefusal(VigilError, ServiceValidationError):
+    """The same refusal for a call that comes from an ESPHome panel.
+
+    The ESPHome integration only sends the answer back to the panel for a ServiceValidationError (and a missing
+    service), so a wrong code reaches the panel and it can show it. The text and the translation key stay the same."""
+
+    @classmethod
+    def of(cls, err: VigilError) -> PanelRefusal:
+        return cls(
+            str(err),
+            translation_domain=err.translation_domain,
+            translation_key=err.translation_key,
+            translation_placeholders=err.translation_placeholders,
+        )

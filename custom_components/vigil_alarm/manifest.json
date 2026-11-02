@@ -2,6 +2,7 @@
   "domain": "vigil_alarm",
   "name": "Vigil Alarm",
   "after_dependencies": [
+    "lovelace",
     "trace"
   ],
   "codeowners": [
@@ -20,5 +21,5 @@
   "issue_tracker": "https://github.com/lightyearcoder/vigil-alarm/issues",
   "requirements": [],
   "single_config_entry": true,
-  "version": "0.7.3"
+  "version": "0.7.4"
 }

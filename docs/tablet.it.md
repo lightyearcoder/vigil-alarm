@@ -14,7 +14,7 @@ Puoi usare Vigil con un tablet che mostra una dashboard di Home Assistant, al po
    type: custom:vigil-card
    ```
 
-   Vigil carica la scheda da sé; non c'è nulla da installare né da aggiungere come risorsa. La scheda non ha impostazioni tranne `idle_timeout` (secondi senza tocco prima che dimentichi un codice digitato a metà, predefinito 30). Per un tablet a parete usa una vista pannello (scheda singola) o una dashboard in stile kiosk, come quella che può mostrare Fully Kiosk Browser, così la barra laterale è nascosta.
+   Vigil carica la scheda da sé; non c'è nulla da installare né da aggiungere come risorsa. Vigil aggiunge da sé la scheda alle risorse della dashboard (*Impostazioni, Dashboard, Risorse*), così è caricata prima che la dashboard venga disegnata. Solo se le tue dashboard sono in modalità YAML, aggiungi tu `/vigil_alarm_static/vigil-card.js` lì come *modulo JavaScript*. La scheda non ha impostazioni tranne `idle_timeout` (secondi senza tocco prima che dimentichi un codice digitato a metà, predefinito 30). Per un tablet a parete usa una vista pannello (scheda singola) o una dashboard in stile kiosk, come quella che può mostrare Fully Kiosk Browser, così la barra laterale è nascosta.
 4. Usa **HTTPS** per Home Assistant. Con un semplice `http://` il codice viaggia leggibile sul tuo Wi-Fi.
 
 ## Cosa fa la scheda

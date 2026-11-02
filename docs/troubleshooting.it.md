@@ -66,7 +66,7 @@ Cerca qui sotto ciò che vedi. Per ogni sintomo: le cause probabili, dove contro
 
 ## Un rifiuto è in una lingua diversa da quella attesa
 
-Quando una scheda standard di Home Assistant (per esempio il riquadro con i pulsanti di inserimento) mostra un rifiuto, il testo è nella lingua **impostata in Home Assistant** (*Impostazioni, Sistema, Generale*), non in quella del tuo profilo, e senza nome utente: *La modalità Personalizzato non può essere inserita da lei.* Vigil ha i testi in sei lingue (inglese per ogni altra). La scheda Vigil e la tastiera touch mostrano il rifiuto nella lingua della tastiera. Home Assistant stesso mette *Validation error:* davanti al testo sulle sue schede; la scheda Vigil lo toglie.
+Quando una scheda standard di Home Assistant (per esempio il riquadro con i pulsanti di inserimento) mostra un rifiuto, il testo è nella lingua **impostata in Home Assistant** (*Impostazioni, Sistema, Generale*), non in quella del tuo profilo, e senza nome utente: *La modalità Personalizzato non può essere inserita da lei.* Vigil ha i testi in sei lingue (inglese per ogni altra). La scheda Vigil e la tastiera touch mostrano il rifiuto nella lingua della tastiera.
 
 ## Le entità hanno nomi diversi da quelli attesi
 
@@ -78,7 +78,7 @@ Ricarica il browser forzando (Ctrl+F5) e controlla che l'integrazione sia in ese
 
 ## La dashboard mostra *Errore di configurazione* per la scheda Vigil
 
-Premi prima F5. Se ritorna, apri la dashboard in modalità modifica: il testo sotto la scheda rossa dice cosa non va. Aggiungi `debug: true` alla scheda, ricarica e apri la console del browser (F12, scheda *Console*, filtro `vigil`). La riga `VIGIL-CARD v…` dice che la scheda è caricata; le righe con `[vigil-card]` dicono cosa fa e cosa va storto. Senza la riga `VIGIL-CARD` il file non è stato caricato: cerca `vigil-card.js` nella scheda *Rete*.
+Premi prima F5. Se sotto la scheda rossa c'è scritto *Custom element doesn't exist: vigil-card*, lo script della scheda non è stato caricato: apri *Impostazioni, Dashboard, ⋮, Risorse* e controlla che `/vigil_alarm_static/vigil-card.js` ci sia una sola volta come *modulo JavaScript* (Vigil lo aggiunge da sé; con dashboard in modalità YAML aggiungilo a mano e rimuovi una seconda copia). Altrimenti, apri la dashboard in modalità modifica: il testo sotto la scheda rossa dice cosa non va. Aggiungi `debug: true` alla scheda, ricarica e apri la console del browser (F12, scheda *Console*, filtro `vigil`). La riga `VIGIL-CARD v…` dice che la scheda è caricata; le righe con `[vigil-card]` dicono cosa fa e cosa va storto. Senza la riga `VIGIL-CARD` il file non è stato caricato: cerca `vigil-card.js` nella scheda *Rete*.
 
 ## Un codice errato sul pannello ESPHome non mostra nulla
 

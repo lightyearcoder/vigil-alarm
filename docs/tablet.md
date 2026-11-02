@@ -12,7 +12,7 @@ You can operate Vigil with a tablet that shows a Home Assistant dashboard, inste
    type: custom:vigil-card
    ```
 
-   Vigil loads the card by itself; there is nothing to install or add as a resource. The card takes two settings: `idle_timeout` (seconds without touch before it forgets a half typed code, default 30) and `debug: true` (the card tells what it does in the browser console, filter on `vigil-card`; use it when the dashboard shows *Configuration error* for the card. At start the console always shows `VIGIL-CARD v…`; when that line is missing the card did not load). For a wall tablet use a panel (single card) view, or a kiosk style dashboard such as the one Fully Kiosk Browser can show, so the sidebar is hidden.
+   Vigil loads the card by itself; there is nothing to install or add as a resource. Vigil adds the card to the dashboard resources itself (*Settings, Dashboards, Resources*), so it is loaded before the dashboard is drawn. Only if your dashboards are in YAML mode, add `/vigil_alarm_static/vigil-card.js` there as a *JavaScript module* yourself. The card takes two settings: `idle_timeout` (seconds without touch before it forgets a half typed code, default 30) and `debug: true` (the card tells what it does in the browser console, filter on `vigil-card`; use it when the dashboard shows *Configuration error* for the card. At start the console always shows `VIGIL-CARD v…`; when that line is missing the card did not load). For a wall tablet use a panel (single card) view, or a kiosk style dashboard such as the one Fully Kiosk Browser can show, so the sidebar is hidden.
 4. Use **HTTPS** for Home Assistant. On plain `http://` the code travels readable over your Wi-Fi.
 
 ## What the card does

@@ -66,7 +66,7 @@ Such unten, was du siehst. Zu jedem Symptom: die wahrscheinlichen Ursachen, wo d
 
 ## Eine Ablehnung steht in einer anderen Sprache als erwartet
 
-Zeigt eine Standardkarte von Home Assistant (zum Beispiel die Kachel mit den Scharfschalt-Tasten) eine Ablehnung, steht der Text in der Sprache, auf die **Home Assistant eingestellt ist** (*Einstellungen, System, Allgemein*), nicht in der Sprache deines Profils, und ohne Benutzernamen: *Der Modus Benutzerdefiniert darf von Ihnen nicht scharfgeschaltet werden.* Vigil hat die Texte in sechs Sprachen (Englisch für jede andere). Die Vigil-Karte und das Touch-Bedienteil zeigen die Ablehnung in der Sprache des Bedienteils. Home Assistant selbst setzt auf seinen eigenen Karten *Validation error:* vor den Text; die Vigil-Karte entfernt das.
+Zeigt eine Standardkarte von Home Assistant (zum Beispiel die Kachel mit den Scharfschalt-Tasten) eine Ablehnung, steht der Text in der Sprache, auf die **Home Assistant eingestellt ist** (*Einstellungen, System, Allgemein*), nicht in der Sprache deines Profils, und ohne Benutzernamen: *Der Modus Benutzerdefiniert darf von Ihnen nicht scharfgeschaltet werden.* Vigil hat die Texte in sechs Sprachen (Englisch für jede andere). Die Vigil-Karte und das Touch-Bedienteil zeigen die Ablehnung in der Sprache des Bedienteils.
 
 ## Die Entitäten heißen anders als erwartet
 
@@ -78,7 +78,7 @@ Lade den Browser neu (Strg+F5) und prüfe unter *Geräte & Dienste*, dass die In
 
 ## Das Dashboard zeigt *Konfigurationsfehler* bei der Vigil-Karte
 
-Zuerst F5 drücken. Kommt es wieder, das Dashboard im Bearbeitungsmodus öffnen: Der Text unter der roten Karte sagt, was nicht stimmt. `debug: true` in die Karte schreiben, neu laden und die Browserkonsole öffnen (F12, Reiter *Konsole*, Filter `vigil`). Die Zeile `VIGIL-CARD v…` sagt, dass die Karte geladen wurde; Zeilen mit `[vigil-card]` sagen, was sie tut und was schiefgeht. Fehlt die Zeile `VIGIL-CARD`, wurde die Datei nicht geladen: im Reiter *Netzwerk* nach `vigil-card.js` suchen.
+Zuerst F5 drücken. Steht unter der roten Karte *Custom element doesn't exist: vigil-card*, wurde das Skript der Karte nicht geladen: Öffne *Einstellungen, Dashboards, ⋮, Ressourcen* und prüfe, dass `/vigil_alarm_static/vigil-card.js` einmal als *JavaScript-Modul* dort steht (Vigil trägt es selbst ein; bei Dashboards im YAML-Modus von Hand hinzufügen und eine zweite Kopie entfernen). Sonst, das Dashboard im Bearbeitungsmodus öffnen: Der Text unter der roten Karte sagt, was nicht stimmt. `debug: true` in die Karte schreiben, neu laden und die Browserkonsole öffnen (F12, Reiter *Konsole*, Filter `vigil`). Die Zeile `VIGIL-CARD v…` sagt, dass die Karte geladen wurde; Zeilen mit `[vigil-card]` sagen, was sie tut und was schiefgeht. Fehlt die Zeile `VIGIL-CARD`, wurde die Datei nicht geladen: im Reiter *Netzwerk* nach `vigil-card.js` suchen.
 
 ## Ein falscher Code am ESPHome-Bedienteil zeigt nichts
 

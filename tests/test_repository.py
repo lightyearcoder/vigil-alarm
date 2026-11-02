@@ -105,7 +105,7 @@ def test_the_vigil_card_is_shipped_and_registered():
     card = (ROOT / "custom_components" / "vigil_alarm" / "frontend" / "vigil-card.js").read_text()
     assert 'customElements.define("vigil-card"' in card and "vigil_alarm/tablet" in card
     panel = (ROOT / "custom_components" / "vigil_alarm" / "panel.py").read_text()
-    assert "vigil-card.js" in panel and "add_extra_js_url" in panel  # loaded for every user, not only administrators
+    assert "vigil-card.js" in panel and "LOVELACE_DATA" in panel  # a dashboard resource: loaded for every user, before the dashboard is drawn
 
 
 def test_the_card_keypad_can_be_used_with_a_real_keyboard():

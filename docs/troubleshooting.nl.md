@@ -64,7 +64,7 @@ Zoek hieronder wat je ziet. Per verschijnsel staan de meest waarschijnlijke oorz
 
 ## Een weigering staat in een andere taal dan ik verwachtte
 
-Toont een standaardkaart van Home Assistant (bijvoorbeeld de tegel met de inschakelknoppen) een weigering, dan staat de tekst in de taal waarop **Home Assistant is ingesteld** (*Instellingen, Systeem, Algemeen*), niet in de taal van je profiel, en zonder gebruikersnaam: *Modus Aangepast is door u niet toegestaan om in te schakelen.* Vigil heeft de teksten in zes talen (Engels voor een andere). De Vigil-kaart en het aanraakpaneel tonen de weigering in de taal van het paneel. Home Assistant zelf zet *Validation error:* voor de tekst op zijn eigen kaarten; de Vigil-kaart haalt dat eraf.
+Toont een standaardkaart van Home Assistant (bijvoorbeeld de tegel met de inschakelknoppen) een weigering, dan staat de tekst in de taal waarop **Home Assistant is ingesteld** (*Instellingen, Systeem, Algemeen*), niet in de taal van je profiel, en zonder gebruikersnaam: *Modus Aangepast is door u niet toegestaan om in te schakelen.* Vigil heeft de teksten in zes talen (Engels voor een andere). De Vigil-kaart en het aanraakpaneel tonen de weigering in de taal van het paneel.
 
 ## De entiteiten heten anders dan ik verwachtte
 
@@ -76,7 +76,7 @@ Ververs de browser hard (Ctrl+F5) en kijk of de integratie actief is onder *Appa
 
 ## Het dashboard toont *Configuratiefout* bij de Vigil-kaart
 
-Druk eerst op F5. Komt het terug, open dan het dashboard in bewerkmodus: de tekst onder de rode kaart zegt wat er mis is. Zet `debug: true` bij de kaart, laad opnieuw en open de browserconsole (F12, tabblad *Console*, filter `vigil`). De regel `VIGIL-CARD v…` zegt dat de kaart geladen is; regels met `[vigil-card]` zeggen wat de kaart doet en wat er misgaat. Staat de regel `VIGIL-CARD` er niet, dan is het bestand niet geladen: zoek `vigil-card.js` op het tabblad *Netwerk*.
+Druk eerst op F5. Staat onder de rode kaart *Custom element doesn't exist: vigil-card*, dan is het script van de kaart niet geladen: open *Instellingen, Dashboards, ⋮, Resources* en controleer dat `/vigil_alarm_static/vigil-card.js` er één keer staat als *JavaScript-module* (Vigil zet het er zelf neer; voeg het bij YAML-dashboards met de hand toe en verwijder een tweede kopie). Anders, open dan het dashboard in bewerkmodus: de tekst onder de rode kaart zegt wat er mis is. Zet `debug: true` bij de kaart, laad opnieuw en open de browserconsole (F12, tabblad *Console*, filter `vigil`). De regel `VIGIL-CARD v…` zegt dat de kaart geladen is; regels met `[vigil-card]` zeggen wat de kaart doet en wat er misgaat. Staat de regel `VIGIL-CARD` er niet, dan is het bestand niet geladen: zoek `vigil-card.js` op het tabblad *Netwerk*.
 
 ## Een foute code op het ESPHome-paneel toont niets
 
