@@ -1,0 +1,452 @@
+# What Home Assistant tells the panel: the profile Vigil makes for it, the partitions and the alarm; and what the
+# panel tells Vigil about itself.
+# Part of vigil-panel.yaml (included by it): the same for every panel, nothing to change here.
+
+# ----------------------------------------------------------------- what Home Assistant tells us
+text_sensor:
+  # ---- the profile of this panel (a sensor Vigil makes; its state is the version of the profile)
+  - platform: homeassistant
+    id: ha_profile
+    entity_id: ${profile_entity}
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.profile_version = vigil::to_int(x, 0);
+        - script.execute: refresh_texts
+  - platform: homeassistant
+    id: ha_profile_language
+    entity_id: ${profile_entity}
+    attribute: language
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.lang = vigil::parse_language(x);
+        - script.execute: refresh_texts
+  - platform: homeassistant
+    id: ha_profile_blocked
+    entity_id: ${profile_entity}
+    attribute: blocked
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.blocked = vigil::truthy(x);
+        # Blocked in Vigil: whatever was open (keypad, sensors, info) goes away, only the message stays.
+        - if:
+            condition:
+              lambda: return vigil::ctx.blocked;
+            then:
+              - script.execute: reset_ui
+        - script.execute: refresh_ui
+  # Locked after wrong codes: Vigil tells how many seconds are left (empty: not locked), the panel counts down itself.
+  - platform: homeassistant
+    id: ha_profile_lock_left
+    entity_id: ${profile_entity}
+    attribute: lock_left
+    internal: true
+    on_value:
+      then:
+        - lambda: |-
+            const int left = vigil::to_int(x, 0);
+            vigil::ctx.lock_end = (left > 0 && !std::isnan(vigil::ctx.now)) ? vigil::ctx.now + left : NAN;
+        # Whatever is open (keypad, sensors, info) has nothing left to do while the panel is locked.
+        - if:
+            condition:
+              lambda: return vigil::locked_now();
+            then:
+              - script.execute: reset_ui
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_lock_permanent
+    entity_id: ${profile_entity}
+    attribute: lock_permanent
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.lock_permanent = vigil::truthy(x);
+        - if:
+            condition:
+              lambda: return vigil::locked_now();
+            then:
+              - script.execute: reset_ui
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_modes
+    entity_id: ${profile_entity}
+    attribute: modes_mask
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.modes_mask = vigil::to_int(x, 0);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_can_disarm
+    entity_id: ${profile_entity}
+    attribute: can_disarm
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.can_disarm = vigil::truthy(x);
+        - script.execute: refresh_ui
+        - script.execute: route
+  - platform: homeassistant
+    id: ha_profile_can_bypass
+    entity_id: ${profile_entity}
+    attribute: can_bypass
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.can_bypass = vigil::truthy(x);
+        - script.execute: refresh_sensors
+  - platform: homeassistant
+    id: ha_profile_sensor_list
+    entity_id: ${profile_entity}
+    attribute: sensor_list
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.sensor_list = vigil::parse_sensor_list(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_unlock_seconds
+    entity_id: ${profile_entity}
+    attribute: unlock_seconds
+    internal: true
+    on_value:
+      then:
+        - lambda: id(unlock_ms) = vigil::to_int(x, 60) * 1000;
+  # The speaker, if the panel has one (the sound package): on or off and how loud, as the administrator set it in Vigil.
+  - platform: homeassistant
+    id: ha_profile_sound
+    entity_id: ${profile_entity}
+    attribute: sound
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.sound_on = vigil::truthy(x);
+  - platform: homeassistant
+    id: ha_profile_sound_changes
+    entity_id: ${profile_entity}
+    attribute: sound_changes
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.sound_changes = vigil::truthy(x);
+  - platform: homeassistant
+    id: ha_profile_sound_delays
+    entity_id: ${profile_entity}
+    attribute: sound_delays
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.sound_delays = vigil::truthy(x);
+  - platform: homeassistant
+    id: ha_profile_sound_volume
+    entity_id: ${profile_entity}
+    attribute: sound_volume
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.sound_volume = std::max(10, std::min(100, vigil::to_int(x, 60)));
+  - platform: homeassistant
+    id: ha_profile_screen_off_seconds
+    entity_id: ${profile_entity}
+    attribute: screen_off_seconds
+    internal: true
+    on_value:
+      then:
+        - lambda: |-
+            int seconds = vigil::to_int(x, 30);
+            id(screen_off_ms) = (seconds < 5 ? 5 : seconds) * 1000;
+  - platform: homeassistant
+    id: ha_profile_screen_off_on_alarm
+    entity_id: ${profile_entity}
+    attribute: screen_off_on_alarm
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.screen_off_on_alarm = vigil::truthy(x);
+  - platform: homeassistant
+    id: ha_profile_code_arm_required
+    entity_id: ${profile_entity}
+    attribute: code_arm_required
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.code_arm_required = vigil::truthy(x);
+  - platform: homeassistant
+    id: ha_profile_has_admin_code
+    entity_id: ${profile_entity}
+    attribute: has_admin_code
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.has_admin_code = vigil::truthy(x);
+  - platform: homeassistant
+    id: ha_profile_unlocked
+    entity_id: ${profile_entity}
+    attribute: unlocked
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.profile_unlocked = vigil::truthy(x);
+        - if:
+            condition:
+              lambda: return !vigil::ctx.profile_unlocked;
+            then:
+              - script.execute: lock_sensors
+            else:
+              - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_open_total
+    entity_id: ${profile_entity}
+    attribute: open_count
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.open_total = vigil::to_int(x, 0);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_faults_total
+    entity_id: ${profile_entity}
+    attribute: faults_count
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.faults_total = vigil::to_int(x, 0);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_problems
+    entity_id: ${profile_entity}
+    attribute: problems_count
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.problems = vigil::to_int(x, 0);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_open_now
+    entity_id: ${profile_entity}
+    attribute: open_now_text
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.open_now = vigil::clean(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_bypassed
+    entity_id: ${profile_entity}
+    attribute: bypassed_text
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.bypassed = vigil::clean(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_last_alarm
+    entity_id: ${profile_entity}
+    attribute: last_alarm_text
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.last_alarm = vigil::clean(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_open_mode
+    entity_id: ${profile_entity}
+    attribute: open_sensors_text
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.open_mode = vigil::clean(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_faults
+    entity_id: ${profile_entity}
+    attribute: faults_text
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.faults = vigil::clean(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_profile_sensors
+    entity_id: ${profile_entity}
+    attribute: sensors
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.sensors = vigil::clean(x);
+        - script.execute: refresh_ui
+        - script.execute: refresh_sensors
+  # The always-on sensors (fire, gas, water ...) belong to no partition: a list of their own, a choice next to the partitions
+  - platform: homeassistant
+    id: ha_profile_sensors_always
+    entity_id: ${profile_entity}
+    attribute: sensors_always
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.sensors_always = vigil::clean(x);
+        - script.execute: refresh_ui
+        - script.execute: refresh_sensors
+  # ---- the partitions this panel may use, and the one on the screen
+  - platform: homeassistant
+    id: ha_partition_list
+    entity_id: ${profile_entity}
+    attribute: partition_list
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.partition_list = vigil::clean(x);
+        - script.execute: refresh_parts
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_partition_selected
+    entity_id: ${profile_entity}
+    attribute: selected_partition
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.sel = vigil::clean(x);
+        - script.execute: refresh_parts
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_partition_default
+    entity_id: ${profile_entity}
+    attribute: default_partition
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.default_part = vigil::clean(x);
+  - platform: homeassistant
+    id: ha_partition_return
+    entity_id: ${profile_entity}
+    attribute: partition_return_seconds
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.return_seconds = vigil::to_int(x, 0);
+  - platform: homeassistant
+    id: ha_partition_total
+    entity_id: ${profile_entity}
+    attribute: partition_total
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.part_total = vigil::to_int(x, 1);
+        - script.execute: refresh_parts
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_view_mixed
+    entity_id: ${profile_entity}
+    attribute: view_mixed
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.mixed = vigil::truthy(x);
+        - script.execute: refresh_ui
+  # ---- the alarm itself: of the partition on the screen, or of all of them together. Vigil puts it in the profile
+  # (view_*), so the panel needs no alarm entity per partition and follows the choice made on the screen.
+  - platform: homeassistant
+    id: ha_state
+    entity_id: ${profile_entity}
+    attribute: view_state
+    internal: true
+    on_value:
+      then:
+        - lambda: |-
+            vigil::sound_on_state(vigil::ctx.state, x);
+            vigil::ctx.state = x;
+        - script.execute: announce
+        - script.execute: wake_event
+        - script.execute: refresh_ui
+        - script.execute: route
+  - platform: homeassistant
+    id: ha_mode
+    entity_id: ${profile_entity}
+    attribute: view_mode
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.mode = vigil::clean(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_delay_left
+    entity_id: ${profile_entity}
+    attribute: view_delay_left
+    internal: true
+    on_value:
+      then:
+        # Seconds left, counted from the clock of this panel: a clock that is off does not matter.
+        - lambda: |-
+            auto t = id(ha_time).now();
+            double left = vigil::parse_number(x);
+            vigil::ctx.delay_end = (std::isnan(left) || !t.is_valid()) ? NAN : (double) t.timestamp + left;
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_changed_by
+    entity_id: ${profile_entity}
+    attribute: view_changed_by
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.changed_by = vigil::clean(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_changed_via
+    entity_id: ${profile_entity}
+    attribute: view_changed_via
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.changed_via = vigil::clean(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_cause
+    entity_id: ${profile_entity}
+    attribute: view_cause
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.cause = vigil::clean(x);
+        - script.execute: refresh_ui
+  - platform: homeassistant
+    id: ha_cause_sensor
+    entity_id: ${profile_entity}
+    attribute: view_cause_sensor
+    internal: true
+    on_value:
+      then:
+        - lambda: vigil::ctx.cause_sensor = vigil::clean(x);
+        - script.execute: refresh_ui
+  # ---- what this panel tells Vigil about itself (Vigil reads these by name, see PanelRegistry)
+  - platform: template
+    id: announce_hardware
+    name: Hardware ID
+    entity_category: diagnostic
+    update_interval: 1h
+    lambda: 'return std::string("${hardware_id}");'
+  - platform: template
+    id: announce_capabilities
+    name: Capabilities
+    entity_category: diagnostic
+    update_interval: 1h
+    lambda: 'return std::string("lvgl,touch,${screen_width}x${screen_height}");'
+  - platform: template
+    id: announce_firmware
+    name: Firmware version
+    entity_category: diagnostic
+    update_interval: 1h
+    lambda: 'return std::string("${firmware_version}");'
+  - platform: template
+    id: announce_profile
+    name: Profile version
+    entity_category: diagnostic
+    update_interval: 1h
+    lambda: 'return std::to_string(vigil::PROFILE_VERSION);'
+  - platform: wifi_info
+    ip_address:
+      id: wifi_ip
+      internal: true
+      on_value:
+        - script.execute: refresh_texts

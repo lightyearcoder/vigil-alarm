@@ -10,6 +10,12 @@ import pytest
 from urllib.parse import parse_qs, unquote, urlparse
 
 ROOT = pathlib.Path(__file__).parents[1]
+
+
+def panel_js() -> str:
+    """The panel script: vigil-panel.js and its parts (frontend/panel/*.js), as one text."""
+    frontend = ROOT / "custom_components" / "vigil_alarm" / "frontend"
+    return "\n".join(p.read_text(encoding="utf-8") for p in [frontend / "vigil-panel.js", *sorted((frontend / "panel").glob("*.js"))])
 DOCS = [ROOT / "README.md", ROOT / "docs" / "user-guide.md", ROOT / "docs" / "user-guide.nl.md",
         *(ROOT / "docs" / f"{name}.{lang}.md" for name in ("user-guide", "tablet", "troubleshooting") for lang in ("de", "fr", "it", "es")),
         ROOT / "docs" / "installation-and-testing.md", ROOT / "docs" / "installation-and-testing.nl.md",
@@ -233,8 +239,31 @@ def test_the_panel_texts_are_one_file_per_language_and_are_served():
         assert "export default {" in text and text.rstrip().endswith("};"), lang
     assert f"`{panel_module.TEXTS_URL}/" in js  # the address the panel imports from is the one that is served
     assert "FINGERPRINT" in js  # and it carries the same ?v= as the panel itself
+    assert f"`{panel_module.PARTS_URL}/" in js  # the same for the parts of the script (frontend/panel/*.js)
     digest_before = panel_module._asset_version("x")
     assert digest_before == panel_module._asset_version("x") and digest_before.startswith("x-")
+
+
+def test_the_parts_of_the_panel_script_are_all_loaded_and_served():
+    """vigil-panel.js loads its parts (methods of the class) by name: every part in the folder is in the list and the
+    other way round, each is a function that gets the helpers, and a change in a part changes the script address."""
+    from custom_components.vigil_alarm import panel as panel_module
+
+    frontend = ROOT / "custom_components" / "vigil_alarm" / "frontend"
+    main = (frontend / "vigil-panel.js").read_text(encoding="utf-8")
+    listed = re.findall(r'"(\w+)"', re.search(r"const PARTS = \[([^\]]+)\]", main).group(1))
+    assert sorted(listed) == sorted(p.stem for p in (frontend / "panel").glob("*.js")) and listed
+    for name in listed:
+        text = (frontend / "panel" / f"{name}.js").read_text(encoding="utf-8")
+        assert "export default function install(core) {" in text, name
+        assert "innerHTML" not in text, name
+    core = re.search(r"const CORE = \{([^}]*)\}", main).group(1)
+    for name in listed:  # what a part takes from the helpers is in what the main file hands over
+        taken = re.search(r"const \{([^}]*)\} = core;", (frontend / "panel" / f"{name}.js").read_text(encoding="utf-8")).group(1)
+        for word in re.findall(r"[\w$]+", taken):
+            assert re.search(rf"\b{re.escape(word)}\b", core), (name, word)
+    assert "PARTS_READY" in main and 'getOwnPropertyDescriptors' in main
+    assert len(main.splitlines()) < 700
 
 
 def test_the_panel_script_has_no_texts_of_its_own():
@@ -243,7 +272,7 @@ def test_the_panel_script_has_no_texts_of_its_own():
     frontend = pathlib.Path(__file__).parent.parent / "custom_components" / "vigil_alarm" / "frontend"
     js = (frontend / "vigil-panel.js").read_text(encoding="utf-8")
     assert js.count("const TXT = {};") == 1 and "TEXTS_READY" in js
-    assert len(js.splitlines()) < 2500
+    assert len(js.splitlines()) < 700
 
 
 def test_every_version_field_says_the_same():
@@ -289,13 +318,13 @@ def test_the_panel_script_is_usable_the_moment_it_has_loaded():
         text = (ROOT / "custom_components/vigil_alarm/frontend" / name).read_text(encoding="utf-8")
         top_level = [l for l in text.splitlines() if re.match(r"(await\b|(const|let|var)\s[^=]*=\s*await\b)", l)]
         assert top_level == [], f"{name} waits at the top level: {top_level}"
-    panel = (ROOT / "custom_components/vigil_alarm/frontend/vigil-panel.js").read_text(encoding="utf-8")
+    panel = panel_js()
     assert "hasOwnProperty.call(this, name)" in panel  # properties set before the element was defined are set again
 
 
 def test_the_overview_tiles_have_one_column_per_kind():
     # The partition tiles and the count tiles share the columns of .cols8, one per kind (one row on a wide screen).
-    js = (ROOT / "custom_components/vigil_alarm/frontend/vigil-panel.js").read_text(encoding="utf-8")
+    js = panel_js()
     kinds = re.search(r"const KINDS = \[([^\]]*)\]", js).group(1)
     assert len(re.findall(r'"[^"]+"', kinds)) == 8
     assert "repeat(8, minmax(0, 1fr))" in js
@@ -314,7 +343,7 @@ def test_the_card_keeps_the_unlock_while_home_assistant_is_still_answering():
 def test_every_tab_of_the_admin_panel_has_an_address_of_its_own():
     # 0.6.10: /vigil_alarm/<tab>, so back and forward switch between tabs (checked in a test browser: click, back, forward,
     # a route from Home Assistant, an unknown tab = overview). Every tab change goes through one function.
-    panel = (ROOT / "custom_components" / "vigil_alarm" / "frontend" / "vigil-panel.js").read_text()
+    panel = panel_js()
     assert "history.pushState(null" in panel and '"location-changed"' in panel and 'addEventListener("popstate"' in panel
     assert "removeEventListener(\"popstate\"" in panel and "set route(route)" in panel
     assert "this._tab = " not in panel.replace("this._tab = tab;", "").replace('this._tab = "overview";', "")
@@ -322,7 +351,7 @@ def test_every_tab_of_the_admin_panel_has_an_address_of_its_own():
 
 def test_find_sensors_shows_the_title_of_a_sensor_group():
     """A sensor group item has a `title` (not a `name`): the tick in Find sensors must show it."""
-    js = (ROOT / "custom_components/vigil_alarm/frontend/vigil-panel.js").read_text(encoding="utf-8")
+    js = panel_js()
     start = js.index("const groupPicker")
     block = js[start : js.index("const build = () =>", start)]
     assert "g.title" in block and "g.name" not in block
@@ -331,7 +360,7 @@ def test_find_sensors_shows_the_title_of_a_sensor_group():
 
 def test_the_lists_in_the_panel_are_sorted_by_name():
     """The tables and the pick lists are sorted by name; only the partitions keep their order (the first is the alarm itself)."""
-    js = (ROOT / "custom_components/vigil_alarm/frontend/vigil-panel.js").read_text(encoding="utf-8")
+    js = panel_js()
     assert "_byName(" in js
     shown = js[js.index("  _shown(kind) {") :][:400]
     assert 'kind === "partition") return this._partitionItems()' in shown and "sort(this._byName" in shown

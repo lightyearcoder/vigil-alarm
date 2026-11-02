@@ -1,0 +1,240 @@
+# The screen: the page with the keypad.
+# Part of vigil-panel.yaml (included by it): the same for every panel, nothing to change here.
+
+lvgl:
+  pages:
+    # ================================================================ KEYPAD
+    - id: page_keypad
+      bg_color: 0x0E1116
+      scrollable: false
+      widgets:
+        - button:
+            id: btn_kp_cancel
+            width: 48
+            height: 48
+            align: TOP_LEFT
+            x: 12
+            y: 8
+            radius: 24
+            bg_color: 0x151A22
+            border_width: 1
+            border_color: 0x232A35
+            shadow_width: 0
+            on_click:
+              then:
+                - script.execute: close_keypad
+            widgets:
+              - label:
+                  text: "\U000F0141"
+                  text_font: font_icons_30
+                  text_color: 0xC5CCD8
+                  align: CENTER
+        - label:
+            id: lbl_kp_title
+            text: ""
+            text_font: montserrat_28
+            text_color: 0xE8ECF2
+            long_mode: DOT
+            width: ${ screen_width | int - 140 }
+            text_align: CENTER
+            align: TOP_MID
+            y: 14
+        - textarea:
+            id: pin_text
+            width: ${ screen_width | int - 120 }
+            height: 60
+            align: TOP_MID
+            y: 62
+            one_line: true
+            password_mode: true
+            max_length: 12
+            text_font: montserrat_40
+            text_color: 0xFFFFFF  # without this the stars are dark grey on a dark background
+            text_align: CENTER
+            bg_color: 0x151A22
+            border_width: 1
+            border_color: 0x232A35
+            radius: 18
+            placeholder_text: ""
+        - label:
+            id: lbl_kp_err
+            text: ""
+            text_font: montserrat_14
+            text_color: 0x8A94A6
+            text_align: CENTER
+            long_mode: WRAP
+            width: ${ screen_width | int - 40 }
+            align: TOP_MID
+            y: 130
+        - obj:
+            id: keypad
+            width: ${content_w}
+            height: ${keypad_h}
+            align: BOTTOM_MID
+            y: -10
+            bg_opa: TRANSP
+            border_width: 0
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: ROW_WRAP
+              pad_row: 10
+              pad_column: 10
+            widgets:
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "1"}}]}
+                  widgets:
+                    - label: {text: "1", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "2"}}]}
+                  widgets:
+                    - label: {text: "2", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "3"}}]}
+                  widgets:
+                    - label: {text: "3", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "4"}}]}
+                  widgets:
+                    - label: {text: "4", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "5"}}]}
+                  widgets:
+                    - label: {text: "5", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "6"}}]}
+                  widgets:
+                    - label: {text: "6", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "7"}}]}
+                  widgets:
+                    - label: {text: "7", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "8"}}]}
+                  widgets:
+                    - label: {text: "8", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "9"}}]}
+                  widgets:
+                    - label: {text: "9", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: delete_digit}]}
+                  widgets:
+                    - label: {text: "\U000F0B5C", text_font: font_icons_30, text_color: 0xC5CCD8, align: CENTER}
+              - button:
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x1E242D
+                  border_width: 1
+                  border_color: 0x2C3542
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x2A3340
+                  on_press: {then: [{script.execute: {id: add_digit, d: "0"}}]}
+                  widgets:
+                    - label: {text: "0", text_font: montserrat_40, text_color: 0xE8ECF2, align: CENTER}
+              - button:
+                  id: key_ok
+                  width: ${key_w}
+                  height: ${key_h}
+                  radius: 18
+                  bg_color: 0x4CCB8F
+                  border_width: 0
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x3DB57C
+                  on_press: {then: [{script.execute: run_action}]}
+                  widgets:
+                    - label: {text: "\U000F012C", text_font: font_icons_30, text_color: 0x07251A, align: CENTER}

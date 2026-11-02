@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.5
+
+**Under the hood** (nothing changes in what Vigil does)
+
+- **Large files are split into parts that are easier to work on.** The admin panel of the integration (`panel.py`) is now four files (forms, state, websocket commands, registration), the manager (`manager.py`) is split into configuration, commands and views, the admin panel script (`vigil-panel.js`) has its sections in `frontend/panel/`, and the panel firmware (`vigil-panel.yaml`) includes five parts: state, scripts and three parts of the screen. The configuration ESPHome builds from the parts is the same as before, and the admin panel draws exactly the same in every tab and form.
+- **ESPHome:** copy the whole folder `vigil_alarm` to your ESPHome folder again (it now has more files); your own device file stays as it is.
+
 ## 0.7.4
 
 **Vigil**

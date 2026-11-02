@@ -1,0 +1,198 @@
+# The screen: the pages with the list of sensors and the information.
+# Part of vigil-panel.yaml (included by it): the same for every panel, nothing to change here.
+
+lvgl:
+  pages:
+    # =============================================================== SENSORS
+    - id: page_sensors
+      bg_color: 0x0E1116
+      scrollable: false
+      widgets:
+        - label:
+            id: lbl_sens_title
+            text: "Sensors"
+            text_font: montserrat_28
+            text_color: 0xE8ECF2
+            align: TOP_LEFT
+            x: 20
+            y: 14
+        # The partition whose sensors are listed: a tap on it goes to the next one (and "All"), like the buttons on the
+        # main page; the choice is the same on both pages.
+        - button:
+            id: sens_part
+            width: 150
+            height: 40
+            align: TOP_MID
+            x: 24
+            y: 10
+            radius: 20
+            bg_color: 0x151A22
+            border_width: 2
+            border_color: 0xF2B84B
+            shadow_width: 0
+            pad_all: 0
+            hidden: true
+            on_click:
+              then:
+                - script.execute:
+                    id: choose_part
+                    partition: !lambda 'return vigil::next_part_id();'
+            widgets:
+              - label:
+                  id: sens_part_lbl
+                  text: ""
+                  text_font: montserrat_20
+                  text_color: 0xE8ECF2
+                  long_mode: DOT
+                  width: 126
+                  text_align: CENTER
+                  align: CENTER
+        - label:
+            id: lbl_sens_sub
+            text: ""
+            text_font: montserrat_14
+            text_color: 0x8A94A6
+            align: TOP_RIGHT
+            x: -20
+            y: 24
+        - !include {file: vigil-panel-row.yaml, vars: {n: 0, y: 58}}
+        - !include {file: vigil-panel-row.yaml, vars: {n: 1, y: 120}}
+        - !include {file: vigil-panel-row.yaml, vars: {n: 2, y: 182}}
+        - !include {file: vigil-panel-row.yaml, vars: {n: 3, y: 244}}
+        - !include {file: vigil-panel-row.yaml, vars: {n: 4, y: 306}}
+        - button:
+            id: btn_prev
+            width: 96
+            height: 40
+            align: BOTTOM_LEFT
+            x: 12
+            y: ${ -1 * (nav_h | int + 8) }
+            radius: 20
+            bg_color: 0x151A22
+            border_width: 1
+            border_color: 0x232A35
+            shadow_width: 0
+            on_click:
+              then:
+                - script.execute:
+                    id: sensors_page_step
+                    step: -1
+            widgets:
+              - label:
+                  text: "\U000F0141"
+                  text_font: font_icons_30
+                  text_color: 0xC5CCD8
+                  align: CENTER
+        - label:
+            id: lbl_pager
+            text: ""
+            text_color: 0x8A94A6
+            align: BOTTOM_MID
+            y: ${ -1 * (nav_h | int + 16) }
+        - button:
+            id: btn_next
+            width: 96
+            height: 40
+            align: BOTTOM_RIGHT
+            x: -12
+            y: ${ -1 * (nav_h | int + 8) }
+            radius: 20
+            bg_color: 0x151A22
+            border_width: 1
+            border_color: 0x232A35
+            shadow_width: 0
+            on_click:
+              then:
+                - script.execute:
+                    id: sensors_page_step
+                    step: 1
+            widgets:
+              - label:
+                  text: "\U000F0142"
+                  text_font: font_icons_30
+                  text_color: 0xC5CCD8
+                  align: CENTER
+
+    # ================================================================== INFO
+    - id: page_info
+      bg_color: 0x0E1116
+      scrollable: false
+      widgets:
+        - label:
+            id: lbl_info_title
+            text: "Info"
+            text_font: montserrat_28
+            text_color: 0xE8ECF2
+            align: TOP_LEFT
+            x: 20
+            y: 14
+        - obj:
+            width: ${content_w}
+            height: 338
+            align: TOP_MID
+            y: 62
+            radius: 22
+            bg_color: 0x151A22
+            border_width: 1
+            border_color: 0x232A35
+            pad_all: 0
+            scrollable: false
+            widgets:
+              - label:
+                  id: lbl_info_conn
+                  text: ""
+                  text_color: 0xE8ECF2
+                  align: TOP_LEFT
+                  x: 18
+                  y: 14
+              - label:
+                  id: lbl_info_ip
+                  text: ""
+                  text_color: 0x8A94A6
+                  align: TOP_LEFT
+                  x: 18
+                  y: 56
+              - label:
+                  id: lbl_info_wifi
+                  text: ""
+                  text_color: 0x8A94A6
+                  align: TOP_LEFT
+                  x: 18
+                  y: 94
+              - label:
+                  id: lbl_info_up
+                  text: ""
+                  text_color: 0x8A94A6
+                  align: TOP_LEFT
+                  x: 18
+                  y: 132
+              - label:
+                  id: lbl_info_fw
+                  text: ""
+                  text_color: 0x8A94A6
+                  align: TOP_LEFT
+                  x: 18
+                  y: 170
+              - label:
+                  id: lbl_info_id
+                  text: ""
+                  text_color: 0x8A94A6
+                  long_mode: DOT
+                  width: ${ content_w | int - 36 }
+                  align: TOP_LEFT
+                  x: 18
+                  y: 208
+              - label:
+                  id: lbl_info_profile
+                  text: ""
+                  text_color: 0x8A94A6
+                  align: TOP_LEFT
+                  x: 18
+                  y: 246
+              - label:
+                  id: lbl_info_key
+                  text: ""
+                  text_color: 0x8A94A6
+                  align: TOP_LEFT
+                  x: 18
+                  y: 284

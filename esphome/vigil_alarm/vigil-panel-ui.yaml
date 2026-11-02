@@ -1,0 +1,1027 @@
+# The screen: the look of Vigil, the top layer and the main page.
+# Part of vigil-panel.yaml (included by it): the same for every panel, nothing to change here.
+
+# --------------------------------------------------------------------------------------- screen
+# The look of Vigil: dark ground, calm cards, one colour per state (see vigil_panel.h). The sizes follow the size of
+# the screen (the substitutions at the top), the main page is a column that grows with the screen, so a wider panel
+# is a matter of a hardware file, not of this one.
+lvgl:
+  default_font: montserrat_20
+  text_color: 0xE8ECF2
+  bg_color: 0x0E1116
+  top_layer:
+    widgets:
+      # The tabs at the bottom, on every page except the keypad (see `nav_update`).
+      - obj:
+          id: nav
+          width: 100%
+          height: ${nav_h}
+          align: BOTTOM_MID
+          bg_color: 0x0E1116
+          bg_opa: COVER
+          border_width: 1
+          border_side: TOP
+          border_color: 0x232A35
+          radius: 0
+          shadow_width: 0
+          pad_all: 0
+          scrollable: false
+          layout:
+            type: flex
+            flex_flow: ROW
+          widgets:
+            - button:
+                id: nav_alarm
+                height: 100%
+                flex_grow: 1
+                bg_opa: TRANSP
+                shadow_width: 0
+                radius: 0
+                layout:
+                  type: flex
+                  flex_flow: COLUMN
+                  flex_align_main: CENTER
+                  flex_align_cross: CENTER
+                  flex_align_track: CENTER
+                on_click:
+                  then:
+                    - script.execute: lock_sensors
+                widgets:
+                  - label:
+                      id: nav_alarm_icon
+                      text: "\U000F0CCB"
+                      text_font: font_icons_30
+                      text_color: 0x8A94A6
+                  - label:
+                      id: nav_alarm_lbl
+                      text: "Alarm"
+                      text_font: montserrat_14
+                      text_color: 0x8A94A6
+            - button:
+                id: nav_sens
+                height: 100%
+                flex_grow: 1
+                bg_opa: TRANSP
+                shadow_width: 0
+                radius: 0
+                layout:
+                  type: flex
+                  flex_flow: COLUMN
+                  flex_align_main: CENTER
+                  flex_align_cross: CENTER
+                  flex_align_track: CENTER
+                on_click:
+                  then:
+                    - script.execute: open_sensors
+                widgets:
+                  - label:
+                      id: nav_sens_icon
+                      text: "\U000F11D9"
+                      text_font: font_icons_30
+                      text_color: 0x8A94A6
+                  - label:
+                      id: nav_sens_lbl
+                      text: "Sensors"
+                      text_font: montserrat_14
+                      text_color: 0x8A94A6
+                  - obj:
+                      id: nav_badge
+                      width: 22
+                      height: 22
+                      radius: 11
+                      bg_color: 0xF2B84B
+                      border_width: 0
+                      shadow_width: 0
+                      pad_all: 0
+                      scrollable: false
+                      clickable: false
+                      floating: true
+                      align: TOP_MID
+                      x: 20
+                      y: 2
+                      hidden: true
+                      widgets:
+                        - label:
+                            id: nav_badge_lbl
+                            text: "0"
+                            text_font: montserrat_14
+                            text_color: 0x2A1D00
+                            align: CENTER
+            - button:
+                id: nav_info
+                height: 100%
+                flex_grow: 1
+                bg_opa: TRANSP
+                shadow_width: 0
+                radius: 0
+                layout:
+                  type: flex
+                  flex_flow: COLUMN
+                  flex_align_main: CENTER
+                  flex_align_cross: CENTER
+                  flex_align_track: CENTER
+                on_click:
+                  then:
+                    - script.execute: open_info
+                widgets:
+                  - label:
+                      id: nav_info_icon
+                      text: "\U000F02FD"
+                      text_font: font_icons_30
+                      text_color: 0x8A94A6
+                  - label:
+                      id: nav_info_lbl
+                      text: "Info"
+                      text_font: montserrat_14
+                      text_color: 0x8A94A6
+      # A red frame around the screen while the alarm is going off.
+      - obj:
+          id: alarm_frame
+          width: 100%
+          height: 100%
+          align: CENTER
+          bg_opa: TRANSP
+          border_width: 3
+          border_color: 0xF0605D
+          radius: 0
+          shadow_width: 0
+          scrollable: false
+          clickable: false
+          hidden: true
+      # A see-through layer over everything, there while the screen is dark: it takes the touch that wakes the panel.
+      - obj:
+          id: wake_shield
+          width: 100%
+          height: 100%
+          align: CENTER
+          bg_opa: TRANSP
+          border_width: 0
+          radius: 0
+          shadow_width: 0
+          scrollable: false
+          hidden: true
+          clickable: true
+          on_release:
+            - lvgl.widget.hide: wake_shield
+  pages:
+    # ================================================================== MAIN
+    - id: page_main
+      bg_color: 0x0E1116
+      scrollable: false
+      pad_all: 12
+      pad_bottom: 0
+      layout:
+        type: flex
+        flex_flow: COLUMN
+        pad_row: 10
+      widgets:
+        # The top bar: the time, and whether Home Assistant is there
+        - obj:
+            width: 100%
+            height: 40
+            bg_opa: TRANSP
+            border_width: 0
+            pad_all: 0
+            scrollable: false
+            widgets:
+              - label:
+                  id: lbl_time
+                  text: "--:--"
+                  text_font: montserrat_24
+                  text_color: 0x8A94A6
+                  align: LEFT_MID
+                  x: 8
+              - label:
+                  id: lbl_wifi
+                  text: "\U000F05AA"
+                  text_font: font_icons_22
+                  text_color: 0x8A94A6
+                  align: RIGHT_MID
+                  x: -8
+              # The logo and the name, in the middle between the clock and the Wi-Fi icon
+              - obj:
+                  width: SIZE_CONTENT
+                  height: 32
+                  align: CENTER
+                  bg_opa: TRANSP
+                  border_width: 0
+                  pad_all: 0
+                  scrollable: false
+                  clickable: false
+                  layout:
+                    type: flex
+                    flex_flow: ROW
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_column: 8
+                  widgets:
+                    - obj:
+                        id: logo_box
+                        width: 30
+                        height: 30
+                        bg_opa: TRANSP
+                        border_width: 0
+                        pad_all: 0
+                        scrollable: false
+                        clickable: false
+                    - label:
+                        id: lbl_brand
+                        text: "Vigil Alarm"
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+        # The partitions: one line with the name when this panel has one partition and the house more, else a button
+        # for each partition it may use and "All". The one on the screen has a coloured edge.
+        - obj:
+            id: row_parts
+            width: 100%
+            height: 40
+            bg_opa: TRANSP
+            border_width: 0
+            pad_all: 0
+            scrollable: false
+            hidden: true
+            layout:
+              type: flex
+              flex_flow: ROW
+              pad_column: 8
+              flex_align_main: START
+              flex_align_cross: CENTER
+              flex_align_track: CENTER
+            widgets:
+              - obj:
+                  id: part_one
+                  width: 100%
+                  height: 40
+                  bg_opa: TRANSP
+                  border_width: 0
+                  pad_all: 0
+                  pad_left: 8
+                  scrollable: false
+                  clickable: false
+                  hidden: true
+                  layout:
+                    type: flex
+                    flex_flow: ROW
+                    flex_align_main: START
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_column: 8
+                  widgets:
+                    - obj:
+                        id: part_one_dot
+                        width: 12
+                        height: 12
+                        radius: 100%
+                        bg_color: 0x8A94A6
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                    - label:
+                        id: lbl_part_one
+                        text: ""
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+                        long_mode: DOT
+                    - label:
+                        id: lbl_part_note
+                        text: ""
+                        text_font: montserrat_14
+                        text_color: 0x8A94A6
+              - button:
+                  id: chip_prev
+                  width: 34
+                  height: 40
+                  radius: 20
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pad_all: 0
+                  hidden: true
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - lambda: |-
+                          vigil::ctx.chip_page = vigil::chip_page_now() - 1;
+                      - script.execute: refresh_parts
+                  widgets:
+                    - label:
+                        text: "\U000F0141"
+                        text_font: font_icons_30
+                        text_color: 0xC5CCD8
+                        align: CENTER
+              - button:
+                  id: chip_0
+                  height: 40
+                  width: SIZE_CONTENT
+                  radius: 20
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pad_left: 12
+                  pad_right: 12
+                  pad_top: 0
+                  pad_bottom: 0
+                  hidden: true
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - script.execute:
+                          id: choose_part
+                          partition: !lambda 'return vigil::chip_target(0);'
+                  layout:
+                    type: flex
+                    flex_flow: ROW
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_column: 6
+                  widgets:
+                    - obj:
+                        id: chip_0_dot
+                        width: 10
+                        height: 10
+                        radius: 100%
+                        bg_color: 0x8A94A6
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                    - label:
+                        id: chip_0_lbl
+                        text: ""
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+                        long_mode: DOT
+                    - label:
+                        id: chip_0_tag
+                        text: ""
+                        text_font: montserrat_14
+                        text_color: 0x8A94A6
+                        hidden: true
+              - button:
+                  id: chip_1
+                  height: 40
+                  width: SIZE_CONTENT
+                  radius: 20
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pad_left: 12
+                  pad_right: 12
+                  pad_top: 0
+                  pad_bottom: 0
+                  hidden: true
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - script.execute:
+                          id: choose_part
+                          partition: !lambda 'return vigil::chip_target(1);'
+                  layout:
+                    type: flex
+                    flex_flow: ROW
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_column: 6
+                  widgets:
+                    - obj:
+                        id: chip_1_dot
+                        width: 10
+                        height: 10
+                        radius: 100%
+                        bg_color: 0x8A94A6
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                    - label:
+                        id: chip_1_lbl
+                        text: ""
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+                        long_mode: DOT
+                    - label:
+                        id: chip_1_tag
+                        text: ""
+                        text_font: montserrat_14
+                        text_color: 0x8A94A6
+                        hidden: true
+              - button:
+                  id: chip_2
+                  height: 40
+                  width: SIZE_CONTENT
+                  radius: 20
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pad_left: 12
+                  pad_right: 12
+                  pad_top: 0
+                  pad_bottom: 0
+                  hidden: true
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - script.execute:
+                          id: choose_part
+                          partition: !lambda 'return vigil::chip_target(2);'
+                  layout:
+                    type: flex
+                    flex_flow: ROW
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_column: 6
+                  widgets:
+                    - obj:
+                        id: chip_2_dot
+                        width: 10
+                        height: 10
+                        radius: 100%
+                        bg_color: 0x8A94A6
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                    - label:
+                        id: chip_2_lbl
+                        text: ""
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+                        long_mode: DOT
+                    - label:
+                        id: chip_2_tag
+                        text: ""
+                        text_font: montserrat_14
+                        text_color: 0x8A94A6
+                        hidden: true
+              - button:
+                  id: chip_3
+                  height: 40
+                  width: SIZE_CONTENT
+                  radius: 20
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pad_left: 12
+                  pad_right: 12
+                  pad_top: 0
+                  pad_bottom: 0
+                  hidden: true
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - script.execute:
+                          id: choose_part
+                          partition: !lambda 'return vigil::chip_target(3);'
+                  layout:
+                    type: flex
+                    flex_flow: ROW
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_column: 6
+                  widgets:
+                    - obj:
+                        id: chip_3_dot
+                        width: 10
+                        height: 10
+                        radius: 100%
+                        bg_color: 0x8A94A6
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                    - label:
+                        id: chip_3_lbl
+                        text: ""
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+                        long_mode: DOT
+                    - label:
+                        id: chip_3_tag
+                        text: ""
+                        text_font: montserrat_14
+                        text_color: 0x8A94A6
+                        hidden: true
+              - button:
+                  id: chip_all
+                  height: 40
+                  width: SIZE_CONTENT
+                  radius: 20
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pad_left: 12
+                  pad_right: 12
+                  pad_top: 0
+                  pad_bottom: 0
+                  hidden: true
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - script.execute:
+                          id: choose_part
+                          partition: !lambda 'return vigil::chip_target(4);'
+                  layout:
+                    type: flex
+                    flex_flow: ROW
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_column: 6
+                  widgets:
+                    - obj:
+                        id: chip_all_dot
+                        width: 10
+                        height: 10
+                        radius: 100%
+                        bg_color: 0x8A94A6
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                    - label:
+                        id: chip_all_lbl
+                        text: ""
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+                        long_mode: DOT
+                    - label:
+                        id: chip_all_tag
+                        text: ""
+                        text_font: montserrat_14
+                        text_color: 0x8A94A6
+                        hidden: true
+              # Fills what is left, so the right arrow stays at the far right of the row
+              - obj:
+                  id: chip_spacer
+                  width: 0
+                  height: 1
+                  flex_grow: 1
+                  hidden: true
+                  bg_opa: TRANSP
+                  border_width: 0
+                  pad_all: 0
+                  scrollable: false
+                  clickable: false
+              - button:
+                  id: chip_next
+                  width: 34
+                  height: 40
+                  radius: 20
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pad_all: 0
+                  hidden: true
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - lambda: |-
+                          vigil::ctx.chip_page = vigil::chip_page_now() + 1;
+                      - script.execute: refresh_parts
+                  widgets:
+                    - label:
+                        text: "\U000F0142"
+                        text_font: font_icons_30
+                        text_color: 0xC5CCD8
+                        align: CENTER
+        # The state: the ring, what it is, what is the matter
+        - obj:
+            id: card_ring
+            width: 100%
+            flex_grow: 1
+            radius: 28
+            bg_color: 0x151A22
+            border_width: 1
+            border_color: 0x232A35
+            shadow_width: 0
+            pad_all: 8
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: COLUMN
+              pad_row: 2
+              flex_align_main: CENTER
+              flex_align_cross: CENTER
+              flex_align_track: CENTER
+            widgets:
+              - obj:
+                  id: ring_box
+                  width: ${ring_d}
+                  height: ${ring_d}
+                  bg_opa: TRANSP
+                  border_width: 0
+                  pad_all: 0
+                  scrollable: false
+                  widgets:
+                    - arc:
+                        id: ring
+                        width: ${ring_d90}
+                        height: ${ring_d90}
+                        align: BOTTOM_MID
+                        start_angle: 0
+                        end_angle: 360
+                        rotation: 270
+                        min_value: 0
+                        max_value: 100
+                        value: 100
+                        adjustable: false
+                        arc_width: 9
+                        arc_color: 0x1C2530
+                        indicator:
+                          arc_width: 9
+                          arc_color: 0x8A94A6
+                        knob:
+                          bg_opa: TRANSP
+                          pad_all: 0
+                    - obj:
+                        id: ring_disc
+                        width: ${ring_disc90}
+                        height: ${ring_disc90}
+                        radius: 100%
+                        align: BOTTOM_MID
+                        y: ${ -1 * disc_gap | int }
+                        bg_color: 0x1B232D
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        scrollable: false
+                        clickable: false
+                    - label:
+                        id: lbl_ring_icon
+                        text: ""
+                        text_font: font_icons_60
+                        text_color: 0x8A94A6
+                        align: CENTER
+                        y: ${ ring_gap | int }
+                    - label:
+                        id: lbl_ring_num
+                        text: ""
+                        text_font: montserrat_40
+                        text_color: 0xF2B84B
+                        align: CENTER
+                        y: ${ ring_gap | int }
+                        hidden: true
+              - label:
+                  id: lbl_state
+                  text: ""
+                  text_font: montserrat_28
+                  text_color: 0xE8ECF2
+                  pad_top: 10
+                  text_align: CENTER
+                  long_mode: DOT
+                  width: 100%
+              - label:
+                  id: lbl_sub
+                  text: ""
+                  text_font: montserrat_14
+                  text_color: 0xC5CCD8
+                  text_align: CENTER
+                  long_mode: WRAP
+                  width: 100%
+        # The buttons: only the modes that are on, or Disarm
+        - obj:
+            id: row_modes
+            width: 100%
+            height: ${mode_h}
+            bg_opa: TRANSP
+            border_width: 0
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: ROW
+              pad_column: 10
+            widgets:
+              - button:
+                  id: btn_home
+                  height: 100%
+                  flex_grow: 1
+                  radius: 22
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - lambda: |-
+                          id(pending_action) = vigil::ARM_HOME;
+                          id(pending_entity) = "";
+                      - script.execute: start_action
+                  layout:
+                    type: flex
+                    flex_flow: COLUMN
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_row: 6
+                  widgets:
+                    - obj:
+                        width: 44
+                        height: 44
+                        radius: 22
+                        bg_color: 0x17233A
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                        widgets:
+                          - label:
+                              text: "\U000F06A1"
+                              text_font: font_icons_30
+                              text_color: 0x5B9BF0
+                              align: CENTER
+                    - label:
+                        id: lbl_btn_home
+                        text: "Home"
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+              - button:
+                  id: btn_away
+                  height: 100%
+                  flex_grow: 1
+                  radius: 22
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - lambda: |-
+                          id(pending_action) = vigil::ARM_AWAY;
+                          id(pending_entity) = "";
+                      - script.execute: start_action
+                  layout:
+                    type: flex
+                    flex_flow: COLUMN
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_row: 6
+                  widgets:
+                    - obj:
+                        width: 44
+                        height: 44
+                        radius: 22
+                        bg_color: 0x2E1E17
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                        widgets:
+                          - label:
+                              text: "\U000F0A48"
+                              text_font: font_icons_30
+                              text_color: 0xFF8A5B
+                              align: CENTER
+                    - label:
+                        id: lbl_btn_away
+                        text: "Away"
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+              - button:
+                  id: btn_night
+                  height: 100%
+                  flex_grow: 1
+                  radius: 22
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - lambda: |-
+                          id(pending_action) = vigil::ARM_NIGHT;
+                          id(pending_entity) = "";
+                      - script.execute: start_action
+                  layout:
+                    type: flex
+                    flex_flow: COLUMN
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_row: 6
+                  widgets:
+                    - obj:
+                        width: 44
+                        height: 44
+                        radius: 22
+                        bg_color: 0x211E3A
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                        widgets:
+                          - label:
+                              text: "\U000F0594"
+                              text_font: font_icons_30
+                              text_color: 0x9A8CF2
+                              align: CENTER
+                    - label:
+                        id: lbl_btn_night
+                        text: "Night"
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+              - button:
+                  id: btn_vacation
+                  height: 100%
+                  flex_grow: 1
+                  radius: 22
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - lambda: |-
+                          id(pending_action) = vigil::ARM_VACATION;
+                          id(pending_entity) = "";
+                      - script.execute: start_action
+                  layout:
+                    type: flex
+                    flex_flow: COLUMN
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_row: 6
+                  widgets:
+                    - obj:
+                        width: 44
+                        height: 44
+                        radius: 22
+                        bg_color: 0x14282B
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                        widgets:
+                          - label:
+                              text: "\U000F001D"
+                              text_font: font_icons_30
+                              text_color: 0x4FC3C9
+                              align: CENTER
+                    - label:
+                        id: lbl_btn_vacation
+                        text: "Vacation"
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+              - button:
+                  id: btn_custom
+                  height: 100%
+                  flex_grow: 1
+                  radius: 22
+                  bg_color: 0x151A22
+                  border_width: 1
+                  border_color: 0x232A35
+                  shadow_width: 0
+                  pressed:
+                    bg_color: 0x1E2631
+                  on_click:
+                    then:
+                      - lambda: |-
+                          id(pending_action) = vigil::ARM_CUSTOM;
+                          id(pending_entity) = "";
+                      - script.execute: start_action
+                  layout:
+                    type: flex
+                    flex_flow: COLUMN
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_row: 6
+                  widgets:
+                    - obj:
+                        width: 44
+                        height: 44
+                        radius: 22
+                        bg_color: 0x2D1E33
+                        border_width: 0
+                        shadow_width: 0
+                        pad_all: 0
+                        clickable: false
+                        scrollable: false
+                        widgets:
+                          - label:
+                              text: "\U000F062E"
+                              text_font: font_icons_30
+                              text_color: 0xD58BDD
+                              align: CENTER
+                    - label:
+                        id: lbl_btn_custom
+                        text: "Custom"
+                        text_font: montserrat_20
+                        text_color: 0xE8ECF2
+        # Disarm: one wide button of its own, as wide as the card above it
+        - button:
+            id: btn_disarm
+            width: 100%
+            height: ${mode_h}
+            radius: 22
+            bg_color: 0x000000
+            border_width: 2
+            border_color: 0x4CCB8F
+            shadow_width: 0
+            pressed:
+              bg_color: 0x14281F
+            on_click:
+              then:
+                - lambda: |-
+                    id(pending_action) = vigil::DISARM;
+                    id(pending_entity) = "";
+                - script.execute: start_action
+            layout:
+              type: flex
+              flex_flow: ROW
+              flex_align_main: CENTER
+              flex_align_cross: CENTER
+              flex_align_track: CENTER
+              pad_column: 10
+            widgets:
+              - label:
+                  text: "\U000F0FC7"
+                  text_font: font_icons_30
+                  text_color: 0x4CCB8F
+              - label:
+                  id: lbl_btn_disarm
+                  text: "Disarm"
+                  text_font: montserrat_28
+                  text_color: 0x4CCB8F
+        # Bypass and arm: after a refusal that bypassing can solve, in the place of the tiles
+        - button:
+            id: btn_force
+            width: 100%
+            height: ${mode_h}
+            radius: 22
+            bg_color: 0x000000
+            border_width: 2
+            border_color: 0xF2B84B
+            shadow_width: 0
+            hidden: true
+            pressed:
+              bg_color: 0x2A2210
+            on_click:
+              then:
+                - lambda: |-
+                    vigil::ctx.force = true;
+                    id(pending_action) = vigil::ctx.refused_action;
+                    id(pending_entity) = "";
+                - script.execute: start_action
+            layout:
+              type: flex
+              flex_flow: ROW
+              flex_align_main: CENTER
+              flex_align_cross: CENTER
+              flex_align_track: CENTER
+              pad_column: 10
+            widgets:
+              - label:
+                  id: lbl_btn_force
+                  text: "Bypass and arm"
+                  text_font: montserrat_20
+                  text_color: 0xF2B84B
+        # The space of the tabs: they are in the top layer, so they stay put on every page
+        - obj:
+            width: 100%
+            height: ${nav_h}
+            bg_opa: TRANSP
+            border_width: 0
+            pad_all: 0
+            scrollable: false
+            clickable: false

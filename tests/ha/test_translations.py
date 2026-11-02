@@ -70,7 +70,8 @@ def test_language_of_maps_any_locale_to_a_supported_language():
 def _panel_only_codes() -> set[str]:
     """Codes only the panel sends (not raised by the shared editing code)."""
     codes: set[str] = set()
-    for line in (ROOT / "panel.py").read_text().splitlines():
+    sources = [p.read_text() for p in sorted(ROOT.glob("panel*.py")) if p.name != "panels.py"]
+    for line in "\n".join(sources).splitlines():
         if "EditError(" in line:
             codes |= set(re.findall(r'(?::|=)\s*"([a-z_]+)"', line))
     return codes - {"invalid_config"}
@@ -87,7 +88,7 @@ def _codes_in_editing() -> set[str]:
 def _panel_source() -> str:
     """The panel script and its texts (one file per language), as one string."""
     frontend = ROOT / "frontend"
-    return "\n".join(p.read_text(encoding="utf-8") for p in [frontend / "vigil-panel.js", *sorted((frontend / "texts").glob("*.js"))])
+    return "\n".join(p.read_text(encoding="utf-8") for p in [frontend / "vigil-panel.js", *sorted((frontend / "panel").glob("*.js")), *sorted((frontend / "texts").glob("*.js"))])
 
 
 def test_every_error_code_in_editing_has_a_text_in_the_panel():
@@ -111,7 +112,7 @@ def test_the_entry_flow_has_its_texts():
 
 def test_the_panel_shows_armed_home_away_and_night_as_armed():
     """The alarm reports armed_home, armed_away and armed_night; the panel has one text, "armed", plus the mode."""
-    js = (ROOT / "frontend/vigil-panel.js").read_text()
+    js = "\n".join(p.read_text() for p in [ROOT / "frontend/vigil-panel.js", *sorted((ROOT / "frontend/panel").glob("*.js"))])
     assert 'startsWith("armed_")' in js and js.count("this._stateText(live)") == 2
 
 

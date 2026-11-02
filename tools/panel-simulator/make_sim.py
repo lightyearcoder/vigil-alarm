@@ -29,19 +29,24 @@ if dest.exists():
 shutil.copytree(a.firmware, dest, ignore=shutil.ignore_patterns("guition*", "__pycache__"))
 
 # No Wi-Fi and no Home Assistant clock on a PC: a fixed address, a fixed signal, the clock of the PC.
-panel = (dest / "vigil-panel.yaml").read_text()
-panel = re.sub(
-    r"  - platform: wifi_info\n    ip_address:\n      id: wifi_ip\n      internal: true\n      on_value:\n        - script.execute: refresh_texts\n",
-    "  - platform: template\n    id: wifi_ip\n    internal: true\n    lambda: 'return std::string(\"192.168.1.50\");'\n",
-    panel)
-panel = re.sub(
-    r"  - platform: wifi_signal\n    id: wifi_rssi\n    internal: true\n    update_interval: 10s\n    on_value:\n      - script.execute: refresh_texts\n",
-    "  - platform: template\n    id: wifi_rssi\n    internal: true\n    update_interval: 60s\n    lambda: 'return -52.0;'\n",
-    panel)
-panel = panel.replace("time:\n  - platform: homeassistant\n    id: ha_time", "time:\n  - platform: host\n    id: ha_time")
-# Nobody is connected to the simulator, but the panel must think Home Assistant is there.
-panel = re.sub(r"api\.connected:\n\s+state_subscription_only: true", "lambda: 'return true;'", panel)
-(dest / "vigil-panel.yaml").write_text(panel)
+def patch(panel):
+    panel = re.sub(
+        r"  - platform: wifi_info\n    ip_address:\n      id: wifi_ip\n      internal: true\n      on_value:\n        - script.execute: refresh_texts\n",
+        "  - platform: template\n    id: wifi_ip\n    internal: true\n    lambda: 'return std::string(\"192.168.1.50\");'\n",
+        panel)
+    panel = re.sub(
+        r"  - platform: wifi_signal\n    id: wifi_rssi\n    internal: true\n    update_interval: 10s\n    on_value:\n      - script.execute: refresh_texts\n",
+        "  - platform: template\n    id: wifi_rssi\n    internal: true\n    update_interval: 60s\n    lambda: 'return -52.0;'\n",
+        panel)
+    panel = panel.replace("time:\n  - platform: homeassistant\n    id: ha_time", "time:\n  - platform: host\n    id: ha_time")
+    # Nobody is connected to the simulator, but the panel must think Home Assistant is there.
+    panel = re.sub(r"api\.connected:\n\s+state_subscription_only: true", "lambda: 'return true;'", panel)
+    return panel
+
+
+# The firmware is in several files (vigil-panel.yaml and the parts it includes): each gets the same patches.
+for part in dest.glob("vigil-panel*.yaml"):
+    part.write_text(patch(part.read_text()))
 
 lang = "vigil::" + (a.lang.upper() if a.lang in ("nl", "en", "de", "fr", "it", "es") else "EN")
 steps = []

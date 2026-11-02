@@ -19,7 +19,12 @@ esphome/
   example-garage.yaml      a device: name, Wi-Fi, keys  (copy this, one per panel)
   vigil_alarm/             the firmware and the hardware; the same for every panel, do not edit
     guition-esp32-s3-4840s40c_i.yaml      the hardware: display, touch, backlight  (one per kind of panel)
-    vigil-panel.yaml
+    vigil-panel.yaml                      the firmware; it includes the parts below (state, scripts, screen)
+    vigil-panel-state.yaml                what Home Assistant tells the panel, and what the panel tells Vigil
+    vigil-panel-scripts.yaml              the scripts: pages, keypad, actions
+    vigil-panel-ui.yaml                   the screen: look, top layer, main page
+    vigil-panel-ui-keypad.yaml            the screen: the keypad page
+    vigil-panel-ui-lists.yaml             the screen: the sensor list and the information
     vigil-panel-sound.yaml                the sound, only for a panel with a speaker (optional)
     vigil-panel-row.yaml
     vigil-panel-row-script.yaml

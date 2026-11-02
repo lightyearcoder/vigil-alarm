@@ -21,6 +21,14 @@ ROOT = Path(__file__).resolve().parent.parent
 ESPHOME_DIR = ROOT / "esphome"
 FIRMWARE_DIR = ESPHOME_DIR / "vigil_alarm"  # the firmware; the folder above has the devices
 
+
+def firmware_yaml() -> str:
+    """The firmware of the panel: vigil-panel.yaml and the parts it includes (state, scripts, the screen), as one text."""
+    names = ["vigil-panel.yaml", "vigil-panel-state.yaml", "vigil-panel-scripts.yaml", "vigil-panel-ui.yaml",
+             "vigil-panel-ui-keypad.yaml", "vigil-panel-ui-lists.yaml"]
+    return "\n".join((FIRMWARE_DIR / name).read_text(encoding="utf-8") for name in names)
+
+
 SECRETS = (
     "wifi_ssid: test\n"
     "wifi_password: testtesttest\n"
@@ -54,7 +62,7 @@ def test_every_language_has_every_text():
 
 
 def test_every_service_the_panel_calls_exists():
-    yaml = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    yaml = firmware_yaml()
     services = (ROOT / "custom_components" / "vigil_alarm" / "services.yaml").read_text()
     for name in ("arm", "disarm", "bypass", "unbypass", "unlock_panel", "select_partition"):
         assert f"action: vigil_alarm.{name}" in yaml
@@ -62,7 +70,7 @@ def test_every_service_the_panel_calls_exists():
 
 
 def test_the_attributes_the_panel_reads_exist():
-    yaml = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    yaml = firmware_yaml()
     attrs = [
         line.split(":", 1)[1].strip()
         for line in yaml.splitlines()
@@ -115,7 +123,7 @@ def test_the_sound_package_takes_what_the_firmware_asks_for():
     """The firmware only asks (vigil::request_sound); the package plays. Pins come from the hardware file."""
     package = (FIRMWARE_DIR / "vigil-panel-sound.yaml").read_text()
     hardware = (FIRMWARE_DIR / "guition-esp32-s3-4840s40c_i.yaml").read_text()
-    firmware = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    firmware = firmware_yaml()
     for pin in ("sound_bclk_pin", "sound_lrclk_pin", "sound_dout_pin"):
         assert "${" + pin + "}" in package and f"  {pin}: GPIO" in hardware, pin
     assert "vigil::take_sound(" in package and "sound_is_event" in package
@@ -143,7 +151,7 @@ def test_label_lambdas_return_a_std_string_not_a_plain_literal():
 
 
 def test_the_pin_field_is_readable_and_shows_stars_only():
-    text = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    text = firmware_yaml()
     field = text[text.index("id: pin_text\n            width"):]
     field = field[: field.index("- label:")]
     assert "password_mode: true" in field and "text_color: 0xFFFFFF" in field
@@ -152,7 +160,7 @@ def test_the_pin_field_is_readable_and_shows_stars_only():
 
 
 def test_the_panel_gets_its_settings_from_the_profile_not_from_the_yaml():
-    yaml = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    yaml = firmware_yaml()
     top = yaml[: yaml.index("esphome:")]
     for gone in ("language:", "allow_bypass:", "sensor_list:", "sensor_unlock:", "  source:"):
         assert gone not in top, f"{gone} is set in Vigil now, not in the firmware"
@@ -165,7 +173,7 @@ def test_the_default_profile_entity_is_the_one_vigil_makes():
     from custom_components.vigil_alarm.panels import profile_object_id
 
     assert profile_object_id("vigil-panel-garage") == "vigil_panel_garage_profile"
-    assert "sensor.${ name | replace(\"-\", \"_\") }_profile" in (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    assert "sensor.${ name | replace(\"-\", \"_\") }_profile" in firmware_yaml()
 
 
 def test_the_panel_reports_what_vigil_reads():
@@ -173,7 +181,7 @@ def test_the_panel_reports_what_vigil_reads():
     pytest.importorskip("homeassistant")  # this job has no Home Assistant; the full run has
     from custom_components.vigil_alarm.panels import REPORTED
 
-    yaml = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    yaml = firmware_yaml()
     assert set(REPORTED) == {"Hardware ID", "Capabilities", "Firmware version", "Profile version"}
     for name in REPORTED:
         assert f"name: {name}\n" in yaml
@@ -187,7 +195,7 @@ def test_the_hardware_file_names_the_hardware_and_the_screen():
 
 
 def test_the_list_and_the_info_open_with_the_admin_code_and_are_forgotten():
-    yaml = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    yaml = firmware_yaml()
     assert "action: vigil_alarm.unlock_panel" in yaml
     assert "lock_sensors" in yaml and "unlock_timer" in yaml
     idle = yaml[yaml.index("  - id: reset_ui"):yaml.index("  - id: set_connected")]
@@ -204,7 +212,7 @@ def test_the_list_and_the_info_open_with_the_admin_code_and_are_forgotten():
 
 
 def test_the_screen_time_and_the_steady_state_rule_come_from_vigil():
-    yaml = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    yaml = firmware_yaml()
     wake = yaml[yaml.index("  - id: wake\n"):yaml.index("  - id: reset_ui")]
     assert "attribute: screen_off_seconds" in yaml and "attribute: screen_off_on_alarm" in yaml
     assert wake.count("delay: !lambda 'return id(screen_off_ms);'") == 2  # once, and once more after an open page
@@ -245,7 +253,7 @@ def test_every_icon_the_panel_draws_is_in_the_icon_font():
     shows as an empty square on the panel."""
     import re
 
-    yaml = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    yaml = firmware_yaml()
     header = (FIRMWARE_DIR / "vigil_panel.h").read_text()
     font = yaml[yaml.index("glyphs: &icon_glyphs"):yaml.index("time:\n  - platform: homeassistant")]
     listed = set(re.findall(r'"\\U(000F[0-9A-F]{4})"', font))
@@ -257,7 +265,7 @@ def test_every_icon_the_panel_draws_is_in_the_icon_font():
 
 
 def test_the_look_and_the_layout_follow_the_size_of_the_screen():
-    yaml = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    yaml = firmware_yaml()
     # the sizes come from the substitutions, which come from screen_width and screen_height of the hardware file
     for name in ("ring_d", "key_w", "key_h", "keypad_h", "content_w", "nav_h"):
         assert f"  {name}:" in yaml.split("esphome:")[0]
@@ -280,7 +288,7 @@ def test_the_colours_of_the_panel_are_the_colours_of_the_card():
 
 def test_the_panel_and_the_card_can_bypass_and_arm_after_a_refusal():
     """Arming refused because something stops it: both show what, and one button bypasses and arms (`bypass_open`)."""
-    yaml = (ROOT / "esphome/vigil_alarm/vigil-panel.yaml").read_text()
+    yaml = firmware_yaml()
     card = (ROOT / "custom_components/vigil_alarm/frontend/vigil-card.js").read_text()
     services = (ROOT / "custom_components/vigil_alarm/services.yaml").read_text()
     assert "bypass_open:" in yaml and "id: btn_force" in yaml and "parse_refusal(message)" in yaml
@@ -291,7 +299,7 @@ def test_the_panel_and_the_card_can_bypass_and_arm_after_a_refusal():
 def test_every_call_the_panel_makes_to_vigil_carries_its_key():
     """The panel sends `key: ${panel_key}` next to `source` in every Home Assistant action, and the key is empty
     (nothing sent) until the device file sets it; the example shows how, commented out so it still builds."""
-    yaml = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    yaml = firmware_yaml()
     assert yaml.count("source: ${name}") == yaml.count("key: ${panel_key}") >= 6
     assert 'panel_key: ""' in yaml
     example = (ROOT / "esphome" / "example-garage.yaml").read_text()
@@ -299,7 +307,7 @@ def test_every_call_the_panel_makes_to_vigil_carries_its_key():
 
 
 def test_the_info_page_says_whether_a_panel_key_is_set_and_never_shows_it():
-    yaml = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    yaml = firmware_yaml()
     header = (FIRMWARE_DIR / "vigil_panel.h").read_text()
     assert yaml.count("id: lbl_info_key") == 2  # the label is updated and is made on the page
     assert 'std::string("${panel_key}").empty()' in yaml  # only whether it is empty is looked at
@@ -310,7 +318,7 @@ def test_the_info_page_says_whether_a_panel_key_is_set_and_never_shows_it():
 
 
 def test_the_panel_has_arrows_for_many_partitions_and_a_list_of_always_on_sensors():
-    yaml = (ROOT / "esphome/vigil_alarm/vigil-panel.yaml").read_text(encoding="utf-8")
+    yaml = firmware_yaml()
     header = (ROOT / "esphome/vigil_alarm/vigil_panel.h").read_text(encoding="utf-8")
     # arrows on both sides of the partition buttons, shown only when there are more partitions than fit
     for name in ("chip_prev", "chip_next"):
@@ -336,7 +344,7 @@ def test_the_card_lists_the_always_on_sensors_apart():
 
 def test_homeassistant_action_data_does_not_call_the_panel_code():
     """ESPHome 2026.10 generates these lambdas before the includes, so `vigil::` is not known there."""
-    lines = (FIRMWARE_DIR / "vigil-panel.yaml").read_text().splitlines()
+    lines = firmware_yaml().splitlines()
     found = 0
     for n, line in enumerate(lines):
         if "homeassistant.action:" not in line:
@@ -352,7 +360,7 @@ def test_homeassistant_action_data_does_not_call_the_panel_code():
 
 def test_the_code_field_of_the_panel_is_emptied_when_the_code_is_sent():
     """A wrong code must not stay in the field: the code goes into act_code and the field is cleared at once."""
-    yaml = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    yaml = firmware_yaml()
     assert "lv_textarea_get_text" in yaml and yaml.count("lv_textarea_get_text") == 1  # only run_action reads the field
     run = yaml.split("  - id: run_action")[1].split("  - id: action_done")[0]
     assert 'id(act_code) = lv_textarea_get_text(id(pin_text));' in run and 'lv_textarea_set_text(id(pin_text), "");' in run
@@ -362,7 +370,7 @@ def test_the_code_field_of_the_panel_is_emptied_when_the_code_is_sent():
 
 
 def test_the_wrong_code_shake_is_an_lvgl_animation():
-    yaml = (FIRMWARE_DIR / "vigil-panel.yaml").read_text()
+    yaml = firmware_yaml()
     shake = yaml.split("  - id: shake_pin")[1].split("  # Do the action.")[0]
     assert "lv_anim_start" in shake and "lv_obj_set_style_translate_x" in shake
     assert "script.execute: shake_pin" in yaml.split("  - id: action_failed")[1]
