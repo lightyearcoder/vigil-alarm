@@ -400,7 +400,9 @@ def test_the_firmware_version_changes_only_with_the_firmware():
 
 
 def test_the_major_number_of_the_firmware_is_the_profile_version():
-    from custom_components.vigil_alarm.const import PROFILE_VERSION
+    # Read from the file: this test also runs where Home Assistant is not installed.
+    const = (ROOT / "custom_components" / "vigil_alarm" / "const.py").read_text(encoding="utf-8")
+    PROFILE_VERSION = int(re.search(r"^PROFILE_VERSION\s*=\s*(\d+)", const, re.M).group(1))
     version = re.search(r'^  firmware_version: "(\d+)\.(\d+)"$', (FIRMWARE_DIR / "vigil-panel.yaml").read_text(), re.M)
     assert version and int(version.group(1)) == PROFILE_VERSION
     header = (FIRMWARE_DIR / "vigil_panel.h").read_text()
