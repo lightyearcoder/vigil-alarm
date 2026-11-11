@@ -291,6 +291,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> boo
         ) from err
     await manager.async_setup()
     entry.runtime_data = manager
+    # The device of the alarm exists before the platforms start: the devices of sensors and panels link to it.
+    dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, entry.entry_id)},
+        name=entry.title,
+        manufacturer="Vigil Alarm",
+    )
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     # The platforms are set up side by side: a panel profile can be written before the alarm entity exists.
     async_dispatcher_send(hass, SIGNAL_UPDATE.format(entry.entry_id))

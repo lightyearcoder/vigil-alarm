@@ -571,7 +571,10 @@ script:
             lambda: return id(kp_error);
           then:
             - script.execute: keypad_calm
-      - lambda: lv_textarea_add_text(id(pin_text), d.c_str());
+      - lambda: |-
+          lv_textarea_add_text(id(pin_text), d.c_str());
+          // A small click for every digit, if the panel has a speaker and sound is on (the speaker package decides).
+          vigil::request_sound(vigil::SOUND_KEY, vigil::ctx.state == "armed_night");
 
   - id: delete_digit
     then:
@@ -580,7 +583,9 @@ script:
             lambda: return id(kp_error);
           then:
             - script.execute: keypad_calm
-      - lambda: lv_textarea_delete_char(id(pin_text));
+      - lambda: |-
+          lv_textarea_delete_char(id(pin_text));
+          vigil::request_sound(vigil::SOUND_KEY_DEL, vigil::ctx.state == "armed_night");
 
   # Back to the normal look of the keypad: the grey hint under the code, a quiet border.
   - id: keypad_calm

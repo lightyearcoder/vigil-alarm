@@ -14,7 +14,7 @@
  * The logic mirrors esphome/vigil_alarm/vigil_panel.h; keep the two in step.
  */
 (() => {
-  const VERSION = "0.7.6";
+  const VERSION = "0.7.7";
   // Every start says so in the console: when this line is missing, the card did not load (yet).
   console.info("%c VIGIL-CARD %c v" + VERSION + " ", "color:#fff;background:#3b6fd4;font-weight:bold", "color:#fff;background:#555");
   if (customElements.get("vigil-card")) {

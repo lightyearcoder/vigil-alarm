@@ -150,7 +150,7 @@ static const Text TEXTS[] = {
 // The version of the profile this firmware understands (PROFILE_VERSION in Vigil). It is the major number of the
 // firmware version (firmware_version in vigil-panel.yaml: "<major>.<minor>"). A different profile means the panel and
 // Vigil no longer speak the same language: the screen then only says which of the two to update.
-constexpr int PROFILE_VERSION = 2;
+constexpr int PROFILE_VERSION = 1;
 
 // "nl", "de", "fr", "it" or "es" (also "de-AT" and the like); everything else is English.
 inline int parse_language(const std::string &s) {
@@ -1017,6 +1017,9 @@ enum Sound {
   SOUND_ARMED,       // armed: two rising tones
   SOUND_DISARMED,    // disarmed: two falling tones
   SOUND_WRONG,       // a wrong code (or an action that failed): a low double buzz
+  SOUND_KEY,         // a digit on the keypad: one very short click
+  SOUND_KEY_DEL,     // the delete key: the same click, lower
+  SOUND_KEY_OK,      // the confirm key: the same click, higher
 };
 
 // RTTTL, the little song format ESPHome plays. Small speakers carry best around 1 to 2.5 kHz.
@@ -1029,11 +1032,15 @@ inline const char *sound_rtttl(int sound) {
     case SOUND_ARMED: return "armed:d=16,o=6,b=180:c6,g6";
     case SOUND_DISARMED: return "disarmed:d=16,o=6,b=180:g6,c6";
     case SOUND_WRONG: return "wrong:d=16,o=5,b=160:e5,p,e5";
+    case SOUND_KEY: return "key:d=32,o=6,b=180:e6";
+    case SOUND_KEY_DEL: return "keydel:d=32,o=6,b=180:c6";
+    case SOUND_KEY_OK: return "keyok:d=32,o=6,b=180:g6";
   }
   return "";
 }
 
-// Armed, disarmed and wrong code are events: they cut off a beep that is playing. The beeps of a countdown do not.
+// Armed, disarmed and wrong code are events: they cut off a beep that is playing. The beeps of a countdown and the
+// clicks of the keys do not (a click that meets a sound is dropped).
 inline bool sound_is_event(int sound) { return sound == SOUND_ARMED || sound == SOUND_DISARMED || sound == SOUND_WRONG; }
 
 inline void request_sound(int sound, bool night) {

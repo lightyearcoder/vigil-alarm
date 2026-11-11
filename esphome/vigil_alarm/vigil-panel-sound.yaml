@@ -14,6 +14,7 @@
 #   armed         two rising tones
 #   disarmed      two falling tones
 #   wrong code    a low double buzz (also for another action that failed)
+#   key           one very short click for every key on the keypad: digits in the middle, delete lower, confirm higher
 # The alarm itself is the job of the sirens, not of this speaker.
 #
 # Sound on or off and the volume are set per panel in Vigil (Panels, the panel, "Sound on the panel"). In Home Assistant the

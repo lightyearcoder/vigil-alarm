@@ -201,6 +201,12 @@ int main(){
     ctx.blocked=true; sound_on_state("armed_away","disarmed"); assert(take_sound(&night)==SOUND_NONE); ctx.blocked=false;
     // the countdowns
     ctx.state="pending"; ctx.mode="away"; ctx.delay_end=100;
+    request_sound(SOUND_KEY,false); assert(take_sound(&night)==SOUND_KEY && !night && !sound_is_event(SOUND_KEY) && std::string(sound_rtttl(SOUND_KEY)).find("key:")==0);
+    request_sound(SOUND_WRONG,false); request_sound(SOUND_KEY,false); assert(take_sound(&night)==SOUND_WRONG);  // a click never replaces an event
+    request_sound(SOUND_KEY_DEL,false); assert(take_sound(&night)==SOUND_KEY_DEL && !sound_is_event(SOUND_KEY_DEL));
+    request_sound(SOUND_KEY_OK,false); assert(take_sound(&night)==SOUND_KEY_OK && !sound_is_event(SOUND_KEY_OK));
+    assert(std::string(sound_rtttl(SOUND_KEY_DEL)).find("c6")!=std::string::npos && std::string(sound_rtttl(SOUND_KEY_OK)).find("g6")!=std::string::npos);
+    request_sound(SOUND_KEY,true); assert(take_sound(&night)==SOUND_KEY && night);
     sound_tick(80); assert(take_sound(&night)==SOUND_ENTRY && !night);
     sound_tick(95); assert(take_sound(&night)==SOUND_ENTRY_FAST);
     sound_tick(100); assert(take_sound(&night)==SOUND_NONE);  // the end of the delay: the alarm takes over

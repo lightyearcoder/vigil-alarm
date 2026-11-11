@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from homeassistant.core import callback
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
@@ -20,6 +21,22 @@ def alarm_device(manager: VigilManager) -> DeviceInfo:
         name=manager.entry.title,
         manufacturer="Vigil Alarm",
     )
+
+
+def _device_info_has_via_device_id() -> bool:
+    """Newer Home Assistant versions link a device to its parent by the id of the parent (`via_device_id`) and
+    deprecate `via_device`; older ones know only `via_device`."""
+    return "via_device_id" in getattr(DeviceInfo, "__annotations__", {})
+
+
+def parent_link(manager: VigilManager) -> dict:
+    """The link of a device of a sensor or a panel to the device of the alarm."""
+    parent = (DOMAIN, manager.entry.entry_id)
+    if _device_info_has_via_device_id():
+        device = dr.async_get(manager.hass).async_get_device(identifiers={parent})
+        if device is not None:
+            return {"via_device_id": device.id}
+    return {"via_device": parent}
 
 
 def _load_english_names() -> dict[str, dict[str, str]]:
@@ -79,5 +96,5 @@ class VigilSensorEntity(VigilEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{manager.entry.entry_id}_{sensor_id}")},
             name=title,
-            via_device=(DOMAIN, manager.entry.entry_id),
+            **parent_link(manager),
         )

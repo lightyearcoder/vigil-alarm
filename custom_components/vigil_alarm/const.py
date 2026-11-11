@@ -246,7 +246,7 @@ DEFAULT_SOUND_DELAYS = True
 DEFAULT_SOUND_CHANGES = True
 DEFAULT_SOUND_VOLUME = 60
 SOUND_VOLUME_RANGE = (10, 100)
-PROFILE_VERSION = 2
+PROFILE_VERSION = 1
 PANEL_OFFLINE_SECONDS = 600  # without a connection for this long: a Repair and a message
 
 # The lockout after wrong codes goes in steps. Settings (all in Settings, card "Locking"): after `lock_tries_1`

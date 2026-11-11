@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.7
+
+**Vigil**
+
+- **No more deprecation warning about `via_device`.** Newer Home Assistant versions (2026.11) log that `via_device` in the device information is deprecated, and stops working in 2027.8, in favour of `via_device_id`. The devices of sensors and panels link to the device of the alarm that way now, and Home Assistant creates the device of the alarm before the platforms start so it can always be found. Older Home Assistant versions keep the old link. Reported by a user.
+
+**ESPHome touch panel** (firmware 1.1, flashing needed for this)
+
+- **A small click for every key on the keypad.** On a panel with a speaker (the sound package) every key you press gives one very short click: digits in the middle, delete lower and confirm higher, so you hear which key you hit. It follows the sound settings of the panel in Vigil: with *Sound on the panel* off there is no click, in Night mode with *Quiet in Night mode* on there is none either, and a click never cuts off another sound. Nothing changes for a panel without a speaker.
+
 ## 0.7.6
 
 **Vigil**

@@ -4,6 +4,7 @@ import pytest
 from homeassistant.core import Context
 from homeassistant.exceptions import Unauthorized
 from custom_components.vigil_alarm.errors import VigilError as ServiceValidationError
+from custom_components.vigil_alarm.const import DOMAIN
 
 from .common import PANEL, make_entry, sub
 from .test_integration import _call, _setup, _tick
@@ -32,6 +33,30 @@ async def test_sensor_devices_and_entities(hass):
     assert {d.name for d in devices} >= {"Vigil Alarm", "Front door", "Smoke", "Kitchen water"}
     reg = er.async_get(hass).async_get("sensor.front_door_status")
     assert reg.config_subentry_id is None  # items are not config subentries
+
+
+async def test_the_devices_of_sensors_link_to_the_device_of_the_alarm(hass):
+    from homeassistant.helpers import device_registry as dr
+
+    entry = await _house(hass)
+    reg = dr.async_get(hass)
+    alarm = reg.async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+    sensor = next(d for d in dr.async_entries_for_config_entry(reg, entry.entry_id) if d.name == "Front door")
+    assert alarm is not None and sensor.via_device_id == alarm.id
+
+
+async def test_the_link_uses_via_device_id_when_home_assistant_knows_it(hass, monkeypatch):
+    """Newer Home Assistant versions deprecate `via_device` for `via_device_id` (the id of the parent device)."""
+    from homeassistant.helpers import device_registry as dr
+    from custom_components.vigil_alarm import entity
+
+    entry = await _house(hass)
+    manager = entry.runtime_data
+    alarm = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+    monkeypatch.setattr(entity, "_device_info_has_via_device_id", lambda: True)
+    assert entity.parent_link(manager) == {"via_device_id": alarm.id}
+    monkeypatch.setattr(entity, "_device_info_has_via_device_id", lambda: False)
+    assert entity.parent_link(manager) == {"via_device": (DOMAIN, entry.entry_id)}
 
 
 async def test_sensor_status_follows_the_sensor_and_bypass(hass):

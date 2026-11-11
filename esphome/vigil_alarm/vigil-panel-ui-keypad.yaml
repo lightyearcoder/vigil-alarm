@@ -235,6 +235,6 @@ lvgl:
                   shadow_width: 0
                   pressed:
                     bg_color: 0x3DB57C
-                  on_press: {then: [{script.execute: run_action}]}
+                  on_press: {then: [{lambda: 'vigil::request_sound(vigil::SOUND_KEY_OK, vigil::ctx.state == "armed_night");'}, {script.execute: run_action}]}
                   widgets:
                     - label: {text: "\U000F012C", text_font: font_icons_30, text_color: 0x07251A, align: CENTER}

@@ -27,7 +27,7 @@ substitutions:
   # firmware speaks (PROFILE_VERSION in vigil_panel.h and in Vigil); it goes up only when panel and Vigil no longer
   # understand each other. The minor number goes up with every other change of the firmware. A release of Vigil
   # without a change here keeps the version. tests/firmware_fingerprint.json makes sure of both.
-  firmware_version: "1.0"
+  firmware_version: "1.1"
   # The width of the cards and buttons: the screen minus a margin on both sides.
   content_w: ${ screen_width | int - 24 }
   # The sizes follow the screen: the ring is a bit over a quarter of the shortest side, the keys fill the keypad.

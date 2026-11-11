@@ -127,6 +127,7 @@ A panel with a speaker beeps for what you are doing at the door:
 | Armed | two rising tones |
 | Disarmed | two falling tones |
 | Wrong code (or an action that failed) | a low double buzz |
+| Every key on the keypad | one very short click: digits in the middle, delete lower, confirm higher (never over another sound; quiet in Night mode when *Quiet in Night mode* is on) |
 
 To switch it on, remove the `#` before `sound:` in your device file, so it includes `vigil_alarm/vigil-panel-sound.yaml`.
 Whether this panel beeps and how loud is set by an administrator in Vigil, per panel (Panels, the panel, *Sound on the panel* and
