@@ -31,6 +31,8 @@ from .const import (
     CONF_MAX_DURATION,
     CONF_PARTITIONS,
     CONF_REPEAT_EVERY,
+    CONF_START_RETRIES,
+    CONF_START_RETRY_DELAY,
     CONF_TONE,
     CONF_TONE_ENTITY,
     CONF_VOLUME,
@@ -62,6 +64,8 @@ class Siren:
     causes: frozenset[str]
     profiles: dict[str, dict[str, str]]
     partitions: frozenset[str] = frozenset()  # sounds for an intrusion in these partitions; empty: all of them
+    start_retries: int = 0  # send the start command again this many times when the siren does not say it is on
+    start_retry_delay: float = 5.0
 
 
 @dataclass
@@ -98,6 +102,8 @@ class SirenController:
                     frozenset(d.get(CONF_CAUSES, SIREN_CAUSES)),
                     {c: dict(d[c]) for c in PROFILE_CAUSES if d.get(c)},
                     frozenset(d.get(CONF_PARTITIONS) or ()),
+                    int(d.get(CONF_START_RETRIES, 0) or 0),
+                    float(d.get(CONF_START_RETRY_DELAY, 5) or 5),
                 )
             )
         self._active: dict[str, _Active] = {}
@@ -234,6 +240,10 @@ class SirenController:
             self.last_start[siren.id] = {"name": siren.name, "result": "confirmed" if verified else "sent", "at": self.manager._wall()}
             self.manager.publish("siren_started", siren=siren.name, cause=cause, verified=verified)
             active.timers.append(async_call_later(self.hass, siren.max_duration, self._timeout(siren)))
+            if siren.start_retries > 0 and not verified:
+                active.timers.append(
+                    async_call_later(self.hass, siren.start_retry_delay, self._retry(siren, cause, 1))
+                )
             if siren.repeat_every > 0:
                 active.timers.append(
                     async_call_later(self.hass, siren.repeat_every, self._repeat(siren, cause, sensor_id))
@@ -245,6 +255,32 @@ class SirenController:
             self.hass.async_create_task(self._async_stop(siren, "max_duration"))
 
         return fire
+
+    def _retry(self, siren: Siren, cause: str, attempt: int):
+        @callback
+        def fire(_now: datetime) -> None:
+            self.hass.async_create_task(self._async_retry(siren, cause, attempt))
+
+        return fire
+
+    async def _async_retry(self, siren: Siren, cause: str, attempt: int) -> None:
+        """The start may not have arrived (a sleeping battery device): send it again, unless the siren says it is on."""
+        async with self._lock:
+            active = self._active.get(siren.id)
+            if active is None:  # stopped in the meantime
+                return
+            state = self.hass.states.get(siren.control)
+            if state is not None and state.state == "on":
+                self.last_start[siren.id] = {**self.last_start.get(siren.id, {"name": siren.name, "at": self.manager._wall()}), "result": "confirmed"}
+                return
+            if not await self._switch(siren, siren.control, True):
+                return
+            self.last_start[siren.id] = {**self.last_start.get(siren.id, {"name": siren.name, "at": self.manager._wall()}), "retries": attempt}
+            self.manager.publish("siren_retry", siren=siren.name, cause=cause, attempt=attempt)
+            if attempt < siren.start_retries:
+                active.timers.append(
+                    async_call_later(self.hass, siren.start_retry_delay, self._retry(siren, cause, attempt + 1))
+                )
 
     def _repeat(self, siren: Siren, cause: str, sensor_id: str | None):
         @callback

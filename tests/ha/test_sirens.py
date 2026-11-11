@@ -187,6 +187,42 @@ async def test_siren_that_stops_by_itself_is_switched_on_again(hass, freezer):
     assert len(m.on) == 3  # no more repeats after the alarm
 
 
+async def test_start_is_sent_again_for_a_siren_that_does_not_confirm(hass, freezer):
+    m = Mocks(hass)
+    await _house(hass, siren(start_retries=2, start_retry_delay=5))
+    hass.states.async_set("binary_sensor.smoke", "on")
+    await hass.async_block_till_done()
+    assert len(m.on) == 1
+    await _tick(hass, freezer, 5)
+    assert len(m.on) == 2
+    await _tick(hass, freezer, 5)
+    assert len(m.on) == 3
+    await _tick(hass, freezer, 30)
+    assert len(m.on) == 3  # no more than the set number
+    await _call(hass, "alarm_disarm", code="1234")
+
+
+async def test_no_repeat_by_default(hass, freezer):
+    m = Mocks(hass)
+    await _house(hass, siren())
+    hass.states.async_set("binary_sensor.smoke", "on")
+    await hass.async_block_till_done()
+    await _tick(hass, freezer, 30)
+    assert len(m.on) == 1
+
+
+async def test_repeat_stops_when_the_siren_says_it_is_on(hass, freezer):
+    m = Mocks(hass)
+    await _house(hass, siren(start_retries=2, start_retry_delay=5))
+    hass.states.async_set("binary_sensor.smoke", "on")
+    await hass.async_block_till_done()
+    hass.states.async_set("switch.siren", "on")
+    await _tick(hass, freezer, 5)
+    assert len(m.on) == 1
+    await _tick(hass, freezer, 30)
+    assert len(m.on) == 1
+
+
 async def test_failing_siren_is_reported_and_a_failing_tone_does_not_keep_it_quiet(hass):
     m = Mocks(hass)
 

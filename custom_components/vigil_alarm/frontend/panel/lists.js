@@ -128,7 +128,11 @@ export default function install(core) {
       out.push(badge("warn", fill(P.locked, { n: live.lock_phase || 1, t: end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) })));
     } else if (live && live.lock_tries > 0) out.push(badge("", fill(P.tries, { n: live.lock_tries, max: live.lock_tries_max })));
     const seen = (live && live.reported) || {};
-    const about = [seen.hardware, seen.firmware ? "v" + seen.firmware : null].filter(Boolean).join(" · ");
+    // What the panel runs, and what Vigil needs of it: the major number of the firmware is the profile version.
+    const wrong = live && seen.profile_supported && live.profile_required && Number(seen.profile_supported) !== live.profile_required;
+    if (wrong) out.push(badge("bad", fill(P.fwWrong, { n: live.profile_required })));
+    const about = [seen.hardware, seen.firmware ? "v" + seen.firmware : null,
+      seen.firmware && live && live.profile_required ? fill(P.fwNeeds, { n: live.profile_required }) : null].filter(Boolean).join(" · ");
     return el("span", { class: "tags" }, out, about ? el("span", { class: "sub", text: about }) : null);
   },
   _panelLimits(item) {

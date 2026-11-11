@@ -12,6 +12,12 @@ text_sensor:
     on_value:
       then:
         - lambda: vigil::ctx.profile_version = vigil::to_int(x, 0);
+        # Panel and Vigil speak another profile: whatever was open goes away, only the message stays.
+        - if:
+            condition:
+              lambda: return vigil::profile_mismatch();
+            then:
+              - script.execute: reset_ui
         - script.execute: refresh_texts
   - platform: homeassistant
     id: ha_profile_language

@@ -37,7 +37,7 @@ blueprint:
       selector:
         select:
           multiple: true
-          options: [armed, arming_started, arm_refused, disarmed, pending_started, triggered, trigger_cause_changed, trigger_ended, sensor_faulted, sensor_unconfirmed, sensor_unconfirmed_escalated, sensor_bypassed, sensor_bypassed_at_arm, sensor_unbypassed, bypass_refused, supervision_lost, supervision_restored, technical_alarm_started, technical_alarm_ended, state_restore_failed, notification_failed, siren_started, siren_stopped, siren_failed, siren_unavailable, siren_available, siren_power_lost, siren_power_restored, battery_low, battery_ok, alarm_silenced, alarm_acknowledged, code_rejected, handler_test]
+          options: [armed, arming_started, arm_refused, disarmed, pending_started, triggered, trigger_cause_changed, trigger_ended, sensor_faulted, sensor_unconfirmed, sensor_unconfirmed_escalated, sensor_bypassed, sensor_bypassed_at_arm, sensor_unbypassed, bypass_refused, supervision_lost, supervision_restored, technical_alarm_started, technical_alarm_ended, state_restore_failed, notification_failed, siren_started, siren_retry, siren_stopped, siren_failed, siren_unavailable, siren_available, siren_power_lost, siren_power_restored, battery_low, battery_ok, alarm_silenced, alarm_acknowledged, code_rejected, handler_test]
     actions:
       name: Actions
       selector:

@@ -228,7 +228,7 @@ class SelfTest:
             "overdue_days": self.overdue_days(),
             "siren": self.manager.sirens.configured,
             "siren_starts": [
-                {"name": v["name"], "result": v["result"], "at": iso(v["at"])}
+                {"name": v["name"], "result": v["result"], "at": iso(v["at"]), "retries": int(v.get("retries", 0))}
                 for v in self.manager.sirens.last_start.values()
             ],
             "enabled": due is not None,

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.7.6
+
+**Vigil**
+
+- **Repeat the start of a siren, per siren.** Some sirens, a battery-powered smoke alarm for example, now and then miss the start command and sound only after a second try. Two new settings per siren (*Sirens*, the siren): *Repeat the start up to* (0 to 3, default 0 = off) and *Wait between repeats* (default 5 seconds). Vigil then sends the start command again after that wait, unless the siren says it is on, and stops at the set number or when the alarm ends. Every repeat gives the event `siren_retry` (with `attempt`) and the *Self-test* card shows that the command was sent again. A siren that cannot say whether it is on (the Sonoff SNZB-09P, the frient smoke alarm) gets every repeat, so first test by ear whether a second command interrupts its sound. Sirens that are left at 0 behave as before; no preset switches this on.
+
+**ESPHome touch panel**
+
+- **The panel has its own firmware version, `1.0`.** Until now it followed the version of Vigil, so every release looked like new firmware. The version is now *major.minor* and only changes when the firmware changes; from here on the release notes say whether you have to flash. The major number is the profile version panel and Vigil speak; the minor number goes up with every other change of the firmware. A test makes sure the version is raised whenever the firmware files change, and not otherwise. This release changes the firmware only by the message below, so flashing is optional: a panel that reports 0.7.5 or older keeps working.
+- **The Panels tab shows the firmware version of every panel** and what Vigil needs of it ("Vigil needs firmware 1.x", a red badge when they do not fit).
+- **A panel and Vigil that no longer understand each other get a full-screen message.** When the profile version of the panel and of Vigil differ, the whole panel screen says *Panel outdated* (flash new firmware) or *Vigil outdated* (update Vigil), with both numbers, and nothing can be operated until they match; the screen is grey. This only works on firmware that has this check, which is the next time you flash; until then an older panel keeps showing *Not linked* and the advice in *Ready for use?*.
+
 ## 0.7.5
 
 **Under the hood** (nothing changes in what Vigil does)

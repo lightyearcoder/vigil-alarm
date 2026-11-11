@@ -666,5 +666,6 @@ class PanelRegistry:
                 "lock_tries": max(self.manager.lockout.tries(pid)[0], self.manager.lockout.tries(admin_bucket(pid))[0]),
                 "lock_tries_max": self.manager.lockout.tries(pid)[1],
                 "reported": {} if panel.data.get(CONF_HA_USER) else self.reported(pid),
+                "profile_required": PROFILE_VERSION,
             })
         return out

@@ -175,7 +175,7 @@ actions:
 | `sensor_bypassed` / `sensor_bypassed_at_arm` / `sensor_unbypassed` / `bypass_refused` | Bypass changes | `sensor`, `reason`, `user` |
 | `supervision_lost` / `supervision_restored` | A sensor became unreachable or came back | `sensor` |
 | `technical_alarm_started` / `technical_alarm_ended` | Water | `sensor`, `cause`, `reason` |
-| `siren_started` / `siren_stopped` / `siren_failed` / `siren_unavailable` / `siren_available` | Siren activity | `siren`, `cause`, `verified`, `reason`, `error` |
+| `siren_started` / `siren_retry` / `siren_stopped` / `siren_failed` / `siren_unavailable` / `siren_available` | Siren activity | `siren`, `cause`, `verified`, `attempt`, `reason`, `error` |
 | `siren_power_lost` / `siren_power_restored` / `battery_low` / `battery_ok` | Self-monitoring | `siren` or `name`, `level` |
 | `alarm_silenced` / `alarm_acknowledged` | A person silenced the sirens or confirmed the alarm | `user` |
 | `code_rejected` | Someone entered a wrong code | `source` (for example a panel), `action` |

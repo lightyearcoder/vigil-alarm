@@ -155,6 +155,10 @@ Set these as `substitutions:` in your device file, above the packages:
 
 Everything else (modes, disarm, bypass, language, sensor list, unlock time) is in Vigil.
 
+## Firmware version
+
+The firmware has its own version, `firmware_version` in `vigil-panel.yaml`: *major.minor* (now `1.0`). It does **not** follow the version of Vigil: a release of Vigil without a change in the `vigil_alarm` folder keeps the firmware version, and the release notes say whether you have to flash again. The major number is the profile version panel and Vigil speak (`PROFILE_VERSION`); it goes up only when they no longer understand each other. The minor number goes up with every other change. When the profile of the panel and of Vigil differ, the whole screen of the panel says *Panel outdated* (flash new firmware) or *Vigil outdated* (update Vigil) and nothing can be operated until they match.
+
 ## What the panel tells Vigil
 
 The firmware adds four diagnostic sensors to the device: *Hardware ID*, *Capabilities*, *Firmware

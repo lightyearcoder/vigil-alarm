@@ -68,6 +68,8 @@ from .const import (
     CONF_MAX_DURATION,
     CONF_ON_UNAVAILABLE,
     CONF_REPEAT_EVERY,
+    CONF_START_RETRIES,
+    CONF_START_RETRY_DELAY,
     CONF_REQUIRED,
     CONF_SERVICE,
     CONF_TAGS,
@@ -561,6 +563,8 @@ def _siren(entry: ConfigEntry, sub: Item | None, name: str, raw: dict[str, Any])
     _partitions_filter(entry, raw, data)
     data[CONF_MAX_DURATION] = float(data.get(CONF_MAX_DURATION, 180))
     data[CONF_REPEAT_EVERY] = float(data.get(CONF_REPEAT_EVERY, 0))
+    data[CONF_START_RETRIES] = max(0, min(3, int(float(data.get(CONF_START_RETRIES) or 0))))
+    data[CONF_START_RETRY_DELAY] = max(1.0, min(60.0, float(data.get(CONF_START_RETRY_DELAY) or 5)))
     if not data.get("control"):
         raise EditError({"control": "required"})
     if not data.get(CONF_CAUSES):

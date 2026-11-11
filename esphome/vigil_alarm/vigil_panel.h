@@ -100,7 +100,10 @@ static const Text TEXTS[] = {
     {"not_linked", {"Niet gekoppeld", "Not linked", "Nicht verknuepft", "Non associe", "Non collegato", "Sin vincular"}},
     {"not_linked_sub", {"Voeg dit paneel toe in Vigil (paneel-id: ", "Add this panel in Vigil (panel id: ", "Bedienteil in Vigil hinzufuegen (Bedienteil-ID: ", "Ajoutez ce clavier dans Vigil (ID du clavier : ", "Aggiungi questo pannello in Vigil (ID pannello: ", "Anade este panel en Vigil (ID del panel: "}},
     {"not_linked_entity", {"Of controleer of deze sensor bestaat: ", "Or check that this sensor exists: ", "Oder pruefen, ob dieser Sensor existiert: ", "Ou verifiez que ce capteur existe : ", "Oppure verifica che questo sensore esista: ", "O comprueba que este sensor existe: "}},
-    {"old_profile", {"Update de firmware of Vigil", "Update the firmware or Vigil", "Firmware oder Vigil aktualisieren", "Mettez a jour le firmware ou Vigil", "Aggiorna il firmware o Vigil", "Actualiza el firmware o Vigil"}},
+    {"fw_old", {"Paneel verouderd", "Panel outdated", "Bedienteil veraltet", "Clavier obsolete", "Pannello obsoleto", "Panel obsoleto"}},
+    {"fw_old_sub", {"Installeer nieuwe firmware op dit paneel", "Flash new firmware on this panel", "Neue Firmware auf dieses Bedienteil laden", "Installez un nouveau firmware sur ce clavier", "Installa il nuovo firmware su questo pannello", "Instala el nuevo firmware en este panel"}},
+    {"vigil_old", {"Vigil verouderd", "Vigil outdated", "Vigil veraltet", "Vigil obsolete", "Vigil obsoleto", "Vigil obsoleto"}},
+    {"vigil_old_sub", {"Werk Vigil bij voor dit paneel", "Update Vigil for this panel", "Vigil fuer dieses Bedienteil aktualisieren", "Mettez Vigil a jour pour ce clavier", "Aggiorna Vigil per questo pannello", "Actualiza Vigil para este panel"}},
     {"no_admin_code", {"Stel eerst een installateurscode in Vigil in", "Set an installer code in Vigil first", "Lege zuerst in Vigil einen Installateurcode fest", "Definissez d'abord un code installateur dans Vigil", "Imposta prima un codice installatore in Vigil", "Define primero un codigo de instalador en Vigil"}},
     {"page", {"Pagina ", "Page ", "Seite ", "Page ", "Pagina ", "Pagina "}},
     // what Vigil answers when a code or an action is refused (see localize_error)
@@ -144,8 +147,10 @@ static const Text TEXTS[] = {
     {"code_hint", {"Code", "Code", "Code", "Code", "Codice", "Codigo"}},
 };
 
-// The version of the profile this firmware understands (PROFILE_VERSION in Vigil) and of this firmware.
-constexpr int PROFILE_VERSION = 1;
+// The version of the profile this firmware understands (PROFILE_VERSION in Vigil). It is the major number of the
+// firmware version (firmware_version in vigil-panel.yaml: "<major>.<minor>"). A different profile means the panel and
+// Vigil no longer speak the same language: the screen then only says which of the two to update.
+constexpr int PROFILE_VERSION = 2;
 
 // "nl", "de", "fr", "it" or "es" (also "de-AT" and the like); everything else is English.
 inline int parse_language(const std::string &s) {
@@ -375,6 +380,11 @@ inline bool state_known() {
 // Is there a profile this firmware understands? Without one this panel is not (yet) known to Vigil.
 inline bool linked() { return ctx.profile_version == PROFILE_VERSION; }
 
+// Vigil has a profile, but not the version this firmware understands: one of the two is too old.
+inline bool profile_mismatch() { return ctx.profile_version != 0 && ctx.profile_version != PROFILE_VERSION; }
+// The firmware is the old one (Vigil asks for a newer profile); otherwise Vigil is.
+inline bool firmware_too_old() { return ctx.profile_version > PROFILE_VERSION; }
+
 // May the panel work at all: connected, known to Vigil, a profile it understands, not blocked.
 inline bool usable() { return state_known() && linked() && !ctx.blocked; }
 
@@ -389,8 +399,8 @@ inline int lock_seconds_left() {
   const double left = ctx.lock_end - ctx.now;
   return left > 0 ? (int) std::ceil(left) : 0;
 }
-// The screen shows only the message (blocked in Vigil, or locked after wrong codes): no partitions, no tabs, no buttons.
-inline bool screen_closed() { return state_known() && linked() && (ctx.blocked || locked_now()); }
+// The screen shows only the message (blocked in Vigil, locked after wrong codes, or panel and Vigil too far apart): no partitions, no tabs, no buttons.
+inline bool screen_closed() { return state_known() && (profile_mismatch() || (linked() && (ctx.blocked || locked_now()))); }
 // "4:32"
 inline std::string minutes_seconds(int seconds) {
   if (seconds < 0) seconds = 0;
@@ -682,7 +692,8 @@ inline std::string mode_name(const std::string &mode) {
 // The title: the state, with the name of the partition in front of it when the screen can switch.
 inline std::string state_title() {
   if (!state_known()) return tr("offline");
-  if (ctx.profile_version == 0 || !linked()) return tr("not_linked");
+  if (profile_mismatch()) return tr(firmware_too_old() ? "fw_old" : "vigil_old");
+  if (ctx.profile_version == 0) return tr("not_linked");
   if (ctx.blocked) return tr("blocked");
   if (locked_now()) return tr("locked");
   const std::string own = parts_switch() && !sel_name().empty() ? sel_name() + ": " : "";
@@ -710,6 +721,7 @@ inline uint32_t color_of_state(const std::string &s) {
 
 inline uint32_t state_color() {
   // A blocked panel and a locked one are amber, with a lock: grey looked like a panel that was simply off.
+  if (profile_mismatch()) return COL_OFF;  // panel and Vigil do not fit: grey, not amber
   if (screen_closed()) return COL_WARN;
   if (!usable()) return COL_OFF;
   if (mixed_now()) return COL_WARN;
@@ -844,7 +856,9 @@ inline std::string state_sub(double /*now: the ring shows the countdown*/) {
     for (auto &c : id) if (c == '-') c = '_';
     return tr("not_linked_sub") + ctx.device_name + "). " + tr("not_linked_entity") + "sensor." + id + "_profile";
   }
-  if (!linked()) return tr("old_profile");
+  if (profile_mismatch())
+    return tr(firmware_too_old() ? "fw_old_sub" : "vigil_old_sub") + std::string(" (") + std::to_string(PROFILE_VERSION) +
+           " / " + std::to_string(ctx.profile_version) + ")";
   if (ctx.blocked) return tr("blocked_sub");
   if (locked_now()) return ctx.lock_permanent ? tr("err_locked_permanent") : tr("lock_try") + minutes_seconds(lock_seconds_left());
   std::string out;

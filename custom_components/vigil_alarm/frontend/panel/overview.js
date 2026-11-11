@@ -90,7 +90,7 @@ export default function install(core) {
     if (st.siren && st.enabled) rows.push(row(t.next, when(st.due)));
     // What the last start of each siren came to: confirmed on, command sent only, or failed.
     const starts = st.siren_starts || [];
-    for (const s of starts) rows.push(row(fill(t.lastStart, { name: s.name }), `${t.startResult[s.result] || s.result} (${when(s.at)})`));
+    for (const s of starts) rows.push(row(fill(t.lastStart, { name: s.name }), `${t.startResult[s.result] || s.result}${s.retries ? fill(t.startRetried, { n: s.retries }) : ""} (${when(s.at)})`));
     // The automations that react to the alarm: how many, the last test, what is wrong, and the two test buttons.
     const hd = st.handlers;
     let handlerBlock = null;

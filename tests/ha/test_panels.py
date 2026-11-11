@@ -385,6 +385,7 @@ async def test_what_the_panel_reports_about_itself_is_shown(hass):
     _reports(hass, hardware="guition-4848", capabilities="touch,screen", firmware="0.4.0", profile_supported="1")
     entry = await _house(hass, panel_item())
     status = entry.runtime_data.panels.status()[0]
+    assert status["profile_required"] == 1  # the Panels tab shows what Vigil needs of the firmware
     assert status["reported"] == {"hardware": "guition-4848", "capabilities": "touch,screen",
                                   "firmware": "0.4.0", "profile_supported": "1"}
     assert [p["code"] for p in entry.runtime_data.panels.problems()] == ["panel_no_key"]  # only: it has no key yet

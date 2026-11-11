@@ -374,3 +374,34 @@ def test_the_wrong_code_shake_is_an_lvgl_animation():
     shake = yaml.split("  - id: shake_pin")[1].split("  # Do the action.")[0]
     assert "lv_anim_start" in shake and "lv_obj_set_style_translate_x" in shake
     assert "script.execute: shake_pin" in yaml.split("  - id: action_failed")[1]
+
+
+def _firmware_hash() -> str:
+    import hashlib
+    digest = hashlib.sha256()
+    for path in sorted(FIRMWARE_DIR.iterdir()):
+        if path.is_file():
+            text = path.read_text(encoding="utf-8").replace("\r\n", "\n")
+            text = re.sub(r'^  firmware_version: ".*"$', "  firmware_version: X", text, flags=re.M)
+            digest.update(path.name.encode() + b"\0" + text.encode() + b"\0")
+    return digest.hexdigest()
+
+
+def test_the_firmware_version_changes_only_with_the_firmware():
+    """The panel firmware has its own version ("<major>.<minor>"): a change in these files needs a new version,
+    and a new version without a change is not wanted. After a change: set firmware_version in vigil-panel.yaml and
+    put the new version and hash in tests/firmware_fingerprint.json."""
+    import json
+    fingerprint = json.loads((ROOT / "tests" / "firmware_fingerprint.json").read_text())
+    version = re.search(r'^  firmware_version: "([^"]+)"', (FIRMWARE_DIR / "vigil-panel.yaml").read_text(), re.M).group(1)
+    assert version == fingerprint["version"], "firmware_version and tests/firmware_fingerprint.json differ"
+    assert _firmware_hash() == fingerprint["hash"], (
+        f"the firmware changed: raise firmware_version (now {version}) and put the hash {_firmware_hash()} in the fingerprint")
+
+
+def test_the_major_number_of_the_firmware_is_the_profile_version():
+    from custom_components.vigil_alarm.const import PROFILE_VERSION
+    version = re.search(r'^  firmware_version: "(\d+)\.(\d+)"$', (FIRMWARE_DIR / "vigil-panel.yaml").read_text(), re.M)
+    assert version and int(version.group(1)) == PROFILE_VERSION
+    header = (FIRMWARE_DIR / "vigil_panel.h").read_text()
+    assert f"constexpr int PROFILE_VERSION = {PROFILE_VERSION};" in header

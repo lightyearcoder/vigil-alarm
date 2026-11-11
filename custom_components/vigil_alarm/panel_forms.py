@@ -203,6 +203,8 @@ def form_schema(modes: list[str], house: Mapping[str, Any] | None = None) -> dic
             _f("causes", "multiselect", options=list(SIREN_CAUSES), default=list(SIREN_CAUSES), required=True),
             _f("max_duration", "number", default=180, unit="s", min=0, max=3600),
             _f("repeat_every", "number", default=0, unit="s", min=0, max=3600),
+            _f("start_retries", "number", default=0, min=0, max=3),
+            _f("start_retry_delay", "number", default=5, unit="s", min=1, max=60),
             _f("light", "entity", domains=["switch", "light"]),
             _f("partitions", "partitions", default=[], required=True),
             _f("tone_entity", "entity", domains=["select", "input_select"]),

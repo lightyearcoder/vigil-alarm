@@ -8,7 +8,7 @@ int main(){
   ctx.ha_connected=true; ctx.state="disarmed"; ctx.device_name="vigil-panel-garage"; ctx.lang=EN;
   assert(!linked() && !usable() && state_title()=="Not linked" && !show_home() && !show_disarm() && !show_sensors_button());
   assert(state_sub(NAN).find("vigil-panel-garage")!=std::string::npos);
-  ctx.profile_version=2; assert(state_title()=="Not linked" && state_sub(NAN)=="Update the firmware or Vigil" && !usable());
+  ctx.profile_version=2; assert(state_title()=="Panel outdated" && state_sub(NAN)=="Flash new firmware on this panel (1 / 2)" && !usable());
   ctx.profile_version=1; ctx.modes_mask=7; ctx.sensor_list=LIST_ALWAYS; ctx.profile_unlocked=true;
   ctx.open_now="Living PIR"; ctx.open_total=1;
   ctx.sensors="Living PIR|binary_sensor.living_pir|open|1\nSmoke|binary_sensor.smoke|closed|0\nBad line\nA|b|bypassed|1";
@@ -241,6 +241,13 @@ int main(){
     ctx.now=1272; assert(!screen_closed());
     ctx.lock_permanent=true; assert(screen_closed()); ctx.lock_permanent=false;
     ctx.blocked=true; assert(screen_closed()); ctx.blocked=false; ctx.profile_version=0; assert(!screen_closed()); ctx.profile_version=1;
+    ctx.lock_end=1272; ctx.now=1000;
+    // another profile than this firmware speaks: the whole screen says which of the two is too old
+    ctx.lock_end=NAN; ctx.profile_version=2; ctx.lang=EN;
+    assert(profile_mismatch() && firmware_too_old() && screen_closed() && !usable());
+    assert(state_title()=="Panel outdated" && state_sub(ctx.now).find("Flash new firmware")!=std::string::npos);
+    ctx.profile_version=0; assert(!profile_mismatch() && state_title()=="Not linked");
+    ctx.profile_version=1; assert(!profile_mismatch() && !screen_closed());
     ctx.lock_end=1272; ctx.now=1000;
     // a blocked panel goes before a lock
     ctx.now=1000; ctx.blocked=true; assert(state_title()=="Blocked" && !locked_now());
