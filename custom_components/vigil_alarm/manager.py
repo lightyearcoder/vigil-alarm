@@ -63,6 +63,7 @@ from .manager_config import (  # noqa: F401 - also the place these are imported 
 from .manager_views import ViewsMixin
 from .notifier import Notifier
 from .panels import PanelRegistry
+from .tagreader import TagReaders
 from .selftest import SelfTest
 from .sirens import SirenController
 from .supervisor import Supervisor
@@ -101,6 +102,7 @@ class VigilManager(CommandsMixin, ViewsMixin):
         self.early_events: list[dict[str, Any]] = []
         self.eventlog = EventLog(hass, entry, self)
         self.panels = PanelRegistry(hass, self)
+        self.tags = TagReaders(hass, self)
         self.lockout = CodeLockout(hass, entry, lambda: self._clock(), self.panels.ids)
         self.last_event: dict[str, Any] | None = None
         self.changed_by: str | None = None  # the user who armed or disarmed last (None: no code, or automatic)
@@ -340,6 +342,7 @@ class VigilManager(CommandsMixin, ViewsMixin):
         self.sirens.resume_after_restart()
         self.supervisor.start()
         self.panels.start()
+        self.tags.start()
         self._after()
 
     @callback
@@ -378,6 +381,7 @@ class VigilManager(CommandsMixin, ViewsMixin):
         self._values.shutdown()
         self.walktest.shutdown()
         self.panels.stop()
+        self.tags.stop()
         if self._unsub_timer:
             self._unsub_timer()
             self._unsub_timer = None

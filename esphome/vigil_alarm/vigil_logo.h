@@ -1,4 +1,4 @@
-// The Vigil logo for the top bar of the panel, kept apart from vigil_panel.h because that file is plain C++ that
+// The Vigil logo for the top bar of the panel, kept apart from vigil_touchpanel.h because that file is plain C++ that
 // is tested on a computer without LVGL.
 #pragma once
 

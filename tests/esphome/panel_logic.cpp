@@ -1,4 +1,4 @@
-#include "vigil_panel.h"
+#include "vigil_touchpanel.h"
 #include <algorithm>
 #include <cassert>
 #include <iostream>

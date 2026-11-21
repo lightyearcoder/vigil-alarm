@@ -549,7 +549,6 @@ export default {
     "refused": "Non è possibile.",
     "keyBtn": "Chiave del pannello",
     "keyTitle": "Chiave del pannello",
-    "fwNeeds": "Vigil richiede il firmware {n}.x",
     "fwWrong": "Il firmware non è adatto a Vigil (richiede {n}.x)",
     "keyYes": "Chiave impostata",
     "keyNo": "Nessuna chiave",
@@ -564,6 +563,7 @@ export default {
     "keyAgain": "Una nuova chiave sostituisce subito questa: la vecchia chiave smette di funzionare.",
     "keyReplaceConfirm": "Sostituire ora?",
     "keyDevice": "Poi, nel file del dispositivo del pannello, togli il # davanti a panel_key: !secret {id}_key e reinstalla il pannello.",
+    "keyDeviceReader": "Poi, nel file del dispositivo del lettore, togliete il # davanti a reader_key: !secret {id}_key e reinstallate il lettore.",
     "keyCopy": "Copia",
     "keyCopied": "Copiato",
     "keyRemoved": "La chiave è stata rimossa; le chiamate a nome di questo pannello non vengono più controllate."
@@ -632,6 +632,8 @@ export default {
     "ha_user": "Account Home Assistant (tablet o telefono)",
     "language": "Lingua",
     "can_disarm": "Può disinserire (con un codice)",
+    "reader_mode": "Inserisce nella modalità",
+    "reader_disarm": "Un tag può disinserire",
     "can_bypass": "Può escludere sensori (con un codice)",
     "can_silence": "Può silenziare e confermare",
     "sensor_list": "Mostra l'elenco dei sensori",
@@ -684,6 +686,8 @@ export default {
     "tamper_entity": "Questo dispositivo ha anche un contatto antimanomissione? Sceglilo qui. Vigil aggiunge da solo un sensore di manomissione: sempre in sorveglianza, con un proprio indicatore «Escluso». Non devi aggiungerlo separatamente."
   },
   "moreInfo": "Ulteriori informazioni",
+  "devicePick": "— scegli un dispositivo —",
+  "deviceOther": "Altro (digita il nome)",
   "help": {
     "selftest_handlers": "Una volta a settimana, nelle ore impostate qui sotto, le automazioni che reagiscono a Vigil Alarm vengono testate con le loro azioni vere in modalità prova: le luci possono lampeggiare, ma niente sirena e Vigil non invia messaggi. Un test silenzioso (segnalano soltanto) gira comunque ogni giorno. Ogni automazione decide da sola se partecipa alla modalità prova.",
     "sensor_group.partition": "La partizione a cui appartiene questo gruppo. Solo i sensori di quella partizione possono usare il gruppo, che offre solo le modalità di quella partizione.",
@@ -814,7 +818,8 @@ export default {
     },
     "device": {
       "esphome": "Pannello ESPHome (schermo fai da te)",
-      "account": "Tablet o telefono con Home Assistant"
+      "account": "Tablet o telefono con Home Assistant",
+      "tagreader": "Lettore di tag (inserisce e disinserisce con un tag)"
     },
     "sensor_list": {
       "always": "Mostra sempre",

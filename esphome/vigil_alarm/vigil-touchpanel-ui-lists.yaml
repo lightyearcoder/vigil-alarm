@@ -1,5 +1,5 @@
 # The screen: the pages with the list of sensors and the information.
-# Part of vigil-panel.yaml (included by it): the same for every panel, nothing to change here.
+# Part of vigil-touchpanel.yaml (included by it): the same for every panel, nothing to change here.
 
 lvgl:
   pages:
@@ -55,11 +55,11 @@ lvgl:
             align: TOP_RIGHT
             x: -20
             y: 24
-        - !include {file: vigil-panel-row.yaml, vars: {n: 0, y: 58}}
-        - !include {file: vigil-panel-row.yaml, vars: {n: 1, y: 120}}
-        - !include {file: vigil-panel-row.yaml, vars: {n: 2, y: 182}}
-        - !include {file: vigil-panel-row.yaml, vars: {n: 3, y: 244}}
-        - !include {file: vigil-panel-row.yaml, vars: {n: 4, y: 306}}
+        - !include {file: vigil-touchpanel-row.yaml, vars: {n: 0, y: 58}}
+        - !include {file: vigil-touchpanel-row.yaml, vars: {n: 1, y: 120}}
+        - !include {file: vigil-touchpanel-row.yaml, vars: {n: 2, y: 182}}
+        - !include {file: vigil-touchpanel-row.yaml, vars: {n: 3, y: 244}}
+        - !include {file: vigil-touchpanel-row.yaml, vars: {n: 4, y: 306}}
         - button:
             id: btn_prev
             width: 96

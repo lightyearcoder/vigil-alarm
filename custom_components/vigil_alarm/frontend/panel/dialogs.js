@@ -87,7 +87,7 @@ export default function install(core) {
       body.replaceChildren(
         el("p", { class: "muted", text: P.keyShown }),
         box,
-        el("p", { class: "muted", text: fill(P.keyDevice, { id }) }),
+        el("p", { class: "muted", text: fill(item.data.device_kind === "tagreader" ? P.keyDeviceReader : P.keyDevice, { id }) }),
         el("p", { class: "muted", text: P.keyAgain }),
         el("button", { class: "btn", text: P.keyCopy, onclick: async () => {
           try { await navigator.clipboard.writeText(line); this._toast(P.keyCopied); } catch (e) { box.select(); }

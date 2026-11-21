@@ -1,4 +1,4 @@
-# One sensor row on the sensors page. Included five times by vigil-panel.yaml, with `n` the position
+# One sensor row on the sensors page. Included five times by vigil-touchpanel.yaml, with `n` the position
 # on the page (0 to 4) and `y` the distance from the top.
 obj:
   id: srow_${n}

@@ -1,14 +1,14 @@
 # Sound for a Vigil panel with a speaker (optional). Add it to the device file next to the other two packages:
 #
 #   packages:
-#     hardware: !include vigil_alarm/guition-esp32-s3-4840s40c_i.yaml
-#     vigil: !include vigil_alarm/vigil-panel.yaml
-#     sound: !include vigil_alarm/vigil-panel-sound.yaml
+#     hardware: !include vigil_alarm/hardware/guition-esp32-s3-4840s40c_i.yaml
+#     vigil: !include vigil_alarm/vigil-touchpanel.yaml
+#     sound: !include vigil_alarm/vigil-touchpanel-sound.yaml
 #
 # The hardware file names the pins of the amplifier (`sound_bclk_pin`, `sound_lrclk_pin`, `sound_dout_pin`). A panel
 # without a speaker leaves this file out and stays silent; the firmware only asks for sounds, this file plays them.
 #
-# What you hear (the panel decides, see sound_* in vigil_panel.h):
+# What you hear (the panel decides, see sound_* in vigil_touchpanel.h):
 #   entry delay   one short beep a second, two a second in the last 10 seconds
 #   exit delay    one beep every two seconds, one a second in the last 5 seconds
 #   armed         two rising tones

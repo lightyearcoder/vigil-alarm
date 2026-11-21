@@ -28,7 +28,7 @@ export default function install(core) {
         state[f.key] = initial[f.key] !== undefined ? initial[f.key] : f.default;
       }
     }
-    if (opts.ctx === "panel") state.device = initial.device || (initial.ha_user ? "account" : "esphome");
+    if (opts.ctx === "panel") state.device = initial.device || (initial.ha_user ? "account" : initial.device_kind === "tagreader" ? "tagreader" : "esphome");
     // A panel always has a language: that of the person who is logged in, English if there is no match.
     if (opts.ctx === "panel" && (!opts.editing || !Object.keys(TXT).includes(state.language))) {
       state.language = panelLanguage((this._hass.locale && this._hass.locale.language) || this._hass.language);
@@ -171,6 +171,22 @@ export default function install(core) {
           }
           return wrap(input, opts.hasCode ? el("label", { class: "inline", style: "margin-top:6px" },
             el("input", { type: "checkbox", onchange: (e) => { state.__remove_code = e.target.checked; } }), t.help.removeCode) : null);
+        }
+        if (key === "panel_id" && opts.ctx === "panel" && (this._data.esphome_devices || []).length) {
+          // The ESPHome devices that Home Assistant knows, picked from a list (a name typed wrong is a device that is never found).
+          const all = this._data.esphome_devices;
+          const used = new Set(((this._data.items || {}).panel || []).map((p) => p.data.panel_id));
+          const current = state[key] || "";
+          const manual = state.__panel_id_manual === true || (current !== "" && !all.some((d) => d.name === current));
+          const free = all.filter((d) => d.name === current || !used.has(d.name));
+          const select = el("select", { onchange: (e) => {
+            if (e.target.value === "__other") { state.__panel_id_manual = true; state[key] = ""; } else { state.__panel_id_manual = false; state[key] = e.target.value; }
+            rerender();
+          } },
+          el("option", { value: "", selected: !manual && current === "", text: t.devicePick }),
+          ...free.map((d) => el("option", { value: d.name, selected: !manual && d.name === current, text: d.title && d.title !== d.name ? `${d.title} (${d.name})` : d.name })),
+          el("option", { value: "__other", selected: manual, text: t.deviceOther }));
+          return wrap(select, manual ? input : null);
         }
         return wrap(input);
       }

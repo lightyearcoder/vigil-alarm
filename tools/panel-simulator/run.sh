@@ -6,7 +6,7 @@
 #
 # Needs: esphome (pip install esphome; or set ESPHOME=/path/to/esphome), g++, gcc, make, git and python3 with Pillow.
 # The first run downloads LVGL (the version ESPHome uses, 9.5.0) and compiles it: a few minutes. Later runs are fast.
-# The pictures are what LVGL draws from the real YAML and the real vigil_panel.h; fonts and anti-aliasing match the
+# The pictures are what LVGL draws from the real YAML and the real vigil_touchpanel.h; fonts and anti-aliasing match the
 # panel, but colours on the real LCD can differ a little, and touch, Wi-Fi and the real clock are not simulated.
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"

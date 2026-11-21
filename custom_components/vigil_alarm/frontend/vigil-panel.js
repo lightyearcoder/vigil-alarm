@@ -61,7 +61,7 @@ function iconButton(name, label, cls, onclick) {
 }
 
 // Which option list belongs to which field.
-const OPTION_GROUP = { modes: "mode", allowed_modes: "mode" };
+const OPTION_GROUP = { modes: "mode", allowed_modes: "mode", reader_mode: "mode" };
 const CONTACT_CLASSES = ["door", "window", "opening", "garage_door"];
 const MOTION_CLASSES = ["motion", "occupancy", "presence", "moving"];
 const KINDS = ["partition", "sensor_group", "sensor", "rule", "user", "notification", "siren", "panel"];

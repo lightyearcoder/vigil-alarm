@@ -16,19 +16,23 @@ Other displays work with another hardware file, see below.
 
 ```
 esphome/
-  example-garage.yaml      a device: name, Wi-Fi, keys  (copy this, one per panel)
-  vigil_alarm/             the firmware and the hardware; the same for every panel, do not edit
-    guition-esp32-s3-4840s40c_i.yaml      the hardware: display, touch, backlight  (one per kind of panel)
-    vigil-panel.yaml                      the firmware; it includes the parts below (state, scripts, screen)
-    vigil-panel-state.yaml                what Home Assistant tells the panel, and what the panel tells Vigil
-    vigil-panel-scripts.yaml              the scripts: pages, keypad, actions
-    vigil-panel-ui.yaml                   the screen: look, top layer, main page
-    vigil-panel-ui-keypad.yaml            the screen: the keypad page
-    vigil-panel-ui-lists.yaml             the screen: the sensor list and the information
-    vigil-panel-sound.yaml                the sound, only for a panel with a speaker (optional)
-    vigil-panel-row.yaml
-    vigil-panel-row-script.yaml
-    vigil_panel.h
+  example-touchpanel.yaml      a device: name, Wi-Fi, keys  (copy this, one per panel)
+  example-tagreader.yaml   a device: a separate tag reader (copy this, one per reader)
+  vigil_alarm/             the firmware and the hardware; the same for every device, do not edit
+    hardware/              what a board is: pins, buses, display. One file per kind of board
+      guition-esp32-s3-4840s40c_i.yaml      the hardware of the panel: display, touch, backlight
+      esp32-s3-super-mini-tagreader.yaml    the hardware of a separate tag reader: ESP32-S3 Super Mini with a PN532
+    vigil-tagreader.yaml                  the function of a tag reader: what happens when a tag is scanned
+    vigil-touchpanel.yaml                      the firmware; it includes the parts below (state, scripts, screen)
+    vigil-touchpanel-state.yaml                what Home Assistant tells the panel, and what the panel tells Vigil
+    vigil-touchpanel-scripts.yaml              the scripts: pages, keypad, actions
+    vigil-touchpanel-ui.yaml                   the screen: look, top layer, main page
+    vigil-touchpanel-ui-keypad.yaml            the screen: the keypad page
+    vigil-touchpanel-ui-lists.yaml             the screen: the sensor list and the information
+    vigil-touchpanel-sound.yaml                the sound, only for a panel with a speaker (optional)
+    vigil-touchpanel-row.yaml
+    vigil-touchpanel-row-script.yaml
+    vigil_touchpanel.h
     vigil_logo.h
 ```
 
@@ -36,7 +40,7 @@ An update of Vigil can bring a new `vigil_alarm/` folder; your own device files 
 
 ## Installing
 
-1. Copy `example-garage.yaml` and the whole folder `vigil_alarm` into your ESPHome folder (rename
+1. Copy `example-touchpanel.yaml` and the whole folder `vigil_alarm` into your ESPHome folder (rename
    the example).
 2. In the new file change `name` (lower case letters, digits and dashes; this is the **panel id**) and
    `friendly_name`. Add the encryption key to your `secrets.yaml`. Keep it: the key protects the link with
@@ -48,7 +52,7 @@ An update of Vigil can bring a new `vigil_alarm/` folder; your own device files 
 5. In Vigil open the tab **Panels → Add panel**. Use the device name as *panel id* and set what the
    panel may do. Until you do, the panel says **Not linked** and shows the panel id it expects.
 6. **Give the panel a key** (recommended). In *Panels* press the key button of the panel: Vigil shows a key **once**
-   (and keeps only a digest of it). Put it in your `secrets.yaml` as `vigil_panel_garage_key` (the panel id with underscores and `_key`; the key dialog shows the line), remove the `#` before
+   (and keeps only a digest of it). Put it in your `secrets.yaml` as `vigil_touchpanel_home_key` (the panel id with underscores and `_key`; the key dialog shows the line), remove the `#` before
    `panel_key` in your device file and install the panel again. From then on the panel sends the key with every call,
    and Vigil refuses any call in the name of this panel without it: a call that only *says* it comes from the panel
    (the `source` is plain text) no longer works, for example from another Home Assistant account. A new key replaces
@@ -106,8 +110,8 @@ names of people unless the panel is unlocked. The names are not in the history o
 
 ### Who did it
 
-The device name is the `source` of every call, so the history shows *Anna (vigil-panel-garage)*, or
-just *vigil-panel-garage* when no code was needed. A wrong code is published as the event
+The device name is the `source` of every call, so the history shows *Anna (vigil-touchpanel-home)*, or
+just *vigil-touchpanel-home* when no code was needed. A wrong code is published as the event
 `code_rejected` with that source, never with the code itself.
 
 ## Wrong codes, locks and blocked panels
@@ -129,7 +133,7 @@ A panel with a speaker beeps for what you are doing at the door:
 | Wrong code (or an action that failed) | a low double buzz |
 | Every key on the keypad | one very short click: digits in the middle, delete lower, confirm higher (never over another sound; quiet in Night mode when *Quiet in Night mode* is on) |
 
-To switch it on, remove the `#` before `sound:` in your device file, so it includes `vigil_alarm/vigil-panel-sound.yaml`.
+To switch it on, remove the `#` before `sound:` in your device file, so it includes `vigil_alarm/vigil-touchpanel-sound.yaml`.
 Whether this panel beeps and how loud is set by an administrator in Vigil, per panel (Panels, the panel, *Sound on the panel* and
 *Sound volume*, *Tones for arming and disarming* and *Beeps during the exit and entry delay* for a panel nobody operates). The device itself gets two entities in Home Assistant: **Quiet in Night mode** (no sound when arming to, in or
 leaving Night) and a **Test sound** button. A panel without the package stays silent.
@@ -158,7 +162,7 @@ Everything else (modes, disarm, bypass, language, sensor list, unlock time) is i
 
 ## Firmware version
 
-The firmware has its own version, `firmware_version` in `vigil-panel.yaml`: *major.minor* (now `1.0`). It does **not** follow the version of Vigil: a release of Vigil without a change in the `vigil_alarm` folder keeps the firmware version, and the release notes say whether you have to flash again. The major number is the profile version panel and Vigil speak (`PROFILE_VERSION`); it goes up only when they no longer understand each other. The minor number goes up with every other change. When the profile of the panel and of Vigil differ, the whole screen of the panel says *Panel outdated* (flash new firmware) or *Vigil outdated* (update Vigil) and nothing can be operated until they match.
+The firmware has its own version, `firmware_version` in `vigil-touchpanel.yaml`: *major.minor* (now `1.0`). It does **not** follow the version of Vigil: a release of Vigil without a change in the `vigil_alarm` folder keeps the firmware version, and the release notes say whether you have to flash again. The major number is the profile version panel and Vigil speak (`PROFILE_VERSION`); it goes up only when they no longer understand each other. The minor number goes up with every other change. When the profile of the panel and of Vigil differ, the whole screen of the panel says *Panel outdated* (flash new firmware) or *Vigil outdated* (update Vigil) and nothing can be operated until they match.
 
 ## What the panel tells Vigil
 
@@ -167,9 +171,45 @@ version* and *Profile version*. Vigil reads them in the Panels tab, and gives ad
 alarm) when the firmware does not understand the profile or when the hardware is not what you
 registered.
 
+## Tag reader
+
+A tag reader is a small separate device: an ESP32-S3 Super Mini with a PN532 on I2C (DIP switch 1 = ON, 2 = OFF; VCC on 3V3, GND, SDA on GPIO6, SCL on GPIO7).
+Copy `example-tagreader.yaml` and the folder `vigil_alarm`, change the name, make the encryption key in `secrets.yaml` and flash it. Wired
+differently? Set `sda_pin` and `scl_pin` under `substitutions:` in your file.
+
+The layers are separate on purpose: `hardware/` says what the board is and where the reader is wired, `vigil-tagreader.yaml` says what happens with a
+tag and does not know pins. A panel that has a reader of its own later gets a hardware file with the reader `vigil_reader` and uses the same
+`vigil-tagreader.yaml`.
+
+A tag goes to Home Assistant (Settings > Tags). Holding a Mifare Classic tag no longer logs "Authentication failed - Block 0x04": the number is read
+and passed on, and the component's attempt to read NDEF data from the tag is not an error to you, so that message is silenced.
+
+### Arming and disarming with a tag
+
+The reader fires the event `esphome.vigil_tag` with its own name (the `name` of the device) and the number of the tag, next to
+the tag for Home Assistant. In Vigil you give a user the tag (*Users*, field *tags*) and add the reader in the tab *Panels* as a device of the kind *Tag reader*,
+with the name of the reader device (its id). The reader is a control point of its own: it needs no panel, and has its own rights and lock. The tag arms in the mode you chose for the reader
+(*Arms in the mode*) when the alarm is off, and disarms when it is on, if *A tag can disarm* is on. All the rights of the reader and of the
+user hold, as with a code. An unknown tag counts as a wrong code for the lock of that reader and gives the event `tag_rejected`, without the number.
+The number of a tag is not a secret and can be copied: for a reader outside, turn *A tag can disarm* off, so that a tag can only arm.
+
+The reader also has a key, like a panel: the event `esphome.vigil_tag` is something anyone who can fire events in Home Assistant could fake, with the name of the reader. Press the key button of the reader in the tab *Panels* (the key is shown once), put it in `secrets.yaml` as `vigil_tagreader_home_key: "..."`, remove the `#` before `reader_key: !secret vigil_tagreader_home_key` in the device file and install the reader again. Once the reader has a key, Vigil refuses (and logs as `panel_refused`, reason `key`) a scan without the right key. A reader without a key works as before, and Vigil points it out in the tab *Panels*.
+
+### The leds
+
+Three leds on GPIO8 (green), GPIO9 (amber) and GPIO10 (red), each with its own resistor (green 100 to 150 ohm, the others 220 ohm), show the
+state of the alarm of the reader. The reader reads it from the sensor that Vigil makes for it: the device name with underscores plus `_state` (`vigil-tagreader-home`
+reads `sensor.vigil_tagreader_home_state`), so which partition it shows is set once, in the form of the reader in Vigil, and nothing has to be set in the firmware. The pins can be set as `led_green_pin`, `led_amber_pin` and `led_red_pin`). Green: off. Amber, slow flashing: exit
+delay (faster in its last 5 seconds, like the beeps of a panel). Amber: armed home or night. Red: armed away. Red, fast flashing: entry delay. Red and amber in turn: alarm. Every scan makes the three leds flash
+once, at once. Red, three short flashes after a scan: Vigil refused it (an unknown tag, a wrong or missing key, a locked reader, a tag that may not do this, an open sensor). Vigil counts the refused scans in the attribute `refused` of the state sensor, and the reader flashes when that number goes up.
+
+The reader also tells Vigil what it is, as a panel does (*Hardware ID*, *Firmware version*, *Profile version*, diagnostic entities in Home Assistant). The tab *Panels* shows the hardware and the firmware version on the card of the reader, and Vigil reports a reader that is there but says nothing (firmware from before 0.7.9: it sends no key and cannot flash for a refused scan) like a panel with firmware that does not fit.
+
+`vigil_alarm/vigil-tagreader-ledtest.yaml` is only there to test the wiring of the leds: it lets them light one after the other. Do not use it with the line for `vigil-tagreader.yaml`.
+
 ## Another display
 
-`vigil_alarm/` is for the screen only. For other hardware make a file like `vigil_alarm/guition-esp32-s3-4840s40c_i.yaml` (or send it to us to add). It
+`vigil_alarm/` is for the screen only. For other hardware make a file like `vigil_alarm/hardware/guition-esp32-s3-4840s40c_i.yaml` (or send it to us to add). It
 must provide:
 
 - the substitutions `hardware_id`, `screen_width` and `screen_height` (reported to Vigil),
@@ -178,13 +218,13 @@ must provide:
 - a touch screen that runs `script.execute: wake` on touch (the touch that wakes a dark screen is then not passed on to the button below it).
 
 The layout follows the size of the screen: the ring, the keys and the tabs are calculated from `screen_width` and
-`screen_height`, and the main page grows with the screen (see the substitutions at the top of `vigil-panel.yaml`).
+`screen_height`, and the main page grows with the screen (see the substitutions at the top of `vigil-touchpanel.yaml`).
 It is designed and checked for 480x480; a wider screen, for example 800x480, is drawn correctly (the picture below
 was made with the simulator) but its proportions are not tuned yet.
 
 ## Seeing the screens without a panel
 
-`tools/panel-simulator/run.sh` draws every screen of the panel on a computer, from the real YAML and `vigil_panel.h`
+`tools/panel-simulator/run.sh` draws every screen of the panel on a computer, from the real YAML and `vigil_touchpanel.h`
 (see `tools/panel-simulator/README.md`): `run.sh out --lang en --size 800x480`. The icons come from a font file that
 ESPHome downloads when you compile, so the first compile needs internet access.
 
@@ -195,7 +235,7 @@ ESPHome downloads when you compile, so the first compile needs internet access.
 ## Another language
 
 The panel speaks Dutch, English, German, French, Italian and Spanish. All texts are in
-`vigil_alarm/vigil_panel.h`, one line per text with a column per language (in the order of `enum Language`).
+`vigil_alarm/vigil_touchpanel.h`, one line per text with a column per language (in the order of `enum Language`).
 To add a language: add a column to `TEXTS` and to `ERROR_ROWS` (the phrases the panel recognises in what Vigil
 answers), a value to the enum and a line to `parse_language`, and add the language to Vigil (`languages.py`).
 Use plain ASCII on the screen: the built-in fonts have no accented letters.
@@ -216,7 +256,7 @@ Silencing a siren and a tag reader. Disarming silences everything anyway. The pa
 
 ## Tests
 
-`tests/test_esphome_panel.py` runs the logic of `vigil_panel.h` with a C++ compiler and validates the
+`tests/test_esphome_panel.py` runs the logic of `vigil_touchpanel.h` with a C++ compiler and validates the
 example with `esphome config`. A build for the ESP32 and the screen on the real LCD can only be tried on the panel; the simulator
 (`tools/panel-simulator/`) draws the screens on a computer.
 

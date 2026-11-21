@@ -44,8 +44,8 @@ def patch(panel):
     return panel
 
 
-# The firmware is in several files (vigil-panel.yaml and the parts it includes): each gets the same patches.
-for part in dest.glob("vigil-panel*.yaml"):
+# The firmware is in several files (vigil-touchpanel.yaml and the parts it includes): each gets the same patches.
+for part in dest.glob("vigil-touchpanel*.yaml"):
     part.write_text(patch(part.read_text()))
 
 lang = "vigil::" + (a.lang.upper() if a.lang in ("nl", "en", "de", "fr", "it", "es") else "EN")
@@ -115,7 +115,7 @@ lvgl:
     - tft_display
 
 packages:
-  vigil: !include vigil_alarm/vigil-panel.yaml
+  vigil: !include vigil_alarm/vigil-touchpanel.yaml
 
 script:
   - id: sim_run

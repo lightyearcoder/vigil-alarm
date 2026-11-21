@@ -150,7 +150,7 @@ class CommandsMixin:
 
     async def async_arm(
         self, mode: str, code: str | None, source: str | None = None, user_id: str | None = None,
-        *, bypass_open: bool = False, partition: str | None = None,
+        *, bypass_open: bool = False, partition: str | None = None, tag_user: Item | None = None,
     ) -> None:
         """Arm. With `bypass_open` what stops it (an open tamper contact, a sensor that does not answer) is bypassed
         first: for someone who may bypass, with the same rules as bypassing by hand, and never a fire or gas sensor.
@@ -174,9 +174,12 @@ class CommandsMixin:
             self.panels.check(source, "arm", mode, first.id)
         panel = self.panels.check(source, "bypass", None, None if everywhere else first.id) if bypass_open else None
         # From a registered panel a bypass always needs a code, like bypassing by hand.
-        user = await self._authenticate(
-            code, required=self.code_arm_required or panel is not None, source=source, action="arm"
-        )
+        if tag_user is not None:  # a tag has said who it is: no code (the reader of the panel has checked it)
+            user, self.auth_duress = tag_user, False
+        else:
+            user = await self._authenticate(
+                code, required=self.code_arm_required or panel is not None, source=source, action="arm"
+            )
         if everywhere:
             targets = [p for p in self._targets("all", user, source, "arm", mode)
                        if mode in p.config.modes and p.engine.state == "disarmed"]
@@ -270,6 +273,7 @@ class CommandsMixin:
 
     async def async_disarm(
         self, code: str | None, source: str | None = None, user_id: str | None = None, *, partition: str | None = None,
+        tag_user: Item | None = None,
     ) -> None:
         """Disarm one partition (none: the first) or, with "all", every partition the caller may use.
 
@@ -279,7 +283,10 @@ class CommandsMixin:
         partition = self.panels.partition_for(source, partition)
         part = self.partition(None if partition == "all" else partition)
         self.panels.check(source, "disarm", None, None if partition == "all" else part.id)
-        user = await self._authenticate(code, required=True, source=source, action="disarm")
+        if tag_user is not None:
+            user, self.auth_duress = tag_user, False
+        else:
+            user = await self._authenticate(code, required=True, source=source, action="disarm")
         duress = self.auth_duress
         self._sync()
         if partition == "all":

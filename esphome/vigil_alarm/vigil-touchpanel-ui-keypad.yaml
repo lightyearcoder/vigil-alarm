@@ -1,5 +1,5 @@
 # The screen: the page with the keypad.
-# Part of vigil-panel.yaml (included by it): the same for every panel, nothing to change here.
+# Part of vigil-touchpanel.yaml (included by it): the same for every panel, nothing to change here.
 
 lvgl:
   pages:

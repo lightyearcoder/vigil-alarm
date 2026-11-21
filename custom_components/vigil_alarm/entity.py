@@ -33,7 +33,12 @@ def parent_link(manager: VigilManager) -> dict:
     """The link of a device of a sensor or a panel to the device of the alarm."""
     parent = (DOMAIN, manager.entry.entry_id)
     if _device_info_has_via_device_id():
-        device = dr.async_get(manager.hass).async_get_device(identifiers={parent})
+        # (Not `async_get_device(identifiers=...)`: Home Assistant deprecates it, identifiers are not unique across entries.)
+        device = next(
+            (d for d in dr.async_entries_for_config_entry(dr.async_get(manager.hass), manager.entry.entry_id)
+             if parent in d.identifiers),
+            None,
+        )
         if device is not None:
             return {"via_device_id": device.id}
     return {"via_device": parent}

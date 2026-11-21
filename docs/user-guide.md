@@ -179,11 +179,28 @@ its profile from Vigil: it shows only the modes the panel may arm in, asks for a
 Installation and options are in [esphome/README.md](../esphome/README.md). The device name is the panel id and the `source` of every call, which shows in the history as *Anna (vigil-panel-garage)*. A wrong
 code gives the event `code_rejected`, never with the code itself. The lock goes in steps and you set the numbers under *Settings*, *Locking*. Wrong codes that did not lead to a lock are forgotten once nobody has tried again for as long as the next lock lasts. The panel list shows when a panel is locked: the phase (1 to 3, 4 for good), the time it lasts until, and while it is not locked the number of wrong codes counted. *Clear lock* lifts it and resets all counts; the *Unlock* button does that too (besides showing the sensor list on the panel). By default: after 3 wrong codes that panel is locked for 5 minutes, then after 2 more wrong codes for 15 minutes, then after 2 more for 60 minutes, and after 1 more wrong code for good (events `code_locked` and `code_locked_permanent`, also sent to your fault notification channels). A permanent lock only goes away with *Clear lock* at the panel, and then everything starts from the first step again. A right code also sets the count and the step back to zero. The lock stays in place when Home Assistant restarts; the shared timer for everything that is not a registered panel (*other*) never locks for good, because nobody could lift it, but repeats the last wait; an administrator in the UI can still operate the alarm. Every registered panel (see below) has its own timer; everything else (a phone, an automation, any other name) shares one.
 
+A tag reader (the separate device from `esphome/README.md`) can arm and disarm with a user's tag. Give the user the tag (*Users*, *tags*) and add the reader in the tab *Panels* as a device of the kind *Tag reader*, with the name of the reader device, the mode it arms in and whether a tag can disarm. It has its own rights and its own lock, and needs no panel; an unknown tag counts as a wrong code of that reader and gives `tag_rejected`. A tag number can be copied, so turn *A tag can disarm* off for a reader outside.
+
 The ESPHome firmware has its own version, *major.minor* (for example 1.0), which does not follow the version of Vigil: a new release of Vigil without a change to the panel keeps the same firmware version, so you only flash when the release notes say so. The major number is the version of the *profile* that panel and Vigil use to talk. When it differs (a new Vigil with an old panel, or the other way round), the whole screen of the panel says *Panel outdated* (flash new firmware) or *Vigil outdated* (update Vigil), with both numbers, and nothing can be operated on that panel until they match again. A new minor number only means that the firmware changed; the panel keeps working with the older one.
 
 #### Panels, tablets and phones
 
 The tab *Panels* is the register of everything that may operate the alarm besides the Home Assistant UI: ESPHome panels (recognised by their panel id) and tablets or phones (recognised by their Home Assistant account). All are set up the same way. As soon as one account is registered, other ordinary accounts are refused before their code is looked at (event `user_refused`); administrators, automations and ESPHome panels are not touched. Details, and the advice to give an administrator a second, ordinary account for daily use, are in the [tablet guide](tablet.md).
+
+#### Linking an ESPHome device safely (panel or tag reader)
+
+Do these steps in this order, for every ESPHome panel or tag reader. Until the last step the device works, but anyone who can call Home Assistant could pretend to be it.
+
+1. **Device file.** Copy the example (`example-touchpanel.yaml` or `example-tagreader.yaml`) and the folder `vigil_alarm` into your ESPHome folder and give it its own `name` (lower case letters, digits and dashes).
+2. **Encryption key.** Put an API encryption key for the device in `secrets.yaml` (the example shows the name). It protects the link with Home Assistant.
+3. **Install** the device (the first time through USB) and add it in Home Assistant (*Settings*, *Devices & services*, *ESPHome*).
+4. **Allow actions.** Under *Configure* of that ESPHome device switch on *Allow the device to perform Home Assistant actions*. Without it nothing reaches Vigil.
+5. **Register it in Vigil.** Tab *Panels*, *Add*: choose *ESPHome panel* or *Tag reader*, pick the device from the list (or type its name) and set what it may do.
+6. **Make the Vigil key.** Press the key button of the device in the tab *Panels*. Vigil shows the key **once** and keeps only a digest. Copy the line that is shown into `secrets.yaml` (for example `vigil_touchpanel_home_key: "..."`).
+7. **Put the key in the device file.** Remove the `#` before `panel_key: !secret ...` (panel) or `reader_key: !secret ...` (tag reader) and install the device again.
+8. **Check.** The badge *Key set* of the device in the tab *Panels* is green, *Ready for use?* no longer advises a key, and a call or scan without the key is refused and logged (`panel_refused`, reason `key`).
+
+The encryption key (step 2) and the Vigil key (steps 6 and 7) are two different things and you need both: the first protects the connection, the second proves to Vigil which device a call comes from. A new Vigil key replaces the old one at once: install the device again with it. Keep both out of screenshots and out of shared files.
 
 #### Registering a panel (tab *Panels*)
 

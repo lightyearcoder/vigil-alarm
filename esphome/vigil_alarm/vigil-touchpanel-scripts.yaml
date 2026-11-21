@@ -1,5 +1,5 @@
 # The scripts of the panel: the screen on and off, the pages, the keypad and the actions towards Vigil.
-# Part of vigil-panel.yaml (included by it): the same for every panel, nothing to change here.
+# Part of vigil-touchpanel.yaml (included by it): the same for every panel, nothing to change here.
 
 # ------------------------------------------------------------------------------------- scripts
 script:
@@ -390,11 +390,11 @@ script:
       - script.execute: row_update_2
       - script.execute: row_update_3
       - script.execute: row_update_4
-  - !include {file: vigil-panel-row-script.yaml, vars: {n: 0}}
-  - !include {file: vigil-panel-row-script.yaml, vars: {n: 1}}
-  - !include {file: vigil-panel-row-script.yaml, vars: {n: 2}}
-  - !include {file: vigil-panel-row-script.yaml, vars: {n: 3}}
-  - !include {file: vigil-panel-row-script.yaml, vars: {n: 4}}
+  - !include {file: vigil-touchpanel-row-script.yaml, vars: {n: 0}}
+  - !include {file: vigil-touchpanel-row-script.yaml, vars: {n: 1}}
+  - !include {file: vigil-touchpanel-row-script.yaml, vars: {n: 2}}
+  - !include {file: vigil-touchpanel-row-script.yaml, vars: {n: 3}}
+  - !include {file: vigil-touchpanel-row-script.yaml, vars: {n: 4}}
 
   - id: sensors_page_step
     parameters:

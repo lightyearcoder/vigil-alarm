@@ -1,0 +1,38 @@
+# A test of the three leds, to see that they are wired right, before they show the state of the alarm. Add it to the
+# device file next to the other two and remove it again when the leds work:
+#
+#   packages:
+#     hardware: !include vigil_alarm/hardware/esp32-s3-super-mini-tagreader.yaml
+#     tagreader: !include vigil_alarm/vigil-tagreader.yaml
+#     ledtest: !include vigil_alarm/vigil-tagreader-ledtest.yaml
+#
+# After the start the leds go on one after the other (green, amber, red, one second each) and then off. In Home Assistant
+# the device has three lights, "Led green", "Led amber" and "Led red", to switch on and off by hand.
+
+light:
+  - platform: binary
+    id: test_led_green
+    name: Led green
+    output: led_green
+  - platform: binary
+    id: test_led_amber
+    name: Led amber
+    output: led_amber
+  - platform: binary
+    id: test_led_red
+    name: Led red
+    output: led_red
+
+esphome:
+  on_boot:
+    priority: -100
+    then:
+      - light.turn_on: test_led_green
+      - delay: 1s
+      - light.turn_off: test_led_green
+      - light.turn_on: test_led_amber
+      - delay: 1s
+      - light.turn_off: test_led_amber
+      - light.turn_on: test_led_red
+      - delay: 1s
+      - light.turn_off: test_led_red

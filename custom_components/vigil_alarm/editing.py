@@ -19,6 +19,10 @@ from .languages import LANGUAGES, TAMPER_WORD, language_of
 from .const import (
     CONF_MIN_CODE_LENGTH,
     CONF_BLOCKED,
+    CONF_DEVICE_KIND,
+    CONF_READER_DISARM,
+    CONF_READER_MODE,
+    KIND_TAGREADER,
     CONF_WATCH,
     CONF_HA_USER,
     CONF_KEY_HASH,
@@ -661,6 +665,13 @@ async def _panel(
     language = raw.get(CONF_LANGUAGE) or ""
     if language not in ("", *LANGUAGES):
         errors[CONF_LANGUAGE] = "unknown_choice"
+    # A tag reader is a control point of its own: found by the name of its ESPHome device (its id), with its own rights
+    # and its own lock. It has no screen, so no language, keypad or sensor list.
+    reader = raw.get("device") == KIND_TAGREADER or (
+        raw.get("device") is None and (sub.data.get(CONF_DEVICE_KIND) if sub else None) == KIND_TAGREADER)
+    reader_mode = str(raw.get(CONF_READER_MODE) or (chosen[0] if chosen else ""))
+    if reader and reader_mode not in modes:
+        errors[CONF_READER_MODE] = "unknown_choice"
     data: dict[str, Any] = {
         CONF_PANEL_ID: panel_id,
         CONF_LANGUAGE: language,
@@ -678,6 +689,10 @@ async def _panel(
         CONF_BLOCKED: bool(raw.get(CONF_BLOCKED, False)),
         CONF_WATCH: bool(raw.get(CONF_WATCH, True)),
     }
+    if reader:
+        data[CONF_DEVICE_KIND] = KIND_TAGREADER
+        data[CONF_READER_MODE] = reader_mode
+        data[CONF_READER_DISARM] = bool(raw.get(CONF_READER_DISARM, True))
     if ha_user:
         data[CONF_HA_USER] = ha_user
     elif sub and sub.data.get(CONF_KEY_HASH):

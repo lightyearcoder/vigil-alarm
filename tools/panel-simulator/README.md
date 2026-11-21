@@ -1,7 +1,7 @@
 # Panel simulator
 
-Renders the screens of the Vigil panel on a computer, without a panel: the real `vigil-panel.yaml` and the real
-`vigil_panel.h`, drawn by the real LVGL, into pictures. It is how the screenshots in the handbook are made and how a
+Renders the screens of the Vigil panel on a computer, without a panel: the real `vigil-touchpanel.yaml` and the real
+`vigil_touchpanel.h`, drawn by the real LVGL, into pictures. It is how the screenshots in the handbook are made and how a
 change to the look is checked before it goes to the hardware.
 
 ```

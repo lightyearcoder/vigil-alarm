@@ -549,7 +549,6 @@ export default {
     "refused": "Ce n'est pas possible.",
     "keyBtn": "Clé du clavier",
     "keyTitle": "Clé du clavier",
-    "fwNeeds": "Vigil demande le firmware {n}.x",
     "fwWrong": "Le firmware ne convient pas à Vigil (demande {n}.x)",
     "keyYes": "Clé définie",
     "keyNo": "Pas de clé",
@@ -564,6 +563,7 @@ export default {
     "keyAgain": "Une nouvelle clé remplace celle-ci aussitôt : l'ancienne clé ne fonctionne plus.",
     "keyReplaceConfirm": "Remplacer maintenant ?",
     "keyDevice": "Ensuite, dans le fichier de l'appareil du clavier, retirez le # devant panel_key: !secret {id}_key et réinstallez le clavier.",
+    "keyDeviceReader": "Ensuite, dans le fichier de l'appareil du lecteur, retirez le # devant reader_key: !secret {id}_key, puis réinstallez le lecteur.",
     "keyCopy": "Copier",
     "keyCopied": "Copié",
     "keyRemoved": "La clé est supprimée ; les appels au nom de ce clavier ne sont plus vérifiés."
@@ -632,6 +632,8 @@ export default {
     "ha_user": "Compte Home Assistant (tablette ou téléphone)",
     "language": "Langue",
     "can_disarm": "Peut désactiver (avec un code)",
+    "reader_mode": "Arme dans le mode",
+    "reader_disarm": "Un badge peut désarmer",
     "can_bypass": "Peut inhiber des capteurs (avec un code)",
     "can_silence": "Peut couper le son et acquitter",
     "sensor_list": "Afficher la liste des capteurs",
@@ -684,6 +686,8 @@ export default {
     "tamper_entity": "Cet appareil a-t-il aussi un contact de sabotage ? Choisissez-le ici. Vigil ajoute de lui-même un capteur de sabotage : toujours à l'écoute, avec son propre indicateur « Inhibé ». Vous n'avez pas besoin de l'ajouter séparément."
   },
   "moreInfo": "Plus d'informations",
+  "devicePick": "— choisir un appareil —",
+  "deviceOther": "Autre (saisir le nom)",
   "help": {
     "selftest_handlers": "Une fois par semaine, aux heures réglées ci-dessous, les automatisations qui réagissent à Vigil Alarm sont testées avec leurs vraies actions en mode d'entraînement : les lampes peuvent clignoter, mais pas de sirène et Vigil n'envoie aucun message. Un test silencieux (elles signalent seulement) tourne de toute façon chaque jour. Chaque automatisation décide elle-même si elle participe au mode d'entraînement.",
     "sensor_group.partition": "La partition à laquelle ce groupe appartient. Seuls les capteurs de cette partition peuvent utiliser le groupe, et il ne propose que les modes de cette partition.",
@@ -814,7 +818,8 @@ export default {
     },
     "device": {
       "esphome": "Clavier ESPHome (écran DIY)",
-      "account": "Tablette ou téléphone avec Home Assistant"
+      "account": "Tablette ou téléphone avec Home Assistant",
+      "tagreader": "Lecteur de badge (arme et désarme avec un badge)"
     },
     "sensor_list": {
       "always": "Toujours afficher",

@@ -1,5 +1,5 @@
-# Example of a Vigil panel: a Guition 4848 in the garage. Copy this file and the
-# folder `vigil_alarm` (the firmware and the hardware file guition-esp32-s3-4840s40c_i.yaml) into your ESPHome
+# Example of a Vigil panel: a Guition 4848 at home. Copy this file and the
+# folder `vigil_alarm` (the firmware and the hardware file hardware/guition-esp32-s3-4840s40c_i.yaml) into your ESPHome
 # folder and change the name. For a
 # second panel copy this file again with another name.
 #
@@ -12,27 +12,27 @@
 # do nothing.
 
 substitutions:
-  name: vigil-panel-garage      # the panel id in Vigil: lower case letters, digits and dashes
-  friendly_name: Vigil panel garage
+  name: vigil-touchpanel-home      # the panel id in Vigil: lower case letters, digits and dashes
+  friendly_name: Vigil touchpanel home
   # backlight_timeout_seconds: "60"   # only until Vigil has told the panel (setting in Vigil)
   # The key of this panel: make it in Vigil (Panels, the key button of this panel) and put it in secrets.yaml. The panel
   # sends it with every call, and Vigil refuses calls in the name of this panel without it.
-  # panel_key: !secret vigil_panel_garage_key   # remove the # once you have made the key and put it in secrets.yaml
+  # panel_key: !secret vigil_touchpanel_home_key   # remove the # once you have made the key and put it in secrets.yaml
 
 esphome:
   name: ${name}
   friendly_name: ${friendly_name}
 
 packages:
-  hardware: !include vigil_alarm/guition-esp32-s3-4840s40c_i.yaml
-  vigil: !include vigil_alarm/vigil-panel.yaml
+  hardware: !include vigil_alarm/hardware/guition-esp32-s3-4840s40c_i.yaml
+  vigil: !include vigil_alarm/vigil-touchpanel.yaml
   # A speaker on the connector of the panel: beeps for the exit and entry delay, arming, disarming and a wrong
   # code. Remove the # to switch it on (see "Sound" in README.md for the one soldering step on this board).
-  # sound: !include vigil_alarm/vigil-panel-sound.yaml
+  # sound: !include vigil_alarm/vigil-touchpanel-sound.yaml
 
 api:
   encryption:
-    key: !secret vigil_panel_garage_encryption_key
+    key: !secret vigil_touchpanel_home_encryption_key
 
 ota:
   - platform: esphome

@@ -193,6 +193,7 @@ EVENT_TYPES = [
     "alarm_silenced",
     "alarm_acknowledged",
     "code_rejected",
+    "tag_rejected",
     "code_locked",
     "startup_settled",
     "code_locked_permanent",
@@ -232,6 +233,13 @@ CONF_SENSOR_LIST = "sensor_list"
 CONF_UNLOCK_SECONDS = "unlock_seconds"
 CONF_BLOCKED = "blocked"
 CONF_KEY_HASH = "key_hash"  # of the key an ESPHome panel sends with every call (never the key itself)
+# A tag reader is a control point of its own (a small ESPHome device with a PN532 next to a door), with its own rights and
+# its own lock. It says which tag it saw by firing the event below; Vigil finds it by the name of the device (its id).
+CONF_DEVICE_KIND = "device_kind"  # "tagreader": a control point that is a tag reader (without it: a panel or a tablet)
+KIND_TAGREADER = "tagreader"
+CONF_READER_MODE = "reader_mode"  # the mode a tag arms in
+CONF_READER_DISARM = "reader_disarm"  # a tag alone may disarm (off: it can only arm, disarming asks for a code)
+READER_EVENT = "esphome.vigil_tag"  # data: reader (the device name) and tag (the number)
 CONF_WATCH = "watch"  # tell the administrators when this panel drops out; a register entry without it is watched
 CONF_HA_USER = "ha_user"  # a tablet: the Home Assistant user it is logged in as
 SENSOR_LIST_CHOICES = ("always", "code", "never")
@@ -247,6 +255,7 @@ DEFAULT_SOUND_CHANGES = True
 DEFAULT_SOUND_VOLUME = 60
 SOUND_VOLUME_RANGE = (10, 100)
 PROFILE_VERSION = 1
+READER_VERSION = 1  # what a tag reader and Vigil say to each other (the key in the event, the refused counter); the major of its firmware
 PANEL_OFFLINE_SECONDS = 600  # without a connection for this long: a Repair and a message
 
 # The lockout after wrong codes goes in steps. Settings (all in Settings, card "Locking"): after `lock_tries_1`

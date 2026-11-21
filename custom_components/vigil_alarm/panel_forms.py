@@ -101,6 +101,9 @@ def _f(key: str, type_: str, **kw: Any) -> dict[str, Any]:
     return {"key": key, "type": type_, **kw}
 
 
+SCREEN = {"device": ["esphome", "account"]}  # what only a panel with a screen or a tablet has, not a tag reader
+
+
 def form_schema(modes: list[str], house: Mapping[str, Any] | None = None) -> dict[str, list[dict[str, Any]]]:
     """Describe the forms; the panel renders them (labels live in the panel).
 
@@ -168,23 +171,25 @@ def form_schema(modes: list[str], house: Mapping[str, Any] | None = None) -> dic
         ],
         "panel": [
             _f("name", "text", required=True),
-            _f("device", "select", options=["esphome", "account"], default="esphome", required=True),
-            _f("panel_id", "text", required=True, show_if={"device": ["esphome"]}),
+            _f("device", "select", options=["esphome", "account", "tagreader"], default="esphome", required=True),
+            _f("panel_id", "text", required=True, show_if={"device": ["esphome", "tagreader"]}),
             _f("ha_user", "ha_user", required=True, show_if={"device": ["account"]}),
-            _f("language", "select", options=list(LANGUAGES), default="en"),
+            _f("language", "select", options=list(LANGUAGES), default="en", show_if=SCREEN),
             _f("partitions", "partitions", default=[], required=True),
             _f("default_partition", "default_partition", default="", required=True),
             _f("allowed_modes", "multiselect", options=modes, default=[]),
-            _f("can_disarm", "boolean", default=True),
-            _f("can_bypass", "boolean", default=True),
-            _f("can_silence", "boolean", default=True),
-            _f("sensor_list", "select", options=list(SENSOR_LIST_CHOICES), default="code"),
-            _f("unlock_seconds", "number", unit="s", min=UNLOCK_SECONDS_RANGE[0], max=UNLOCK_SECONDS_RANGE[1], default=DEFAULT_UNLOCK_SECONDS),
+            _f("reader_mode", "select", options=modes, default=modes[0] if modes else "away", show_if={"device": ["tagreader"]}),
+            _f("reader_disarm", "boolean", default=True, show_if={"device": ["tagreader"]}),
+            _f("can_disarm", "boolean", default=True, show_if=SCREEN),
+            _f("can_bypass", "boolean", default=True, show_if=SCREEN),
+            _f("can_silence", "boolean", default=True, show_if=SCREEN),
+            _f("sensor_list", "select", options=list(SENSOR_LIST_CHOICES), default="code", show_if=SCREEN),
+            _f("unlock_seconds", "number", unit="s", min=UNLOCK_SECONDS_RANGE[0], max=UNLOCK_SECONDS_RANGE[1], default=DEFAULT_UNLOCK_SECONDS, show_if=SCREEN),
             _f("sound", "boolean", default=DEFAULT_SOUND, show_if={"device": ["esphome"]}),
             _f("sound_changes", "boolean", default=DEFAULT_SOUND_CHANGES, show_if={"device": ["esphome"], "sound": [True]}),
             _f("sound_delays", "boolean", default=DEFAULT_SOUND_DELAYS, show_if={"device": ["esphome"], "sound": [True]}),
             _f("sound_volume", "number", unit="%", min=SOUND_VOLUME_RANGE[0], max=SOUND_VOLUME_RANGE[1], default=DEFAULT_SOUND_VOLUME, show_if={"device": ["esphome"], "sound": [True]}),
-            _f("code", "password"),
+            _f("code", "password", show_if=SCREEN),
             _f("watch", "boolean", default=True),
             _f("blocked", "boolean", default=False),
         ],

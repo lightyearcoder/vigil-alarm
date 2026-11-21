@@ -123,6 +123,13 @@ def _snapshot(hass: HomeAssistant, entry: ConfigEntry, users: list[Any]) -> dict
         "alarm_entity": registry.async_get_entity_id("alarm_control_panel", DOMAIN, entry.entry_id),
         "alarm_all_entity": registry.async_get_entity_id("alarm_control_panel", DOMAIN, f"{entry.entry_id}_all"),
         "notify_services": notify_services(hass),
+        # The ESPHome devices that Home Assistant knows: a panel or a tag reader is one of them, picked from a list
+        # instead of typed, because a name that is typed wrong is a reader that never finds its panel.
+        "esphome_devices": sorted(
+            ({"name": str(e.data["device_name"]), "title": e.title}
+             for e in hass.config_entries.async_entries("esphome") if e.data.get("device_name")),
+            key=lambda d: d["title"].lower(),
+        ),
         # Who a tablet or phone can be: every active account that is not a system account. An administrator
         # too: that is the administrator's own responsibility (see the guides), and Vigil then treats the account
         # on that device as an ordinary one: no administrator shortcuts, a code for every disarm and bypass.

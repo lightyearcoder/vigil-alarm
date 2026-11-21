@@ -1,0 +1,49 @@
+# The hardware of a small separate tag reader: an ESP32-S3 Super Mini (ESP32-S3FH4R2, 4 MB flash, USB-C) with a PN532
+# NFC module on I2C (DIP switch on the PN532: 1 = ON, 2 = OFF). It says what the board is and where the reader is wired;
+# what Vigil does with a tag is in ../vigil-tagreader.yaml, the device itself (name, Wi-Fi, keys) in your own file.
+#
+# The pins of the PN532 can differ per build: set `sda_pin` and `scl_pin` under `substitutions:` in your own file
+# (see example-tagreader.yaml) and leave them out if you wired the reader as below.
+#
+#   PN532 VCC -> 3V3,  GND -> GND,  SDA -> GPIO6,  SCL -> GPIO7
+#
+# Three leds for the state of the alarm, each with its own resistor (green 100-150 ohm, amber and red 220 ohm), from the
+# pin through the resistor and the led (long leg to the resistor) to GND:
+#
+#   green -> GPIO8,  amber -> GPIO9,  red -> GPIO10
+
+substitutions:
+  sda_pin: GPIO6
+  scl_pin: GPIO7
+  led_green_pin: GPIO8
+  led_amber_pin: GPIO9
+  led_red_pin: GPIO10
+
+esp32:
+  board: esp32-s3-devkitc-1
+  flash_size: 4MB
+  framework:
+    type: esp-idf
+
+i2c:
+  - id: bus_nfc
+    sda: ${sda_pin}
+    scl: ${scl_pin}
+    scan: true            # the log says "Found i2c device at address 0x24" when the PN532 is there
+    frequency: 100kHz
+
+pn532_i2c:
+  id: vigil_reader        # ../vigil-tagreader.yaml hangs the tag action on this id
+  i2c_id: bus_nfc
+  update_interval: 1s
+
+output:                   # ../vigil-tagreader-ledtest.yaml and, later, the state of the alarm use these ids
+  - platform: gpio
+    id: led_green
+    pin: ${led_green_pin}
+  - platform: gpio
+    id: led_amber
+    pin: ${led_amber_pin}
+  - platform: gpio
+    id: led_red
+    pin: ${led_red_pin}

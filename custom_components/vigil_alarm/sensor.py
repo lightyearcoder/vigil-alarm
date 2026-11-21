@@ -8,12 +8,14 @@ from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from . import VigilConfigEntry
-from .const import EVENT_TYPES
+from .alarm_control_panel import _STATE
+from .const import ALL_PARTITIONS, EVENT_TYPES
 from .entity import VigilEntity, VigilSensorEntity
 from .items import items_of
-from .panels import profile_object_id
+from .panels import profile_object_id, reader_state_object_id
 
 SENSOR_STATUSES = ["closed", "open", "unavailable", "bypassed", "bypassed_at_arm", "waiting"]
 
@@ -23,11 +25,57 @@ async def async_setup_entry(
 ) -> None:
     manager = entry.runtime_data
     async_add_entities([VigilLastEvent(manager)])
-    async_add_entities([VigilPanelProfile(manager, p.subentry_id, p.title) for p in manager.panels.items()])
+    async_add_entities([VigilPanelProfile(manager, p.subentry_id, p.title) for p in manager.panels.items() if not manager.panels.is_reader(p)])
+    async_add_entities([VigilReaderState(manager, p.subentry_id, p.title) for p in manager.panels.items() if manager.panels.is_reader(p)])
     for sub in manager.sensor_items():
         async_add_entities(
             [VigilSensorStatus(manager, sub.subentry_id, sub.title)],
         )
+
+
+class VigilReaderState(VigilSensorEntity, SensorEntity):
+    """The state of the alarm that a tag reader shows with its leds: the partition (or all) of that reader, as Home
+    Assistant names it (disarmed, arming, armed_home, ...). The reader finds this sensor from its own device name, so
+    which partition it belongs to is set in Vigil, in one place, and not again in the firmware."""
+
+    _attr_has_entity_name = False
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, manager, item_id: str, title: str) -> None:
+        super().__init__(manager, item_id, title)
+        self._attr_unique_id = f"{manager.entry.entry_id}_{item_id}_state"
+        self._attr_name = f"{title} state"
+        panel = items_of(manager.entry).get(item_id)
+        self._object_id = reader_state_object_id(panel.data["panel_id"]) if panel else None
+
+    @property
+    def suggested_object_id(self) -> str | None:
+        return self._object_id
+
+    @property
+    def extra_state_attributes(self) -> dict[str, float | int | None]:
+        """The seconds left of an exit or entry delay at the moment this state was written (as the alarm entity has
+        them): the reader counts down on its own clock, and flashes faster in the last seconds."""
+        panel = items_of(self._manager.entry).get(self._sensor_id)
+        if panel is None:
+            return {"delay_left": None, "refused": 0}
+        pid = self._manager.panels.default_partition(panel)
+        ids = list(self._manager.partitions) if pid == ALL_PARTITIONS else [pid]
+        ends = [e for e in (self._manager.snapshot(i)["delay_end"] for i in ids) if e]
+        left = round(max(0.0, min(ends) - dt_util.utcnow().timestamp()), 1) if ends else None
+        # `refused` counts the scans Vigil refused since it started: the reader flashes red when it goes up.
+        return {"delay_left": left, "refused": self._manager.tags.refused.get(panel.data["panel_id"], 0)}
+
+    @property
+    def native_value(self) -> str | None:
+        panel = items_of(self._manager.entry).get(self._sensor_id)
+        if panel is None:
+            return None
+        pid = self._manager.panels.default_partition(panel)
+        engine_state = (
+            self._manager.combined().ha_state if pid == ALL_PARTITIONS else self._manager.partitions[pid].engine.state
+        )
+        return str(_STATE[engine_state].value)
 
 
 class VigilSensorStatus(VigilSensorEntity, SensorEntity):

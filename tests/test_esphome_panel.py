@@ -1,12 +1,13 @@
 """The ESPHome touch panel: its logic in C++ and its YAML.
 
-The logic (vigil_panel.h) is plain C++ and runs here with g++. The YAML is checked with
+The logic (vigil_touchpanel.h) is plain C++ and runs here with g++. The YAML is checked with
 `esphome config` when ESPHome is installed. A real build and the screen itself can only be tried
 on the panel.
 """
 
 from __future__ import annotations
 
+import hashlib
 import shutil
 import subprocess
 import sys
@@ -23,16 +24,17 @@ FIRMWARE_DIR = ESPHOME_DIR / "vigil_alarm"  # the firmware; the folder above has
 
 
 def firmware_yaml() -> str:
-    """The firmware of the panel: vigil-panel.yaml and the parts it includes (state, scripts, the screen), as one text."""
-    names = ["vigil-panel.yaml", "vigil-panel-state.yaml", "vigil-panel-scripts.yaml", "vigil-panel-ui.yaml",
-             "vigil-panel-ui-keypad.yaml", "vigil-panel-ui-lists.yaml"]
+    """The firmware of the panel: vigil-touchpanel.yaml and the parts it includes (state, scripts, the screen), as one text."""
+    names = ["vigil-touchpanel.yaml", "vigil-touchpanel-state.yaml", "vigil-touchpanel-scripts.yaml", "vigil-touchpanel-ui.yaml",
+             "vigil-touchpanel-ui-keypad.yaml", "vigil-touchpanel-ui-lists.yaml"]
     return "\n".join((FIRMWARE_DIR / name).read_text(encoding="utf-8") for name in names)
 
 
 SECRETS = (
     "wifi_ssid: test\n"
     "wifi_password: testtesttest\n"
-    'vigil_panel_garage_encryption_key: "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="\n'
+    'vigil_touchpanel_home_encryption_key: "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="\n'
+    'vigil_tagreader_home_encryption_key: "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="\n'
 )
 
 
@@ -50,7 +52,7 @@ def test_the_panel_logic(tmp_path):
 
 def test_every_language_has_every_text():
     """A text with an empty column would show up blank on the panel."""
-    header = (FIRMWARE_DIR / "vigil_panel.h").read_text()
+    header = (FIRMWARE_DIR / "vigil_touchpanel.h").read_text()
     start = header.index("static const Text TEXTS[]")
     table = header[start : header.index("};", start)]
     for line in table.splitlines():
@@ -98,7 +100,7 @@ def test_the_example_panel_is_valid_esphome(tmp_path):
     shutil.copytree(ESPHOME_DIR, work)
     (work / "secrets.yaml").write_text(SECRETS)
     result = subprocess.run(
-        [sys.executable, "-I", "-m", "esphome", "config", str(work / "example-garage.yaml")],
+        [sys.executable, "-I", "-m", "esphome", "config", str(work / "example-touchpanel.yaml")],
         capture_output=True, text=True, cwd=work,
     )
     assert result.returncode == 0, result.stdout[-3000:] + result.stderr[-3000:]
@@ -109,11 +111,11 @@ def test_the_example_panel_with_the_sound_package_is_valid_esphome(tmp_path):
     work = tmp_path / "config"
     shutil.copytree(ESPHOME_DIR, work)
     (work / "secrets.yaml").write_text(SECRETS)
-    example = (work / "example-garage.yaml").read_text()
-    assert "  # sound: !include vigil_alarm/vigil-panel-sound.yaml" in example  # off until the person switches it on
-    (work / "example-garage.yaml").write_text(example.replace("  # sound: !include", "  sound: !include"))
+    example = (work / "example-touchpanel.yaml").read_text()
+    assert "  # sound: !include vigil_alarm/vigil-touchpanel-sound.yaml" in example  # off until the person switches it on
+    (work / "example-touchpanel.yaml").write_text(example.replace("  # sound: !include", "  sound: !include"))
     result = subprocess.run(
-        [sys.executable, "-I", "-m", "esphome", "config", str(work / "example-garage.yaml")],
+        [sys.executable, "-I", "-m", "esphome", "config", str(work / "example-touchpanel.yaml")],
         capture_output=True, text=True, cwd=work,
     )
     assert result.returncode == 0, result.stdout[-3000:] + result.stderr[-3000:]
@@ -121,8 +123,8 @@ def test_the_example_panel_with_the_sound_package_is_valid_esphome(tmp_path):
 
 def test_the_sound_package_takes_what_the_firmware_asks_for():
     """The firmware only asks (vigil::request_sound); the package plays. Pins come from the hardware file."""
-    package = (FIRMWARE_DIR / "vigil-panel-sound.yaml").read_text()
-    hardware = (FIRMWARE_DIR / "guition-esp32-s3-4840s40c_i.yaml").read_text()
+    package = (FIRMWARE_DIR / "vigil-touchpanel-sound.yaml").read_text()
+    hardware = (FIRMWARE_DIR / "hardware" / "guition-esp32-s3-4840s40c_i.yaml").read_text()
     firmware = firmware_yaml()
     for pin in ("sound_bclk_pin", "sound_lrclk_pin", "sound_dout_pin"):
         assert "${" + pin + "}" in package and f"  {pin}: GPIO" in hardware, pin
@@ -188,7 +190,7 @@ def test_the_panel_reports_what_vigil_reads():
 
 
 def test_the_hardware_file_names_the_hardware_and_the_screen():
-    hardware = (FIRMWARE_DIR / "guition-esp32-s3-4840s40c_i.yaml").read_text()
+    hardware = (FIRMWARE_DIR / "hardware" / "guition-esp32-s3-4840s40c_i.yaml").read_text()
     for needed in ("hardware_id:", "screen_width:", "screen_height:", "id: display_backlight"):
         assert needed in hardware
     assert "width: ${screen_width}" in hardware and "height: ${screen_height}" in hardware
@@ -227,7 +229,7 @@ def test_the_error_phrases_of_the_panel_and_the_card_match_vigils_own_texts():
     import json
     import re
 
-    header = (FIRMWARE_DIR / "vigil_panel.h").read_text(encoding="utf-8")
+    header = (FIRMWARE_DIR / "vigil_touchpanel.h").read_text(encoding="utf-8")
     card = (ROOT / "custom_components/vigil_alarm/frontend/vigil-card.js").read_text(encoding="utf-8")
     rows = re.findall(r'\{\{([^}]*)\}, "(err_[a-z_]+)"\}', header)
     card_rows = re.findall(r'\[\[([^\]]*)\], "(err_[a-z_]+)"\]', card)
@@ -254,7 +256,7 @@ def test_every_icon_the_panel_draws_is_in_the_icon_font():
     import re
 
     yaml = firmware_yaml()
-    header = (FIRMWARE_DIR / "vigil_panel.h").read_text()
+    header = (FIRMWARE_DIR / "vigil_touchpanel.h").read_text()
     font = yaml[yaml.index("glyphs: &icon_glyphs"):yaml.index("time:\n  - platform: homeassistant")]
     listed = set(re.findall(r'"\\U(000F[0-9A-F]{4})"', font))
     used = set(re.findall(r'"\\U(000F[0-9A-F]{4})"', header))
@@ -279,7 +281,7 @@ def test_the_colours_of_the_panel_are_the_colours_of_the_card():
     """One look for card and panel: the state colours must be the same in both."""
     import re
 
-    header = (FIRMWARE_DIR / "vigil_panel.h").read_text()
+    header = (FIRMWARE_DIR / "vigil_touchpanel.h").read_text()
     card = (ROOT / "custom_components" / "vigil_alarm" / "frontend" / "vigil-card.js").read_text().lower()
     for name in ("COL_OK", "COL_WARN", "COL_ENTRY", "COL_ALARM", "COL_HOME", "COL_AWAY", "COL_NIGHT"):
         value = re.search(rf"{name} = 0x([0-9A-F]{{6}});", header).group(1).lower()
@@ -302,13 +304,13 @@ def test_every_call_the_panel_makes_to_vigil_carries_its_key():
     yaml = firmware_yaml()
     assert yaml.count("source: ${name}") == yaml.count("key: ${panel_key}") >= 6
     assert 'panel_key: ""' in yaml
-    example = (ROOT / "esphome" / "example-garage.yaml").read_text()
-    assert "# panel_key: !secret vigil_panel_garage_key" in example
+    example = (ROOT / "esphome" / "example-touchpanel.yaml").read_text()
+    assert "# panel_key: !secret vigil_touchpanel_home_key" in example
 
 
 def test_the_info_page_says_whether_a_panel_key_is_set_and_never_shows_it():
     yaml = firmware_yaml()
-    header = (FIRMWARE_DIR / "vigil_panel.h").read_text()
+    header = (FIRMWARE_DIR / "vigil_touchpanel.h").read_text()
     assert yaml.count("id: lbl_info_key") == 2  # the label is updated and is made on the page
     assert 'std::string("${panel_key}").empty()' in yaml  # only whether it is empty is looked at
     assert 'tr("panel_key") + (' in yaml and '+ "${panel_key}"' not in yaml
@@ -319,7 +321,7 @@ def test_the_info_page_says_whether_a_panel_key_is_set_and_never_shows_it():
 
 def test_the_panel_has_arrows_for_many_partitions_and_a_list_of_always_on_sensors():
     yaml = firmware_yaml()
-    header = (ROOT / "esphome/vigil_alarm/vigil_panel.h").read_text(encoding="utf-8")
+    header = (ROOT / "esphome/vigil_alarm/vigil_touchpanel.h").read_text(encoding="utf-8")
     # arrows on both sides of the partition buttons, shown only when there are more partitions than fit
     for name in ("chip_prev", "chip_next"):
         assert f"id: {name}" in yaml and f"id({name})" in yaml
@@ -378,22 +380,27 @@ def test_the_wrong_code_shake_is_an_lvgl_animation():
 
 def _firmware_hash() -> str:
     import hashlib
-    digest = hashlib.sha256()
-    for path in sorted(FIRMWARE_DIR.iterdir()):
-        if path.is_file():
+    # The firmware of the panel: everything in the folder except the tag reader, which is a device of its own.
+    # What counts is what is in the files, not what they are called: a renamed file is not a new firmware.
+    reader = {"vigil-tagreader.yaml", "vigil-tagreader-ledtest.yaml", "esp32-s3-super-mini-tagreader.yaml"}
+    parts = []
+    for path in FIRMWARE_DIR.rglob("*"):
+        if path.is_file() and path.name not in reader and "__pycache__" not in path.parts:
             text = path.read_text(encoding="utf-8").replace("\r\n", "\n")
             text = re.sub(r'^  firmware_version: ".*"$', "  firmware_version: X", text, flags=re.M)
-            digest.update(path.name.encode() + b"\0" + text.encode() + b"\0")
-    return digest.hexdigest()
+            if path.suffix == ".yaml":  # a comment is not firmware: a new remark needs no new version
+                text = "\n".join(line for line in text.split("\n") if line.strip() and not line.lstrip().startswith("#"))
+            parts.append(hashlib.sha256(text.encode()).hexdigest())
+    return hashlib.sha256("\n".join(sorted(parts)).encode()).hexdigest()
 
 
 def test_the_firmware_version_changes_only_with_the_firmware():
     """The panel firmware has its own version ("<major>.<minor>"): a change in these files needs a new version,
-    and a new version without a change is not wanted. After a change: set firmware_version in vigil-panel.yaml and
+    and a new version without a change is not wanted. After a change: set firmware_version in vigil-touchpanel.yaml and
     put the new version and hash in tests/firmware_fingerprint.json."""
     import json
     fingerprint = json.loads((ROOT / "tests" / "firmware_fingerprint.json").read_text())
-    version = re.search(r'^  firmware_version: "([^"]+)"', (FIRMWARE_DIR / "vigil-panel.yaml").read_text(), re.M).group(1)
+    version = re.search(r'^  firmware_version: "([^"]+)"', (FIRMWARE_DIR / "vigil-touchpanel.yaml").read_text(), re.M).group(1)
     assert version == fingerprint["version"], "firmware_version and tests/firmware_fingerprint.json differ"
     assert _firmware_hash() == fingerprint["hash"], (
         f"the firmware changed: raise firmware_version (now {version}) and put the hash {_firmware_hash()} in the fingerprint")
@@ -403,7 +410,38 @@ def test_the_major_number_of_the_firmware_is_the_profile_version():
     # Read from the file: this test also runs where Home Assistant is not installed.
     const = (ROOT / "custom_components" / "vigil_alarm" / "const.py").read_text(encoding="utf-8")
     PROFILE_VERSION = int(re.search(r"^PROFILE_VERSION\s*=\s*(\d+)", const, re.M).group(1))
-    version = re.search(r'^  firmware_version: "(\d+)\.(\d+)"$', (FIRMWARE_DIR / "vigil-panel.yaml").read_text(), re.M)
+    version = re.search(r'^  firmware_version: "(\d+)\.(\d+)"$', (FIRMWARE_DIR / "vigil-touchpanel.yaml").read_text(), re.M)
     assert version and int(version.group(1)) == PROFILE_VERSION
-    header = (FIRMWARE_DIR / "vigil_panel.h").read_text()
+    header = (FIRMWARE_DIR / "vigil_touchpanel.h").read_text()
     assert f"constexpr int PROFILE_VERSION = {PROFILE_VERSION};" in header
+
+
+@pytest.mark.skipif(not _esphome_installed(), reason="ESPHome is not installed")
+def test_the_example_tag_reader_is_valid_esphome(tmp_path):
+    work = tmp_path / "config"
+    shutil.copytree(ESPHOME_DIR, work)
+    (work / "secrets.yaml").write_text(SECRETS)
+    result = subprocess.run(
+        [sys.executable, "-I", "-m", "esphome", "config", str(work / "example-tagreader.yaml")],
+        capture_output=True, text=True, cwd=work,
+    )
+    assert result.returncode == 0, result.stdout[-3000:] + result.stderr[-3000:]
+    # the function adds its action to the reader the hardware file defines, and the pins can be set by the person
+    assert "homeassistant.tag_scanned" in result.stdout or "tag_scanned" in result.stdout
+    changed = (work / "example-tagreader.yaml").read_text().replace("  # sda_pin: GPIO6", "  sda_pin: GPIO4")
+    (work / "example-tagreader.yaml").write_text(changed)
+    again = subprocess.run(
+        [sys.executable, "-I", "-m", "esphome", "config", str(work / "example-tagreader.yaml")],
+        capture_output=True, text=True, cwd=work,
+    )
+    assert again.returncode == 0 and "sda: 4" in again.stdout, again.stdout[-2000:]
+
+
+def test_the_layers_do_not_know_each_other_s_details():
+    """The hardware file says where things are, the function says what happens; no pins in the function."""
+    function = (FIRMWARE_DIR / "vigil-tagreader.yaml").read_text()
+    hardware = (FIRMWARE_DIR / "hardware" / "esp32-s3-super-mini-tagreader.yaml").read_text()
+    assert "GPIO" not in "".join(line for line in function.splitlines() if not line.lstrip().startswith("#"))
+    assert "id: vigil_reader" in function and "id: vigil_reader" in hardware
+    assert "${sda_pin}" in hardware and "${scl_pin}" in hardware
+    assert "on_tag" in function and "on_tag" not in hardware

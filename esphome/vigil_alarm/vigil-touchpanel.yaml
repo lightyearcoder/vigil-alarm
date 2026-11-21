@@ -1,8 +1,8 @@
 # Vigil Alarm touch panel: the screen, for any ESPHome device with an LVGL display and a touch screen.
 #
 # This file is the part that is the same for every panel. The hardware (display, touch, backlight)
-# is in a second file, for example guition-esp32-s3-4840s40c_i.yaml, and the device itself (name, Wi-Fi, keys) in
-# a third, see ../example-garage.yaml. What the hardware file must provide:
+# is in a second file, for example hardware/guition-esp32-s3-4840s40c_i.yaml, and the device itself (name, Wi-Fi, keys) in
+# a third, see ../example-touchpanel.yaml. What the hardware file must provide:
 #   - the substitutions `hardware_id`, `screen_width` and `screen_height`
 #   - a light with the id `display_backlight`
 #   - an `lvgl:` with the `touchscreens:` (and the display) of the panel
@@ -24,7 +24,7 @@ substitutions:
   # key made under Panels in Vigil). Set it in your device file, from secrets.yaml. Empty: no key is sent.
   panel_key: ""
   # The version of this firmware, reported to Vigil: "<major>.<minor>". The major number is the profile version this
-  # firmware speaks (PROFILE_VERSION in vigil_panel.h and in Vigil); it goes up only when panel and Vigil no longer
+  # firmware speaks (PROFILE_VERSION in vigil_touchpanel.h and in Vigil); it goes up only when panel and Vigil no longer
   # understand each other. The minor number goes up with every other change of the firmware. A release of Vigil
   # without a change here keeps the version. tests/firmware_fingerprint.json makes sure of both.
   firmware_version: "1.1"
@@ -46,7 +46,7 @@ substitutions:
 
 esphome:
   includes:
-    - vigil_panel.h
+    - vigil_touchpanel.h
     - vigil_logo.h
   # The logo in the top bar is an LVGL image made in the lambda of `refresh_ui`: the image widget has to be built into LVGL.
   build_flags:
@@ -61,7 +61,7 @@ esphome:
       - script.execute: wake
 
 font:
-  # The icons: Material Design Icons, only the glyphs the panel uses (see VIGIL_ICON_* in vigil_panel.h). ESPHome
+  # The icons: Material Design Icons, only the glyphs the panel uses (see VIGIL_ICON_* in vigil_touchpanel.h). ESPHome
   # downloads the font file when you compile. The text is the built-in Montserrat of LVGL.
   - file:
       type: web
@@ -116,7 +116,7 @@ time:
     id: ha_time
 
 globals:
-  - id: pending_action  # what the keypad is for, see Action in vigil_panel.h
+  - id: pending_action  # what the keypad is for, see Action in vigil_touchpanel.h
     type: int
     initial_value: "0"
   - id: pending_entity  # the sensor for a bypass
@@ -224,8 +224,8 @@ interval:
 # The rest of the firmware is in these files (all in this folder). The order matters for the pages of the screen: the
 # main page first.
 packages:
-  state: !include vigil-panel-state.yaml
-  scripts: !include vigil-panel-scripts.yaml
-  ui: !include vigil-panel-ui.yaml
-  ui_keypad: !include vigil-panel-ui-keypad.yaml
-  ui_lists: !include vigil-panel-ui-lists.yaml
+  state: !include vigil-touchpanel-state.yaml
+  scripts: !include vigil-touchpanel-scripts.yaml
+  ui: !include vigil-touchpanel-ui.yaml
+  ui_keypad: !include vigil-touchpanel-ui-keypad.yaml
+  ui_lists: !include vigil-touchpanel-ui-lists.yaml

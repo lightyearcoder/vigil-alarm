@@ -1,0 +1,39 @@
+# Example of a Vigil tag reader: an ESP32-S3 Super Mini with a PN532 next to the panel at home. Copy this file and the
+# folder `vigil_alarm` into your ESPHome folder and change the name. The reader belongs to a panel: say which one in Vigil.
+#
+# In Home Assistant, switch on "Allow the device to perform Home Assistant actions" for this device (Settings > Devices &
+# services > ESPHome > the device > Configure). Without it, a tag is not passed on.
+
+substitutions:
+  name: vigil-tagreader-home        # lower case letters, digits and dashes
+  friendly_name: Vigil tagreader home
+  # The pins of the PN532, if you wired it differently (these are the defaults of the hardware file):
+  # sda_pin: GPIO6
+  # scl_pin: GPIO7
+  # The pins of the three leds (green, amber, red), if you wired them differently:
+  # led_green_pin: GPIO8
+  # led_amber_pin: GPIO9
+  # led_red_pin: GPIO10
+  # The key that Vigil made for this reader (the key button in the form of the reader in Vigil). Remove the # once you have
+  # made the key and put it in secrets.yaml:
+  # reader_key: !secret vigil_tagreader_home_key
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+
+packages:
+  hardware: !include vigil_alarm/hardware/esp32-s3-super-mini-tagreader.yaml
+  tagreader: !include vigil_alarm/vigil-tagreader.yaml
+  # ledtest: !include vigil_alarm/vigil-tagreader-ledtest.yaml   # only to test the wiring of the leds (not together with the line above)
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+api:
+  encryption:
+    key: !secret vigil_tagreader_home_encryption_key
+
+ota:
+  - platform: esphome

@@ -129,10 +129,11 @@ export default function install(core) {
     } else if (live && live.lock_tries > 0) out.push(badge("", fill(P.tries, { n: live.lock_tries, max: live.lock_tries_max })));
     const seen = (live && live.reported) || {};
     // What the panel runs, and what Vigil needs of it: the major number of the firmware is the profile version.
-    const wrong = live && seen.profile_supported && live.profile_required && Number(seen.profile_supported) !== live.profile_required;
+    // A reader that is there but reports nothing is old firmware (it sends no key and cannot show a refused scan).
+    const silentReader = live && live.kind === "tagreader" && live.connected === true && !seen.profile_supported;
+    const wrong = live && live.profile_required && (silentReader || (seen.profile_supported && Number(seen.profile_supported) !== live.profile_required));
     if (wrong) out.push(badge("bad", fill(P.fwWrong, { n: live.profile_required })));
-    const about = [seen.hardware, seen.firmware ? "v" + seen.firmware : null,
-      seen.firmware && live && live.profile_required ? fill(P.fwNeeds, { n: live.profile_required }) : null].filter(Boolean).join(" · ");
+    const about = [seen.hardware, seen.firmware ? "v" + seen.firmware : null].filter(Boolean).join(" · ");
     return el("span", { class: "tags" }, out, about ? el("span", { class: "sub", text: about }) : null);
   },
   _panelLimits(item) {

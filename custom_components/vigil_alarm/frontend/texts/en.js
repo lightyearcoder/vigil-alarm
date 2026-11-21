@@ -549,7 +549,6 @@ export default {
     "refused": "This is not possible.",
     "keyBtn": "Panel key",
     "keyTitle": "Panel key",
-    "fwNeeds": "Vigil needs firmware {n}.x",
     "fwWrong": "Firmware does not fit Vigil (needs {n}.x)",
     "keyYes": "Key set",
     "keyNo": "No key",
@@ -564,6 +563,7 @@ export default {
     "keyAgain": "A new key replaces this one at once: the old key stops working.",
     "keyReplaceConfirm": "Replace now?",
     "keyDevice": "Then, in the device file of the panel, remove the # before panel_key: !secret {id}_key, and install the panel again.",
+    "keyDeviceReader": "Then, in the device file of the reader, remove the # before reader_key: !secret {id}_key, and install the reader again.",
     "keyCopy": "Copy",
     "keyCopied": "Copied",
     "keyRemoved": "The key is removed; calls in the name of this panel are no longer checked."
@@ -632,6 +632,8 @@ export default {
     "ha_user": "Home Assistant account (tablet or phone)",
     "language": "Language",
     "can_disarm": "May disarm (with a code)",
+    "reader_mode": "Arms in the mode",
+    "reader_disarm": "A tag can disarm",
     "can_bypass": "May bypass sensors (with a code)",
     "can_silence": "May silence and acknowledge",
     "sensor_list": "Show the sensor list",
@@ -684,6 +686,8 @@ export default {
     "tamper_entity": "Does this device also have a tamper contact? Choose it here. Vigil adds a tamper sensor for it by itself: always watching, with its own “Bypassed” indicator. You do not have to add it separately."
   },
   "moreInfo": "More information",
+  "devicePick": "— choose a device —",
+  "deviceOther": "Other (type the name)",
   "help": {
     "selftest_handlers": "Once a week, in the hours set below, the automations that react to Vigil Alarm are tested with their real actions in practice mode: lights may flash, but there is no siren and Vigil sends no messages. A quiet test (they only report) runs every day anyway. Each automation decides itself whether it takes part in practice mode.",
     "sensor_group.partition": "The partition this group belongs to. Only sensors of that partition can use the group, and it offers only the modes of that partition.",
@@ -814,7 +818,8 @@ export default {
     },
     "device": {
       "esphome": "ESPHome panel (DIY screen)",
-      "account": "Tablet or phone running Home Assistant"
+      "account": "Tablet or phone running Home Assistant",
+      "tagreader": "Tag reader (arms and disarms with a tag)"
     },
     "sensor_list": {
       "always": "Always show",

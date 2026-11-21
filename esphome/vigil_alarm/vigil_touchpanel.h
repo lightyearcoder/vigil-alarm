@@ -1,7 +1,7 @@
 // Vigil Alarm touch panel: the texts and the display logic.
 //
 // This file is plain C++ without any ESPHome or LVGL calls, so it can be tested on a computer.
-// The YAML (vigil-panel.yaml) only holds the layout and the wiring; everything that decides
+// The YAML (vigil-touchpanel.yaml) only holds the layout and the wiring; everything that decides
 // what the panel shows is here.
 //
 // Adding a language: add a column to TEXTS (and to ERROR_ROWS), an entry to Language and a line in
@@ -148,7 +148,7 @@ static const Text TEXTS[] = {
 };
 
 // The version of the profile this firmware understands (PROFILE_VERSION in Vigil). It is the major number of the
-// firmware version (firmware_version in vigil-panel.yaml: "<major>.<minor>"). A different profile means the panel and
+// firmware version (firmware_version in vigil-touchpanel.yaml: "<major>.<minor>"). A different profile means the panel and
 // Vigil no longer speak the same language: the screen then only says which of the two to update.
 constexpr int PROFILE_VERSION = 1;
 
@@ -1006,7 +1006,7 @@ inline bool should_return_to_default(uint32_t idle_ms) {
 }
 
 // ---------------------------------------------------------------------------- sounds (a panel with a speaker)
-// The panel asks for a sound; the optional package vigil-panel-sound.yaml plays it. Without a speaker nothing
+// The panel asks for a sound; the optional package vigil-touchpanel-sound.yaml plays it. Without a speaker nothing
 // takes the request, so this costs nothing.
 enum Sound {
   SOUND_NONE = 0,

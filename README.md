@@ -179,6 +179,7 @@ actions:
 | `siren_power_lost` / `siren_power_restored` / `battery_low` / `battery_ok` | Self-monitoring | `siren` or `name`, `level` |
 | `alarm_silenced` / `alarm_acknowledged` | A person silenced the sirens or confirmed the alarm | `user` |
 | `code_rejected` | Someone entered a wrong code | `source` (for example a panel), `action` |
+| `tag_rejected` | A tag that belongs to no user was held in front of the reader of a panel (counts as a wrong code for the lock; the number of the tag is never logged) | `source`, `panel` |
 | `code_locked` | wrong codes lock that control point in steps (default: 3 wrong codes = 5 minutes, then 2 more = 15 minutes, then 2 more = 60 minutes), also over a restart; every registered panel has its own timer and everything else shares one (`timer` is `other`); also sent to the fault channels | `source`, `action`, `timer`, `minutes` |
 | `startup_settled` | Home Assistant had just started and Vigil waited for slow sensors (MQTT, Zigbee): all sensors are there, or the wait (setting *Wait for sensors after a restart*, default 120 s) is over. Only now are sensors that are still gone reported as lost. Not a notification | `waited`, `unavailable`, `sensors` |
 | `code_locked_permanent` | the last step: after the final wrong codes (default 1) the panel stays locked until an administrator uses *Clear lock*; also sent to the fault channels. The shared timer `other` never locks for good | `source`, `action`, `timer` |

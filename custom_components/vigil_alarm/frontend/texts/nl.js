@@ -549,7 +549,6 @@ export default {
     "refused": "Dit kan niet.",
     "keyBtn": "Paneelsleutel",
     "keyTitle": "Paneelsleutel",
-    "fwNeeds": "Vigil vraagt firmware {n}.x",
     "fwWrong": "Firmware past niet bij Vigil (vraagt {n}.x)",
     "keyYes": "Sleutel ingesteld",
     "keyNo": "Geen sleutel",
@@ -564,6 +563,7 @@ export default {
     "keyAgain": "Een nieuwe sleutel vervangt deze meteen: de oude sleutel werkt dan niet meer.",
     "keyReplaceConfirm": "Nu vervangen?",
     "keyDevice": "Haal daarna in het apparaatbestand van het paneel de # weg voor panel_key: !secret {id}_key en installeer het paneel opnieuw.",
+    "keyDeviceReader": "Haal daarna in het device-bestand van de lezer de # weg voor reader_key: !secret {id}_key, en installeer de lezer opnieuw.",
     "keyCopy": "Kopiëren",
     "keyCopied": "Gekopieerd",
     "keyRemoved": "De sleutel is verwijderd; aanroepen in naam van dit paneel worden niet meer gecontroleerd."
@@ -632,6 +632,8 @@ export default {
     "ha_user": "Home Assistant-account (tablet of telefoon)",
     "language": "Taal",
     "can_disarm": "Mag uitschakelen (met code)",
+    "reader_mode": "Schakelt in op modus",
+    "reader_disarm": "Een tag kan uitschakelen",
     "can_bypass": "Mag sensoren omzeilen (met code)",
     "can_silence": "Mag dempen en bevestigen",
     "sensor_list": "Sensorlijst tonen",
@@ -684,6 +686,8 @@ export default {
     "tamper_entity": "Heeft dit apparaat ook een sabotagecontact (tamper)? Kies dat hier. Vigil maakt er vanzelf een sabotagesensor bij: altijd actief, met een eigen indicator “Omzeild”. Je hoeft het niet apart toe te voegen."
   },
   "moreInfo": "Meer uitleg",
+  "devicePick": "— kies een apparaat —",
+  "deviceOther": "Anders (typ de naam)",
   "help": {
     "selftest_handlers": "Eén keer per week, binnen de hieronder ingestelde uren, worden de automatiseringen die op Vigil Alarm reageren getest met hun echte acties in oefenmodus: lampen kunnen flitsen, maar er is geen sirene en Vigil stuurt geen berichten. Een stille test (ze melden alleen) draait sowieso elke dag. Elke automatisering bepaalt zelf of hij in oefenmodus meedoet.",
     "sensor_group.partition": "De partitie waar deze groep bij hoort. Alleen sensoren van die partitie kunnen de groep gebruiken, en de groep biedt alleen de modi van die partitie.",
@@ -814,7 +818,8 @@ export default {
     },
     "device": {
       "esphome": "ESPHome-paneel (zelfbouwscherm)",
-      "account": "Tablet of telefoon met Home Assistant"
+      "account": "Tablet of telefoon met Home Assistant",
+      "tagreader": "Tagreader (schakelt in en uit met een tag)"
     },
     "sensor_list": {
       "always": "Altijd tonen",

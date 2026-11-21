@@ -11,10 +11,10 @@
  * Optional settings:  idle_timeout: 30   (seconds without touch before a half typed code is forgotten)
  *                     debug: true        (the card tells what it does in the browser console, filter on "vigil-card")
  *
- * The logic mirrors esphome/vigil_alarm/vigil_panel.h; keep the two in step.
+ * The logic mirrors esphome/vigil_alarm/vigil_touchpanel.h; keep the two in step.
  */
 (() => {
-  const VERSION = "0.7.7";
+  const VERSION = "0.7.9";
   // Every start says so in the console: when this line is missing, the card did not load (yet).
   console.info("%c VIGIL-CARD %c v" + VERSION + " ", "color:#fff;background:#3b6fd4;font-weight:bold", "color:#fff;background:#555");
   if (customElements.get("vigil-card")) {
@@ -169,7 +169,7 @@
     },
   };
   const PROFILE_VERSION = 1;
-  // One colour per situation; the same set is used by the ESPHome panel (vigil_panel.h). Modes have their own colour.
+  // One colour per situation; the same set is used by the ESPHome panel (vigil_touchpanel.h). Modes have their own colour.
   const COLORS = {
     none: "#8A94A6", disarmed: "#4CCB8F", notready: "#F2B84B", armed_home: "#5B9BF0", armed_away: "#FF8A5B",
     armed_night: "#9A8CF2", armed_vacation: "#4FC3C9", armed_custom_bypass: "#D58BDD", arming: "#F2B84B", pending: "#FF9F43", triggered: "#F0605D",

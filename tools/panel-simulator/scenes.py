@@ -1,7 +1,7 @@
 """The scenes the panel simulator takes a picture of.
 
 Every scene has a name, the C++ that sets what Home Assistant would have told the panel (the `vigil::ctx`
-struct, see esphome/vigil_alarm/vigil_panel.h), and a view: which page of the panel is on the screen.
+struct, see esphome/vigil_alarm/vigil_touchpanel.h), and a view: which page of the panel is on the screen.
 
 views:  main | keypad | sensors | info
 """

@@ -40,6 +40,8 @@ from .const import (
     CONF_LANGUAGE,
     CONF_PANEL_ID,
     CONF_SENSOR_LIST,
+    CONF_DEVICE_KIND,
+    KIND_TAGREADER,
     CONF_WATCH,
     CONF_UNLOCK_SECONDS,
     CONF_SOUND,
@@ -62,6 +64,7 @@ from .const import (
     DEFAULT_SCREEN_OFF_ON_ALARM,
     DEFAULT_SCREEN_OFF_SECONDS,
     PROFILE_VERSION,
+    READER_VERSION,
     PRIMARY_PARTITION,
     SUBENTRY_PANEL,
 )
@@ -83,6 +86,12 @@ def profile_object_id(panel_id: str) -> str:
     """The entity id (without `sensor.`) of the profile of a panel. The firmware works it out from its own
     device name, so it needs no setting: `vigil-panel-garage` reads `sensor.vigil_panel_garage_profile`."""
     return f"{panel_id.replace('-', '_')}_profile"
+
+
+def reader_state_object_id(panel_id: str) -> str:
+    """The entity id (without `sensor.`) of the state a tag reader shows: `vigil-tag-garage` reads
+    `sensor.vigil_tag_garage_state`. The firmware works it out from its own device name."""
+    return f"{panel_id.replace('-', '_')}_state"
 
 
 # The entities of a panel that report what it is (by the name given in the firmware).
@@ -149,6 +158,16 @@ class PanelRegistry:
         if not source:
             return None
         return next((p for p in self.items() if p.data.get(CONF_PANEL_ID) == source), None)
+
+    @staticmethod
+    def is_reader(panel: Item) -> bool:
+        return panel.data.get(CONF_DEVICE_KIND) == KIND_TAGREADER
+
+    def for_reader(self, reader: str | None) -> Item | None:
+        """The tag reader (a control point of its own, found by the name of its ESPHome device)."""
+        if not reader:
+            return None
+        return next((p for p in self.items() if self.is_reader(p) and p.data.get(CONF_PANEL_ID) == reader), None)
 
     def for_user(self, user_id: str | None) -> Item | None:
         """The tablet that is bound to this Home Assistant user, if any."""
@@ -557,7 +576,11 @@ class PanelRegistry:
                 if not e.disabled
             ]
             known = [s for s in states if s is not None]
-            return any(s.state != "unavailable" for s in known) if known else False
+            if known:
+                return any(s.state != "unavailable" for s in known)
+            # A device without entities (a tag reader that only listens and shows leds has none) has nothing to read:
+            # ask the ESPHome integration whether it is connected.
+            return bool(getattr(getattr(config_entry, "runtime_data", None), "available", False))
         return None
 
     def reported(self, panel_id: str) -> dict[str, str]:
@@ -586,11 +609,16 @@ class PanelRegistry:
             if not self.has_key(panel):
                 found.append({"code": "panel_no_key", "name": panel.title})
             seen = self.reported(pid)
+            wanted = str(READER_VERSION if self.is_reader(panel) else PROFILE_VERSION)
             if not seen:
+                # A reader that is there but says nothing about itself has firmware from before readers reported:
+                # it does not send the key, and it cannot show a refused scan.
+                if self.is_reader(panel) and self._connected(pid):
+                    found.append({"code": "panel_firmware", "name": panel.title, "seen": "?", "wanted": wanted})
                 continue
-            if seen.get("profile_supported") != str(PROFILE_VERSION):
+            if seen.get("profile_supported") != wanted:
                 found.append({"code": "panel_firmware", "name": panel.title,
-                              "seen": seen.get("profile_supported", "?"), "wanted": str(PROFILE_VERSION)})
+                              "seen": seen.get("profile_supported", "?"), "wanted": wanted})
         return found
 
     def start(self) -> None:
@@ -653,7 +681,7 @@ class PanelRegistry:
             out.append({
                 "id": panel.subentry_id,
                 "panel_id": pid,
-                "kind": "tablet" if panel.data.get(CONF_HA_USER) else "esphome",
+                "kind": "tablet" if panel.data.get(CONF_HA_USER) else (KIND_TAGREADER if self.is_reader(panel) else "esphome"),
                 "connected": self._connected(pid) if (pid in self._cards or not panel.data.get(CONF_HA_USER)) else None,
                 "card": pid in self._cards,
                 "offline": pid in self._offline,
@@ -666,6 +694,6 @@ class PanelRegistry:
                 "lock_tries": max(self.manager.lockout.tries(pid)[0], self.manager.lockout.tries(admin_bucket(pid))[0]),
                 "lock_tries_max": self.manager.lockout.tries(pid)[1],
                 "reported": {} if panel.data.get(CONF_HA_USER) else self.reported(pid),
-                "profile_required": PROFILE_VERSION,
+                "profile_required": READER_VERSION if self.is_reader(panel) else PROFILE_VERSION,
             })
         return out

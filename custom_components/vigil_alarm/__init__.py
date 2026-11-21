@@ -27,7 +27,7 @@ from .eventlog import STORAGE_VERSION as EVENTLOG_STORAGE_VERSION
 from .repairs import VigilRepairs
 from .lockout import STORAGE_VERSION as LOCKOUT_STORAGE_VERSION
 from .selftest import STORAGE_VERSION as SELFTEST_STORAGE_VERSION
-from .panels import profile_object_id
+from .panels import profile_object_id, reader_state_object_id
 from .panel import async_register_commands, async_register_panel, async_remove_panel
 from .vigil_core import ConfigError
 
@@ -337,7 +337,8 @@ def _remove_orphans(hass: HomeAssistant, entry: VigilConfigEntry, manager) -> No
             continue
         if uid.startswith(prefix) and uid.count("_") >= 2:
             sid = uid[len(prefix):].rsplit("_", 1)[0]
-            if sid not in known and (uid.endswith("_status") or uid.endswith("_bypassed") or uid.endswith("_profile")):
+            if sid not in known and (uid.endswith("_status") or uid.endswith("_bypassed") or uid.endswith("_profile")
+                                   or uid.endswith("_state")):
                 ent_reg.async_remove(ent.entity_id)
     dev_reg = dr.async_get(hass)
     for dev in dr.async_entries_for_config_entry(dev_reg, entry.entry_id):
@@ -352,8 +353,12 @@ def _align_profile_ids(hass: HomeAssistant, entry: VigilConfigEntry, manager) ->
     renames an entity by itself, so it is done here, once, if the right id is free."""
     ent_reg = er.async_get(hass)
     for panel in manager.panels.items():
-        current = manager.panels.profile_entity_id(panel)
-        wanted = f"sensor.{profile_object_id(panel.data['panel_id'])}"
+        # A panel has a profile sensor; a tag reader has the sensor with the state its leds show.
+        reader = manager.panels.is_reader(panel)
+        suffix = "state" if reader else "profile"
+        current = ent_reg.async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}_{panel.subentry_id}_{suffix}")
+        object_id = reader_state_object_id if reader else profile_object_id
+        wanted = f"sensor.{object_id(panel.data['panel_id'])}"
         if not current or current == wanted:
             continue
         if ent_reg.async_get(wanted) is None:

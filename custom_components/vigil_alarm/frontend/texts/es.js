@@ -549,7 +549,6 @@ export default {
     "refused": "Esto no es posible.",
     "keyBtn": "Clave del panel",
     "keyTitle": "Clave del panel",
-    "fwNeeds": "Vigil requiere el firmware {n}.x",
     "fwWrong": "El firmware no encaja con Vigil (requiere {n}.x)",
     "keyYes": "Clave definida",
     "keyNo": "Sin clave",
@@ -564,6 +563,7 @@ export default {
     "keyAgain": "Una clave nueva sustituye a esta enseguida: la clave anterior deja de funcionar.",
     "keyReplaceConfirm": "¿Sustituir ahora?",
     "keyDevice": "Después, en el archivo del dispositivo del panel, quita el # delante de panel_key: !secret {id}_key y vuelve a instalar el panel.",
+    "keyDeviceReader": "Después, en el archivo del dispositivo del lector, quite el # delante de reader_key: !secret {id}_key e instale el lector de nuevo.",
     "keyCopy": "Copiar",
     "keyCopied": "Copiado",
     "keyRemoved": "La clave se ha eliminado; las llamadas en nombre de este panel ya no se comprueban."
@@ -632,6 +632,8 @@ export default {
     "ha_user": "Cuenta de Home Assistant (tableta o teléfono)",
     "language": "Idioma",
     "can_disarm": "Puede desactivar (con un código)",
+    "reader_mode": "Arma en el modo",
+    "reader_disarm": "Una etiqueta puede desarmar",
     "can_bypass": "Puede anular sensores (con un código)",
     "can_silence": "Puede silenciar y confirmar",
     "sensor_list": "Mostrar la lista de sensores",
@@ -684,6 +686,8 @@ export default {
     "tamper_entity": "¿Este dispositivo tiene también un contacto de sabotaje? Elígelo aquí. Vigil añade por sí mismo un sensor de sabotaje: siempre vigilando, con su propio indicador «Anulado». No tienes que añadirlo por separado."
   },
   "moreInfo": "Más información",
+  "devicePick": "— elegir un dispositivo —",
+  "deviceOther": "Otro (escribir el nombre)",
   "help": {
     "selftest_handlers": "Una vez por semana, en las horas fijadas abajo, las automatizaciones que reaccionan a Vigil Alarm se prueban con sus acciones reales en modo de práctica: las luces pueden parpadear, pero sin sirena y Vigil no envía mensajes. Una prueba silenciosa (solo informan) se hace igualmente cada día. Cada automatización decide si participa en el modo de práctica.",
     "sensor_group.partition": "La partición a la que pertenece este grupo. Solo los sensores de esa partición pueden usar el grupo, y ofrece solo los modos de esa partición.",
@@ -814,7 +818,8 @@ export default {
     },
     "device": {
       "esphome": "Panel ESPHome (pantalla casera)",
-      "account": "Tableta o teléfono con Home Assistant"
+      "account": "Tableta o teléfono con Home Assistant",
+      "tagreader": "Lector de etiquetas (arma y desarma con una etiqueta)"
     },
     "sensor_list": {
       "always": "Mostrar siempre",

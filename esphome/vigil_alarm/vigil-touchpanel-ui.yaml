@@ -1,8 +1,8 @@
 # The screen: the look of Vigil, the top layer and the main page.
-# Part of vigil-panel.yaml (included by it): the same for every panel, nothing to change here.
+# Part of vigil-touchpanel.yaml (included by it): the same for every panel, nothing to change here.
 
 # --------------------------------------------------------------------------------------- screen
-# The look of Vigil: dark ground, calm cards, one colour per state (see vigil_panel.h). The sizes follow the size of
+# The look of Vigil: dark ground, calm cards, one colour per state (see vigil_touchpanel.h). The sizes follow the size of
 # the screen (the substitutions at the top), the main page is a column that grows with the screen, so a wider panel
 # is a matter of a hardware file, not of this one.
 lvgl:

@@ -1,4 +1,4 @@
-# Fills one sensor row. Included five times by vigil-panel.yaml, with `n` the position on the page.
+# Fills one sensor row. Included five times by vigil-touchpanel.yaml, with `n` the position on the page.
 id: row_update_${n}
 mode: restart
 then:

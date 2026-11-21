@@ -549,7 +549,6 @@ export default {
     "refused": "Das ist nicht möglich.",
     "keyBtn": "Bedienteil-Schlüssel",
     "keyTitle": "Bedienteil-Schlüssel",
-    "fwNeeds": "Vigil braucht Firmware {n}.x",
     "fwWrong": "Firmware passt nicht zu Vigil (braucht {n}.x)",
     "keyYes": "Schlüssel gesetzt",
     "keyNo": "Kein Schlüssel",
@@ -564,6 +563,7 @@ export default {
     "keyAgain": "Ein neuer Schlüssel ersetzt diesen sofort: der alte Schlüssel funktioniert dann nicht mehr.",
     "keyReplaceConfirm": "Jetzt ersetzen?",
     "keyDevice": "Entferne dann in der Gerätedatei des Bedienteils das # vor panel_key: !secret {id}_key und installiere das Bedienteil erneut.",
+    "keyDeviceReader": "Entfernen Sie danach in der Gerätedatei des Lesers das # vor reader_key: !secret {id}_key und installieren Sie den Leser neu.",
     "keyCopy": "Kopieren",
     "keyCopied": "Kopiert",
     "keyRemoved": "Der Schlüssel ist entfernt; Aufrufe im Namen dieses Bedienteils werden nicht mehr geprüft."
@@ -632,6 +632,8 @@ export default {
     "ha_user": "Home-Assistant-Konto (Tablet oder Handy)",
     "language": "Sprache",
     "can_disarm": "Darf unscharf schalten (mit Code)",
+    "reader_mode": "Scharfschalten im Modus",
+    "reader_disarm": "Ein Tag kann unscharf schalten",
     "can_bypass": "Darf Sensoren überbrücken (mit Code)",
     "can_silence": "Darf stummschalten und quittieren",
     "sensor_list": "Sensorliste anzeigen",
@@ -684,6 +686,8 @@ export default {
     "tamper_entity": "Hat dieses Gerät auch einen Sabotagekontakt? Wähle ihn hier aus. Vigil legt dafür selbst einen Sabotagesensor an: immer überwachend, mit eigener Anzeige „Überbrückt“. Du musst ihn nicht separat hinzufügen."
   },
   "moreInfo": "Weitere Informationen",
+  "devicePick": "— Gerät wählen —",
+  "deviceOther": "Anderes (Namen eingeben)",
   "help": {
     "selftest_handlers": "Einmal pro Woche, in den unten eingestellten Stunden, werden die Automatisierungen, die auf Vigil Alarm reagieren, mit ihren echten Aktionen im Übungsmodus getestet: Lampen können blinken, aber es gibt keine Sirene und Vigil sendet keine Nachrichten. Ein stiller Test (sie melden nur) läuft ohnehin jeden Tag. Jede Automatisierung entscheidet selbst, ob sie im Übungsmodus mitmacht.",
     "sensor_group.partition": "Die Partition, zu der diese Gruppe gehört. Nur Sensoren dieser Partition können die Gruppe verwenden, und sie bietet nur die Modi dieser Partition.",
@@ -814,7 +818,8 @@ export default {
     },
     "device": {
       "esphome": "ESPHome-Bedienteil (selbstgebautes Display)",
-      "account": "Tablet oder Handy mit Home Assistant"
+      "account": "Tablet oder Handy mit Home Assistant",
+      "tagreader": "Tag-Leser (schaltet mit einem Tag scharf und unscharf)"
     },
     "sensor_list": {
       "always": "Immer anzeigen",
