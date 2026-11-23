@@ -11,6 +11,12 @@
 # pin through the resistor and the led (long leg to the resistor) to GND:
 #
 #   green -> GPIO8,  amber -> GPIO9,  red -> GPIO10
+#
+# A buzzer (a passive one, which takes a tone; an active one beeps too, at its own pitch) is optional: + to GPIO11 and
+# the other leg to GND (a resistor of 100 ohm in series if it is too loud). Without a buzzer nothing is wrong: the pin
+# is only an output that nothing listens to. `buzzer_on: "false"` under `substitutions:` in your own file keeps it silent.
+#
+#   buzzer -> GPIO11
 
 substitutions:
   sda_pin: GPIO6
@@ -18,6 +24,7 @@ substitutions:
   led_green_pin: GPIO8
   led_amber_pin: GPIO9
   led_red_pin: GPIO10
+  buzzer_pin: GPIO11
 
 esp32:
   board: esp32-s3-devkitc-1
@@ -47,3 +54,7 @@ output:                   # ../vigil-tagreader-ledtest.yaml and, later, the stat
   - platform: gpio
     id: led_red
     pin: ${led_red_pin}
+  - platform: ledc
+    id: buzzer
+    pin: ${buzzer_pin}
+    frequency: 2000Hz     # the tone is set with every beep (see ../vigil-tagreader.yaml)

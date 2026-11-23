@@ -732,6 +732,9 @@ export default {
     "preset": "Rellena tono, volumen y duración para una sirena conocida. Elige primero la entidad de encendido/apagado en «Sirena» y Vigil busca las demás entidades del mismo dispositivo. Todo sigue siendo editable.",
     "presetFound": "Encontrado en este dispositivo:",
     "presetNoneFound": "No se encontraron otras entidades en este dispositivo; elígelas tú.",
+    "tagPick": "Añadir una etiqueta que un lector no conocía",
+    "tagNone": "No se leyó ninguna etiqueta desconocida en los últimos 10 minutos. Acerque la etiqueta al lector y pulse de nuevo el botón.",
+    "tagAgo": "hace {n} min",
     "presetNoControl": "Valores rellenados. Elige la entidad de la sirena y vuelve a elegir el preajuste para buscar las demás entidades.",
     "power_battery_value": "El valor de la entidad del modo de alimentación cuando la sirena funciona con batería."
   },

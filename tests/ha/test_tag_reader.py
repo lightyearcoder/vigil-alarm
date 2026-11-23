@@ -299,3 +299,48 @@ async def test_a_reader_that_reports_nothing_is_old_firmware(hass):
     assert any(p["code"] == "panel_firmware" and p["seen"] == "?" for p in panels.problems())
     status = next(r for r in panels.status() if r["panel_id"] == "vigil-tag-garage")
     assert status["profile_required"] == 1 and status["reported"] == {}
+
+
+async def test_a_held_tag_does_not_push_the_pause_away(hass):
+    """The 3 seconds count from the scan that did something, not from the last one that was ignored."""
+    await _house(hass)
+    manager = _manager(hass)
+    clock = {"t": 1000.0}
+    manager._wall = lambda: clock["t"]
+    await _scan(hass, "04-A1-B2-C3")
+    assert hass.states.get(PANEL).state == "armed_home"
+    for step in (1.0, 2.0, 2.9):  # held: ignored
+        clock["t"] = 1000.0 + step
+        await _scan(hass, "04-A1-B2-C3")
+        assert hass.states.get(PANEL).state == "armed_home"
+    clock["t"] = 1003.1  # more than 3 seconds after the scan that counted
+    await _scan(hass, "04-A1-B2-C3")
+    assert hass.states.get(PANEL).state == "disarmed"
+
+
+async def test_a_reader_that_may_not_disarm_can_still_cancel_the_exit_delay(hass):
+    data = {"device_kind": "tagreader", "reader_mode": "home", "reader_disarm": False}
+    await _setup(hass, make_entry(extra_subentries=[panel_item("vigil-tag-garage", "Garage reader", "r_garage", None, **data),
+                                                    TESS, BOB], exit_delay_home=30))
+    manager = _manager(hass)
+    clock = {"t": 1000.0}
+    manager._wall = lambda: clock["t"]
+    await _scan(hass, "04-A1-B2-C3")
+    assert hass.states.get(PANEL).state == "arming"
+    clock["t"] += 5
+    await _scan(hass, "04-A1-B2-C3")
+    assert hass.states.get(PANEL).state == "disarmed"  # cancelled: the exit delay was still running
+    clock["t"] += 5
+    await _scan(hass, "04-A1-B2-C3")
+    assert hass.states.get(PANEL).state == "arming"  # armed again
+
+
+async def test_unknown_tags_can_be_linked_by_an_administrator(hass, hass_ws_client):
+    await _house(hass)
+    await _scan(hass, "FF-EE-DD-CC")
+    client = await hass_ws_client(hass)
+    await client.send_json({"id": 1, "type": "vigil_alarm/unknown_tags"})
+    res = (await client.receive_json())["result"]
+    assert [t["tag"] for t in res["tags"]] == ["FF-EE-DD-CC"] and res["tags"][0]["reader"] == "Garage reader"
+    # the number is in no event of the log
+    assert "FF-EE-DD-CC" not in str(hass.states.get(EVENTS).attributes)

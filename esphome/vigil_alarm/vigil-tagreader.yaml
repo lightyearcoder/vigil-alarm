@@ -10,23 +10,25 @@
 # What a scan does:
 #   - the tag goes to Home Assistant (Settings > Tags), so you can name it there;
 #   - the reader fires the event `esphome.vigil_tag` with its own name (`name` of the device), its key (`reader_key`, see
-#     your own file: the same key as a panel has) and the number. Vigil
-#     finds the panel that has this reader (in the form of the panel: the name of this device) and the user who has the
-#     tag, and arms or disarms with the rights of that panel;
-#   - the three leds flash once, at once, whatever Vigil makes of the tag.
+#     your own file: the same key as a panel has) and the number. Vigil finds the reader (in the tab Panels: the name of
+#     this device) and the user who has the tag, and arms or disarms with the rights of that reader;
+#   - the three leds flash once, at once, and the buzzer (if there is one) beeps, whatever Vigil makes of the tag.
 # The leds show the state of the alarm of the reader, which the reader reads from the sensor that Vigil makes for it: the
-# device name with underscores, plus `_state` (`vigil-tag-garage` reads `sensor.vigil_tag_garage_state`). Which partition
+# device name with underscores, plus `_state` (`vigil-tagreader-home` reads `sensor.vigil_tagreader_home_state`). Which partition
 # that is, is set once, in Vigil (the form of the reader), and not here. Green: off. Amber, slow: the exit delay (faster in its last 5 seconds). Red: armed away. Amber: armed home or
 # night. Red, fast: entry delay (faster in its last 10 seconds). Red and amber in turn: alarm. Amber, short flash now and then: no state (Home
 # Assistant is not there yet or the entity does not exist).
-# Red, three short flashes: Vigil refused the scan (an unknown tag, a wrong or missing key, a locked reader, not allowed).
+# Red, three short flashes (and three low beeps): Vigil refused the scan (an unknown tag, a wrong or missing key, a locked
+# reader, not allowed). The buzzer beeps with the flashing of the exit delay (faster in its last 5 seconds) and of the entry
+# delay (faster in its last 10 seconds), like the beeps of a panel.
 
 substitutions:
   reader_key: ""   # the key that Vigil made for this reader (the key button in Vigil): see your own file
   state_entity: sensor.${ name | replace("-", "_") }_state
   # What the reader tells Vigil about itself, like a panel does: "<major>.<minor>" (the major number is what the reader and
   # Vigil say to each other: READER_VERSION in Vigil; the minor number goes up with every other change) and the hardware.
-  firmware_version: "1.0"
+  firmware_version: "1.1"
+  buzzer_on: "true"       # "false": the buzzer stays silent
   hardware_id: esp32-s3-super-mini-tagreader
 
 logger:
@@ -40,6 +42,10 @@ pn532_i2c:
   on_tag:
     then:
       - script.execute: led_flash
+      - script.execute:
+          id: beep
+          freq: 2400
+          ms: 60
       - homeassistant.tag_scanned: !lambda 'return x;'
       - homeassistant.event:
           event: esphome.vigil_tag
@@ -174,6 +180,10 @@ script:
                 then:
                   # the last 5 seconds of the exit delay faster, as the beep of a panel does
                   - output.turn_on: led_amber
+                  - script.execute:
+                      id: beep
+                      freq: 2000
+                      ms: 60
                   - if:
                       condition:
                         lambda: 'int32_t left = (int32_t)(id(delay_until) - millis()); return left > 0 && left <= 5000;'
@@ -195,6 +205,10 @@ script:
                 then:
                   # the last 10 seconds of the entry delay faster
                   - output.turn_on: led_red
+                  - script.execute:
+                      id: beep
+                      freq: 2600
+                      ms: 60
                   - if:
                       condition:
                         lambda: 'int32_t left = (int32_t)(id(delay_until) - millis()); return left > 0 && left <= 10000;'
@@ -258,9 +272,35 @@ script:
           count: 3
           then:
             - output.turn_on: led_red
+            - script.execute:
+                id: beep
+                freq: 1000
+                ms: 150
             - delay: 150ms
             - output.turn_off: led_red
             - delay: 150ms
       - script.execute:
           id: led_show
           state: !lambda 'return id(alarm_state).state;'
+
+  # One beep of the buzzer (nothing happens without one, or with buzzer_on "false"). A new beep stops the old one.
+  - id: beep
+    mode: restart
+    parameters:
+      freq: int
+      ms: int
+    then:
+      - if:
+          condition:
+            lambda: 'return ${buzzer_on};'
+          then:
+            - output.ledc.set_frequency:
+                id: buzzer
+                frequency: !lambda 'return (float) freq;'
+            - output.set_level:
+                id: buzzer
+                level: 50%
+            - delay: !lambda 'return ms;'
+            - output.set_level:
+                id: buzzer
+                level: 0%

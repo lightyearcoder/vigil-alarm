@@ -732,6 +732,9 @@ export default {
     "preset": "Fills in tone, volume and duration for a known siren. Pick the on/off entity under \"Siren\" first and Vigil looks for the other entities of the same device. Everything stays editable.",
     "presetFound": "Found on this device:",
     "presetNoneFound": "No other entities found on this device; pick them yourself.",
+    "tagPick": "Add a tag a reader did not know",
+    "tagNone": "No unknown tag was scanned in the last 10 minutes. Hold the tag in front of the reader, then press the button again.",
+    "tagAgo": "{n} min ago",
     "presetNoControl": "Values filled in. Pick the siren entity and choose the preset again to look up the other entities.",
     "power_battery_value": "The value of the power mode entity when the siren runs on battery."
   },

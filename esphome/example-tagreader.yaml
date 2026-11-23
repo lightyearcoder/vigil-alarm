@@ -14,6 +14,8 @@ substitutions:
   # led_green_pin: GPIO8
   # led_amber_pin: GPIO9
   # led_red_pin: GPIO10
+  # buzzer_pin: GPIO11          # an optional buzzer (see the hardware file)
+  # buzzer_on: "false"          # keep the buzzer silent
   # The key that Vigil made for this reader (the key button in the form of the reader in Vigil). Remove the # once you have
   # made the key and put it in secrets.yaml:
   # reader_key: !secret vigil_tagreader_home_key

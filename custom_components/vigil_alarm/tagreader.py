@@ -26,6 +26,8 @@ if TYPE_CHECKING:
     from .manager import VigilManager
 
 SAME_TAG_SECONDS = 3  # a tag that stays in front of the reader is one scan, not a switch on and off
+UNKNOWN_KEEP_SECONDS = 600  # an unknown tag can be linked to a user for this long after it was scanned
+UNKNOWN_KEEP_COUNT = 5
 
 
 def _norm(tag: str) -> str:
@@ -41,6 +43,21 @@ class TagReaders:
         # reader -> how many scans were refused (only in memory): the state sensor of the reader shows it as an attribute,
         # and the reader flashes red when it goes up.
         self.refused: dict[str, int] = {}
+        # The last unknown tags (only in memory, never in the log): an administrator can link one to a user from the
+        # form of that user, instead of looking the number up in Settings > Tags.
+        self._unknown: list[dict] = []
+
+    def recent_unknown(self) -> list[dict]:
+        """Unknown tags scanned lately, newest first, as {tag, reader, ago}: only for an administrator."""
+        now = self.manager._wall()
+        self._unknown = [u for u in self._unknown if now - u["when"] < UNKNOWN_KEEP_SECONDS and self._user_of(u["tag"]) is None]
+        return [{"tag": u["tag"], "reader": u["reader"], "ago": int(now - u["when"])} for u in self._unknown]
+
+    def _remember_unknown(self, tag: str, title: str) -> None:
+        wanted = _norm(tag)
+        self._unknown = [u for u in self._unknown if _norm(u["tag"]) != wanted]
+        self._unknown.insert(0, {"tag": tag, "reader": title, "when": self.manager._wall()})
+        del self._unknown[UNKNOWN_KEEP_COUNT:]
 
     def _refuse(self, source: str) -> None:
         self.refused[source] = self.refused.get(source, 0) + 1
@@ -55,6 +72,7 @@ class TagReaders:
             self._unsub()
             self._unsub = None
         self._last.clear()
+        self._unknown.clear()
 
     @callback
     def _on_event(self, event: Event) -> None:
@@ -83,9 +101,9 @@ class TagReaders:
             return
         now = manager._wall()
         previous = self._last.get(source)
-        self._last[source] = (tag, now)
         if previous and previous[0] == tag and now - previous[1] < SAME_TAG_SECONDS:
-            return
+            return  # (the window starts at the scan that counted: a tag held in front of the reader does not push it away)
+        self._last[source] = (tag, now)
         if manager.lockout.refusal(source):  # a locked panel does not look at tags either
             self._refuse(source)
             return
@@ -94,6 +112,7 @@ class TagReaders:
             if locked := manager.lockout.record_failure(source):
                 manager.publish_lock(locked, source, "tag")
             manager.publish("tag_rejected", source=source, panel=panel.title)
+            self._remember_unknown(tag, panel.title)
             self._refuse(source)
             return
         manager.lockout.record_success(source)
@@ -102,7 +121,10 @@ class TagReaders:
         active = any(p.engine.state != "disarmed" for p in parts)
         try:
             if active:
-                if not panel.data.get(CONF_READER_DISARM, True):
+                # A reader that may not disarm may still cancel an exit delay that is running (a tag held by mistake, or
+                # to leave again): there is nothing yet to protect, and the one who armed is standing there.
+                counting = all(p.engine.state in ("disarmed", "arming") for p in parts)
+                if not counting and not panel.data.get(CONF_READER_DISARM, True):
                     manager.publish("panel_refused", source=source, panel=panel.title, action="disarm", reason="tag_disarm")
                     self._refuse(source)
                     return

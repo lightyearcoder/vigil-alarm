@@ -446,6 +446,19 @@ def ws_panel_key(hass: HomeAssistant, connection: websocket_api.ActiveConnection
         connection.send_error(msg["id"], "refused", str(err))
 
 
+@websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/unknown_tags"})
+@websocket_api.require_admin
+@callback
+def ws_unknown_tags(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """The unknown tags that a reader saw lately, so an administrator can link one to a user. The number is not in
+    the log (on purpose) and is only given here, to an administrator, from memory."""
+    entry = _entry_for(hass)
+    if entry is None or getattr(entry, "runtime_data", None) is None:
+        _no_entry(connection, msg)
+        return
+    connection.send_result(msg["id"], {"tags": entry.runtime_data.tags.recent_unknown()})
+
+
 @websocket_api.websocket_command({vol.Required("type"): "vigil_alarm/dashboard"})
 @websocket_api.require_admin
 @callback
@@ -934,7 +947,7 @@ def ws_arm_check(hass: HomeAssistant, connection: websocket_api.ActiveConnection
 
 @callback
 def async_register_commands(hass: HomeAssistant) -> None:
-    for command in (ws_get, ws_about, ws_tablet, ws_discover, ws_discover_ignore, ws_new_sensors_dismiss, ws_alarm_memory_clear, ws_practice, ws_walktest, ws_discover_report, ws_readiness, ws_log, ws_log_export, ws_selftest, ws_heartbeat, ws_panel_unlock, ws_panel_clear_lock, ws_panel_key, ws_dashboard, ws_add_phone, ws_create_default_groups, ws_subscribe, ws_save, ws_save_many, ws_delete, ws_save_settings, ws_siren_preset, ws_backups, ws_backup_restore, ws_export, ws_import, ws_arm_check):
+    for command in (ws_get, ws_about, ws_tablet, ws_discover, ws_discover_ignore, ws_new_sensors_dismiss, ws_alarm_memory_clear, ws_practice, ws_walktest, ws_discover_report, ws_readiness, ws_log, ws_log_export, ws_selftest, ws_heartbeat, ws_panel_unlock, ws_panel_clear_lock, ws_panel_key, ws_unknown_tags, ws_dashboard, ws_add_phone, ws_create_default_groups, ws_subscribe, ws_save, ws_save_many, ws_delete, ws_save_settings, ws_siren_preset, ws_backups, ws_backup_restore, ws_export, ws_import, ws_arm_check):
         websocket_api.async_register_command(hass, command)
 
 

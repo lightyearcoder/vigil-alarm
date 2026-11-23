@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.7.10
+
+**Tag reader: link a tag from the form of the user, a buzzer, and two small fixes** (the firmware of the panel is unchanged, 1.1: no need to flash the panel again; flash the tag reader again and copy its hardware file)
+
+- **A new tag is linked from the form of the user.** Hold the tag in front of the reader (it is refused as unknown), open the user and press *Add a tag a reader did not know* under *tags*: Vigil lists the unknown tags of the last 10 minutes with the reader and the minutes ago, and one press adds the number. The number is kept in memory only, shown to an administrator only, and is still not in the Log.
+- **A tag can cancel a running exit delay, also when the reader may not disarm.** *A tag can disarm* off still refuses a scan once the alarm is on (`panel_refused`, reason `tag_disarm`), but the exit delay after arming can be cancelled with the tag.
+- **Fix: a tag held in front of the reader pushed the pause away.** The 3 seconds in which the same tag counts as one scan started again with every ignored scan, so the next scan worked much later. They now count from the scan that did something.
+- **A buzzer on the reader (optional).** On GPIO11 (`buzzer_pin`; `buzzer_on: "false"` keeps it silent): a beep at every scan, beeps with the flashing of the exit delay (faster in its last 5 seconds) and of the entry delay (faster in its last 10 seconds), like a panel, and three low beeps with the red flashes when Vigil refused the scan. The pin is in the hardware file: **copy `vigil_alarm/hardware/esp32-s3-super-mini-tagreader.yaml` and `vigil_alarm/vigil-tagreader.yaml` again and flash the reader** (firmware of the reader 1.1). Without a buzzer nothing is wrong.
+
 ## 0.7.9
 
 **A tag arms and disarms, and the tag reader has leds** (the firmware of the panel is unchanged, 1.1: no need to flash the panel again; flash the tag reader again)

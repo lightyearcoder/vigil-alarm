@@ -191,7 +191,7 @@ the tag for Home Assistant. In Vigil you give a user the tag (*Users*, field *ta
 with the name of the reader device (its id). The reader is a control point of its own: it needs no panel, and has its own rights and lock. The tag arms in the mode you chose for the reader
 (*Arms in the mode*) when the alarm is off, and disarms when it is on, if *A tag can disarm* is on. All the rights of the reader and of the
 user hold, as with a code. An unknown tag counts as a wrong code for the lock of that reader and gives the event `tag_rejected`, without the number.
-The number of a tag is not a secret and can be copied: for a reader outside, turn *A tag can disarm* off, so that a tag can only arm.
+The number of a tag is not a secret and can be copied: for a reader outside, turn *A tag can disarm* off, so that a tag can only arm (a tag can still cancel an exit delay that is running). To link a new tag: hold it in front of the reader, open the user in Vigil and press *Add a tag a reader did not know* under *tags*.
 
 The reader also has a key, like a panel: the event `esphome.vigil_tag` is something anyone who can fire events in Home Assistant could fake, with the name of the reader. Press the key button of the reader in the tab *Panels* (the key is shown once), put it in `secrets.yaml` as `vigil_tagreader_home_key: "..."`, remove the `#` before `reader_key: !secret vigil_tagreader_home_key` in the device file and install the reader again. Once the reader has a key, Vigil refuses (and logs as `panel_refused`, reason `key`) a scan without the right key. A reader without a key works as before, and Vigil points it out in the tab *Panels*.
 
@@ -206,6 +206,10 @@ once, at once. Red, three short flashes after a scan: Vigil refused it (an unkno
 The reader also tells Vigil what it is, as a panel does (*Hardware ID*, *Firmware version*, *Profile version*, diagnostic entities in Home Assistant). The tab *Panels* shows the hardware and the firmware version on the card of the reader, and Vigil reports a reader that is there but says nothing (firmware from before 0.7.9: it sends no key and cannot flash for a refused scan) like a panel with firmware that does not fit.
 
 `vigil_alarm/vigil-tagreader-ledtest.yaml` is only there to test the wiring of the leds: it lets them light one after the other. Do not use it with the line for `vigil-tagreader.yaml`.
+
+### The buzzer
+
+An optional buzzer (+ to GPIO11, the other leg to GND; `buzzer_pin` sets another pin, `buzzer_on: "false"` keeps it silent) beeps once at every scan, with the flashing of the exit delay (faster in its last 5 seconds, like a panel) and of the entry delay (faster in its last 10 seconds), and three low beeps with the red flashes when Vigil refused the scan. Without a buzzer nothing is wrong. The pin is in the hardware file, so copy that file again when you update.
 
 ## Another display
 

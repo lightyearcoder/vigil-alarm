@@ -732,6 +732,9 @@ export default {
     "preset": "Vult toon, volume en duur in voor een bekende sirene. Kies eerst bij \"Sirene\" de aan/uit-entiteit, dan zoekt Vigil de andere entiteiten van hetzelfde apparaat erbij. Alles blijft aanpasbaar.",
     "presetFound": "Gevonden bij dit apparaat:",
     "presetNoneFound": "Geen andere entiteiten gevonden bij dit apparaat; kies ze zelf.",
+    "tagPick": "Voeg een tag toe die een reader niet kende",
+    "tagNone": "In de laatste 10 minuten is geen onbekende tag gescand. Houd de tag voor de reader en druk dan nog eens op de knop.",
+    "tagAgo": "{n} min geleden",
     "presetNoControl": "Waarden ingevuld. Kies de sirene-entiteit en kies de voorinstelling opnieuw om de andere entiteiten te laten zoeken.",
     "power_battery_value": "De waarde van de voedingsmodus als de sirene op batterij draait."
   },

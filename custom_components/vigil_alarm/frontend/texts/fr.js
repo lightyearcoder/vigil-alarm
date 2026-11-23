@@ -732,6 +732,9 @@ export default {
     "preset": "Remplit le son, le volume et la durée pour une sirène connue. Choisissez d'abord l'entité marche/arrêt sous « Sirène » et Vigil cherche les autres entités du même appareil. Tout reste modifiable.",
     "presetFound": "Trouvé sur cet appareil :",
     "presetNoneFound": "Aucune autre entité trouvée sur cet appareil ; choisissez-les vous-même.",
+    "tagPick": "Ajouter un badge qu'un lecteur ne connaissait pas",
+    "tagNone": "Aucun badge inconnu n'a été lu ces 10 dernières minutes. Présentez le badge au lecteur, puis appuyez de nouveau sur le bouton.",
+    "tagAgo": "il y a {n} min",
     "presetNoControl": "Valeurs remplies. Choisissez l'entité de la sirène et choisissez de nouveau le préréglage pour rechercher les autres entités.",
     "power_battery_value": "La valeur de l'entité du mode d'alimentation quand la sirène fonctionne sur batterie."
   },

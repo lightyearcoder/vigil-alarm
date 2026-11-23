@@ -1,7 +1,7 @@
 /* Vigil Alarm: admin panel, part "forms": methods of VigilPanel. ../vigil-panel.js adds them to the class;
  * the helpers of that file come in as `core`. */
 export default function install(core) {
-  const { TXT, el, panelLanguage } = core;
+  const { TXT, el, fill, panelLanguage } = core;
   return {
   // ---- form builder: returns {node, values(), showErrors(res, baseNode)}
   _makeForm(schema, initial, opts) {
@@ -319,7 +319,24 @@ export default function install(core) {
       }
       case "tags": {
         const v = Array.isArray(state[key]) ? state[key].join(", ") : state[key] || "";
-        return wrap(el("input", { type: "text", value: v, autocomplete: "off", oninput: (e) => { state[key] = e.target.value; } }));
+        const input = el("input", { type: "text", value: v, autocomplete: "off", oninput: (e) => { state[key] = e.target.value; } });
+        // Tags that a reader did not know lately (kept in memory only, shown to an administrator only): one press adds it.
+        const chips = el("div", { class: "checks" });
+        const pick = el("button", { type: "button", class: "btn", text: t.help.tagPick, onclick: async () => {
+          const res = await this._hass.callWS({ type: "vigil_alarm/unknown_tags" });
+          chips.replaceChildren();
+          if (!res.tags.length) { chips.append(el("span", { class: "muted", text: t.help.tagNone })); return; }
+          for (const u of res.tags) {
+            const mins = Math.max(1, Math.round(u.ago / 60));
+            chips.append(el("button", { type: "button", class: "btn", title: u.reader, text: `${u.tag} · ${u.reader} · ${fill(t.help.tagAgo, { n: mins })}`, onclick: () => {
+              const have = String(Array.isArray(state[key]) ? state[key].join(", ") : state[key] || "").split(",").map((x) => x.trim()).filter(Boolean);
+              if (!have.includes(u.tag)) have.push(u.tag);
+              state[key] = have.join(", ");
+              input.value = state[key];
+            } }));
+          }
+        } });
+        return wrap(input, pick, chips);
       }
       case "ha_user": {
         const users = [...(this._data.ha_users || [])].sort(this._byName((u) => u.name));

@@ -732,6 +732,9 @@ export default {
     "preset": "Füllt Ton, Lautstärke und Dauer für eine bekannte Sirene aus. Wähle zuerst die An/Aus-Entität unter „Sirene“, dann sucht Vigil die anderen Entitäten desselben Geräts. Alles bleibt bearbeitbar.",
     "presetFound": "Auf diesem Gerät gefunden:",
     "presetNoneFound": "Keine weiteren Entitäten auf diesem Gerät gefunden; wähle sie selbst.",
+    "tagPick": "Einen Tag hinzufügen, den ein Leser nicht kannte",
+    "tagNone": "In den letzten 10 Minuten wurde kein unbekannter Tag gescannt. Halten Sie den Tag vor den Leser und drücken Sie die Schaltfläche erneut.",
+    "tagAgo": "vor {n} Min.",
     "presetNoControl": "Werte ausgefüllt. Wähle die Sirenen-Entität und wähle die Voreinstellung erneut, um die anderen Entitäten zu suchen.",
     "power_battery_value": "Der Wert der Entität für den Energiemodus, wenn die Sirene im Batteriebetrieb läuft."
   },

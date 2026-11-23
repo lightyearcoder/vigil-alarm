@@ -732,6 +732,9 @@ export default {
     "preset": "Compila tono, volume e durata per una sirena nota. Scegli prima l'entità on/off sotto «Sirena» e Vigil cerca le altre entità dello stesso dispositivo. Tutto resta modificabile.",
     "presetFound": "Trovato su questo dispositivo:",
     "presetNoneFound": "Nessun'altra entità trovata su questo dispositivo; sceglile tu.",
+    "tagPick": "Aggiungi un tag che un lettore non conosceva",
+    "tagNone": "Nessun tag sconosciuto è stato letto negli ultimi 10 minuti. Avvicinate il tag al lettore e premete di nuovo il pulsante.",
+    "tagAgo": "{n} min fa",
     "presetNoControl": "Valori compilati. Scegli l'entità della sirena e scegli di nuovo la preimpostazione per cercare le altre entità.",
     "power_battery_value": "Il valore dell'entità della modalità di alimentazione quando la sirena funziona a batteria."
   },
